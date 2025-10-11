@@ -1,0 +1,8 @@
+node_modules/
+.next/
+dist/
+build/
+.cache/
+npm-debug.log*
+pnpm-lock.yaml
+yarn.lock
