@@ -1,10 +1,10 @@
 [build]
-  command = "npm ci && npm run build"
+  command = "npm ci --omit=dev && npm run build"
   publish = ".next"
 
 [build.environment]
   NODE_VERSION = "20"
   NEXT_TELEMETRY_DISABLED = "1"
-# Official Next.js plugin (handles SSR/ISR/routes on Netlify)
+
 [[plugins]]
   package = "@netlify/plugin-nextjs"

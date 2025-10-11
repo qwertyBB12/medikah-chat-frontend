@@ -13,6 +13,17 @@ interface Message {
   text: string;
 }
 
+interface ChatResponse {
+  ok?: boolean;
+  reply?: string;
+}
+
+interface HealthResponse {
+  ok?: boolean;
+  service?: string;
+  [key: string]: unknown;
+}
+
 export default function Home() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -23,11 +34,13 @@ export default function Home() {
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [showLoginForm, setShowLoginForm] = useState(false);
   const [portalSelection, setPortalSelection] = useState<'doctor' | 'patient' | 'insurer' | 'employer' | null>(null);
   const [theme, setTheme] = useState<ThemeKey>('warm');
   const themeSettings = THEMES[theme];
   const toggleTheme = () => setTheme((prev) => (prev === 'warm' ? 'ocean' : 'warm'));
+  const base = process.env.NEXT_PUBLIC_API_URL!;
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -47,48 +60,64 @@ export default function Home() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const sendMessage = async () => {
-    const trimmed = input.trim();
-    if (!trimmed) return;
+  const sendMessage = async (text: string): Promise<void> => {
+    const trimmed = text.trim();
+    if (!trimmed) {
+      setInput('');
+      requestAnimationFrame(() => adjustTextareaHeight());
+      return;
+    }
+
     const userMsg: Message = { sender: 'user', text: trimmed };
+    setIsSending(true);
     setMessages((msgs) => [...msgs, userMsg]);
-    setInput('');
-    requestAnimationFrame(() => adjustTextareaHeight());
+
     try {
-      const url = `${process.env.NEXT_PUBLIC_API_URL}/chat`;
-      const payload = { message: trimmed };
-      console.log('Chat request →', { url, payload });
-      const res = await fetch(url, {
+      const res = await fetch(`${base}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ message: trimmed })
       });
-      console.log('Chat response status:', res.status, res.statusText);
-      let data: { response?: string; detail?: string } | null = null;
+
+      let data: ChatResponse = {};
       try {
-        data = await res.json();
-      } catch (parseError) {
-        console.error('Failed to parse chat response JSON', parseError);
+        data = (await res.json()) as ChatResponse;
+      } catch {
+        data = {};
       }
-      if (!res.ok) {
-        console.error('Chat request returned non-OK status', { status: res.status, data });
-        throw new Error(data?.detail || `Request failed with status ${res.status}`);
+
+      if (!res.ok || !data?.ok || !data?.reply) {
+        setMessages((msgs) => [
+          ...msgs,
+          { sender: 'bot', text: 'Lo siento — I couldn’t reply just now. Please try again.' }
+        ]);
+        return;
       }
-      console.log('Chat response payload:', data);
+
       setMessages((msgs) => [
         ...msgs,
-        { sender: 'bot', text: data?.response ?? 'No response' }
+        { sender: 'bot', text: data.reply }
       ]);
     } catch (err) {
       console.error('Chat request error:', err);
-      setMessages((msgs) => [...msgs, { sender: 'bot', text: 'Error contacting server' }]);
+      setMessages((msgs) => [
+        ...msgs,
+        { sender: 'bot', text: 'Network error — please check your connection and try again.' }
+      ]);
+    }
+    finally {
+      setInput('');
+      requestAnimationFrame(() => adjustTextareaHeight());
+      setIsSending(false);
     }
   };
 
   const handleTextareaKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
-      sendMessage();
+      if (!isSending) {
+        sendMessage(input);
+      }
     }
   };
 
@@ -129,6 +158,21 @@ export default function Home() {
     setPortalSelection('patient');
     setShowLoginForm(true);
     setLoginError(null);
+  };
+
+  const handleHealthCheck = async () => {
+    try {
+      const res = await fetch(`${base}/health`);
+      const payload = (await res.json().catch(() => ({}))) as HealthResponse;
+      if (!res.ok) {
+        alert(`Health check failed: ${JSON.stringify(payload)}`);
+        return;
+      }
+      alert(JSON.stringify(payload, null, 2));
+    } catch (error) {
+      console.error('Health check error:', error);
+      alert('Unable to reach the API health endpoint.');
+    }
   };
 
   const handleInsurerAccess = () => {
@@ -314,8 +358,20 @@ export default function Home() {
           onSubmit={sendMessage}
           onKeyDown={handleTextareaKeyDown}
           textareaRef={textareaRef}
+          isSending={isSending}
           themeSettings={themeSettings}
         />
+        {process.env.NODE_ENV !== 'production' ? (
+          <div className="px-4 sm:px-10 pb-3">
+            <button
+              type="button"
+              onClick={handleHealthCheck}
+              className="px-3 py-2 text-xs font-heading rounded-none border border-muted/60 text-muted hover:bg-muted/10 transition"
+            >
+              Test API
+            </button>
+          </div>
+        ) : null}
 
         <Footer themeSettings={themeSettings} />
       </div>

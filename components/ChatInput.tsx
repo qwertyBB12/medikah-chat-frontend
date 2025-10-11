@@ -4,10 +4,11 @@ import { ThemeSettings } from '../lib/theme';
 interface ChatInputProps {
   value: string;
   onChange: (value: string) => void;
-  onSubmit: () => void;
+  onSubmit: (value: string) => void | Promise<void>;
   onKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
   textareaRef: RefObject<HTMLTextAreaElement | null>;
   themeSettings: ThemeSettings;
+  isSending: boolean;
 }
 
 export default function ChatInput({
@@ -16,11 +17,13 @@ export default function ChatInput({
   onSubmit,
   onKeyDown,
   textareaRef,
-  themeSettings
+  themeSettings,
+  isSending
 }: ChatInputProps) {
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    onSubmit();
+    if (isSending) return;
+    onSubmit(value);
   };
 
   return (
@@ -34,14 +37,17 @@ export default function ChatInput({
           value={value}
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={onKeyDown}
-          placeholder="Share how you’re feeling, and include any details you think matter."
+          aria-label="Message Medikah"
+          placeholder="Type your message…"
           className="flex-1 resize-none bg-transparent focus:outline-none text-base leading-6 placeholder:text-muted/70"
           rows={1}
           spellCheck={false}
         />
         <button
           type="submit"
-          className={`px-4 py-2 font-heading font-semibold transition rounded-none lowercase ${themeSettings.primaryButton}`}
+          disabled={isSending}
+          aria-disabled={isSending}
+          className={`px-4 py-2 font-heading font-semibold transition rounded-none lowercase disabled:opacity-60 disabled:cursor-not-allowed ${themeSettings.primaryButton}`}
         >
           Send
         </button>
