@@ -86,13 +86,15 @@ export default function Home() {
         data = {};
       }
 
-      if (!res.ok || !data?.ok || !data?.reply) {
-        setMessages((msgs) => [
-          ...msgs,
-          { sender: 'bot', text: 'Lo siento — I couldn’t reply just now. Please try again.' }
-        ]);
-        return;
-      }
+    const botText: string =
+  res.ok && data?.ok && typeof data.reply === 'string' && data.reply.trim().length > 0
+    ? data.reply
+    : 'Lo siento — I couldn’t reply just now. Please try again.';
+
+setMessages((msgs: Message[]): Message[] => [
+  ...msgs,
+  { sender: 'bot', text: botText },
+]);
 
       setMessages((msgs) => [
         ...msgs,
