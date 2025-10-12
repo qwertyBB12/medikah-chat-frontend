@@ -18,7 +18,9 @@ export default function Sidebar({
   const toggleLabel = theme === 'warm' ? 'switch to ocean mode' : 'switch to warm mode';
 
   return (
-    <aside className={`hidden md:flex md:w-72 lg:w-80 flex-col ${themeSettings.sidebarBackground}`}>
+    <aside
+      className={`hidden md:flex md:w-72 lg:w-80 flex-col md:sticky md:top-0 md:h-screen md:max-h-screen md:flex-shrink-0 md:overflow-hidden ${themeSettings.sidebarBackground}`}
+    >
       <div className="px-6 py-8 flex flex-col items-center gap-4">
         <img
           src="/logo.png"

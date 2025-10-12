@@ -273,7 +273,7 @@ export default function Home() {
 
   return (
     <div
-      className={`min-h-screen flex flex-col md:flex-row ${themeSettings.appBackground} ${themeSettings.baseTextColor}`}
+      className={`min-h-screen md:h-screen md:overflow-hidden flex flex-col md:flex-row ${themeSettings.appBackground} ${themeSettings.baseTextColor}`}
       style={warmBackgroundStyle}
     >
       <Sidebar
