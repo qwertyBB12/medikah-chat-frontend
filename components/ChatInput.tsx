@@ -30,7 +30,7 @@ export default function ChatInput({
     <div className={`px-4 sm:px-10 py-4 ${themeSettings.chatInputBackground}`}>
       <form
         onSubmit={handleSubmit}
-        className={`max-w-3xl mx-auto w-full flex items-end gap-3 px-4 py-3 rounded-none shadow ${themeSettings.chatInputSurface}`}
+        className={`max-w-3xl mx-auto w-full flex items-end gap-3 px-5 py-4 rounded-3xl transition-colors ${themeSettings.chatInputSurface}`}
       >
         <textarea
           ref={textareaRef}
@@ -39,7 +39,7 @@ export default function ChatInput({
           onKeyDown={onKeyDown}
           aria-label="Message Medikah"
           placeholder="Type your message…"
-          className="flex-1 resize-none bg-transparent focus:outline-none text-base leading-6 placeholder:text-muted/70"
+          className="flex-1 resize-none bg-transparent focus:outline-none text-lg leading-7 font-medium text-inherit placeholder:text-white/60 caret-white selection:bg-white/20"
           rows={1}
           spellCheck={false}
         />
