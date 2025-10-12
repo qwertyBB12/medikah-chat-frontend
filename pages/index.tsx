@@ -13,6 +13,11 @@ interface ChatResponse {
   reply?: unknown;  // we'll type-narrow at runtime
 }
 
+type Message = {
+  sender: 'user' | 'bot';
+  text: string;
+};
+
 interface HealthResponse {
   ok?: boolean;
   service?: string;
