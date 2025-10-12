@@ -333,7 +333,7 @@ export default function Home() {
                 {messages.map((message, index) => (
                   <div key={index} className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div
-                      className={`px-5 py-4 rounded-none shadow max-w-xl whitespace-pre-line ${
+                      className={`px-5 py-4 max-w-xl whitespace-pre-line ${
                         message.sender === 'user' ? themeSettings.userBubble : themeSettings.botBubble
                       }`}
                     >
