@@ -8,14 +8,9 @@ import ChatInput from '../components/ChatInput';
 import Footer from '../components/Footer';
 import { ThemeKey, THEMES } from '../lib/theme';
 
-interface Message {
-  sender: 'user' | 'bot';
-  text: string;
-}
-
 interface ChatResponse {
   ok?: boolean;
-  reply?: string;
+  reply?: unknown;  // we'll type-narrow at runtime
 }
 
 interface HealthResponse {
@@ -86,19 +81,14 @@ export default function Home() {
         data = {};
       }
 
-    const botText: string =
-  res.ok && data?.ok && typeof data.reply === 'string' && data.reply.trim().length > 0
-    ? data.reply
-    : 'Lo siento — I couldn’t reply just now. Please try again.';
+      const reply =
+        typeof data.reply === 'string' && data.reply.trim()
+          ? data.reply
+          : 'Lo siento — I couldn’t reply just now. Please try again.';
 
-setMessages((msgs: Message[]): Message[] => [
-  ...msgs,
-  { sender: 'bot', text: botText },
-]);
-
-      setMessages((msgs) => [
+      setMessages((msgs): Message[] => [
         ...msgs,
-        { sender: 'bot', text: data.reply }
+        { sender: 'bot', text: reply },
       ]);
     } catch (err) {
       console.error('Chat request error:', err);
