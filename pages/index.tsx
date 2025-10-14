@@ -290,7 +290,7 @@ export default function Home() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Image
-                src="/logo.png"
+                src="/logo-BLU.png"
                 alt="Medikah logo"
                 width={96}
                 height={96}

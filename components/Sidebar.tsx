@@ -24,10 +24,10 @@ export default function Sidebar({
     >
       <div className="px-6 py-8 flex flex-col items-center gap-4">
         <Image
-          src="/logo.png"
+          src="/logo-BLU.png"
           alt="Medikah logo"
-          width={796}
-          height={720}
+          width={1024}
+          height={1024}
           priority
           className="w-36 sm:w-40 lg:w-48 h-auto mx-auto"
         />
