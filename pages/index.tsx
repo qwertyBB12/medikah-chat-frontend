@@ -7,8 +7,10 @@ import Sidebar from '../components/Sidebar';
 import WelcomeRotator from '../components/WelcomeRotator';
 import ChatInput from '../components/ChatInput';
 import Footer from '../components/Footer';
+import SchedulerForm from '../components/SchedulerForm';
 import { ThemeKey, THEMES } from '../lib/theme';
 import { LOGO_SRC } from '../lib/assets';
+import { SupportedLang } from '../lib/i18n';
 
 interface ChatResponse {
   ok?: boolean;
@@ -43,6 +45,7 @@ export default function Home() {
   const themeSettings = THEMES[theme];
   const toggleTheme = () => setTheme((prev) => (prev === 'warm' ? 'ocean' : 'warm'));
   const base = process.env.NEXT_PUBLIC_API_URL!;
+  const lang: SupportedLang = router.locale?.toLowerCase().startsWith('es') ? 'es' : 'en';
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -351,6 +354,14 @@ export default function Home() {
             </div>
           )}
         </main>
+
+        <div className="px-4 sm:px-8 pb-6">
+          <SchedulerForm
+            lang={lang}
+            theme={theme}
+            className="mx-auto w-full max-w-3xl"
+          />
+        </div>
 
         <ChatInput
           value={input}
