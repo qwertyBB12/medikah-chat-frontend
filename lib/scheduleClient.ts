@@ -1,9 +1,9 @@
 export interface ScheduleFormPayload {
   patientName: string;
   patientEmail: string;
-  doctorName: string;
   appointmentTimeISO: string;
   symptoms?: string;
+  localePreference?: string;
 }
 
 export interface ScheduleSuccessResponse {
@@ -29,8 +29,8 @@ export async function postSchedule(
       patient_name: payload.patientName,
       patient_contact: payload.patientEmail,
       appointment_time: payload.appointmentTimeISO,
-      doctor_name: payload.doctorName,
       symptoms: payload.symptoms,
+      locale_preference: payload.localePreference,
     }),
   });
 
