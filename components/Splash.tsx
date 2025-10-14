@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { ReactNode } from 'react';
 import { ThemeKey } from '../lib/theme';
 
@@ -69,8 +70,8 @@ export default function Splash({
 
       <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-10 text-center">
         <div className="flex flex-col items-center gap-4">
-          <img src="/logo.png" alt="Medikah emblem" className="w-16 h-auto sm:w-20" />
-          <img src="/medikah_wht.png" alt="Medikah wordmark" className="w-40 h-auto sm:w-48" />
+          <Image src="/logo.png" alt="Medikah emblem" width={320} height={320} priority className="w-16 h-auto sm:w-20" />
+          <Image src="/medikah_wht.png" alt="Medikah wordmark" width={480} height={180} className="w-40 h-auto sm:w-48" />
           <p className={`text-base leading-relaxed max-w-lg ${copyTextClass}`}>
             Hola, estás en buenas manos. Escoge cómo quieres ingresar y seguimos contigo con paciencia, atención y respeto.
           </p>

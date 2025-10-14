@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from 'react';
@@ -288,11 +289,12 @@ export default function Home() {
         <header className={`md:hidden px-4 py-4 ${themeSettings.headerBackground}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <img
+              <Image
                 src="/logo.png"
                 alt="Medikah logo"
                 width={96}
                 height={96}
+                priority
                 className="w-12 h-auto sm:w-14"
               />
             </div>

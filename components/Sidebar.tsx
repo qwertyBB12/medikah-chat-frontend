@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { ThemeKey, ThemeSettings } from '../lib/theme';
 
 interface SidebarProps {
@@ -22,14 +23,15 @@ export default function Sidebar({
       className={`hidden md:flex md:w-72 lg:w-80 flex-col md:sticky md:top-0 md:h-screen md:max-h-screen md:flex-shrink-0 md:overflow-hidden ${themeSettings.sidebarBackground}`}
     >
       <div className="px-6 py-8 flex flex-col items-center gap-4">
-        <img
+        <Image
           src="/logo.png"
           alt="Medikah logo"
           width={796}
           height={720}
+          priority
           className="w-36 sm:w-40 lg:w-48 h-auto mx-auto"
         />
-        <img
+        <Image
           src="/medikah_wht.png"
           alt="Medikah wordmark"
           width={600}
