@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import { ThemeKey, ThemeSettings } from '../lib/theme';
+import { LOGO_SRC, WORDMARK_SRC } from '../lib/assets';
 
 interface SidebarProps {
   onSignOut: () => void;
@@ -24,7 +25,7 @@ export default function Sidebar({
     >
       <div className="px-6 py-8 flex flex-col items-center gap-4">
         <Image
-          src="/logo-BLU.png"
+          src={LOGO_SRC}
           alt="Medikah logo"
           width={1024}
           height={1024}
@@ -32,7 +33,7 @@ export default function Sidebar({
           className="w-36 sm:w-40 lg:w-48 h-auto mx-auto"
         />
         <Image
-          src="/medikah_wht.png"
+          src={WORDMARK_SRC}
           alt="Medikah wordmark"
           width={600}
           height={200}

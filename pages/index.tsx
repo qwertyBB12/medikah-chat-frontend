@@ -8,6 +8,7 @@ import WelcomeRotator from '../components/WelcomeRotator';
 import ChatInput from '../components/ChatInput';
 import Footer from '../components/Footer';
 import { ThemeKey, THEMES } from '../lib/theme';
+import { LOGO_SRC } from '../lib/assets';
 
 interface ChatResponse {
   ok?: boolean;
@@ -290,7 +291,7 @@ export default function Home() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Image
-                src="/logo-BLU.png"
+                src={LOGO_SRC}
                 alt="Medikah logo"
                 width={96}
                 height={96}
