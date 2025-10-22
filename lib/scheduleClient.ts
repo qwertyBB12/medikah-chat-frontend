@@ -13,7 +13,8 @@ export interface ScheduleSuccessResponse {
   message: string;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL ?? 'https://medikah-chat-api.onrender.com';
 
 export async function postSchedule(
   payload: ScheduleFormPayload,
@@ -22,7 +23,9 @@ export async function postSchedule(
     throw new Error('API base URL is not configured');
   }
 
-  const response = await fetch(`${API_BASE}/schedule`, {
+  const endpoint = `${API_BASE.replace(/\/$/, '')}/schedule`;
+
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
