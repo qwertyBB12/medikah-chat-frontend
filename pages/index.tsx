@@ -1,20 +1,15 @@
 import Image from 'next/image';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { useRouter } from 'next/router';
-import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from 'react';
 import Splash from '../components/Splash';
 import Sidebar from '../components/Sidebar';
 import WelcomeRotator from '../components/WelcomeRotator';
 import ChatInput from '../components/ChatInput';
 import Footer from '../components/Footer';
-import ChatSchedulerAgent, {
-  ChatSchedulerAgentHandle,
-  SchedulerAction,
-  SchedulerAgentState,
-} from '../components/ChatSchedulerAgent';
+import { SchedulerAction } from '../components/ChatSchedulerAgent';
 import { ThemeKey, THEMES } from '../lib/theme';
 import { LOGO_SRC } from '../lib/assets';
-import { getSchedulerCopy, SupportedLang } from '../lib/i18n';
 
 interface ChatResponse {
   ok?: boolean;
@@ -55,10 +50,7 @@ export default function Home() {
   const themeSettings = THEMES[theme];
   const toggleTheme = () => setTheme((prev) => (prev === 'warm' ? 'ocean' : 'warm'));
   const base = process.env.NEXT_PUBLIC_API_URL!;
-  const lang: SupportedLang = router.locale?.toLowerCase().startsWith('es') ? 'es' : 'en';
-  const schedulerCopy = useMemo(() => getSchedulerCopy(lang), [lang]);
-  const agentRef = useRef<ChatSchedulerAgentHandle | null>(null);
-  const [schedulerState, setSchedulerState] = useState<SchedulerAgentState>('idle');
+  const lang = router.locale?.toLowerCase().startsWith('es') ? 'es' : 'en';
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -159,7 +151,6 @@ export default function Home() {
     setMessages([]);
     setInput('');
     sessionIdRef.current = null;
-    setSchedulerState('idle');
     requestAnimationFrame(() => adjustTextareaHeight());
   };
 
@@ -404,21 +395,6 @@ export default function Home() {
           )}
         </main>
 
-        <div className="px-4 sm:px-8 pb-4">
-          <button
-            type="button"
-            onClick={() => agentRef.current?.start()}
-            disabled={schedulerState === 'awaiting_user' || schedulerState === 'scheduling'}
-            className={`mx-auto flex w-full max-w-3xl items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-heading uppercase tracking-wide transition ${
-              theme === 'warm'
-                ? 'bg-[#1a7c8b] text-white hover:bg-[#166776] disabled:bg-[#1a7c8b]/60 disabled:text-white/80'
-                : 'bg-white/85 text-[#104a53] hover:bg-white disabled:bg-white/50 disabled:text-[#104a53]/60'
-            }`}
-          >
-            {schedulerCopy.startCta}
-          </button>
-        </div>
-
         <ChatInput
           value={input}
           onChange={setInput}
@@ -443,19 +419,6 @@ export default function Home() {
         <Footer themeSettings={themeSettings} />
       </div>
 
-      <ChatSchedulerAgent
-        ref={agentRef}
-        lang={lang}
-        sessionName={session?.user?.name ?? ''}
-        sessionEmail={session?.user?.email ?? ''}
-        appendMessage={(message) =>
-          setMessages((msgs) => [
-            ...msgs,
-            { sender: 'bot', text: message.text, actions: message.actions },
-          ])
-        }
-        onStateChange={setSchedulerState}
-      />
     </div>
   );
 }
