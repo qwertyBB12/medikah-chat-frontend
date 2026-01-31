@@ -251,7 +251,7 @@ const ChatSchedulerAgent = forwardRef<
       });
       updateState('completed');
     } catch (error) {
-      console.error('Medikah scheduler failed:', error);
+      // error handled in UI
       appendMessage({
         text: `${copy.failureHeadline}\n${copy.failureDetails}\n${copy.agentSignature}`,
       });

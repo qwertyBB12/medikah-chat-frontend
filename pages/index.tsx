@@ -19,6 +19,11 @@ import { getSchedulerCopy, SupportedLang } from '../lib/i18n';
 interface ChatResponse {
   ok?: boolean;
   reply?: unknown;  // we'll type-narrow at runtime
+  session_id?: string;
+  stage?: string;
+  appointment_confirmed?: boolean;
+  emergency_noted?: boolean;
+  actions?: SchedulerAction[];
 }
 
 type Message = {
@@ -57,6 +62,7 @@ export default function Home() {
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const sessionIdRef = useRef<string | null>(null);
 
   const adjustTextareaHeight = () => {
     const el = textareaRef.current;
@@ -84,21 +90,20 @@ export default function Home() {
     const userMsg: Message = { sender: 'user', text: trimmed };
     setMessages((msgs) => [...msgs, userMsg]);
 
-    const agentHandled = agentRef.current
-      ? await agentRef.current.handleUserInput(trimmed)
-      : false;
-    if (agentHandled) {
-      setInput('');
-      requestAnimationFrame(() => adjustTextareaHeight());
-      return;
-    }
-
     setIsSending(true);
     try {
+      const payload: Record<string, unknown> = { message: trimmed };
+      if (sessionIdRef.current) {
+        payload.session_id = sessionIdRef.current;
+      }
+      if (lang) {
+        payload.locale = lang;
+      }
+
       const res = await fetch(`${base}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: trimmed })
+        body: JSON.stringify(payload)
       });
 
       let data: ChatResponse = {};
@@ -112,13 +117,23 @@ export default function Home() {
         typeof data.reply === 'string' && data.reply.trim()
           ? data.reply
           : 'Lo siento — I couldn’t reply just now. Please try again.';
+      if (typeof data.session_id === 'string' && data.session_id.length > 0) {
+        sessionIdRef.current = data.session_id;
+      }
+
+      const actionList: SchedulerAction[] | undefined = Array.isArray(data.actions)
+        ? data.actions.filter(
+            (action): action is SchedulerAction =>
+              typeof action?.label === 'string' && typeof action?.url === 'string'
+          )
+        : undefined;
 
       setMessages((msgs): Message[] => [
         ...msgs,
-        { sender: 'bot', text: reply },
+        { sender: 'bot', text: reply, actions: actionList },
       ]);
     } catch (err) {
-      console.error('Chat request error:', err);
+      // error handled in UI
       setMessages((msgs) => [
         ...msgs,
         { sender: 'bot', text: 'Network error — please check your connection and try again.' }
@@ -143,6 +158,8 @@ export default function Home() {
   const handleNewChat = () => {
     setMessages([]);
     setInput('');
+    sessionIdRef.current = null;
+    setSchedulerState('idle');
     requestAnimationFrame(() => adjustTextareaHeight());
   };
 
@@ -189,7 +206,7 @@ export default function Home() {
       }
       alert(JSON.stringify(payload, null, 2));
     } catch (error) {
-      console.error('Health check error:', error);
+      // health check failed
       alert('Unable to reach the API health endpoint.');
     }
   };
@@ -272,7 +289,7 @@ export default function Home() {
             {isSubmitting ? 'signing in…' : 'sign in'}
           </button>
           <p className={helperTextClass}>
-            ¿Solo explorando? Usa test@example.com y test123.
+            Enter your credentials to continue.
           </p>
         </form>
       </div>
