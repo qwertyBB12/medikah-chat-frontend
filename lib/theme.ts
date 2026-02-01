@@ -1,80 +1,23 @@
-export type ThemeKey = 'warm' | 'ocean';
+/**
+ * Single unified theme — Navy / Cream / Teal
+ * Aligned with the BeNeXT ecosystem palette.
+ */
 
-export interface ThemeSettings {
-  appBackground: string;
-  mainPanelBackground: string;
-  sidebarBackground: string;
-  newChatButton: string;
-  toggleButton: string;
-  signOutButton: string;
-  headerBackground: string;
-  rotatorBackground: string;
-  emptyStateBackground: string;
-  userBubble: string;
-  botBubble: string;
-  userTextClass: string;
-  botTextClass: string;
-  primaryButton: string;
-  chatInputBackground: string;
-  chatInputSurface: string;
-  guidanceText: string;
-  footerBackground: string;
-  footerText: string;
-  descriptionText: string;
-  headerText: string;
-  mobileOutlineButton: string;
-  baseTextColor: string;
-}
-
-export const THEMES: Record<ThemeKey, ThemeSettings> = {
-  warm: {
-    appBackground: 'bg-[#b38382]',
-    mainPanelBackground: 'bg-[#d4a5a3]',
-    sidebarBackground: 'bg-[#1b1b1f] text-white',
-    newChatButton: 'bg-white/10 text-white/90 hover:bg-white/20',
-    toggleButton: 'border border-white/40 text-white hover:bg-white/10 bg-transparent',
-    signOutButton: 'border border-[#1a7c8b]/60 text-[#1a7c8b] hover:bg-[#1a7c8b]/10 hover:border-[#1a7c8b] bg-transparent',
-    headerBackground: 'bg-[#874b49]/95 text-white',
-    rotatorBackground: 'bg-[#c47f7c]',
-    emptyStateBackground: 'bg-[#e8b6b3] text-[#4a2e2d]',
-    userBubble: 'bg-[#f4d7d1]/95 rounded-3xl shadow-sm',
-    botBubble: 'bg-transparent shadow-none',
-    userTextClass: 'text-white',
-    botTextClass: 'text-white',
-    primaryButton: 'bg-[#1a7c8b] text-white hover:bg-[#166776]',
-    chatInputBackground: 'bg-[#c47f7c]/60 backdrop-blur-sm',
-    chatInputSurface: 'bg-[#2e3035]/95 text-white ring-1 ring-white/10 shadow-lg shadow-black/30',
-    guidanceText: 'text-white/85',
-    footerBackground: 'bg-[#b07a78]',
-    footerText: 'text-white/80',
-    descriptionText: 'text-[#3f2a28]',
-    headerText: 'text-white/85',
-    mobileOutlineButton: 'border border-[#1a7c8b]/60 text-[#1a7c8b] hover:bg-[#1a7c8b]/10 hover:border-[#1a7c8b] bg-transparent',
-    baseTextColor: 'text-[#3f2a28]',
-  },
-  ocean: {
-    appBackground: 'bg-[#1a7c8b]',
-    mainPanelBackground: 'bg-[#1f8a99]',
-    sidebarBackground: 'bg-[#1b1b1f] text-white',
-    newChatButton: 'bg-white/10 text-white/90 hover:bg-white/20',
-    toggleButton: 'border border-white/50 text-white hover:bg-white/15 bg-transparent',
-    signOutButton: 'border border-[#d9d9d9]/60 text-[#f7f2ef] hover:bg-[#f7f2ef]/10 hover:border-[#f7f2ef]/80 bg-transparent',
-    headerBackground: 'bg-[#0d3840]/95 text-white',
-    rotatorBackground: 'bg-[#1a7c8b]',
-    emptyStateBackground: 'bg-[#1f8a99] text-white/90',
-    userBubble: 'bg-transparent shadow-none',
-    botBubble: 'bg-transparent shadow-none',
-    userTextClass: 'text-white',
-    botTextClass: 'text-white',
-    primaryButton: 'bg-white/85 text-[#104a53] hover:bg-white',
-    chatInputBackground: 'bg-[#165f6b]/60 backdrop-blur-sm',
-    chatInputSurface: 'bg-[#2e3035]/95 text-white ring-1 ring-white/10 shadow-lg shadow-black/40',
-    guidanceText: 'text-white/85',
-    footerBackground: 'bg-[#0d3840]',
-    footerText: 'text-white/85',
-    descriptionText: 'text-white/85',
-    headerText: 'text-white/85',
-    mobileOutlineButton: 'border border-white/50 text-white hover:bg-white/15 bg-transparent',
-    baseTextColor: 'text-white',
-  },
-};
+export const colors = {
+  navy900: '#1b2a41',
+  navy800: '#243650',
+  navy700: '#2E4260',
+  navy600: '#3A5070',
+  teal: '#1a7c8b',
+  tealDark: '#166776',
+  cream600: '#eddfc7',
+  cream500: '#f2e5d5',
+  cream400: '#f5ebe0',
+  cream300: '#fdf7ec',
+  cream200: '#faf6f2',
+  cream100: '#ffffff',
+  textDark: '#1b2a41',
+  textSoft: '#3A3A3A',
+  textMuted: '#888888',
+  textLight: '#fdf7ec',
+} as const;

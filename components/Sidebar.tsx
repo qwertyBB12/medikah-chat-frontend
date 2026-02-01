@@ -1,77 +1,53 @@
 import Image from 'next/image';
-import { ThemeKey, ThemeSettings } from '../lib/theme';
 import { LOGO_SRC, WORDMARK_SRC } from '../lib/assets';
 
 interface SidebarProps {
   onSignOut: () => void;
   onNewChat: () => void;
-  onToggleTheme: () => void;
-  theme: ThemeKey;
-  themeSettings: ThemeSettings;
 }
 
-export default function Sidebar({
-  onSignOut,
-  onNewChat,
-  onToggleTheme,
-  theme,
-  themeSettings
-}: SidebarProps) {
-  const toggleLabel = theme === 'warm' ? 'switch to ocean mode' : 'switch to warm mode';
-
+export default function Sidebar({ onSignOut, onNewChat }: SidebarProps) {
   return (
-    <aside
-      className={`hidden md:flex md:w-72 lg:w-80 flex-col md:sticky md:top-0 md:h-screen md:max-h-screen md:flex-shrink-0 md:overflow-hidden ${themeSettings.sidebarBackground}`}
-    >
+    <aside className="hidden md:flex md:w-72 lg:w-80 flex-col md:sticky md:top-0 md:h-screen md:max-h-screen md:flex-shrink-0 md:overflow-hidden bg-navy-900 text-cream-300">
       <div className="px-6 py-8 flex flex-col items-center gap-4">
         <Image
           src={LOGO_SRC}
-          alt="Medikah logo"
+          alt="Medikah"
           width={1024}
           height={1024}
           priority
-          className="w-36 sm:w-40 lg:w-48 h-auto mx-auto"
+          className="w-28 sm:w-32 lg:w-36 h-auto mx-auto"
         />
         <Image
           src={WORDMARK_SRC}
-          alt="Medikah wordmark"
+          alt="Medikah"
           width={600}
           height={200}
-          className="w-40 sm:w-48 lg:w-56 h-auto mx-auto"
+          className="w-36 sm:w-40 lg:w-44 h-auto mx-auto"
         />
       </div>
-      <div className="px-6 py-4 space-y-3">
+
+      <div className="px-6 py-4">
         <button
           onClick={onNewChat}
-          className={`w-full text-left text-sm py-3 px-4 transition rounded-none font-heading font-semibold lowercase ${themeSettings.newChatButton}`}
+          className="w-full text-left text-sm py-3 px-4 transition font-heading font-normal uppercase tracking-wider text-cream-300/70 hover:text-cream-300 hover:bg-cream-500/5 rounded-sm"
         >
-          → Start a New Chat
-        </button>
-        <button
-          onClick={onToggleTheme}
-          className={`w-full text-left text-sm py-3 px-4 transition rounded-none font-heading font-semibold lowercase ${themeSettings.toggleButton}`}
-        >
-          {toggleLabel}
+          New conversation
         </button>
       </div>
-      <div className="px-6 py-6 text-sm space-y-3">
-        <p className="font-heading font-extrabold text-lg lowercase text-center text-white">
-          medikah care team + ai guidance
-        </p>
-        <p className={`text-base leading-relaxed text-center ${themeSettings.descriptionText}`}>
-          This assistant blends GPT-4o insight with clinicians across the Americas. It offers calm, clear guidance so you
-          know when to seek hands-on care.
+
+      <div className="px-6 py-6 space-y-3">
+        <p className="font-body text-sm text-cream-300/50 leading-relaxed text-center">
+          Share what you are feeling. Your conversation stays private and helps your doctor prepare.
         </p>
       </div>
-      <div className={`flex-1 overflow-y-auto px-6 py-6 space-y-3 text-base leading-relaxed text-center ${themeSettings.descriptionText}`}>
-        <p>
-          Everything you share stays private. Tell us what you’re feeling and we’ll explore the next steps by your side.
-        </p>
-      </div>
+
+      <div className="flex-1" />
+
       <div className="px-6 py-6">
         <button
           onClick={onSignOut}
-          className={`w-full px-4 py-3 font-heading font-semibold tracking-wide rounded-none lowercase transition ${themeSettings.signOutButton}`}
+          className="w-full px-4 py-3 font-heading font-normal uppercase tracking-wider text-sm text-cream-300/50 border border-cream-500/15 transition hover:text-cream-300/80 hover:border-cream-500/30 rounded-sm"
         >
           Sign out
         </button>

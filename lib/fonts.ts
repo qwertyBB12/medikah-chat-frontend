@@ -1,15 +1,15 @@
-import { Raleway, Sora } from 'next/font/google';
+import { Oswald, Mulish } from 'next/font/google';
 
-export const raleway = Raleway({
+export const oswald = Oswald({
   subsets: ['latin'],
-  weight: ['300', '400', '500'],
-  variable: '--font-raleway',
-  display: 'swap'
+  weight: ['300', '400', '500', '600'],
+  variable: '--font-oswald',
+  display: 'swap',
 });
 
-export const sora = Sora({
+export const mulish = Mulish({
   subsets: ['latin'],
-  weight: ['800'],
-  variable: '--font-sora',
-  display: 'swap'
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-mulish',
+  display: 'swap',
 });

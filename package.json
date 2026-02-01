@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@sanity/client": "^7.14.1",
     "@supabase/supabase-js": "^2.93.3",
     "@types/node": "^20.19.21",
     "@types/react": "^19.2.2",

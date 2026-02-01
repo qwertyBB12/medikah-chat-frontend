@@ -1,5 +1,4 @@
 import { FormEvent, KeyboardEvent, RefObject } from 'react';
-import { ThemeSettings } from '../lib/theme';
 
 interface ChatInputProps {
   value: string;
@@ -7,7 +6,6 @@ interface ChatInputProps {
   onSubmit: (value: string) => void | Promise<void>;
   onKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
   textareaRef: RefObject<HTMLTextAreaElement | null>;
-  themeSettings: ThemeSettings;
   isSending: boolean;
 }
 
@@ -17,8 +15,7 @@ export default function ChatInput({
   onSubmit,
   onKeyDown,
   textareaRef,
-  themeSettings,
-  isSending
+  isSending,
 }: ChatInputProps) {
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -27,10 +24,10 @@ export default function ChatInput({
   };
 
   return (
-    <div className={`px-4 sm:px-10 py-4 ${themeSettings.chatInputBackground}`}>
+    <div className="px-4 sm:px-10 py-4 bg-cream-400/60 backdrop-blur-sm">
       <form
         onSubmit={handleSubmit}
-        className={`max-w-3xl mx-auto w-full flex items-end gap-3 px-5 py-4 rounded-3xl transition-colors ${themeSettings.chatInputSurface}`}
+        className="max-w-3xl mx-auto w-full flex items-end gap-3 px-5 py-4 rounded-lg bg-navy-900/95 text-cream-300 ring-1 ring-cream-500/10 shadow-lg shadow-navy-900/20 transition-colors"
       >
         <textarea
           ref={textareaRef}
@@ -38,8 +35,8 @@ export default function ChatInput({
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={onKeyDown}
           aria-label="Message Medikah"
-          placeholder="Type your message…"
-          className="flex-1 resize-none bg-transparent focus:outline-none text-lg leading-7 font-medium text-inherit placeholder:text-white/60 caret-white selection:bg-white/20"
+          placeholder="Describe what you are feeling\u2026"
+          className="flex-1 resize-none bg-transparent focus:outline-none text-base leading-7 font-body font-normal text-cream-300 placeholder:text-cream-300/40 caret-teal selection:bg-teal/20"
           rows={1}
           spellCheck={false}
         />
@@ -47,13 +44,13 @@ export default function ChatInput({
           type="submit"
           disabled={isSending}
           aria-disabled={isSending}
-          className={`px-4 py-2 font-heading font-semibold transition rounded-none lowercase disabled:opacity-60 disabled:cursor-not-allowed ${themeSettings.primaryButton}`}
+          className="px-5 py-2 font-heading font-normal uppercase tracking-wider text-sm bg-teal text-white transition hover:bg-teal-dark disabled:opacity-50 disabled:cursor-not-allowed rounded-sm"
         >
           Send
         </button>
       </form>
-      <p className={`max-w-3xl mx-auto text-xs mt-3 text-center ${themeSettings.guidanceText}`}>
-        Take your time describing your symptoms. Press Enter to send, or Shift+Enter for a new line.
+      <p className="max-w-3xl mx-auto text-xs mt-3 text-center text-navy-900/40 font-body">
+        Press Enter to send. Shift+Enter for a new line.
       </p>
     </div>
   );

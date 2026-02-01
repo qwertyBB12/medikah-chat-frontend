@@ -1,14 +1,8 @@
-import { ThemeSettings } from '../lib/theme';
-
-interface FooterProps {
-  themeSettings: ThemeSettings;
-}
-
-export default function Footer({ themeSettings }: FooterProps) {
+export default function Footer() {
   return (
-    <footer className={`px-6 py-6 text-center text-xs space-y-2 ${themeSettings.footerBackground} ${themeSettings.footerText}`}>
-      <p>Every conversation is encrypted and treated with cariño. Your privacy stays at the center of our work.</p>
-      <p>Licensed professionals may review chats when needed to ensure you receive safe, thoughtful guidance.</p>
+    <footer className="px-6 py-5 text-center text-xs font-body text-navy-900/35 bg-cream-400/40 space-y-1">
+      <p>Your conversations are encrypted and handled with care.</p>
+      <p>Licensed professionals may review when needed to ensure safe guidance.</p>
     </footer>
   );
 }
