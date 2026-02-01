@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 
 const MESSAGES = [
-  'welcome to medikah. let’s take care of you together.',
-  'tell me what you’re feeling and we’ll walk through it calmly.',
-  'tómate tu tiempo—we’re with you in english and spanish.',
-  'if you need a doctor, we’ll help you find the right person.',
-  'precision ai with latin american heart. estamos contigo.'
+  'Welcome to Medikah.',
+  'Tell us what brings you in today.',
+  'Take your time. We are here.',
+  'English and Spanish, always.',
+  'Your doctor will be ready for you.',
 ];
 
 export default function WelcomeRotator() {
@@ -19,10 +19,10 @@ export default function WelcomeRotator() {
   }, []);
 
   return (
-    <div className="px-4 py-6 md:py-8 lg:py-10">
+    <div className="px-6 py-8 md:py-12">
       <div
         key={index}
-        className="mx-auto max-w-4xl text-center text-3xl md:text-4xl lg:text-5xl leading-tight font-heading font-extrabold text-white/90 lowercase animate-fadeIn"
+        className="mx-auto max-w-2xl text-center text-2xl md:text-3xl lg:text-4xl leading-snug font-heading font-light uppercase tracking-wide text-navy-900/70 animate-fadeIn"
         aria-live="polite"
       >
         {MESSAGES[index]}
