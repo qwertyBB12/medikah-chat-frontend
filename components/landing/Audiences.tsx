@@ -34,9 +34,9 @@ const AUDIENCES = [
 
 export default function Audiences() {
   return (
-    <section className="bg-clinical-surface px-6 py-24 sm:py-32">
+    <section className="bg-clinical-surface px-6 py-24 sm:py-[100px]">
       <div className="max-w-5xl mx-auto">
-        <h2 className="font-bold text-4xl md:text-5xl text-inst-blue text-center mb-20">
+        <h2 className="font-extrabold text-4xl md:text-[56px] text-inst-blue text-center mb-20 leading-[1.15] tracking-[-0.01em]">
           Who Medikah Serves
         </h2>
 
@@ -44,12 +44,12 @@ export default function Audiences() {
           {AUDIENCES.map((audience) => (
             <div
               key={audience.label}
-              className="bg-white rounded-sm p-8 sm:p-12 border border-border-line"
+              className="bg-white shadow-[0_1px_3px_rgba(27,42,65,0.06),0_8px_24px_rgba(27,42,65,0.04)] rounded-[12px] p-8 sm:p-12"
             >
-              <p className="text-xs font-semibold uppercase tracking-widest text-archival-grey mb-3">
+              <p className="text-[13px] font-bold uppercase tracking-[0.1em] text-archival-grey mb-3">
                 {audience.label}
               </p>
-              <h3 className="font-bold text-3xl text-clinical-teal mb-6">
+              <h3 className="font-extrabold text-3xl text-clinical-teal mb-6">
                 {audience.headline}
               </h3>
               <div className="max-w-[700px] space-y-5">

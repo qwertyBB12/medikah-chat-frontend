@@ -3,10 +3,8 @@ export default function LandingFooter() {
     <footer className="bg-inst-blue px-6 pt-14 pb-10">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-10">
-          <p className="font-semibold text-sm text-white leading-relaxed mb-4">
+          <p className="font-semibold text-[15px] text-white leading-relaxed mb-4">
             Independent Pan-American Health Infrastructure
-            <br />
-            Conceived through BeNeXT Global frameworks
           </p>
           <p className="text-sm">
             <a
