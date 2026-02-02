@@ -9,10 +9,17 @@ export default function TermsOfService() {
     <>
       <Head>
         <title>Terms of Service — Medikah</title>
-        <meta
-          name="description"
-          content="Medikah Terms of Service. HIPAA-compliant technology platform for cross-border healthcare coordination."
-        />
+        <meta name="description" content="Medikah Terms of Service. HIPAA-compliant technology platform for cross-border healthcare coordination." />
+        <link rel="canonical" href="https://medikah.org/terms" />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://medikah.org/terms" />
+        <meta property="og:title" content="Terms of Service — Medikah" />
+        <meta property="og:description" content="Medikah Terms of Service. HIPAA-compliant technology platform for cross-border healthcare coordination." />
+        <meta property="og:image" content="https://medikah.org/og-image.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Terms of Service — Medikah" />
+        <meta name="twitter:description" content="Medikah Terms of Service. HIPAA-compliant technology platform for cross-border healthcare coordination." />
+        <meta name="twitter:image" content="https://medikah.org/og-image.png" />
       </Head>
 
       <nav className="sticky top-0 bg-white/95 backdrop-blur-[12px] backdrop-saturate-[180%] border-b border-border-line/30 shadow-[0_1px_3px_rgba(27,42,65,0.04)] z-[1000] h-20">
