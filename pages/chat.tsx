@@ -1,3 +1,4 @@
+import Head from 'next/head';
 import Image from 'next/image';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { useRouter } from 'next/router';
@@ -258,6 +259,11 @@ export default function ChatPage() {
   const consentUserId = (session.user as { id?: string })?.id ?? session.user?.email ?? '';
 
   return (
+    <>
+    <Head>
+      <title>Chat — Medikah</title>
+      <meta name="robots" content="noindex, nofollow" />
+    </Head>
     <div className="min-h-screen md:h-screen md:overflow-hidden flex flex-col md:flex-row bg-[#FAFAFB] text-deep-charcoal">
       {showConsentModal && (
         <ConsentModal
@@ -364,5 +370,6 @@ export default function ChatPage() {
         <Footer />
       </div>
     </div>
+    </>
   );
 }

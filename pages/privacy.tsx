@@ -9,10 +9,17 @@ export default function PrivacyPolicy() {
     <>
       <Head>
         <title>Privacy Policy — Medikah</title>
-        <meta
-          name="description"
-          content="Medikah Privacy Policy. HIPAA-compliant technology platform for cross-border healthcare coordination."
-        />
+        <meta name="description" content="Medikah Privacy Policy. HIPAA-compliant technology platform for cross-border healthcare coordination." />
+        <link rel="canonical" href="https://medikah.org/privacy" />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://medikah.org/privacy" />
+        <meta property="og:title" content="Privacy Policy — Medikah" />
+        <meta property="og:description" content="Medikah Privacy Policy. HIPAA-compliant technology platform for cross-border healthcare coordination." />
+        <meta property="og:image" content="https://medikah.org/og-image.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Privacy Policy — Medikah" />
+        <meta name="twitter:description" content="Medikah Privacy Policy. HIPAA-compliant technology platform for cross-border healthcare coordination." />
+        <meta name="twitter:image" content="https://medikah.org/og-image.png" />
       </Head>
 
       <nav className="sticky top-0 bg-white/95 backdrop-blur-[12px] backdrop-saturate-[180%] border-b border-border-line/30 shadow-[0_1px_3px_rgba(27,42,65,0.04)] z-[1000] h-20">
