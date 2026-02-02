@@ -16,7 +16,7 @@ export default function Hero() {
           />
         </div>
 
-        <h1 className="font-extrabold text-5xl sm:text-6xl md:text-7xl lg:text-8xl leading-[1.05] mb-8">
+        <h1 className="font-extrabold text-5xl sm:text-6xl md:text-7xl lg:text-[96px] leading-[1.05] tracking-[-0.02em] mb-8">
           <span className="text-clinical-teal">Healthcare That Crosses Borders.</span>
           <br />
           <span className="text-deep-charcoal">Care That Never Does.</span>

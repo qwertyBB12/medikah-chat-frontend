@@ -29,7 +29,7 @@ export default function Governance() {
   return (
     <section className="bg-steady-teal px-6 py-24 sm:py-32">
       <div className="max-w-4xl mx-auto">
-        <h2 className="font-bold text-3xl md:text-4xl text-inst-blue text-center mb-8">
+        <h2 className="font-extrabold text-4xl md:text-[56px] text-inst-blue text-center mb-8 leading-[1.15] tracking-[-0.01em]">
           Built for Institutional Scrutiny
         </h2>
 
@@ -39,8 +39,8 @@ export default function Governance() {
           to withstand institutional audit from day one.
         </p>
 
-        <p className="font-semibold text-sm text-clinical-teal uppercase tracking-[0.05em] text-center mb-10">
-          Dual-jurisdiction legal framework | HIPAA and COFEPRIS compliant | Established institutional governance
+        <p className="font-semibold text-sm text-body-slate text-center mb-10">
+          Dual-jurisdiction compliance &middot; HIPAA and COFEPRIS frameworks &middot; Institutional governance from inception
         </p>
 
         <p className="text-lg text-deep-charcoal leading-relaxed text-center max-w-[800px] mx-auto mb-6">

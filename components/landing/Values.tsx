@@ -15,16 +15,16 @@ const VALUES = [
 
 export default function Values() {
   return (
-    <section className="bg-white px-6 py-24 sm:py-32">
+    <section className="bg-gradient-to-b from-white via-clinical-surface to-white px-6 py-24 sm:py-[100px]">
       <div className="max-w-6xl mx-auto">
-        <h2 className="font-bold text-4xl md:text-5xl text-inst-blue text-center mb-16">
+        <h2 className="font-extrabold text-4xl md:text-[56px] text-inst-blue text-center mb-16 leading-[1.15] tracking-[-0.01em]">
           What We Believe
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-10">
           {VALUES.map((item) => (
             <div key={item.title} className="space-y-4">
-              <h3 className="font-bold text-2xl text-clinical-teal">
+              <h3 className="font-extrabold text-2xl text-clinical-teal">
                 {item.title}
               </h3>
               <p className="text-lg text-body-slate leading-relaxed">
