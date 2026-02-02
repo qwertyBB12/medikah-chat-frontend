@@ -12,7 +12,7 @@ export default function ClosingStatement() {
         </p>
 
         <a
-          href="mailto:partnerships@medikah.org"
+          href="mailto:partnerships@medikahhealth.com"
           className="inline-block px-8 py-4 text-white font-bold tracking-wide text-lg border border-white/40 hover:bg-white/10 transition rounded-sm"
         >
           Begin Coordination Inquiry
