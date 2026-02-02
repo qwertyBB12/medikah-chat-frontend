@@ -6,21 +6,21 @@ export default function LandingFooter() {
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-10">
           <p className="font-semibold text-[15px] text-white leading-relaxed mb-4">
-            Independent Pan-American Health Infrastructure
+            Medikah Corporation · Incorporated in Delaware, USA
           </p>
           <p className="text-sm">
             <a
-              href="mailto:partnerships@medikah.org"
+              href="mailto:partnerships@medikahhealth.com"
               className="text-clinical-teal hover:text-white transition-colors"
             >
-              partnerships@medikah.org
+              partnerships@medikahhealth.com
             </a>
           </p>
         </div>
 
         <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-[13px] text-white/60">
-            &copy; 2026 Medikah | Established 2022
+            &copy; 2026 Medikah Corporation. All rights reserved.
           </p>
           <div className="text-[13px]">
             <Link href="/privacy" className="text-white/60 hover:text-white transition-colors">

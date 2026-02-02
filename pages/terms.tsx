@@ -10,16 +10,16 @@ export default function TermsOfService() {
       <Head>
         <title>Terms of Service — Medikah</title>
         <meta name="description" content="Medikah Terms of Service. HIPAA-compliant technology platform for cross-border healthcare coordination." />
-        <link rel="canonical" href="https://medikah.org/terms" />
+        <link rel="canonical" href="https://medikahhealth.com/terms" />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://medikah.org/terms" />
+        <meta property="og:url" content="https://medikahhealth.com/terms" />
         <meta property="og:title" content="Terms of Service — Medikah" />
         <meta property="og:description" content="Medikah Terms of Service. HIPAA-compliant technology platform for cross-border healthcare coordination." />
-        <meta property="og:image" content="https://medikah.org/og-image.png" />
+        <meta property="og:image" content="https://medikahhealth.com/og-image.png" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Terms of Service — Medikah" />
         <meta name="twitter:description" content="Medikah Terms of Service. HIPAA-compliant technology platform for cross-border healthcare coordination." />
-        <meta name="twitter:image" content="https://medikah.org/og-image.png" />
+        <meta name="twitter:image" content="https://medikahhealth.com/og-image.png" />
       </Head>
 
       <nav className="sticky top-0 bg-white/95 backdrop-blur-[12px] backdrop-saturate-[180%] border-b border-border-line/30 shadow-[0_1px_3px_rgba(27,42,65,0.04)] z-[1000] h-20">
@@ -43,7 +43,7 @@ export default function TermsOfService() {
             Terms of Service
           </h1>
           <p className="text-lg text-body-slate leading-relaxed mb-2">
-            <strong className="text-deep-charcoal">Medikah Health Coordination Technology Platform</strong>
+            <strong className="text-deep-charcoal">Medikah Corporation</strong>
           </p>
           <p className="text-sm text-archival-grey mb-2">
             <strong>Effective Date:</strong> February 1, 2026
@@ -113,7 +113,7 @@ export default function TermsOfService() {
               <li>Providing accurate, current, and complete information</li>
               <li>Maintaining security of your account credentials</li>
               <li>All activity that occurs under your account</li>
-              <li>Immediately notifying us of unauthorized access: <a href="mailto:support@medikah.org">support@medikah.org</a></li>
+              <li>Immediately notifying us of unauthorized access: <a href="mailto:support@medikahhealth.com">support@medikahhealth.com</a></li>
               <li>Updating your information when it changes</li>
             </ul>
             <p><strong>False information consequences:</strong> Account suspension or termination, compromised medical care quality, insurance claim denials, legal liability.</p>
@@ -190,7 +190,7 @@ export default function TermsOfService() {
 
             <h3>3.6 Enforcement</h3>
             <p>All providers receive training on cross-border restrictions and sign agreements with strict limitations. Violations result in immediate suspension, termination, and reporting to medical licensing boards. Medikah does NOT indemnify providers who violate restrictions.</p>
-            <p><strong>If a provider violates restrictions:</strong> Report immediately to <a href="mailto:legal@medikah.org">legal@medikah.org</a>.</p>
+            <p><strong>If a provider violates restrictions:</strong> Report immediately to <a href="mailto:legal@medikahhealth.com">legal@medikahhealth.com</a>.</p>
 
             <h3>3.7 Medical Tourism Risks</h3>
             <p><strong>You acknowledge and accept these risks:</strong></p>
@@ -261,7 +261,7 @@ export default function TermsOfService() {
             <p>Healthcare providers are <strong>independent contractors</strong>, not employees or agents of Medikah. Medikah has no control over medical care provided and is not liable for provider actions or malpractice.</p>
 
             <h3>6.5 Reporting Provider Violations</h3>
-            <p>If a provider violates cross-border restrictions: stop the consultation, document what happened, and report to <a href="mailto:legal@medikah.org">legal@medikah.org</a> with &ldquo;Provider Violation Report&rdquo; in the subject line. No retaliation for good-faith reports.</p>
+            <p>If a provider violates cross-border restrictions: stop the consultation, document what happened, and report to <a href="mailto:legal@medikahhealth.com">legal@medikahhealth.com</a> with &ldquo;Provider Violation Report&rdquo; in the subject line. No retaliation for good-faith reports.</p>
 
             <hr />
 
@@ -315,14 +315,14 @@ export default function TermsOfService() {
             <h2>11. Dispute Resolution</h2>
 
             <h3>11.1 Informal Resolution</h3>
-            <p>Before filing any legal claim, you agree to contact us at <a href="mailto:legal@medikah.org">legal@medikah.org</a>, describe your concern in detail, and provide opportunity for us to resolve within 60 days.</p>
+            <p>Before filing any legal claim, you agree to contact us at <a href="mailto:legal@medikahhealth.com">legal@medikahhealth.com</a>, describe your concern in detail, and provide opportunity for us to resolve within 60 days.</p>
 
             <h3>11.2 Arbitration Agreement (United States Users)</h3>
             <p><strong>PLEASE READ CAREFULLY &mdash; THIS AFFECTS YOUR LEGAL RIGHTS.</strong></p>
             <p>If you are a user in the United States, you agree that disputes will be resolved through binding arbitration under American Arbitration Association (AAA) Consumer Arbitration Rules, not court litigation. We pay arbitration fees for claims under $10,000.</p>
             <p><strong>What Can Still Go to Court:</strong> Small claims court, intellectual property disputes, claims for injunctive relief, emergency medical malpractice claims.</p>
             <p><strong>CLASS ACTION WAIVER:</strong> You agree to arbitrate disputes only on an individual basis, not as a class action, class arbitration, or representative action.</p>
-            <p><strong>Right to Opt-Out:</strong> You may opt out of arbitration by emailing <a href="mailto:legal@medikah.org">legal@medikah.org</a> within 30 days of accepting these Terms with &ldquo;Arbitration Opt-Out&rdquo; in the subject line.</p>
+            <p><strong>Right to Opt-Out:</strong> You may opt out of arbitration by emailing <a href="mailto:legal@medikahhealth.com">legal@medikahhealth.com</a> within 30 days of accepting these Terms with &ldquo;Arbitration Opt-Out&rdquo; in the subject line.</p>
 
             <h3>11.3 International Users (Non-US)</h3>
             <p>Consumer protection laws of your country apply. Courts in your country of residence have jurisdiction for consumer claims. Good-faith negotiation required first; mediation available before litigation.</p>
@@ -338,7 +338,7 @@ export default function TermsOfService() {
             <h2>12. Termination</h2>
 
             <h3>12.1 Your Right to Terminate</h3>
-            <p>You may terminate your account at any time by closing it in Account Settings or emailing <a href="mailto:support@medikah.org">support@medikah.org</a>. Platform access ends immediately. We retain records per legal requirements. Outstanding payment obligations remain. Data available for download for 90 days.</p>
+            <p>You may terminate your account at any time by closing it in Account Settings or emailing <a href="mailto:support@medikahhealth.com">support@medikahhealth.com</a>. Platform access ends immediately. We retain records per legal requirements. Outstanding payment obligations remain. Data available for download for 90 days.</p>
 
             <h3>12.2 Our Right to Terminate</h3>
             <p>We may suspend or terminate your account if you violate these Terms, engage in prohibited uses, provide false information, as required by law, or if service is discontinued in your jurisdiction. Reasonable advance notice when possible; immediate termination if necessary for safety or legal compliance.</p>
@@ -374,9 +374,9 @@ export default function TermsOfService() {
             <h3>14.5 Notices</h3>
             <p><strong>To Medikah:</strong></p>
             <ul>
-              <li>Legal notices: <a href="mailto:legal@medikah.org">legal@medikah.org</a></li>
-              <li>Support: <a href="mailto:support@medikah.org">support@medikah.org</a></li>
-              <li>Privacy: <a href="mailto:privacy@medikah.org">privacy@medikah.org</a></li>
+              <li>Legal notices: <a href="mailto:legal@medikahhealth.com">legal@medikahhealth.com</a></li>
+              <li>Support: <a href="mailto:support@medikahhealth.com">support@medikahhealth.com</a></li>
+              <li>Privacy: <a href="mailto:privacy@medikahhealth.com">privacy@medikahhealth.com</a></li>
             </ul>
             <p><strong>Controlling Version:</strong> English language version controls in case of conflicts with translations.</p>
 
@@ -401,13 +401,13 @@ export default function TermsOfService() {
             <h2>16. Contact Information</h2>
 
             <h3>General Support</h3>
-            <p><strong>Email:</strong> <a href="mailto:support@medikah.org">support@medikah.org</a><br /><strong>Response Time:</strong> Within 2 business days</p>
+            <p><strong>Email:</strong> <a href="mailto:support@medikahhealth.com">support@medikahhealth.com</a><br /><strong>Response Time:</strong> Within 2 business days</p>
 
             <h3>Legal Department</h3>
-            <p><strong>Email:</strong> <a href="mailto:legal@medikah.org">legal@medikah.org</a></p>
+            <p><strong>Email:</strong> <a href="mailto:legal@medikahhealth.com">legal@medikahhealth.com</a></p>
 
             <h3>Privacy Requests</h3>
-            <p><strong>Email:</strong> <a href="mailto:privacy@medikah.org">privacy@medikah.org</a></p>
+            <p><strong>Email:</strong> <a href="mailto:privacy@medikahhealth.com">privacy@medikahhealth.com</a></p>
 
             <h3>Emergency</h3>
             <p><strong>DO NOT CONTACT MEDIKAH FOR MEDICAL EMERGENCIES.</strong> Call local emergency services: United States: 911. Mexico: 911.</p>
@@ -436,7 +436,7 @@ export default function TermsOfService() {
             </p>
 
             <p className="text-center text-sm text-archival-grey mt-8">
-              Medikah Health Coordination Services<br />
+              Medikah Corporation<br />
               HIPAA-Compliant Technology Platform<br />
               Incorporated in Delaware, USA<br />
               Operating: Texas, California, Mexico
@@ -454,16 +454,16 @@ export default function TermsOfService() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10">
             <p className="font-semibold text-[15px] text-white leading-relaxed mb-4">
-              Independent Pan-American Health Infrastructure
+              Medikah Corporation · Incorporated in Delaware, USA
             </p>
             <p className="text-sm">
-              <a href="mailto:partnerships@medikah.org" className="text-clinical-teal hover:text-white transition-colors">
-                partnerships@medikah.org
+              <a href="mailto:partnerships@medikahhealth.com" className="text-clinical-teal hover:text-white transition-colors">
+                partnerships@medikahhealth.com
               </a>
             </p>
           </div>
           <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-[13px] text-white/60">&copy; 2026 Medikah | Established 2022</p>
+            <p className="text-[13px] text-white/60">&copy; 2026 Medikah Corporation. All rights reserved.</p>
             <div className="text-[13px]">
               <Link href="/privacy" className="text-white/60 hover:text-white transition-colors">Privacy Policy</Link>
               <span className="text-white/30 mx-2">|</span>
