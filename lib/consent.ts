@@ -55,13 +55,19 @@ export async function hasValidConsent(userId: string): Promise<boolean> {
   }
 
   try {
-    const { data, error } = await supabase
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Consent check timed out')), 5000),
+    );
+
+    const query = supabase
       .from('consent_records')
       .select('id')
       .eq('user_id', userId)
       .eq('form_type', 'cross_border_ack')
       .eq('form_version', CONSENT_FORM_VERSION)
       .limit(1);
+
+    const { data, error } = await Promise.race([query, timeout]);
 
     if (error) {
       console.error('Failed to check consent:', error);
