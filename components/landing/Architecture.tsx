@@ -38,7 +38,7 @@ export default function Architecture() {
           {PORTALS.map((portal) => (
             <div
               key={portal.title}
-              className="bg-white shadow-[0_1px_3px_rgba(27,42,65,0.06),0_8px_24px_rgba(27,42,65,0.04)] rounded-[12px] p-10 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_6px_rgba(27,42,65,0.08),0_16px_32px_rgba(27,42,65,0.06)]"
+              className="bg-white shadow-[0_1px_3px_rgba(27,42,65,0.06),0_8px_24px_rgba(27,42,65,0.04)] rounded-[12px] p-10 cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:-translate-y-1 hover:shadow-[0_4px_8px_rgba(27,42,65,0.08),0_20px_40px_rgba(27,42,65,0.08)] active:-translate-y-0.5 active:shadow-[0_2px_4px_rgba(27,42,65,0.08),0_12px_24px_rgba(27,42,65,0.06)]"
             >
               <h3 className="font-extrabold text-2xl text-clinical-teal mb-4 leading-[1.3]">
                 {portal.title}

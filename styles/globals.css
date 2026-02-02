@@ -41,7 +41,121 @@
   }
 }
 
+/* Smooth scroll with fixed-nav offset */
+html {
+  scroll-behavior: smooth;
+}
+
+:target {
+  scroll-margin-top: 100px;
+}
+
+/* Hero subtle linen texture */
+.hero-texture::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      rgba(27, 42, 65, 0.01) 0px,
+      transparent 1px,
+      transparent 2px,
+      rgba(27, 42, 65, 0.01) 3px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(27, 42, 65, 0.01) 0px,
+      transparent 1px,
+      transparent 2px,
+      rgba(27, 42, 65, 0.01) 3px
+    );
+  background-size: 3px 3px;
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hero-texture > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Fade-in on scroll */
+.fade-in-section {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fade-in-section.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.fade-in-section.is-visible > * {
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+}
+
+.fade-in-section.is-visible > *:nth-child(1) { animation-delay: 0.1s; }
+.fade-in-section.is-visible > *:nth-child(2) { animation-delay: 0.2s; }
+.fade-in-section.is-visible > *:nth-child(3) { animation-delay: 0.3s; }
+.fade-in-section.is-visible > *:nth-child(4) { animation-delay: 0.4s; }
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Skip-to-content link */
+.skip-to-content {
+  position: absolute;
+  top: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  padding: 12px 24px;
+  background: #1B2A41;
+  color: #FFFFFF;
+  font-family: var(--font-mulish), 'Mulish', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 12px rgba(27, 42, 65, 0.3);
+  transition: top 0.3s ease;
+}
+
+.skip-to-content:focus {
+  top: 0;
+  outline: 2px solid #2C7A8C;
+  outline-offset: 2px;
+}
+
+.skip-to-content:hover {
+  background: #2C7A8C;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .fade-in-section,
+  .fade-in-section.is-visible > * {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
   *,
   *::before,
   *::after {
