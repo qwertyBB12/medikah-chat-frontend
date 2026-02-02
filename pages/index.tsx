@@ -29,7 +29,7 @@ export default function LandingPage() {
 
       <Nav />
 
-      <main id="main-content" className="font-body pt-20">
+      <main id="main-content" className="font-body pt-20 landing-sections">
         <Hero />
         <FadeInSection><Values /></FadeInSection>
         <FadeInSection><WhyExists /></FadeInSection>

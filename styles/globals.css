@@ -13,7 +13,7 @@
     font-weight: 400;
     font-size: 1rem;
     line-height: 1.7;
-    background-color: #F5F6F8;
+    background-color: #FAFAFB;
     color: #1C1C1E;
   }
 
@@ -39,6 +39,47 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Dramatic breathing room between sections */
+.landing-sections > .fade-in-section + .fade-in-section {
+  margin-top: 160px;
+}
+
+.landing-sections > :first-child + .fade-in-section {
+  margin-top: 120px;
+}
+
+@media (max-width: 768px) {
+  .landing-sections > .fade-in-section + .fade-in-section {
+    margin-top: 100px;
+  }
+
+  .landing-sections > :first-child + .fade-in-section {
+    margin-top: 80px;
+  }
+}
+
+/* Compliance section dark anchor texture */
+.compliance-dark::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.01) 0px,
+      transparent 1px,
+      transparent 2px,
+      rgba(255, 255, 255, 0.01) 3px
+    );
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.compliance-dark > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* Smooth scroll with fixed-nav offset */
