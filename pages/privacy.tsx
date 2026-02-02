@@ -625,7 +625,7 @@ export default function PrivacyPolicy() {
             <div className="text-[13px]">
               <span className="text-white/80">Privacy Policy</span>
               <span className="text-white/30 mx-2">|</span>
-              <a href="/terms" className="text-white/60 hover:text-white transition-colors">Terms of Service</a>
+              <Link href="/terms" className="text-white/60 hover:text-white transition-colors">Terms of Service</Link>
             </div>
           </div>
         </div>
