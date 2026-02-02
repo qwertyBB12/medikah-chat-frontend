@@ -1,7 +1,10 @@
 import Head from 'next/head';
+import Nav from '../components/landing/Nav';
 import Hero from '../components/landing/Hero';
 import Values from '../components/landing/Values';
+import WhyExists from '../components/landing/WhyExists';
 import Audiences from '../components/landing/Audiences';
+import Architecture from '../components/landing/Architecture';
 import CrossBorder from '../components/landing/CrossBorder';
 import Governance from '../components/landing/Governance';
 import ClosingStatement from '../components/landing/ClosingStatement';
@@ -19,10 +22,14 @@ export default function LandingPage() {
         />
       </Head>
 
-      <main className="font-body">
+      <Nav />
+
+      <main className="font-body pt-[70px]">
         <Hero />
         <Values />
+        <WhyExists />
         <Audiences />
+        <Architecture />
         <CrossBorder />
         <Governance />
         {/* Future: Medikah Institutional Research section
