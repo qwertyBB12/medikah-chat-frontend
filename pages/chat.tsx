@@ -76,14 +76,19 @@ export default function ChatPage() {
     hasValidConsent(userId).then((valid) => setConsentCompleted(valid));
   }, [session]);
 
+  const consentCompletedRef = useRef(consentCompleted);
+  consentCompletedRef.current = consentCompleted;
+
   const handleConsentComplete = () => {
     setShowConsentModal(false);
     setConsentCompleted(true);
+    consentCompletedRef.current = true;
     // If there was a pending message, send it now
-    if (pendingMessageRef.current) {
-      const msg = pendingMessageRef.current;
+    const msg = pendingMessageRef.current;
+    if (msg) {
       pendingMessageRef.current = null;
-      sendMessage(msg);
+      // Delay to let state settle before sending
+      setTimeout(() => sendMessage(msg), 0);
     }
   };
 
@@ -96,7 +101,7 @@ export default function ChatPage() {
     }
 
     // Block on consent if not yet completed
-    if (!consentCompleted) {
+    if (!consentCompletedRef.current) {
       pendingMessageRef.current = trimmed;
       setInput('');
       requestAnimationFrame(() => adjustTextareaHeight());
