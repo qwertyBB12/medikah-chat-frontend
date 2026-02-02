@@ -33,15 +33,20 @@ export default function Nav() {
         <Link href="/" className="flex items-center gap-2.5">
           <Image
             src={LOGO_ICON}
-            alt="Medikah"
+            alt="Medikah app icon"
             width={40}
             height={40}
             priority
             className="h-10 w-10 rounded-[9px]"
           />
-          <span className="text-inst-blue font-extrabold text-[22px] tracking-[0.01em] leading-none">
-            medikah
-          </span>
+          <Image
+            src="/medikah-wordmark-blue.png"
+            alt="Medikah — Cross-Border Health Coordination Platform"
+            width={692}
+            height={138}
+            priority
+            className="h-6 w-auto"
+          />
         </Link>
         <div className="hidden sm:flex items-center gap-8">
           {LINKS.map((link) => (
