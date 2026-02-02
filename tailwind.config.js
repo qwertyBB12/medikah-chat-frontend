@@ -30,7 +30,6 @@ module.exports = {
 
         // Warm accent
         'linen': '#F0EAE0',
-        'chat-warm': '#F8F6F3',
       },
       fontFamily: {
         sans: ['var(--font-mulish)', 'sans-serif'],

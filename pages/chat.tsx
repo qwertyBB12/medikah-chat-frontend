@@ -217,10 +217,10 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="min-h-screen md:h-screen md:overflow-hidden flex flex-col md:flex-row bg-chat-warm text-deep-charcoal">
+    <div className="min-h-screen md:h-screen md:overflow-hidden flex flex-col md:flex-row bg-[#FAFAFB] text-deep-charcoal">
       <Sidebar onSignOut={() => signOut()} onNewChat={handleNewChat} />
 
-      <div className="flex-1 flex flex-col bg-chat-warm">
+      <div className="flex-1 flex flex-col bg-[#FAFAFB]">
         {/* Mobile header */}
         <header className="md:hidden px-4 py-4 bg-gradient-to-r from-inst-blue to-[#243447] text-white">
           <div className="flex items-center justify-between">
