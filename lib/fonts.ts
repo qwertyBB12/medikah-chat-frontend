@@ -1,15 +1,15 @@
-import { Oswald, Mulish } from 'next/font/google';
-
-export const oswald = Oswald({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600'],
-  variable: '--font-oswald',
-  display: 'swap',
-});
+import { Mulish, IBM_Plex_Mono } from 'next/font/google';
 
 export const mulish = Mulish({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
+  weight: ['300', '400', '600', '700', '800'],
   variable: '--font-mulish',
+  display: 'swap',
+});
+
+export const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-mono',
   display: 'swap',
 });

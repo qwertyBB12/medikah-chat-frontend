@@ -22,12 +22,12 @@ export default function Perspectives({ items }: Props) {
   if (!items || items.length === 0) return null;
 
   return (
-    <section className="bg-[#c49493] px-6 py-20 sm:py-28">
+    <section className="bg-clinical-teal px-6 py-20 sm:py-28">
       <div className="max-w-5xl mx-auto">
-        <h2 className="font-heading font-extrabold text-2xl sm:text-3xl lowercase text-center mb-4 tracking-tight text-white">
+        <h2 className="font-extrabold text-2xl sm:text-3xl lowercase text-center mb-4 tracking-tight text-white">
           perspectives
         </h2>
-        <p className="font-body font-light text-center text-white/70 mb-14 max-w-xl mx-auto">
+        <p className="font-light text-center text-white/70 mb-14 max-w-xl mx-auto">
           Curated writing and conversations from across the ecosystem.
         </p>
 
@@ -38,20 +38,20 @@ export default function Perspectives({ items }: Props) {
               className="bg-white/15 backdrop-blur-sm p-6 space-y-3 hover:bg-white/25 transition"
             >
               <div className="flex items-center gap-2">
-                <span className="font-heading text-[10px] uppercase tracking-widest text-[#1a7c8b] bg-white/30 px-2 py-0.5">
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-inst-blue bg-white/30 px-2 py-0.5">
                   {TYPE_LABELS[item._type] ?? item._type}
                 </span>
                 {item.language && (
-                  <span className="font-heading text-[10px] uppercase tracking-widest text-white/60">
+                  <span className="text-[10px] font-semibold uppercase tracking-widest text-white/60">
                     {item.language}
                   </span>
                 )}
               </div>
-              <h3 className="font-heading font-extrabold text-base lowercase text-white leading-snug">
+              <h3 className="font-extrabold text-base lowercase text-white leading-snug">
                 {item.title}
               </h3>
               {item.narrativeOwner && (
-                <p className="font-body text-xs text-white/50">
+                <p className="text-xs text-white/50">
                   {item.narrativeOwner}
                 </p>
               )}

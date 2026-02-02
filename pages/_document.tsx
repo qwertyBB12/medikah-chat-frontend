@@ -1,11 +1,11 @@
 import { Html, Head, Main, NextScript } from 'next/document';
-import { oswald, mulish } from '../lib/fonts';
+import { mulish, ibmPlexMono } from '../lib/fonts';
 
 export default function Document() {
   return (
     <Html>
       <Head />
-      <body className={`${oswald.variable} ${mulish.variable} font-body`}>
+      <body className={`${mulish.variable} ${ibmPlexMono.variable} font-body`}>
         <Main />
         <NextScript />
       </body>

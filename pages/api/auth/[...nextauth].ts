@@ -6,12 +6,9 @@ import { supabase } from '../../../lib/supabase';
 /**
  * NextAuth configuration
  *
- * Uses Supabase Auth when configured, falls back to env-based demo credentials.
- * Replace with full Supabase Auth flow before production.
+ * Authenticates against Supabase Auth only.
+ * Accounts are created manually via Supabase dashboard (invite-only).
  */
-const DEMO_EMAIL = process.env.DEMO_EMAIL;
-const DEMO_PASSWORD = process.env.DEMO_PASSWORD;
-
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   providers: [
@@ -26,33 +23,24 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // Try Supabase Auth first
-        if (supabase) {
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email: credentials.email,
-            password: credentials.password,
-          });
-
-          if (!error && data.user) {
-            return {
-              id: data.user.id,
-              name: data.user.user_metadata?.name || data.user.email,
-              email: data.user.email,
-            };
-          }
+        if (!supabase) {
+          return null;
         }
 
-        // Fallback to env-based demo credentials
-        if (
-          DEMO_EMAIL &&
-          DEMO_PASSWORD &&
-          credentials.email === DEMO_EMAIL &&
-          credentials.password === DEMO_PASSWORD
-        ) {
-          return { id: 'demo', name: 'Demo User', email: DEMO_EMAIL };
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: credentials.email,
+          password: credentials.password,
+        });
+
+        if (error || !data.user) {
+          return null;
         }
 
-        return null;
+        return {
+          id: data.user.id,
+          name: data.user.user_metadata?.name || data.user.email,
+          email: data.user.email,
+        };
       }
     })
   ],

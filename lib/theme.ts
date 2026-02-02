@@ -1,23 +1,28 @@
 /**
- * Single unified theme — Navy / Cream / Teal
- * Aligned with the BeNeXT ecosystem palette.
+ * Medikah Design System — Clinical Institutional Palette
+ * Aligned with the BeNeXT ecosystem. Dressed for the hospital, not the embassy.
  */
 
 export const colors = {
-  navy900: '#1b2a41',
-  navy800: '#243650',
-  navy700: '#2E4260',
-  navy600: '#3A5070',
-  teal: '#1a7c8b',
-  tealDark: '#166776',
-  cream600: '#eddfc7',
-  cream500: '#f2e5d5',
-  cream400: '#f5ebe0',
-  cream300: '#fdf7ec',
-  cream200: '#faf6f2',
-  cream100: '#ffffff',
-  textDark: '#1b2a41',
-  textSoft: '#3A3A3A',
-  textMuted: '#888888',
-  textLight: '#fdf7ec',
+  // Primary
+  institutionalBlue: '#1B2A41',
+  clinicalTeal: '#2C7A8C',
+  steadyTeal: '#E8F4F6',
+
+  // Neutrals
+  deepCharcoal: '#1C1C1E',
+  bodySlate: '#4A5568',
+  archivalGrey: '#8A8D91',
+  borderLine: '#D1D5DB',
+  clinicalSurface: '#F5F6F8',
+  pureWhite: '#FFFFFF',
+
+  // Semantic
+  confirmationGreen: '#2D7D5F',
+  cautionAmber: '#B8860B',
+  alertGarnet: '#B83D3D',
+  infoBlue: '#3B82B6',
+
+  // Warm accent (patient intake & chat only)
+  linenWarmth: '#F0EAE0',
 } as const;

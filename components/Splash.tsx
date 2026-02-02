@@ -20,12 +20,10 @@ export default function Splash({
   const portals = [
     { label: 'Patient', onClick: onPatientLogin },
     { label: 'Doctor', onClick: onDoctorLogin },
-    { label: 'Insurance', onClick: onInsuranceEmployers },
-    { label: 'Admin', onClick: onAdminAccess },
   ];
 
   return (
-    <div className="relative min-h-screen flex flex-col justify-center px-6 py-16 bg-navy-900">
+    <div className="relative min-h-screen flex flex-col justify-center px-6 py-16 bg-inst-blue">
       <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-12 text-center">
         <div className="flex flex-col items-center gap-5">
           <Image
@@ -43,8 +41,8 @@ export default function Splash({
             height={180}
             className="w-36 h-auto sm:w-44"
           />
-          <p className="font-body text-sm text-cream-300/60 leading-relaxed max-w-xs">
-            Select how you would like to sign in.
+          <p className="text-sm text-white/60 leading-relaxed max-w-xs">
+            Credentialed access only. Sign in with your authorized account.
           </p>
         </div>
 
@@ -54,7 +52,7 @@ export default function Splash({
               key={portal.label}
               type="button"
               onClick={portal.onClick}
-              className="w-full py-3.5 text-center font-heading text-base font-normal uppercase tracking-widest text-cream-300/80 border-b border-cream-500/10 transition hover:text-cream-300 hover:bg-cream-500/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
+              className="w-full py-3.5 text-center text-base font-semibold tracking-wide text-white/80 border-b border-white/10 transition hover:text-white hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-clinical-teal"
             >
               {portal.label}
             </button>

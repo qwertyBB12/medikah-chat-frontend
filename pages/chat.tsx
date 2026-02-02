@@ -156,13 +156,13 @@ export default function ChatPage() {
 
   if (!session) {
     const loginPanel = showLoginForm ? (
-      <div className="bg-navy-800/80 rounded-sm p-6 space-y-5 text-cream-300">
-        <h3 className="font-heading text-base font-normal uppercase tracking-wider">
+      <div className="bg-inst-blue/80 rounded-sm p-6 space-y-5 text-white">
+        <h3 className="text-base font-bold tracking-wide">
           {portalSelection === 'patient' ? 'Patient sign in' : 'Doctor sign in'}
         </h3>
         <form onSubmit={handleSignIn} className="space-y-4">
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="email" className="text-xs uppercase tracking-wider text-cream-300/50">
+            <label htmlFor="email" className="text-xs uppercase tracking-wider text-white/50">
               Email
             </label>
             <input
@@ -170,13 +170,13 @@ export default function ChatPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="border border-cream-500/20 bg-navy-900/50 px-4 py-3 text-cream-300 placeholder-cream-300/30 focus:outline-none focus:border-teal rounded-none font-body"
+              className="border border-white/20 bg-inst-blue/50 px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-clinical-teal rounded-none"
               placeholder="user@example.com"
               required
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="password" className="text-xs uppercase tracking-wider text-cream-300/50">
+            <label htmlFor="password" className="text-xs uppercase tracking-wider text-white/50">
               Password
             </label>
             <input
@@ -184,19 +184,19 @@ export default function ChatPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="border border-cream-500/20 bg-navy-900/50 px-4 py-3 text-cream-300 placeholder-cream-300/30 focus:outline-none focus:border-teal rounded-none font-body"
+              className="border border-white/20 bg-inst-blue/50 px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-clinical-teal rounded-none"
               placeholder="changeme"
               required
             />
           </div>
           {loginError && (
-            <p className="text-sm text-coral bg-coral/10 border border-coral/20 px-3 py-2 text-center rounded-sm">
+            <p className="text-sm text-alert-garnet bg-alert-garnet/10 border border-alert-garnet/20 px-3 py-2 text-center rounded-sm">
               {loginError}
             </p>
           )}
           <button
             type="submit"
-            className="w-full px-4 py-3 font-heading font-normal uppercase tracking-wider text-sm bg-teal text-white hover:bg-teal-dark transition rounded-sm disabled:opacity-50"
+            className="w-full px-4 py-3 font-bold tracking-wide text-sm bg-inst-blue text-white border border-white/20 hover:bg-clinical-teal hover:border-clinical-teal transition rounded-sm disabled:opacity-50"
             disabled={isSubmitting}
           >
             {isSubmitting ? 'Signing in\u2026' : 'Sign in'}
@@ -217,24 +217,24 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="min-h-screen md:h-screen md:overflow-hidden flex flex-col md:flex-row bg-cream-400 text-navy-900">
+    <div className="min-h-screen md:h-screen md:overflow-hidden flex flex-col md:flex-row bg-linen text-deep-charcoal">
       <Sidebar onSignOut={() => signOut()} onNewChat={handleNewChat} />
 
-      <div className="flex-1 flex flex-col bg-cream-400">
+      <div className="flex-1 flex flex-col bg-linen">
         {/* Mobile header */}
-        <header className="md:hidden px-4 py-4 bg-navy-900 text-cream-300">
+        <header className="md:hidden px-4 py-4 bg-inst-blue text-white">
           <div className="flex items-center justify-between">
             <Image src={LOGO_SRC} alt="Medikah" width={96} height={96} priority className="w-10 h-auto" />
             <div className="flex items-center gap-2">
               <button
                 onClick={handleNewChat}
-                className="px-3 py-2 text-xs font-heading uppercase tracking-wider text-cream-300/70 hover:text-cream-300 transition"
+                className="px-3 py-2 text-xs font-semibold tracking-wide text-white/70 hover:text-white transition"
               >
                 New chat
               </button>
               <button
                 onClick={() => signOut()}
-                className="px-3 py-2 text-xs font-heading uppercase tracking-wider text-cream-300/50 border border-cream-500/15 hover:text-cream-300/80 transition rounded-sm"
+                className="px-3 py-2 text-xs font-semibold tracking-wide text-white/50 border border-white/15 hover:text-white/80 transition rounded-sm"
               >
                 Sign out
               </button>
@@ -255,14 +255,14 @@ export default function ChatPage() {
                     <div
                       className={`px-5 py-4 max-w-xl whitespace-pre-line ${
                         message.sender === 'user'
-                          ? 'bg-navy-900/10 rounded-lg'
-                          : 'bg-transparent'
+                          ? 'bg-inst-blue/10 rounded-lg'
+                          : 'bg-steady-teal rounded-lg'
                       }`}
                     >
                       <p className={
                         message.sender === 'user'
-                          ? 'text-navy-900 font-body'
-                          : 'text-navy-900/80 font-body'
+                          ? 'text-deep-charcoal'
+                          : 'text-deep-charcoal/80'
                       }>
                         {message.text}
                       </p>
@@ -274,7 +274,7 @@ export default function ChatPage() {
                               href={action.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 rounded-sm bg-teal px-4 py-2 text-xs font-heading uppercase tracking-wider text-white transition hover:bg-teal-dark"
+                              className="inline-flex items-center gap-1 rounded-sm bg-clinical-teal px-4 py-2 text-xs font-semibold tracking-wide text-white transition hover:bg-clinical-teal-dark"
                             >
                               {action.label}
                             </a>
