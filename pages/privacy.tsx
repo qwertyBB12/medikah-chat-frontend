@@ -107,13 +107,13 @@ export default function PrivacyPolicy() {
             <p>
               <strong>Medikah Health Coordination Services</strong><br />
               Incorporated: Delaware, USA<br />
-              Operating Locations: Texas, California, Mexico City
+              Operating Locations: Texas, California, Mexico
             </p>
             <p>
               <strong>Contact Information:</strong><br />
-              Email: <a href="mailto:privacy@medikah.com">privacy@medikah.com</a><br />
-              Privacy Officer: <a href="mailto:privacy@medikah.com">privacy@medikah.com</a><br />
-              Data Protection Officer: <a href="mailto:dpo@medikah.com">dpo@medikah.com</a>
+              Email: <a href="mailto:privacy@medikah.org">privacy@medikah.org</a><br />
+              Privacy Officer: <a href="mailto:privacy@medikah.org">privacy@medikah.org</a><br />
+              Data Protection Officer: <a href="mailto:dpo@medikah.org">dpo@medikah.org</a>
             </p>
             <p><strong>Regulatory Compliance:</strong></p>
             <ul>
@@ -443,7 +443,7 @@ export default function PrivacyPolicy() {
               <li>Communication logs: Regulatory requirements (typically 6 years)</li>
             </ul>
             <p>After retention periods expire, data is securely deleted or anonymized. You can request early deletion, subject to legal retention obligations.</p>
-            <p><strong>How to Request Deletion:</strong> Email <a href="mailto:privacy@medikah.com">privacy@medikah.com</a> with &ldquo;Data Deletion Request&rdquo;</p>
+            <p><strong>How to Request Deletion:</strong> Email <a href="mailto:privacy@medikah.org">privacy@medikah.org</a> with &ldquo;Data Deletion Request&rdquo;</p>
 
             <hr />
 
@@ -451,9 +451,9 @@ export default function PrivacyPolicy() {
 
             <h3>7.1 Rights Under HIPAA (US Patients)</h3>
             <p><strong>Important:</strong> Most HIPAA rights are exercised through your healthcare provider, not Medikah, because providers are the Covered Entities responsible for your care.</p>
-            <p><strong>Right to Access:</strong> Request copies of your health information stored on our platform. Request provided to your healthcare provider. Or contact Medikah at <a href="mailto:privacy@medikah.com">privacy@medikah.com</a> for technical records.</p>
+            <p><strong>Right to Access:</strong> Request copies of your health information stored on our platform. Request provided to your healthcare provider. Or contact Medikah at <a href="mailto:privacy@medikah.org">privacy@medikah.org</a> for technical records.</p>
             <p><strong>Right to Amendment:</strong> Request corrections to inaccurate health information. Request must be made to your healthcare provider. Medikah can correct account information.</p>
-            <p><strong>Right to Accounting of Disclosures:</strong> Request list of PHI disclosures made by Medikah (past 6 years). Contact <a href="mailto:privacy@medikah.com">privacy@medikah.com</a>. We provide within 60 days.</p>
+            <p><strong>Right to Accounting of Disclosures:</strong> Request list of PHI disclosures made by Medikah (past 6 years). Contact <a href="mailto:privacy@medikah.org">privacy@medikah.org</a>. We provide within 60 days.</p>
             <p><strong>Right to Request Restrictions:</strong> Request limits on how providers use or disclose your information. Must be requested from healthcare provider.</p>
             <p><strong>Right to Confidential Communications:</strong> Request we communicate via alternative email, phone, or address. We accommodate reasonable requests. No explanation required.</p>
 
@@ -466,7 +466,7 @@ export default function PrivacyPolicy() {
               <li><strong>Right to Non-Discrimination:</strong> We won&rsquo;t discriminate for exercising privacy rights</li>
               <li><strong>Right to Correct:</strong> Request correction of inaccurate information</li>
             </ul>
-            <p><strong>Exercise Rights:</strong> Email <a href="mailto:privacy@medikah.com">privacy@medikah.com</a> with &ldquo;California Privacy Request&rdquo;</p>
+            <p><strong>Exercise Rights:</strong> Email <a href="mailto:privacy@medikah.org">privacy@medikah.org</a> with &ldquo;California Privacy Request&rdquo;</p>
 
             <h3>7.3 Rights Under International Law</h3>
             <p><strong>European Union/EEA Residents (GDPR):</strong></p>
@@ -476,11 +476,11 @@ export default function PrivacyPolicy() {
               <li>Right to Withdraw Consent, Lodge Complaint with supervisory authority</li>
             </ul>
             <p><strong>Brazilian Residents (LGPD):</strong> Right to confirmation of processing, access, correction, anonymization, blocking, deletion, portability, information about sharing, withdraw consent, petition ANPD.</p>
-            <p><strong>Mexican Residents (LFPDPPP):</strong> ARCO rights: Access, Rectification, Cancellation, Opposition. Right to revoke consent and limit use and disclosure. Request via <a href="mailto:privacy@medikah.com">privacy@medikah.com</a> or <a href="mailto:dpo@medikah.com">dpo@medikah.com</a>.</p>
+            <p><strong>Mexican Residents (LFPDPPP):</strong> ARCO rights: Access, Rectification, Cancellation, Opposition. Right to revoke consent and limit use and disclosure. Request via <a href="mailto:privacy@medikah.org">privacy@medikah.org</a> or <a href="mailto:dpo@medikah.org">dpo@medikah.org</a>.</p>
 
             <h3>7.4 How to Exercise Your Rights</h3>
             <p>
-              <strong>Email:</strong> <a href="mailto:privacy@medikah.com">privacy@medikah.com</a><br />
+              <strong>Email:</strong> <a href="mailto:privacy@medikah.org">privacy@medikah.org</a><br />
               <strong>Subject Line:</strong> Include &ldquo;Privacy Rights Request&rdquo; or &ldquo;HIPAA Request&rdquo;<br />
               <strong>Include:</strong> Your name, email, description of request, identity verification
             </p>
@@ -512,7 +512,7 @@ export default function PrivacyPolicy() {
             <h2>9. Children&rsquo;s Privacy</h2>
             <p><strong>Medikah is not designed for independent use by children under 13.</strong></p>
             <p>Users under 18 require parent/guardian consent. Parents can create and manage accounts for minors. We do not knowingly collect information from children under 13 without verifiable parental consent. If we learn we&rsquo;ve collected such information, we delete it immediately.</p>
-            <p>Parents can contact <a href="mailto:privacy@medikah.com">privacy@medikah.com</a> to review or delete a child&rsquo;s information.</p>
+            <p>Parents can contact <a href="mailto:privacy@medikah.org">privacy@medikah.org</a> to review or delete a child&rsquo;s information.</p>
 
             <hr />
 
@@ -524,7 +524,7 @@ export default function PrivacyPolicy() {
               <li>Platform notification for significant changes affecting rights</li>
               <li>30-day notice period before material changes take effect</li>
             </ul>
-            <p>Continue using platform = acceptance of updated policy. Object to changes by discontinuing use before effective date. Contact us with concerns: <a href="mailto:privacy@medikah.com">privacy@medikah.com</a></p>
+            <p>Continue using platform = acceptance of updated policy. Object to changes by discontinuing use before effective date. Contact us with concerns: <a href="mailto:privacy@medikah.org">privacy@medikah.org</a></p>
 
             <hr />
 
@@ -536,13 +536,13 @@ export default function PrivacyPolicy() {
             <p><strong>Mexico:</strong> LFPDPPP, ARCO rights, INAI oversight.</p>
             <p><strong>Brazil:</strong> LGPD, ANPD oversight, international transfer safeguards.</p>
             <p><strong>European Union/EEA:</strong> GDPR, supervisory authority oversight, strict cross-border transfer rules.</p>
-            <p><strong>Other Countries:</strong> Local healthcare privacy laws apply. Contact <a href="mailto:dpo@medikah.com">dpo@medikah.com</a> for jurisdiction-specific questions.</p>
+            <p><strong>Other Countries:</strong> Local healthcare privacy laws apply. Contact <a href="mailto:dpo@medikah.org">dpo@medikah.org</a> for jurisdiction-specific questions.</p>
 
             <h3>11.2 Legal Basis for Processing (GDPR)</h3>
             <p>For EU/EEA users, we process your information based on: Consent, Contract Performance, Legal Obligation, Vital Interests, and Legitimate Interests (only for non-sensitive data).</p>
 
             <h3>11.3 Data Protection Officer</h3>
-            <p><strong>Email:</strong> <a href="mailto:dpo@medikah.com">dpo@medikah.com</a></p>
+            <p><strong>Email:</strong> <a href="mailto:dpo@medikah.org">dpo@medikah.org</a></p>
 
             <hr />
 
@@ -550,15 +550,15 @@ export default function PrivacyPolicy() {
 
             <h3>Privacy Questions or Requests</h3>
             <p>
-              <strong>Email:</strong> <a href="mailto:privacy@medikah.com">privacy@medikah.com</a><br />
+              <strong>Email:</strong> <a href="mailto:privacy@medikah.org">privacy@medikah.org</a><br />
               <strong>Response Time:</strong> Within 30&ndash;60 days depending on jurisdiction and request type
             </p>
 
             <h3>Data Protection Officer</h3>
-            <p><strong>Email:</strong> <a href="mailto:dpo@medikah.com">dpo@medikah.com</a></p>
+            <p><strong>Email:</strong> <a href="mailto:dpo@medikah.org">dpo@medikah.org</a></p>
 
             <h3>File a Complaint</h3>
-            <p><strong>With Medikah:</strong> <a href="mailto:privacy@medikah.com">privacy@medikah.com</a> (we will not retaliate for complaints)</p>
+            <p><strong>With Medikah:</strong> <a href="mailto:privacy@medikah.org">privacy@medikah.org</a> (we will not retaliate for complaints)</p>
             <p><strong>With Regulatory Authorities:</strong></p>
             <ul>
               <li><strong>United States:</strong> U.S. Department of Health and Human Services, Office for Civil Rights &mdash; www.hhs.gov/ocr/privacy/hipaa/complaints</li>
@@ -597,7 +597,7 @@ export default function PrivacyPolicy() {
               Medikah Health Coordination Services<br />
               HIPAA-Compliant Technology Platform<br />
               Incorporated in Delaware, USA<br />
-              Operating: Texas, California, Mexico City
+              Operating: Texas, California, Mexico
             </p>
 
             <p className="text-center text-sm text-archival-grey mt-6">
@@ -615,13 +615,13 @@ export default function PrivacyPolicy() {
               Independent Pan-American Health Infrastructure
             </p>
             <p className="text-sm">
-              <a href="mailto:partnerships@medikah.com" className="text-clinical-teal hover:text-white transition-colors">
-                partnerships@medikah.com
+              <a href="mailto:partnerships@medikah.org" className="text-clinical-teal hover:text-white transition-colors">
+                partnerships@medikah.org
               </a>
             </p>
           </div>
           <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-[13px] text-white/60">&copy; 2026 Medikah | Established 2024</p>
+            <p className="text-[13px] text-white/60">&copy; 2026 Medikah | Established 2022</p>
             <div className="text-[13px]">
               <span className="text-white/80">Privacy Policy</span>
               <span className="text-white/30 mx-2">|</span>

@@ -35,7 +35,7 @@ export default function Hero() {
             Learn About Access
           </a>
           <a
-            href="mailto:partnerships@medikah.com"
+            href="mailto:partnerships@medikah.org"
             className="inline-block px-8 py-4 text-clinical-teal font-bold text-lg tracking-wide border border-clinical-teal hover:bg-clinical-teal hover:text-white transition rounded-sm text-center"
           >
             Institutional Inquiry
