@@ -16,13 +16,28 @@ interface Props {
 }
 
 export async function getStaticProps() {
+  // Fetch only leadership, Americas, and healthcare-relevant content.
+  // Once the Sanity schema includes a `healthcareRelevant` boolean field,
+  // add `&& healthcareRelevant == true` to this filter.
   let perspectives: SanityPerspective[] = [];
   try {
-    perspectives = await sanityClient.fetch(
-      `*[_type in ["essay","opEd","video","podcastEpisode"]] | order(_createdAt desc)[0..11]{
+    const all: SanityPerspective[] = await sanityClient.fetch(
+      `*[_type in ["essay","opEd","video","podcastEpisode"]] | order(_createdAt desc)[0..50]{
         _id, _type, title, slug, language, narrativeOwner
       }`
     );
+
+    const ALLOWED_KEYWORDS = [
+      'healthcare', 'health', 'medical', 'clinical', 'hospital',
+      'physician', 'patient', 'care', 'insurance', 'telemedicine',
+      'leadership', 'americas', 'latin america', 'hemispheric',
+      'cross-border', 'coordination', 'salud', 'médico', 'paciente',
+    ];
+
+    perspectives = all.filter((item) => {
+      const text = `${item.title} ${item.narrativeOwner ?? ''}`.toLowerCase();
+      return ALLOWED_KEYWORDS.some((kw) => text.includes(kw));
+    }).slice(0, 12);
   } catch {
     perspectives = [];
   }
