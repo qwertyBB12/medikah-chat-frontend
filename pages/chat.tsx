@@ -7,8 +7,11 @@ import Sidebar from '../components/Sidebar';
 import WelcomeRotator from '../components/WelcomeRotator';
 import ChatInput from '../components/ChatInput';
 import Footer from '../components/Footer';
+import ConsentModal from '../components/ConsentModal';
 import { SchedulerAction } from '../components/ChatSchedulerAgent';
 import { LOGO_SRC } from '../lib/assets';
+import { hasValidConsent } from '../lib/consent';
+import { SupportedLang } from '../lib/i18n';
 
 interface ChatResponse {
   ok?: boolean;
@@ -39,9 +42,12 @@ export default function ChatPage() {
   const [isSending, setIsSending] = useState(false);
   const [showLoginForm, setShowLoginForm] = useState(false);
   const [portalSelection, setPortalSelection] = useState<'doctor' | 'patient' | 'insurer' | 'employer' | null>(null);
+  const [consentCompleted, setConsentCompleted] = useState<boolean | null>(null);
+  const [showConsentModal, setShowConsentModal] = useState(false);
+  const pendingMessageRef = useRef<string | null>(null);
 
   const base = process.env.NEXT_PUBLIC_API_URL!;
-  const lang = router.locale?.toLowerCase().startsWith('es') ? 'es' : 'en';
+  const lang: SupportedLang = router.locale?.toLowerCase().startsWith('es') ? 'es' : 'en';
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -62,11 +68,39 @@ export default function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Check consent on mount when authenticated
+  useEffect(() => {
+    if (!session?.user) return;
+    const userId = (session.user as { id?: string }).id ?? session.user.email ?? '';
+    if (!userId) return;
+    hasValidConsent(userId).then((valid) => setConsentCompleted(valid));
+  }, [session]);
+
+  const handleConsentComplete = () => {
+    setShowConsentModal(false);
+    setConsentCompleted(true);
+    // If there was a pending message, send it now
+    if (pendingMessageRef.current) {
+      const msg = pendingMessageRef.current;
+      pendingMessageRef.current = null;
+      sendMessage(msg);
+    }
+  };
+
   const sendMessage = async (text: string): Promise<void> => {
     const trimmed = text.trim();
     if (!trimmed) {
       setInput('');
       requestAnimationFrame(() => adjustTextareaHeight());
+      return;
+    }
+
+    // Block on consent if not yet completed
+    if (!consentCompleted) {
+      pendingMessageRef.current = trimmed;
+      setInput('');
+      requestAnimationFrame(() => adjustTextareaHeight());
+      setShowConsentModal(true);
       return;
     }
 
@@ -216,8 +250,17 @@ export default function ChatPage() {
     );
   }
 
+  const consentUserId = (session.user as { id?: string })?.id ?? session.user?.email ?? '';
+
   return (
     <div className="min-h-screen md:h-screen md:overflow-hidden flex flex-col md:flex-row bg-[#FAFAFB] text-deep-charcoal">
+      {showConsentModal && (
+        <ConsentModal
+          userId={consentUserId}
+          lang={lang}
+          onComplete={handleConsentComplete}
+        />
+      )}
       <Sidebar onSignOut={() => signOut()} onNewChat={handleNewChat} />
 
       <div className="flex-1 flex flex-col bg-[#FAFAFB]">
