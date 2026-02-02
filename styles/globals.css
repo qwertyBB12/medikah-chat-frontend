@@ -82,12 +82,12 @@
   z-index: 1;
 }
 
-/* Smooth scroll with fixed-nav offset */
-html {
+/* Smooth scroll — scoped to landing page via has() */
+html:has(.landing-sections) {
   scroll-behavior: smooth;
 }
 
-:target {
+.landing-sections :target {
   scroll-margin-top: 100px;
 }
 
@@ -185,7 +185,7 @@ html {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html {
+  html:has(.landing-sections) {
     scroll-behavior: auto;
   }
 
