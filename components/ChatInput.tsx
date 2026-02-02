@@ -24,10 +24,10 @@ export default function ChatInput({
   };
 
   return (
-    <div className="px-4 sm:px-10 py-4 bg-linen/60 backdrop-blur-sm">
+    <div className="px-4 sm:px-10 py-6 bg-gradient-to-t from-chat-warm via-chat-warm/95 to-chat-warm/0 backdrop-blur-sm">
       <form
         onSubmit={handleSubmit}
-        className="max-w-3xl mx-auto w-full flex items-end gap-3 px-5 py-4 rounded-lg bg-inst-blue/95 text-white ring-1 ring-white/10 shadow-lg shadow-inst-blue/20 transition-colors"
+        className="max-w-[900px] mx-auto w-full relative"
       >
         <textarea
           ref={textareaRef}
@@ -36,7 +36,7 @@ export default function ChatInput({
           onKeyDown={onKeyDown}
           aria-label="Message Medikah"
           placeholder="Describe what you are feeling…"
-          className="flex-1 resize-none bg-transparent focus:outline-none text-base leading-7 font-normal text-white placeholder:text-white/40 caret-clinical-teal selection:bg-clinical-teal/20"
+          className="w-full resize-none bg-inst-blue text-white text-base leading-relaxed font-normal placeholder:text-white/50 caret-clinical-teal selection:bg-clinical-teal/20 rounded-[16px] pl-6 pr-[120px] py-[18px] min-h-[56px] max-h-[200px] shadow-[0_2px_8px_rgba(27,42,65,0.12),0_8px_24px_rgba(27,42,65,0.08)] transition-shadow duration-300 focus:outline-none focus:shadow-[0_3px_12px_rgba(27,42,65,0.16),0_12px_32px_rgba(27,42,65,0.12),0_0_0_3px_rgba(44,122,140,0.3)]"
           rows={1}
           spellCheck={false}
         />
@@ -44,12 +44,12 @@ export default function ChatInput({
           type="submit"
           disabled={isSending}
           aria-disabled={isSending}
-          className="px-5 py-2 font-semibold tracking-wide text-sm bg-clinical-teal text-white transition hover:bg-clinical-teal-dark disabled:opacity-50 disabled:cursor-not-allowed rounded-sm"
+          className="absolute right-3 bottom-3 px-7 py-3 font-semibold tracking-[0.02em] text-[15px] bg-clinical-teal text-white rounded-[10px] shadow-[0_2px_8px_rgba(44,122,140,0.3)] transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-[#2A8DA0] hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(44,122,140,0.4)] active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
         >
           Send
         </button>
       </form>
-      <p className="max-w-3xl mx-auto text-xs mt-3 text-center text-body-slate/50 font-body">
+      <p className="max-w-[900px] mx-auto text-[13px] mt-3 text-center text-archival-grey font-normal">
         Press Enter to send. Shift+Enter for a new line.
       </p>
     </div>
