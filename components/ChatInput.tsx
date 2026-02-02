@@ -24,7 +24,7 @@ export default function ChatInput({
   };
 
   return (
-    <div className="px-4 sm:px-10 py-6 bg-gradient-to-t from-chat-warm via-chat-warm/95 to-chat-warm/0 backdrop-blur-sm">
+    <div className="px-4 sm:px-10 py-6 bg-gradient-to-t from-[#FAFAFB] via-[#FAFAFB]/95 to-[#FAFAFB]/0 backdrop-blur-sm">
       <form
         onSubmit={handleSubmit}
         className="max-w-[900px] mx-auto w-full relative"
