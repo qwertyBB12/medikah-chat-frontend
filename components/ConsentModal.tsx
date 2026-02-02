@@ -99,35 +99,6 @@ export default function ConsentModal({ userId, lang: initialLang, onComplete }: 
                 {section.body}
               </pre>
 
-              {/* Recording consent radios for section 14 */}
-              {section.hasRecordingConsent && (
-                <div className="mt-3 space-y-2 pl-1">
-                  <label className="flex items-center gap-2.5 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="recordingConsent"
-                      checked={recordingConsent === true}
-                      onChange={() => setRecordingConsent(true)}
-                      className="w-4 h-4 accent-clinical-teal"
-                    />
-                    <span className="text-sm text-body-slate font-semibold">
-                      {copy.recordingYes}
-                    </span>
-                  </label>
-                  <label className="flex items-center gap-2.5 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="recordingConsent"
-                      checked={recordingConsent === false}
-                      onChange={() => setRecordingConsent(false)}
-                      className="w-4 h-4 accent-clinical-teal"
-                    />
-                    <span className="text-sm text-body-slate font-semibold">
-                      {copy.recordingNo}
-                    </span>
-                  </label>
-                </div>
-              )}
             </div>
           ))}
 
@@ -139,8 +110,41 @@ export default function ConsentModal({ userId, lang: initialLang, onComplete }: 
           )}
         </div>
 
-        {/* Footer with single checkbox + CTA */}
+        {/* Footer with recording consent + checkbox + CTA */}
         <div className="px-6 py-4 border-t border-border-line shrink-0 space-y-3">
+          {/* Recording consent — always visible */}
+          <div className="bg-clinical-surface border border-border-line rounded-[8px] px-4 py-3">
+            <p className="text-xs text-inst-blue font-bold mb-2">
+              {lang === 'en' ? 'Consultation Recording (Section 14)' : 'Grabación de Consulta (Sección 14)'}
+            </p>
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="recordingConsent"
+                  checked={recordingConsent === true}
+                  onChange={() => setRecordingConsent(true)}
+                  className="w-4 h-4 accent-clinical-teal"
+                />
+                <span className="text-sm text-body-slate font-semibold">
+                  {copy.recordingYes}
+                </span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="recordingConsent"
+                  checked={recordingConsent === false}
+                  onChange={() => setRecordingConsent(false)}
+                  className="w-4 h-4 accent-clinical-teal"
+                />
+                <span className="text-sm text-body-slate font-semibold">
+                  {copy.recordingNo}
+                </span>
+              </label>
+            </div>
+          </div>
+
           <label className="flex items-start gap-2.5 cursor-pointer">
             <input
               type="checkbox"
