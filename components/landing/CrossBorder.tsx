@@ -2,7 +2,7 @@ export default function CrossBorder() {
   return (
     <section className="bg-white px-6 py-24 sm:py-32 overflow-hidden">
       <div className="max-w-5xl mx-auto">
-        <h2 className="font-bold text-4xl md:text-5xl text-inst-blue text-center mb-8">
+        <h2 className="font-extrabold text-4xl md:text-[56px] text-inst-blue text-center mb-8 leading-[1.15] tracking-[-0.01em]">
           The Americas Are Already One Healthcare Theater
         </h2>
 
