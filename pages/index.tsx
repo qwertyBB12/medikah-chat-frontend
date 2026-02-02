@@ -24,7 +24,7 @@ export default function LandingPage() {
 
       <Nav />
 
-      <main className="font-body pt-[70px]">
+      <main className="font-body pt-20">
         <Hero />
         <Values />
         <WhyExists />
