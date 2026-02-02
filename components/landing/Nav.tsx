@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
-const LOGO_ICON = '/logo-app-icon.png';
+const LOGO_ICON = '/logo-app-icon-teal.png';
 
 const LINKS = [
   { label: 'About', href: '#about' },
