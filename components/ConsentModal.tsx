@@ -52,12 +52,10 @@ export default function ConsentModal({ userId, lang: initialLang, onComplete }: 
       recordingConsent,
     };
 
-    // Attempt to save, but proceed regardless — consent was given in the UI
-    try {
-      await saveConsentRecord(formData);
-    } catch {
-      console.warn('Consent record could not be persisted — proceeding anyway.');
-    }
+    // Fire-and-forget — don't block the UI on Supabase
+    saveConsentRecord(formData).catch(() => {
+      console.warn('Consent record could not be persisted.');
+    });
 
     onComplete();
   };
