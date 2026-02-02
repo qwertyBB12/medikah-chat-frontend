@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 const LOGO_ICON = '/logo-app-icon.png';
 
@@ -29,7 +30,7 @@ export default function Nav() {
       style={{ WebkitBackdropFilter: scrolled ? 'blur(16px) saturate(200%)' : 'blur(12px) saturate(180%)' }}
     >
       <div className="max-w-[1400px] mx-auto px-6 h-full flex items-center justify-between">
-        <a href="/" className="flex items-center gap-2.5">
+        <Link href="/" className="flex items-center gap-2.5">
           <Image
             src={LOGO_ICON}
             alt="Medikah"
@@ -41,7 +42,7 @@ export default function Nav() {
           <span className="text-inst-blue font-extrabold text-[22px] tracking-[0.01em] leading-none">
             medikah
           </span>
-        </a>
+        </Link>
         <div className="hidden sm:flex items-center gap-8">
           {LINKS.map((link) => (
             <a
