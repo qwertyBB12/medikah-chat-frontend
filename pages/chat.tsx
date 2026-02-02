@@ -335,6 +335,17 @@ export default function ChatPage() {
                     </div>
                   </div>
                 ))}
+                {isSending && (
+                  <div className="flex justify-start animate-messageAppear">
+                    <div className="bg-white border-l-4 border-inst-blue px-7 py-5 rounded-[12px_12px_12px_4px] shadow-[0_2px_4px_rgba(27,42,65,0.08),0_8px_20px_rgba(27,42,65,0.06)] ml-5 sm:ml-10">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 bg-inst-blue/40 rounded-full animate-typingBounce" />
+                        <span className="w-2 h-2 bg-inst-blue/40 rounded-full animate-typingBounce [animation-delay:0.2s]" />
+                        <span className="w-2 h-2 bg-inst-blue/40 rounded-full animate-typingBounce [animation-delay:0.4s]" />
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div ref={messagesEndRef} />
               </div>
             </div>
