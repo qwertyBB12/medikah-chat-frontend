@@ -33,6 +33,16 @@ export default function Governance() {
           Built for Institutional Scrutiny
         </h2>
 
+        <p className="text-lg text-deep-charcoal leading-[1.7] text-center max-w-[900px] mx-auto mb-6">
+          Medikah&rsquo;s compliance framework was developed in consultation with healthcare
+          regulatory experts across multiple jurisdictions. Our architecture is designed
+          to withstand institutional audit from day one.
+        </p>
+
+        <p className="font-semibold text-sm text-clinical-teal uppercase tracking-[0.05em] text-center mb-10">
+          Dual-jurisdiction legal framework | HIPAA and COFEPRIS compliant | Established institutional governance
+        </p>
+
         <p className="text-lg text-deep-charcoal leading-relaxed text-center max-w-[800px] mx-auto mb-6">
           Healthcare coordination across borders requires regulatory compliance, jurisdictional
           clarity, and institutional trust. Medikah operates within established
