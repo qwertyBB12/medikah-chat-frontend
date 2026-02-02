@@ -22,7 +22,7 @@ export default function WelcomeRotator() {
     <div className="px-6 py-8 md:py-12">
       <div
         key={index}
-        className="mx-auto max-w-2xl text-center text-2xl md:text-3xl lg:text-4xl leading-snug font-heading font-light uppercase tracking-wide text-navy-900/70 animate-fadeIn"
+        className="mx-auto max-w-2xl text-center text-2xl md:text-3xl lg:text-4xl leading-snug font-light tracking-wide text-body-slate/70 animate-fadeIn"
         aria-live="polite"
       >
         {MESSAGES[index]}

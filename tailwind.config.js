@@ -7,30 +7,34 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        navy: {
-          900: "#1b2a41",
-          800: "#243650",
-          700: "#2E4260",
-          600: "#3A5070",
+        // Primary
+        'inst-blue': '#1B2A41',
+        'clinical-teal': {
+          DEFAULT: '#2C7A8C',
+          dark: '#236370',
         },
-        teal: {
-          DEFAULT: "#1a7c8b",
-          dark: "#166776",
-        },
-        cream: {
-          600: "#eddfc7",
-          500: "#f2e5d5",
-          400: "#f5ebe0",
-          300: "#fdf7ec",
-          200: "#faf6f2",
-          100: "#ffffff",
-        },
-        coral: "#ff6f61",
+        'steady-teal': '#E8F4F6',
+
+        // Neutrals
+        'deep-charcoal': '#1C1C1E',
+        'body-slate': '#4A5568',
+        'archival-grey': '#8A8D91',
+        'border-line': '#D1D5DB',
+        'clinical-surface': '#F5F6F8',
+
+        // Semantic
+        'confirm-green': '#2D7D5F',
+        'caution-amber': '#B8860B',
+        'alert-garnet': '#B83D3D',
+        'info-blue': '#3B82B6',
+
+        // Warm accent
+        'linen': '#F0EAE0',
       },
       fontFamily: {
-        sans: ['var(--font-mulish)', "sans-serif"],
-        heading: ['var(--font-oswald)', "sans-serif"],
-        body: ['var(--font-mulish)', "sans-serif"],
+        sans: ['var(--font-mulish)', 'sans-serif'],
+        body: ['var(--font-mulish)', 'sans-serif'],
+        mono: ['var(--font-mono)', 'monospace'],
       },
       borderRadius: {
         sm: '8px',

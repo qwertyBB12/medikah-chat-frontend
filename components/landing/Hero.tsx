@@ -1,45 +1,44 @@
 import Image from 'next/image';
-import { LOGO_SRC, WORDMARK_SRC } from '../../lib/assets';
+const LOGO_DARK = '/logo-BLU.png';
 
 export default function Hero() {
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center px-6 py-24 bg-navy-900 overflow-hidden">
-      {/* Subtle radial accent — echoes ecosystem hero patterns */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-teal/[0.06] blur-3xl pointer-events-none" />
-
-      <div className="relative z-10 flex flex-col items-center text-center max-w-2xl mx-auto space-y-10">
-        <Image
-          src={LOGO_SRC}
-          alt="Medikah"
-          width={100}
-          height={100}
-          priority
-          className="w-20 h-auto sm:w-24"
-        />
-        <Image
-          src={WORDMARK_SRC}
-          alt="Medikah"
-          width={220}
-          height={48}
-          priority
-          className="w-44 h-auto sm:w-56"
-        />
-
-        <div className="space-y-5 pt-6">
-          <h1 className="font-heading font-light text-2xl sm:text-3xl md:text-4xl uppercase tracking-wide text-cream-300 leading-snug">
-            Connecting patients with doctors across the Americas.
-          </h1>
-          <p className="font-body text-base text-cream-300/40 leading-relaxed">
-            Conectando pacientes con m&eacute;dicos en toda Am&eacute;rica.
-          </p>
+    <section className="relative bg-white px-6 py-24 sm:py-32 md:py-40">
+      <div className="max-w-5xl mx-auto">
+        <div className="mb-10">
+          <Image
+            src={LOGO_DARK}
+            alt="Medikah"
+            width={96}
+            height={96}
+            priority
+            className="w-20 h-auto sm:w-24"
+          />
         </div>
 
-        <div className="pt-4">
+        <h1 className="font-extrabold text-5xl sm:text-6xl md:text-7xl lg:text-8xl text-deep-charcoal leading-[1.05] mb-8">
+          Healthcare That Crosses Borders.
+          <br />
+          <span className="text-deep-charcoal/80">Care That Never Does.</span>
+        </h1>
+
+        <p className="font-semibold text-xl sm:text-2xl md:text-3xl text-body-slate leading-snug max-w-3xl mb-12">
+          Coordinating quality healthcare across the Americas&mdash;with the continuity, compliance,
+          and humanity that healthcare demands.
+        </p>
+
+        <div className="flex flex-col sm:flex-row gap-4">
           <a
             href="#early-access"
-            className="inline-block px-8 py-3.5 bg-teal text-white font-heading font-normal uppercase tracking-wider text-sm hover:bg-teal-dark transition rounded-sm"
+            className="inline-block px-8 py-4 bg-inst-blue text-white font-bold text-lg tracking-wide hover:bg-clinical-teal transition rounded-sm text-center"
           >
-            Request early access
+            Learn About Access
+          </a>
+          <a
+            href="mailto:partnerships@medikah.com"
+            className="inline-block px-8 py-4 text-clinical-teal font-bold text-lg tracking-wide border border-clinical-teal hover:bg-clinical-teal hover:text-white transition rounded-sm text-center"
+          >
+            Institutional Inquiry
           </a>
         </div>
       </div>

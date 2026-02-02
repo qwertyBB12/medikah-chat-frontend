@@ -18,17 +18,17 @@ const ITEMS = [
 
 export default function Promise() {
   return (
-    <section className="bg-cream-200 px-6 py-24 sm:py-32">
+    <section className="bg-clinical-surface px-6 py-24 sm:py-32">
       <div className="max-w-3xl mx-auto space-y-20">
         {ITEMS.map((item) => (
           <div key={item.heading} className="space-y-4">
-            <h3 className="font-heading font-normal text-xl uppercase tracking-wider text-navy-900">
+            <h3 className="font-bold text-xl tracking-wide text-deep-charcoal">
               {item.heading}
             </h3>
-            <p className="font-body text-base text-navy-900/70 leading-relaxed">
+            <p className="text-base text-body-slate leading-relaxed">
               {item.body}
             </p>
-            <p className="font-body text-sm text-navy-900/35 leading-relaxed">
+            <p className="text-sm text-archival-grey leading-relaxed">
               {item.bodyEs}
             </p>
           </div>
