@@ -217,15 +217,15 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="min-h-screen md:h-screen md:overflow-hidden flex flex-col md:flex-row bg-linen text-deep-charcoal">
+    <div className="min-h-screen md:h-screen md:overflow-hidden flex flex-col md:flex-row bg-chat-warm text-deep-charcoal">
       <Sidebar onSignOut={() => signOut()} onNewChat={handleNewChat} />
 
-      <div className="flex-1 flex flex-col bg-linen">
+      <div className="flex-1 flex flex-col bg-chat-warm">
         {/* Mobile header */}
-        <header className="md:hidden px-4 py-4 bg-inst-blue text-white">
+        <header className="md:hidden px-4 py-4 bg-gradient-to-r from-inst-blue to-[#243447] text-white">
           <div className="flex items-center justify-between">
             <Image src={LOGO_SRC} alt="Medikah" width={96} height={96} priority className="w-10 h-auto" />
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <button
                 onClick={handleNewChat}
                 className="px-3 py-2 text-xs font-semibold tracking-wide text-white/70 hover:text-white transition"
@@ -234,7 +234,7 @@ export default function ChatPage() {
               </button>
               <button
                 onClick={() => signOut()}
-                className="px-3 py-2 text-xs font-semibold tracking-wide text-white/50 border border-white/15 hover:text-white/80 transition rounded-sm"
+                className="px-3 py-2 text-xs font-semibold tracking-wide text-white/80 border border-white/20 hover:text-white hover:border-white/30 transition rounded-[8px]"
               >
                 Sign out
               </button>
@@ -248,33 +248,36 @@ export default function ChatPage() {
               <WelcomeRotator />
             </div>
           ) : (
-            <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-6 space-y-6">
-              <div className="max-w-3xl mx-auto w-full space-y-6">
+            <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-6 pb-[200px]">
+              <div className="max-w-[900px] mx-auto w-full space-y-8">
                 {messages.map((message, index) => (
-                  <div key={index} className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div
+                    key={index}
+                    className={`flex animate-messageAppear ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
                     <div
-                      className={`px-5 py-4 max-w-xl whitespace-pre-line ${
+                      className={`max-w-[700px] whitespace-pre-line transition-all duration-200 ${
                         message.sender === 'user'
-                          ? 'bg-inst-blue/10 rounded-lg'
-                          : 'bg-steady-teal rounded-lg'
+                          ? 'bg-clinical-surface border-l-[3px] border-clinical-teal px-6 py-5 rounded-[12px_12px_4px_12px] shadow-[0_1px_3px_rgba(27,42,65,0.06),0_4px_12px_rgba(44,122,140,0.04)] hover:-translate-y-px hover:shadow-[0_2px_4px_rgba(27,42,65,0.08),0_8px_16px_rgba(44,122,140,0.06)] mr-5 sm:mr-10'
+                          : 'bg-white border-l-4 border-inst-blue px-7 py-6 rounded-[12px_12px_12px_4px] shadow-[0_2px_4px_rgba(27,42,65,0.08),0_8px_20px_rgba(27,42,65,0.06)] hover:shadow-[0_3px_6px_rgba(27,42,65,0.08),0_12px_24px_rgba(27,42,65,0.06)] ml-5 sm:ml-10'
                       }`}
                     >
-                      <p className={
+                      <p className={`text-base leading-[1.7] ${
                         message.sender === 'user'
                           ? 'text-deep-charcoal'
-                          : 'text-deep-charcoal/80'
-                      }>
+                          : 'text-body-slate leading-[1.8]'
+                      }`}>
                         {message.text}
                       </p>
                       {message.actions && message.actions.length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-2">
+                        <div className="mt-4 flex flex-wrap gap-2">
                           {message.actions.map((action, actionIdx) => (
                             <a
                               key={`${action.label}-${actionIdx}`}
                               href={action.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 rounded-sm bg-clinical-teal px-4 py-2 text-xs font-semibold tracking-wide text-white transition hover:bg-clinical-teal-dark"
+                              className="inline-flex items-center gap-1 rounded-[10px] bg-clinical-teal px-5 py-2.5 text-xs font-semibold tracking-wide text-white transition-all duration-200 hover:bg-[#2A8DA0] hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(44,122,140,0.3)]"
                             >
                               {action.label}
                             </a>

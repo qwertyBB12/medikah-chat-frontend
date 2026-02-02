@@ -30,6 +30,7 @@ module.exports = {
 
         // Warm accent
         'linen': '#F0EAE0',
+        'chat-warm': '#F8F6F3',
       },
       fontFamily: {
         sans: ['var(--font-mulish)', 'sans-serif'],
@@ -47,9 +48,25 @@ module.exports = {
           "0%": { opacity: "0", transform: "translateY(4px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
+        messageAppear: {
+          "0%": { opacity: "0", transform: "translateY(10px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        welcomeFade: {
+          "0%": { opacity: "0", transform: "translateY(-10px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        typingBounce: {
+          "0%, 60%, 100%": { transform: "translateY(0)" },
+          "30%": { transform: "translateY(-8px)" },
+        },
       },
       animation: {
         fadeIn: "fadeIn 0.35s ease-out forwards",
+        messageAppear: "messageAppear 0.4s cubic-bezier(0.4, 0, 0.2, 1) backwards",
+        welcomeFade: "welcomeFade 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
+        welcomeFadeDelay: "welcomeFade 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.1s backwards",
+        typingBounce: "typingBounce 1.4s infinite ease-in-out",
       },
     },
   },

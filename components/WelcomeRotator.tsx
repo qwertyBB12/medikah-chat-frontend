@@ -19,13 +19,21 @@ export default function WelcomeRotator() {
   }, []);
 
   return (
-    <div className="px-6 py-8 md:py-12">
+    <div className="relative flex flex-col items-center justify-center min-h-[60vh] px-6 py-8 md:py-12">
+      {/* Subtle radial glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[radial-gradient(circle,rgba(44,122,140,0.03)_0%,transparent_70%)] pointer-events-none" />
+
       <div
         key={index}
-        className="mx-auto max-w-2xl text-center text-2xl md:text-3xl lg:text-4xl leading-snug font-light tracking-wide text-body-slate/70 animate-fadeIn"
+        className="relative z-10 mx-auto max-w-lg text-center"
         aria-live="polite"
       >
-        {MESSAGES[index]}
+        <p className="text-[36px] font-bold text-inst-blue leading-[1.3] tracking-[-0.01em] animate-welcomeFade">
+          {MESSAGES[index]}
+        </p>
+        <p className="text-xl font-normal text-body-slate leading-relaxed mt-4 max-w-[480px] mx-auto animate-welcomeFadeDelay">
+          Coordinating your care across borders.
+        </p>
       </div>
     </div>
   );
