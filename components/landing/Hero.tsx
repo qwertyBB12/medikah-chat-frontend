@@ -19,7 +19,7 @@ export default function Hero() {
         <h1 className="font-extrabold text-5xl sm:text-6xl md:text-7xl lg:text-[96px] leading-[1.05] tracking-[-0.025em] mb-8">
           <span className="text-clinical-teal">Healthcare That Crosses Borders.</span>
           <br />
-          <span className="text-deep-charcoal">Care That Never Does.</span>
+          <span className="text-inst-blue">Care That Never Does.</span>
         </h1>
 
         <p className="font-semibold text-xl sm:text-2xl md:text-3xl text-body-slate leading-snug max-w-3xl mb-12">
