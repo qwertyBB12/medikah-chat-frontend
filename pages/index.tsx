@@ -10,6 +10,7 @@ import Governance from '../components/landing/Governance';
 import ClosingStatement from '../components/landing/ClosingStatement';
 import Waitlist from '../components/landing/Waitlist';
 import LandingFooter from '../components/landing/LandingFooter';
+import FadeInSection from '../components/landing/FadeInSection';
 
 export default function LandingPage() {
   return (
@@ -22,20 +23,24 @@ export default function LandingPage() {
         />
       </Head>
 
+      <a href="#main-content" className="skip-to-content">
+        Skip to main content
+      </a>
+
       <Nav />
 
-      <main className="font-body pt-20">
+      <main id="main-content" className="font-body pt-20">
         <Hero />
-        <Values />
-        <WhyExists />
-        <Audiences />
-        <Architecture />
-        <CrossBorder />
-        <Governance />
+        <FadeInSection><Values /></FadeInSection>
+        <FadeInSection><WhyExists /></FadeInSection>
+        <FadeInSection><Audiences /></FadeInSection>
+        <FadeInSection><Architecture /></FadeInSection>
+        <FadeInSection><CrossBorder /></FadeInSection>
+        <FadeInSection><Governance /></FadeInSection>
         {/* Future: Medikah Institutional Research section
             (white papers, policy briefs, clinical case studies)
             attributed to "Medikah Research" — not founder narrative content */}
-        <ClosingStatement />
+        <FadeInSection><ClosingStatement /></FadeInSection>
         <Waitlist />
         <LandingFooter />
       </main>

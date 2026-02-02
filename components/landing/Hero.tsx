@@ -3,7 +3,7 @@ const LOGO_DARK = '/logo-BLU.png';
 
 export default function Hero() {
   return (
-    <section className="relative bg-white px-6 py-24 sm:py-32 md:py-40">
+    <section className="relative bg-white px-6 py-24 sm:py-32 md:py-40 overflow-hidden hero-texture">
       <div className="max-w-5xl mx-auto">
         <div className="mb-10">
           <Image
