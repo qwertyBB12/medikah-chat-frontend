@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
-const LOGO_ICON = '/logo-app-icon-teal.png';
+const LOGO_ICON = '/logo-teal.png';
 
 const LINKS = [
   { label: 'About', href: '#about' },
@@ -33,11 +33,11 @@ export default function Nav() {
         <Link href="/" className="flex items-center gap-2.5">
           <Image
             src={LOGO_ICON}
-            alt="Medikah app icon"
-            width={40}
-            height={40}
+            alt="Medikah emblem"
+            width={36}
+            height={36}
             priority
-            className="h-10 w-10 rounded-[9px]"
+            className="h-9 w-9"
           />
           <Image
             src="/medikah-wordmark-blue.png"
