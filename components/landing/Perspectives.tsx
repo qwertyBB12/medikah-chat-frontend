@@ -24,8 +24,8 @@ export default function Perspectives({ items }: Props) {
   return (
     <section className="bg-clinical-teal px-6 py-20 sm:py-28">
       <div className="max-w-5xl mx-auto">
-        <h2 className="font-extrabold text-2xl sm:text-3xl lowercase text-center mb-4 tracking-tight text-white">
-          perspectives
+        <h2 className="font-extrabold text-2xl sm:text-3xl text-center mb-4 tracking-tight text-white">
+          Perspectives
         </h2>
         <p className="font-light text-center text-white/70 mb-14 max-w-xl mx-auto">
           Curated writing and conversations from across the ecosystem.
@@ -47,7 +47,7 @@ export default function Perspectives({ items }: Props) {
                   </span>
                 )}
               </div>
-              <h3 className="font-extrabold text-base lowercase text-white leading-snug">
+              <h3 className="font-extrabold text-base text-white leading-snug">
                 {item.title}
               </h3>
               {item.narrativeOwner && (

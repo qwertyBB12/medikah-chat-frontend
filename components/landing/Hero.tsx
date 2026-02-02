@@ -16,10 +16,10 @@ export default function Hero() {
           />
         </div>
 
-        <h1 className="font-extrabold text-5xl sm:text-6xl md:text-7xl lg:text-8xl text-deep-charcoal leading-[1.05] mb-8">
-          Healthcare That Crosses Borders.
+        <h1 className="font-extrabold text-5xl sm:text-6xl md:text-7xl lg:text-8xl leading-[1.05] mb-8">
+          <span className="text-clinical-teal">Healthcare That Crosses Borders.</span>
           <br />
-          <span className="text-deep-charcoal/80">Care That Never Does.</span>
+          <span className="text-deep-charcoal">Care That Never Does.</span>
         </h1>
 
         <p className="font-semibold text-xl sm:text-2xl md:text-3xl text-body-slate leading-snug max-w-3xl mb-12">
