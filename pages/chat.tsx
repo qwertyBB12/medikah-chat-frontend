@@ -210,7 +210,7 @@ export default function ChatPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="border border-white/20 bg-inst-blue/50 px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-clinical-teal rounded-none"
-              placeholder="user@example.com"
+              placeholder="Email address"
               required
             />
           </div>
@@ -224,7 +224,7 @@ export default function ChatPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="border border-white/20 bg-inst-blue/50 px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-clinical-teal rounded-none"
-              placeholder="changeme"
+              placeholder="Password"
               required
             />
           </div>
