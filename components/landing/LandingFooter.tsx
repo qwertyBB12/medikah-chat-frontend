@@ -10,10 +10,10 @@ export default function LandingFooter() {
           </p>
           <p className="text-sm">
             <a
-              href="mailto:partnerships@medikahhealth.com"
+              href="mailto:partnerships@medikah.health"
               className="text-clinical-teal hover:text-white transition-colors"
             >
-              partnerships@medikahhealth.com
+              partnerships@medikah.health
             </a>
           </p>
         </div>

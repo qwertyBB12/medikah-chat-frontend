@@ -18,19 +18,19 @@ export default function LandingPage() {
       <Head>
         <title>Medikah — Healthcare That Crosses Borders</title>
         <meta name="description" content="Medikah coordinates quality healthcare across the Americas with continuity, compliance, and humanity." />
-        <link rel="canonical" href="https://medikahhealth.com/" />
+        <link rel="canonical" href="https://medikah.health/" />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://medikahhealth.com/" />
+        <meta property="og:url" content="https://medikah.health/" />
         <meta property="og:title" content="Medikah — Healthcare That Crosses Borders" />
         <meta property="og:description" content="Medikah coordinates quality healthcare across the Americas with continuity, compliance, and humanity." />
-        <meta property="og:image" content="https://medikahhealth.com/og-image.png" />
+        <meta property="og:image" content="https://medikah.health/og-image.png" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta property="og:site_name" content="Medikah" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Medikah — Healthcare That Crosses Borders" />
         <meta name="twitter:description" content="Medikah coordinates quality healthcare across the Americas with continuity, compliance, and humanity." />
-        <meta name="twitter:image" content="https://medikahhealth.com/og-image.png" />
+        <meta name="twitter:image" content="https://medikah.health/og-image.png" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -38,15 +38,15 @@ export default function LandingPage() {
               '@context': 'https://schema.org',
               '@type': 'MedicalOrganization',
               name: 'Medikah',
-              url: 'https://medikahhealth.com',
-              logo: 'https://medikahhealth.com/logo-app-icon.png',
+              url: 'https://medikah.health',
+              logo: 'https://medikah.health/logo-app-icon.png',
               description: 'Medikah is a HIPAA-compliant cross-border health coordination platform connecting patients across the Americas with licensed healthcare providers via secure telehealth consultations.',
               foundingDate: '2022',
               areaServed: 'Americas',
               medicalSpecialty: 'Cross-Border Healthcare Coordination',
               contactPoint: {
                 '@type': 'ContactPoint',
-                email: 'support@medikahhealth.com',
+                email: 'support@medikah.health',
                 contactType: 'customer support',
               },
               sameAs: [],

@@ -3,4 +3,4 @@ Allow: /
 Disallow: /chat
 Disallow: /api/
 
-Sitemap: https://medikahhealth.com/sitemap.xml
+Sitemap: https://medikah.health/sitemap.xml
