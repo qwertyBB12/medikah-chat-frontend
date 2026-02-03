@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { supabase } from '../../lib/supabase';
+import { sendWaitlistConfirmation } from '../../lib/email';
 
 const VALID_ROLES = ['patient', 'doctor', 'insurer', 'employer'] as const;
 
@@ -28,6 +29,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('Waitlist insert error:', error);
     return res.status(500).json({ error: 'Could not save registration' });
   }
+
+  // Send confirmation email (non-blocking)
+  sendWaitlistConfirmation(email).catch((err) => {
+    console.error('Failed to send waitlist confirmation email:', err);
+  });
 
   return res.status(201).json({ ok: true });
 }
