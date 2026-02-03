@@ -27,7 +27,7 @@ const AUDIENCES = [
     ],
     cta: {
       label: 'Schedule Institutional Consultation',
-      href: 'mailto:partnerships@medikahhealth.com',
+      href: 'mailto:partnerships@medikah.health',
     },
   },
 ];

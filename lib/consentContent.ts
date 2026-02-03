@@ -357,13 +357,13 @@ If consenting to recording, I understand:
       body: `I CONFIRM that:
 • I have had the opportunity to ask questions about this consultation
 • I have received satisfactory answers to my questions
-• I know how to contact Medikah if I have concerns: support@medikahhealth.com
-• I know how to report problems or violations: legal@medikahhealth.com
+• I know how to contact Medikah if I have concerns: support@medikah.health
+• I know how to report problems or violations: legal@medikah.health
 
 I UNDERSTAND that I can contact:
-• Medikah Support: support@medikahhealth.com (platform and account questions)
-• Medikah Legal: legal@medikahhealth.com (violations or legal concerns)
-• Medikah Privacy: privacy@medikahhealth.com (privacy and data questions)`,
+• Medikah Support: support@medikah.health (platform and account questions)
+• Medikah Legal: legal@medikah.health (violations or legal concerns)
+• Medikah Privacy: privacy@medikah.health (privacy and data questions)`,
     },
   ],
   es: [
@@ -673,13 +673,13 @@ Si consiento la grabación, entiendo que:
       body: `CONFIRMO que:
 • He tenido la oportunidad de hacer preguntas sobre esta consulta
 • He recibido respuestas satisfactorias a mis preguntas
-• Sé cómo contactar a Medikah si tengo inquietudes: support@medikahhealth.com
-• Sé cómo reportar problemas o violaciones: legal@medikahhealth.com
+• Sé cómo contactar a Medikah si tengo inquietudes: support@medikah.health
+• Sé cómo reportar problemas o violaciones: legal@medikah.health
 
 ENTIENDO que puedo contactar:
-• Soporte de Medikah: support@medikahhealth.com (preguntas sobre la plataforma y cuenta)
-• Legal de Medikah: legal@medikahhealth.com (violaciones o inquietudes legales)
-• Privacidad de Medikah: privacy@medikahhealth.com (preguntas sobre privacidad y datos)`,
+• Soporte de Medikah: support@medikah.health (preguntas sobre la plataforma y cuenta)
+• Legal de Medikah: legal@medikah.health (violaciones o inquietudes legales)
+• Privacidad de Medikah: privacy@medikah.health (preguntas sobre privacidad y datos)`,
     },
   ],
 };

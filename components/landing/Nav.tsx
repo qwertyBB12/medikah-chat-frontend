@@ -8,7 +8,7 @@ const LINKS = [
   { label: 'About', href: '#about' },
   { label: 'How It Works', href: '#architecture' },
   { label: 'Access', href: '#early-access' },
-  { label: 'Contact', href: 'mailto:partnerships@medikahhealth.com' },
+  { label: 'Contact', href: 'mailto:partnerships@medikah.health' },
 ];
 
 export default function Nav() {
