@@ -21,13 +21,16 @@ export default function Values() {
           What We Believe
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {VALUES.map((item) => (
-            <div key={item.title} className="space-y-4 text-center">
-              <h3 className="font-extrabold text-2xl text-clinical-teal">
+            <div
+              key={item.title}
+              className="bg-white shadow-[0_1px_3px_rgba(27,42,65,0.06),0_8px_24px_rgba(27,42,65,0.04)] rounded-[12px] p-8 sm:p-10"
+            >
+              <h3 className="font-extrabold text-3xl text-clinical-teal mb-4">
                 {item.title}
               </h3>
-              <p className="text-lg text-body-slate leading-relaxed text-left">
+              <p className="text-lg text-body-slate leading-relaxed">
                 {item.body}
               </p>
             </div>
