@@ -1,7 +1,7 @@
 const VALUES = [
   {
     title: 'Continuity',
-    body: 'Your medical history shouldn\u2019t stop at a border. Your relationship with your physician shouldn\u2019t end because you moved. Healthcare requires continuity\u2014across cities, countries, contexts. Medikah coordinates medical records, provider relationships, and patient histories across jurisdictions. Your care narrative remains unbroken.',
+    body: 'Your relationship with your physician shouldn\u2019t end because you crossed a border. Healthcare requires continuity\u2014across cities, countries, contexts. We believe coordination between providers restores the humanity and compassion that fragmented systems have lost. Your care narrative should remain unbroken.',
   },
   {
     title: 'Access',
@@ -17,8 +17,8 @@ export default function Values() {
   return (
     <section className="bg-gradient-to-b from-white via-clinical-surface to-white px-6 py-24 sm:py-[100px]">
       <div className="max-w-6xl mx-auto">
-        <h2 className="font-extrabold text-4xl md:text-[56px] text-inst-blue text-center mb-16 leading-[1.15] tracking-[-0.01em]">
-          Healthcare Requires Three Things Most Systems Don&rsquo;t Provide
+        <h2 className="font-bold text-3xl md:text-5xl text-inst-blue text-center mb-16 leading-[1.15] tracking-[0.04em] uppercase">
+          What We Believe
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-10">
