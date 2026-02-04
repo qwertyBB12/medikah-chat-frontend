@@ -34,7 +34,7 @@ export default function Governance() {
         </h2>
 
         <p className="text-lg text-white/90 leading-[1.7] text-center max-w-[900px] mx-auto mb-6">
-          Medikah&rsquo;s compliance framework was developed in consultation with healthcare
+          Medikah&rsquo;s compliance framework was developed in consultation with
           regulatory experts across multiple jurisdictions. Our architecture is designed
           to withstand institutional audit from day one.
         </p>
@@ -44,7 +44,7 @@ export default function Governance() {
         </p>
 
         <p className="text-lg text-white/90 leading-relaxed text-center max-w-[800px] mx-auto mb-6">
-          Healthcare coordination across borders requires regulatory compliance, jurisdictional
+          Coordination across borders requires regulatory compliance, jurisdictional
           clarity, and institutional trust. Medikah operates within established
           frameworks&mdash;HIPAA, local medical licensing, bilateral agreements, and privacy
           standards.

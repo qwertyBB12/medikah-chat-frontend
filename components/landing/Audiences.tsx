@@ -1,11 +1,11 @@
 const AUDIENCES = [
   {
-    headline: 'Healthcare Coordination That Follows You',
+    headline: 'Coordination That Follows You',
     label: 'For Patients',
     body: [
-      'Whether you live between countries, seek specialized care across borders, or need access to physicians in other jurisdictions\u2014Medikah coordinates your healthcare journey with institutional rigor and human attention.',
+      'Whether you live between countries, seek specialized care across borders, or need access to physicians in other jurisdictions\u2014Medikah coordinates your journey with institutional rigor and human attention.',
       'Our platform connects you with licensed physicians across the Americas for informational consultations about your health needs. Medical care happens in-person, in the provider\u2019s licensed jurisdiction, with full regulatory compliance and complete documentation.',
-      'Your medical history travels with you. Your physicians collaborate across jurisdictions. Your care happens compliantly, continuously. Bilingual support at every step. Designed for real lives, not insurance categories.',
+      'Your physicians collaborate across jurisdictions. Your care happens compliantly, continuously. Bilingual support at every step. Designed for real lives, not insurance categories.',
     ],
     cta: {
       label: 'Learn About Patient Access',

@@ -2,7 +2,7 @@ const PORTALS = [
   {
     title: 'Patient Coordination',
     description:
-      'Connect with physicians across borders. Medical history travels with you. Continuity maintained across jurisdictions.',
+      'Connect with physicians across borders. Continuity maintained across jurisdictions.',
     featured: true,
   },
   {
@@ -35,7 +35,7 @@ export default function Architecture() {
 
         <p className="text-xl text-body-slate leading-[1.7] text-center max-w-[900px] mx-auto mb-16">
           Medikah coordinates care through institutional interfaces, each serving
-          healthcare coordination needs while maintaining regulatory compliance.
+          coordination needs while maintaining regulatory compliance.
         </p>
 
         {/* Featured card — full width */}

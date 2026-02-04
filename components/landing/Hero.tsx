@@ -26,7 +26,7 @@ export default function Hero() {
         </h1>
 
         <p className="font-medium text-lg sm:text-xl md:text-[22px] text-body-slate leading-relaxed max-w-3xl mb-5">
-          The Americas function as one healthcare theater&mdash;but healthcare systems
+          The Americas function as one medical theater&mdash;but systems
           remain divided by borders that families and physicians routinely cross.
         </p>
 

@@ -3,7 +3,7 @@ export default function WhyExists() {
     <section id="about" className="bg-white px-6 py-24 sm:py-[100px]">
       <div className="max-w-[900px] mx-auto">
         <h2 className="font-extrabold text-4xl md:text-[56px] text-inst-blue text-center mb-12 leading-[1.15] tracking-[-0.01em]">
-          The Americas Are Already One Healthcare Theater
+          The Americas Are Already One Medical Theater
         </h2>
 
         <div className="space-y-6">
@@ -15,7 +15,7 @@ export default function WhyExists() {
           </p>
 
           <p className="text-lg text-body-slate leading-[1.7]">
-            The healthcare reality is hemispheric.
+            The medical reality is hemispheric.
             The infrastructure isn&rsquo;t.
           </p>
 
