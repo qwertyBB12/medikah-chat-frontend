@@ -16,36 +16,32 @@ export default function Hero() {
           />
         </div>
 
-        <h1 className="font-extrabold text-4xl sm:text-5xl md:text-6xl lg:text-[80px] leading-[1.1] tracking-[-0.02em] mb-10 uppercase">
-          <span className="text-clinical-teal block animate-[fadeInUp_0.8s_ease-out_both]">
-            Connect With Physicians Across Borders.
-          </span>
-          <span className="text-inst-blue block animate-[fadeInUp_0.8s_ease-out_0.15s_both]">
-            Receive Care Where They&rsquo;re Licensed.
-          </span>
+        <h1 className="font-extrabold text-5xl sm:text-6xl md:text-7xl lg:text-[96px] leading-[1.05] tracking-[-0.025em] mb-8">
+          <span className="text-clinical-teal">Connect With Physicians Across Borders.</span>
+          <br />
+          <span className="text-inst-blue">Receive Care Where They&rsquo;re Licensed.</span>
         </h1>
 
-        <div className="max-w-3xl mb-12 space-y-5 animate-[fadeInUp_0.8s_ease-out_0.3s_both]">
-          <p className="font-semibold text-lg sm:text-xl md:text-2xl text-body-slate leading-relaxed">
-            The Americas function as one healthcare theater&mdash;but healthcare systems
-            remain divided by borders that families and physicians routinely cross.
-          </p>
-          <p className="font-semibold text-lg sm:text-xl md:text-2xl text-body-slate leading-relaxed">
-            Medikah provides the coordination infrastructure these realities require.
-            Not as innovation. As institutional necessity.
-          </p>
-        </div>
+        <p className="font-semibold text-xl sm:text-2xl md:text-3xl text-body-slate leading-snug max-w-3xl mb-6">
+          The Americas function as one healthcare theater&mdash;but healthcare systems
+          remain divided by borders that families and physicians routinely cross.
+        </p>
 
-        <div className="flex flex-col sm:flex-row gap-4 animate-[fadeInUp_0.8s_ease-out_0.45s_both]">
+        <p className="font-semibold text-xl sm:text-2xl md:text-3xl text-body-slate leading-snug max-w-3xl mb-12">
+          Medikah provides the coordination infrastructure these realities require.
+          Not as innovation. As institutional necessity.
+        </p>
+
+        <div className="flex flex-col sm:flex-row gap-4">
           <a
             href="#early-access"
-            className="inline-block px-8 py-4 bg-inst-blue text-white font-bold text-lg tracking-wide hover:bg-clinical-teal hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 rounded-sm text-center"
+            className="inline-block px-8 py-4 bg-inst-blue text-white font-bold text-lg tracking-wide hover:bg-clinical-teal transition rounded-sm text-center"
           >
             Begin Coordination
           </a>
           <a
             href="mailto:partnerships@medikah.health"
-            className="inline-block px-8 py-4 text-clinical-teal font-bold text-lg tracking-wide border-2 border-clinical-teal hover:bg-clinical-teal hover:text-white hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 rounded-sm text-center"
+            className="inline-block px-8 py-4 text-clinical-teal font-bold text-lg tracking-wide border border-clinical-teal hover:bg-clinical-teal hover:text-white transition rounded-sm text-center"
           >
             Institutional Partnerships
           </a>

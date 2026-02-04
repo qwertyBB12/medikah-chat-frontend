@@ -17,21 +17,17 @@ export default function Values() {
   return (
     <section className="bg-gradient-to-b from-white via-clinical-surface to-white px-6 py-24 sm:py-[100px]">
       <div className="max-w-6xl mx-auto">
-        <h2 className="font-extrabold text-3xl md:text-5xl lg:text-[56px] text-inst-blue text-center mb-16 leading-[1.15] tracking-[-0.01em]">
+        <h2 className="font-extrabold text-4xl md:text-[56px] text-inst-blue text-center mb-16 leading-[1.15] tracking-[-0.01em]">
           Healthcare Requires Three Things Most Systems Don&rsquo;t Provide
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-10">
-          {VALUES.map((item, index) => (
-            <div
-              key={item.title}
-              className="space-y-4 p-8 bg-white rounded-[12px] shadow-[0_1px_3px_rgba(27,42,65,0.06),0_8px_24px_rgba(27,42,65,0.04)] hover:shadow-[0_4px_8px_rgba(27,42,65,0.08),0_16px_32px_rgba(27,42,65,0.06)] transition-shadow duration-300"
-              style={{ animationDelay: `${index * 0.1}s` }}
-            >
-              <h3 className="font-extrabold text-2xl text-clinical-teal uppercase tracking-wide">
+          {VALUES.map((item) => (
+            <div key={item.title} className="space-y-4">
+              <h3 className="font-extrabold text-2xl text-clinical-teal">
                 {item.title}
               </h3>
-              <p className="text-base text-body-slate leading-relaxed">
+              <p className="text-lg text-body-slate leading-relaxed">
                 {item.body}
               </p>
             </div>
