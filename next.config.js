@@ -16,7 +16,7 @@ const nextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://*.onrender.com https://fo6n8ceo.apicdn.sanity.io https://fo6n8ceo.api.sanity.io https://www.google-analytics.com https://*.sentry.io; frame-ancestors 'none';",
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.googletagmanager.com https://*.google-analytics.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://*.onrender.com https://fo6n8ceo.apicdn.sanity.io https://fo6n8ceo.api.sanity.io https://*.google-analytics.com https://*.analytics.google.com https://*.sentry.io; frame-ancestors 'none';",
           },
         ],
       },
