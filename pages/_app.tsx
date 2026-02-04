@@ -8,8 +8,9 @@ import '../styles/globals.css';
 function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
   const router = useRouter();
 
-  // Initialize analytics on mount
+  // Mark that JS is enabled and initialize analytics
   useEffect(() => {
+    document.body.classList.add('js-enabled');
     initGA();
   }, []);
 
