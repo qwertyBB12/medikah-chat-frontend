@@ -8,6 +8,7 @@ import Architecture from '../components/landing/Architecture';
 import CrossBorder from '../components/landing/CrossBorder';
 import Governance from '../components/landing/Governance';
 import ClosingStatement from '../components/landing/ClosingStatement';
+import RegulatoryDisclosure from '../components/landing/RegulatoryDisclosure';
 import Waitlist from '../components/landing/Waitlist';
 import LandingFooter from '../components/landing/LandingFooter';
 import FadeInSection from '../components/landing/FadeInSection';
@@ -16,20 +17,20 @@ export default function LandingPage() {
   return (
     <>
       <Head>
-        <title>Medikah — Healthcare That Crosses Borders</title>
-        <meta name="description" content="Medikah coordinates quality healthcare across the Americas with continuity, compliance, and humanity." />
+        <title>Medikah — Connect With Physicians Across Borders</title>
+        <meta name="description" content="Medikah coordinates healthcare across the Americas with continuity, compliance, and institutional rigor." />
         <link rel="canonical" href="https://medikah.health/" />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://medikah.health/" />
-        <meta property="og:title" content="Medikah — Healthcare That Crosses Borders" />
-        <meta property="og:description" content="Medikah coordinates quality healthcare across the Americas with continuity, compliance, and humanity." />
+        <meta property="og:title" content="Medikah — Connect With Physicians Across Borders" />
+        <meta property="og:description" content="Medikah coordinates healthcare across the Americas with continuity, compliance, and institutional rigor." />
         <meta property="og:image" content="https://medikah.health/og-image.png" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta property="og:site_name" content="Medikah" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Medikah — Healthcare That Crosses Borders" />
-        <meta name="twitter:description" content="Medikah coordinates quality healthcare across the Americas with continuity, compliance, and humanity." />
+        <meta name="twitter:title" content="Medikah — Connect With Physicians Across Borders" />
+        <meta name="twitter:description" content="Medikah coordinates healthcare across the Americas with continuity, compliance, and institutional rigor." />
         <meta name="twitter:image" content="https://medikah.health/og-image.png" />
         <script
           type="application/ld+json"
@@ -73,6 +74,7 @@ export default function LandingPage() {
             (white papers, policy briefs, clinical case studies)
             attributed to "Medikah Research" — not founder narrative content */}
         <FadeInSection><ClosingStatement /></FadeInSection>
+        <RegulatoryDisclosure />
         <Waitlist />
         <LandingFooter />
       </main>
