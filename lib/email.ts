@@ -65,16 +65,15 @@ export const templates = {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="margin: 0; padding: 0; background-color: #FAFAFB; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+<body style="margin: 0; padding: 0; background-color: #FAFAFB; font-family: 'Mulish', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #FAFAFB; padding: 40px 20px;">
     <tr>
       <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-          <!-- Header -->
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(27,42,65,0.08);">
+          <!-- Header with inst-blue background and white text -->
           <tr>
-            <td style="background-color: #1B2A41; padding: 32px; text-align: center;">
-              <img src="https://medikah.health/logo-app-icon.png" alt="Medikah" width="48" height="48" style="border-radius: 10px;">
-              <h1 style="color: #ffffff; font-size: 24px; margin: 16px 0 0 0; font-weight: 600;">Medikah</h1>
+            <td style="background-color: #1B2A41; padding: 44px 32px; text-align: center;">
+              <p style="font-family: 'Mulish', -apple-system, BlinkMacSystemFont, sans-serif; font-size: 32px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.01em; margin: 0;">medikah</p>
             </td>
           </tr>
 
@@ -94,12 +93,15 @@ export const templates = {
             </td>
           </tr>
 
-          <!-- Footer -->
+          <!-- Footer with inst-blue -->
           <tr>
-            <td style="background-color: #F7F8FA; padding: 24px 32px; border-top: 1px solid #E2E8F0;">
-              <p style="color: #718096; font-size: 13px; line-height: 1.5; margin: 0; text-align: center;">
-                Medikah Health<br>
-                <a href="https://medikah.health/privacy" style="color: #2C7A8C; text-decoration: none;">Privacy Policy</a> ·
+            <td style="background-color: #1B2A41; padding: 28px 32px; text-align: center;">
+              <p style="color: rgba(255,255,255,0.6); font-size: 13px; line-height: 1.5; margin: 0 0 12px 0;">
+                Medikah Corporation · Incorporated in Delaware, USA
+              </p>
+              <p style="font-size: 13px; margin: 0;">
+                <a href="https://medikah.health/privacy" style="color: #2C7A8C; text-decoration: none;">Privacy Policy</a>
+                <span style="color: rgba(255,255,255,0.3); margin: 0 8px;">|</span>
                 <a href="https://medikah.health/terms" style="color: #2C7A8C; text-decoration: none;">Terms of Service</a>
               </p>
             </td>
