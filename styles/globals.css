@@ -142,8 +142,9 @@
   z-index: 1;
 }
 
-/* Smooth scroll — scoped to landing page via has() */
-html:has(.landing-sections) {
+/* Smooth scroll — only for anchor links within landing page */
+/* Disabled globally to prevent unwanted scroll on navigation */
+.landing-sections {
   scroll-behavior: smooth;
 }
 
