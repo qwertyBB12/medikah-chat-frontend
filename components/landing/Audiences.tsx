@@ -52,17 +52,17 @@ export default function Audiences() {
           {AUDIENCES.map((audience) => (
             <div
               key={audience.label}
-              className="bg-white shadow-[0_1px_3px_rgba(27,42,65,0.06),0_8px_24px_rgba(27,42,65,0.04)] rounded-[12px] p-8 sm:p-12"
+              className="bg-white shadow-[0_1px_3px_rgba(27,42,65,0.06),0_8px_24px_rgba(27,42,65,0.04)] hover:shadow-[0_4px_8px_rgba(27,42,65,0.08),0_16px_40px_rgba(27,42,65,0.08)] rounded-[12px] p-8 sm:p-12 transition-shadow duration-300"
             >
-              <p className="text-[13px] font-bold uppercase tracking-[0.1em] text-archival-grey mb-3">
+              <p className="text-[13px] font-bold uppercase tracking-[0.15em] text-clinical-teal mb-3">
                 {audience.label}
               </p>
-              <h3 className="font-extrabold text-3xl text-clinical-teal mb-6">
+              <h3 className="font-extrabold text-2xl sm:text-3xl text-inst-blue mb-6 uppercase tracking-wide">
                 {audience.headline}
               </h3>
               <div className="max-w-[700px] space-y-5">
                 {audience.body.map((paragraph, i) => (
-                  <p key={i} className="text-lg text-body-slate leading-relaxed">
+                  <p key={i} className="text-base text-body-slate leading-relaxed">
                     {paragraph}
                   </p>
                 ))}
@@ -71,7 +71,7 @@ export default function Audiences() {
                 <div className="mt-8">
                   <a
                     href={audience.cta.href}
-                    className="inline-block px-7 py-3.5 bg-inst-blue text-white font-bold tracking-wide text-sm hover:bg-clinical-teal transition rounded-sm"
+                    className="inline-block px-7 py-3.5 bg-inst-blue text-white font-bold tracking-wide text-sm hover:bg-clinical-teal hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 rounded-sm"
                   >
                     {audience.cta.label}
                   </a>
