@@ -17,9 +17,7 @@ export default function RegulatoryDisclosure() {
               </h3>
               <div className="space-y-4 text-body-slate text-base leading-relaxed">
                 <p>
-                  Medikah is a HIPAA-compliant technology platform. We provide video
-                  conferencing, scheduling, billing, and coordination services to connect
-                  patients with independent, licensed healthcare providers.
+                  Medikah is a HIPAA-compliant technology platform.
                 </p>
                 <p>
                   <strong className="text-deep-charcoal">We are not healthcare providers.</strong> We do not employ or supervise physicians.
