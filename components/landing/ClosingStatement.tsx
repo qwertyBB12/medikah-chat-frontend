@@ -2,7 +2,7 @@ export default function ClosingStatement() {
   return (
     <section className="bg-inst-blue px-6 py-20 sm:py-24">
       <div className="max-w-[800px] mx-auto text-center">
-        <p className="font-bold text-2xl sm:text-3xl md:text-[36px] text-white leading-[1.2] tracking-[-0.01em] mb-8">
+        <p className="font-extrabold text-4xl sm:text-5xl md:text-[56px] lg:text-[64px] text-white leading-[1.1] tracking-[-0.01em] mb-8">
           Care is too important to remain fragmented.
           <br className="hidden sm:block" />
           The Americas are too connected to leave care divided.
