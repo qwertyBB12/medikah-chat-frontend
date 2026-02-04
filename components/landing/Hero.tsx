@@ -17,7 +17,7 @@ export default function Hero() {
         </div>
 
         <h1 className="font-extrabold text-5xl sm:text-6xl md:text-7xl lg:text-[96px] leading-[1.05] tracking-[-0.025em] mb-8">
-          <span className="text-clinical-teal">Connect With Physicians Across Borders.</span>
+          <span className="text-clinical-teal uppercase">Connect With Physicians Across Borders.</span>
           <br />
           <span className="text-inst-blue">Receive Care Where They&rsquo;re Licensed.</span>
         </h1>
