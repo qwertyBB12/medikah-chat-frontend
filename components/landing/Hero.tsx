@@ -16,21 +16,21 @@ export default function Hero() {
           />
         </div>
 
-        <h1 className="font-black text-4xl sm:text-5xl md:text-[56px] lg:text-[64px] leading-[1.1] mb-10">
-          <span className="text-clinical-teal uppercase tracking-[0.04em] block mb-2">
+        <h1 className="font-extrabold text-5xl sm:text-6xl md:text-7xl lg:text-[96px] leading-[1.05] tracking-[-0.025em] mb-8">
+          <span className="text-clinical-teal uppercase block">
             Connect With Physicians Across Borders.
           </span>
-          <span className="text-inst-blue tracking-[-0.02em] block">
+          <span className="text-inst-blue block">
             Receive Care Where They&rsquo;re Licensed.
           </span>
         </h1>
 
-        <p className="font-medium text-lg sm:text-xl md:text-[22px] text-body-slate leading-relaxed max-w-3xl mb-5">
+        <p className="font-semibold text-xl sm:text-2xl md:text-3xl text-body-slate leading-snug max-w-3xl mb-6">
           The Americas function as one medical theater&mdash;but systems
           remain divided by borders that families and physicians routinely cross.
         </p>
 
-        <p className="font-medium text-lg sm:text-xl md:text-[22px] text-body-slate leading-relaxed max-w-3xl mb-12">
+        <p className="font-semibold text-xl sm:text-2xl md:text-3xl text-body-slate leading-snug max-w-3xl mb-12">
           Medikah provides the coordination infrastructure these realities require.
           Not as innovation. As institutional necessity.
         </p>
