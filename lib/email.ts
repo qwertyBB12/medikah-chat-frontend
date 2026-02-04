@@ -69,11 +69,11 @@ export const templates = {
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #FAFAFB; padding: 40px 20px;">
     <tr>
       <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(27,42,65,0.08);">
-          <!-- Header with inst-blue background and white text -->
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden;">
+          <!-- Header - light design with blue accent bar -->
           <tr>
-            <td style="background-color: #1B2A41; padding: 44px 32px; text-align: center;">
-              <p style="font-family: 'Mulish', -apple-system, BlinkMacSystemFont, sans-serif; font-size: 32px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.01em; margin: 0;">medikah</p>
+            <td style="background-color: #FFFFFF; padding: 32px; text-align: center; border-bottom: 4px solid #1B2A41;">
+              <p style="font-family: 'Mulish', -apple-system, BlinkMacSystemFont, sans-serif; font-size: 32px; font-weight: 800; color: #1B2A41; letter-spacing: -0.01em; margin: 0;">medikah</p>
             </td>
           </tr>
 
@@ -93,16 +93,16 @@ export const templates = {
             </td>
           </tr>
 
-          <!-- Footer with inst-blue -->
+          <!-- Footer - light with blue accent -->
           <tr>
-            <td style="background-color: #1B2A41; padding: 28px 32px; text-align: center;">
-              <p style="color: rgba(255,255,255,0.6); font-size: 13px; line-height: 1.5; margin: 0 0 12px 0;">
+            <td style="background-color: #F5F7F8; padding: 24px 32px; text-align: center; border-top: 4px solid #1B2A41;">
+              <p style="color: #9CA3AF; font-size: 13px; line-height: 1.5; margin: 0 0 12px 0;">
                 Medikah Corporation · Incorporated in Delaware, USA
               </p>
               <p style="font-size: 13px; margin: 0;">
-                <a href="https://medikah.health/privacy" style="color: #2C7A8C; text-decoration: none;">Privacy Policy</a>
-                <span style="color: rgba(255,255,255,0.3); margin: 0 8px;">|</span>
-                <a href="https://medikah.health/terms" style="color: #2C7A8C; text-decoration: none;">Terms of Service</a>
+                <a href="https://medikah.health/privacy" style="color: #1B2A41; text-decoration: none; font-weight: 600;">Privacy Policy</a>
+                <span style="color: #D1D5DB; margin: 0 8px;">|</span>
+                <a href="https://medikah.health/terms" style="color: #1B2A41; text-decoration: none; font-weight: 600;">Terms of Service</a>
               </p>
             </td>
           </tr>
