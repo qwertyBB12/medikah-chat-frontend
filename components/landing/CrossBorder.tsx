@@ -3,13 +3,13 @@ export default function CrossBorder() {
     <section className="bg-white px-6 py-24 sm:py-32 overflow-hidden">
       <div className="max-w-5xl mx-auto">
         <h2 className="font-extrabold text-4xl md:text-[56px] text-inst-blue text-center mb-8 leading-[1.15] tracking-[-0.01em]">
-          The Americas Are Already One Healthcare Theater
+          The Americas Are Already One Medical Theater
         </h2>
 
         <p className="text-lg text-body-slate leading-relaxed text-center max-w-[900px] mx-auto mb-16">
           Patients already live across borders. Families span multiple countries. Physicians trained
           in one nation practice in another. Insurers operate multinational employer groups. The
-          healthcare reality is hemispheric&mdash;but the infrastructure isn&rsquo;t.
+          medical reality is hemispheric&mdash;but the infrastructure isn&rsquo;t.
         </p>
 
         <p className="text-lg text-body-slate leading-relaxed text-center max-w-[900px] mx-auto mb-20">

@@ -3,7 +3,7 @@ export default function ClosingStatement() {
     <section className="bg-inst-blue px-6 py-24 sm:py-32">
       <div className="max-w-[900px] mx-auto text-center">
         <p className="font-extrabold text-4xl md:text-[56px] text-white leading-[1.15] tracking-[-0.01em] mb-12">
-          Healthcare is too important to remain fragmented.
+          Care is too important to remain fragmented.
           <br className="hidden sm:block" />
           The Americas are too connected to leave care divided.
         </p>
