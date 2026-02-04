@@ -1,21 +1,29 @@
 const AUDIENCES = [
   {
-    headline: 'Care That Follows You',
+    headline: 'Healthcare Coordination That Follows You',
     label: 'For Patients',
     body: [
-      'Whether you live between countries, seek second opinions across borders, or need specialized care beyond your local system\u2014Medikah coordinates your care with institutional rigor and human attention.',
-      'Your medical history travels with you. Your coverage is transparent. Your physicians collaborate across jurisdictions. And when you need care, you receive it\u2014compliantly, affordably, continuously.',
-      'Bilingual at every step. Coordinated across systems. Designed for real lives, not insurance categories.',
+      'Whether you live between countries, seek specialized care across borders, or need access to physicians in other jurisdictions\u2014Medikah coordinates your healthcare journey with institutional rigor and human attention.',
+      'Our platform connects you with licensed physicians across the Americas for informational consultations about your health needs. Medical care happens in-person, in the provider\u2019s licensed jurisdiction, with full regulatory compliance and complete documentation.',
+      'Your medical history travels with you. Your physicians collaborate across jurisdictions. Your care happens compliantly, continuously. Bilingual support at every step. Designed for real lives, not insurance categories.',
     ],
+    cta: {
+      label: 'Learn About Patient Access',
+      href: '#early-access',
+    },
   },
   {
-    headline: 'Practice Across Borders, Compliantly',
+    headline: 'Consult Across Borders. Deliver Care In-Person.',
     label: 'For Physicians',
     body: [
-      'Your expertise doesn\u2019t stop at national borders\u2014your practice shouldn\u2019t either. Medikah enables cross-border care delivery within clear regulatory and credentialing frameworks.',
-      'See patients throughout the Americas. Maintain longitudinal relationships. Coordinate with institutions transparently. Practice medicine as it should be\u2014focused on patient outcomes, not jurisdictional bureaucracy.',
-      'Credentialed networks. Licensing clarity. Institutional support.',
+      'Your expertise doesn\u2019t end at national borders. Neither should your patient relationships. Medikah enables cross-border patient consultation within clear regulatory and credentialing frameworks.',
+      'Consult with patients across borders within compliant frameworks. Maintain longitudinal relationships regardless of where patients live. Coordinate seamlessly with referring physicians and specialists. Video consultations are informational and planning-focused. Medical diagnosis and treatment happen in-person, in your licensed jurisdiction.',
+      'No regulatory gray zones. No jurisdictional ambiguity. Practice medicine as it should be\u2014focused on patient outcomes, not jurisdictional bureaucracy.',
     ],
+    cta: {
+      label: 'Schedule Physician Onboarding Call',
+      href: 'mailto:partnerships@medikah.health',
+    },
   },
   {
     headline: 'Coordination Infrastructure That Works',

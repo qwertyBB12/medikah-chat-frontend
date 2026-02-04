@@ -8,14 +8,32 @@ export default function LandingFooter() {
           <p className="font-semibold text-[15px] text-white leading-relaxed mb-4">
             Medikah Corporation · Incorporated in Delaware, USA
           </p>
-          <p className="text-sm">
-            <a
-              href="mailto:partnerships@medikah.health"
-              className="text-clinical-teal hover:text-white transition-colors"
-            >
-              partnerships@medikah.health
-            </a>
-          </p>
+          <div className="text-sm space-y-1">
+            <p>
+              <a
+                href="mailto:partnerships@medikah.health"
+                className="text-clinical-teal hover:text-white transition-colors"
+              >
+                partnerships@medikah.health
+              </a>
+            </p>
+            <p>
+              <a
+                href="mailto:support@medikah.health"
+                className="text-clinical-teal hover:text-white transition-colors"
+              >
+                support@medikah.health
+              </a>
+            </p>
+            <p>
+              <a
+                href="mailto:legal@medikah.health"
+                className="text-clinical-teal hover:text-white transition-colors"
+              >
+                legal@medikah.health
+              </a>
+            </p>
+          </div>
         </div>
 
         <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
