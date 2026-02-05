@@ -196,8 +196,8 @@ export default function ChatPage() {
 
   if (!session) {
     const loginPanel = showLoginForm ? (
-      <div className="bg-inst-blue/80 rounded-sm p-6 space-y-5 text-white">
-        <h3 className="text-base font-bold tracking-wide">
+      <div className="font-dm-sans bg-inst-blue/80 rounded-sm p-6 space-y-5 text-white">
+        <h3 className="text-base font-semibold tracking-wide">
           {portalSelection === 'patient' ? 'Patient sign in' : 'Doctor sign in'}
         </h3>
         <form onSubmit={handleSignIn} className="space-y-4">
@@ -210,7 +210,7 @@ export default function ChatPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="border border-white/20 bg-inst-blue/50 px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-clinical-teal rounded-none"
+              className="font-dm-sans border border-white/20 bg-inst-blue/50 px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-clinical-teal rounded-none"
               placeholder="Email address"
               required
             />
@@ -224,19 +224,19 @@ export default function ChatPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="border border-white/20 bg-inst-blue/50 px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-clinical-teal rounded-none"
+              className="font-dm-sans border border-white/20 bg-inst-blue/50 px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-clinical-teal rounded-none"
               placeholder="Password"
               required
             />
           </div>
           {loginError && (
-            <p className="text-sm text-alert-garnet bg-alert-garnet/10 border border-alert-garnet/20 px-3 py-2 text-center rounded-sm">
+            <p className="font-dm-sans text-sm text-alert-garnet bg-alert-garnet/10 border border-alert-garnet/20 px-3 py-2 text-center rounded-sm">
               {loginError}
             </p>
           )}
           <button
             type="submit"
-            className="w-full px-4 py-3 font-bold tracking-wide text-sm bg-inst-blue text-white border border-white/20 hover:bg-clinical-teal hover:border-clinical-teal transition rounded-sm disabled:opacity-50"
+            className="font-dm-sans w-full px-4 py-3 font-semibold tracking-wide text-sm bg-inst-blue text-white border border-white/20 hover:bg-clinical-teal hover:border-clinical-teal transition rounded-sm disabled:opacity-50"
             disabled={isSubmitting}
           >
             {isSubmitting ? 'Signing in\u2026' : 'Sign in'}
@@ -282,13 +282,13 @@ export default function ChatPage() {
             <div className="flex items-center gap-3">
               <button
                 onClick={handleNewChat}
-                className="px-3 py-2 text-xs font-semibold tracking-wide text-white/70 hover:text-white transition"
+                className="font-dm-sans px-3 py-2 text-xs font-semibold tracking-wide text-white/70 hover:text-white transition"
               >
                 New chat
               </button>
               <button
                 onClick={() => signOut()}
-                className="px-3 py-2 text-xs font-semibold tracking-wide text-white/80 border border-white/20 hover:text-white hover:border-white/30 transition rounded-[8px]"
+                className="font-dm-sans px-3 py-2 text-xs font-semibold tracking-wide text-white/80 border border-white/20 hover:text-white hover:border-white/30 transition rounded-[8px]"
               >
                 Sign out
               </button>
@@ -316,7 +316,7 @@ export default function ChatPage() {
                           : 'bg-white border-l-4 border-inst-blue px-7 py-6 rounded-[12px_12px_12px_4px] shadow-[0_2px_4px_rgba(27,42,65,0.08),0_8px_20px_rgba(27,42,65,0.06)] hover:shadow-[0_3px_6px_rgba(27,42,65,0.08),0_12px_24px_rgba(27,42,65,0.06)] ml-5 sm:ml-10'
                       }`}
                     >
-                      <p className={`text-base leading-[1.7] ${
+                      <p className={`font-dm-sans text-base leading-[1.7] ${
                         message.sender === 'user'
                           ? 'text-deep-charcoal'
                           : 'text-body-slate leading-[1.8]'
@@ -331,7 +331,7 @@ export default function ChatPage() {
                               href={action.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 rounded-[10px] bg-clinical-teal px-5 py-2.5 text-xs font-semibold tracking-wide text-white transition-all duration-200 hover:bg-[#2A8DA0] hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(44,122,140,0.3)]"
+                              className="font-dm-sans inline-flex items-center gap-1 rounded-[10px] bg-clinical-teal px-5 py-2.5 text-xs font-semibold tracking-wide text-white transition-all duration-200 hover:bg-[#2A8DA0] hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(44,122,140,0.3)]"
                             >
                               {action.label}
                             </a>

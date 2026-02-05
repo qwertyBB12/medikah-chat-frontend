@@ -65,12 +65,12 @@ export default function ConsentModal({ userId, lang: initialLang, onComplete }: 
       <div className="bg-white w-full max-w-3xl max-h-[90vh] rounded-[16px] shadow-2xl flex flex-col overflow-hidden">
         {/* Header */}
         <div className="px-6 py-5 border-b border-border-line flex items-center justify-between shrink-0">
-          <h2 className="text-inst-blue font-bold text-lg leading-tight pr-4">
+          <h2 className="font-dm-serif text-inst-blue text-xl leading-tight pr-4">
             {copy.modalTitle}
           </h2>
           <button
             onClick={() => { setLang(lang === 'en' ? 'es' : 'en'); setAgreed(false); }}
-            className="shrink-0 text-xs font-semibold tracking-wide px-3 py-1.5 border border-border-line rounded-[8px] text-body-slate hover:text-inst-blue hover:border-clinical-teal transition"
+            className="font-dm-sans shrink-0 text-xs font-semibold tracking-wide px-3 py-1.5 border border-border-line rounded-[8px] text-body-slate hover:text-inst-blue hover:border-clinical-teal transition"
           >
             {lang === 'en' ? 'ES' : 'EN'}
           </button>
@@ -78,7 +78,7 @@ export default function ConsentModal({ userId, lang: initialLang, onComplete }: 
 
         {/* Important notice */}
         <div className="px-6 py-3 shrink-0">
-          <p className="text-xs text-body-slate leading-relaxed bg-clinical-surface border border-border-line rounded-[8px] px-4 py-3">
+          <p className="font-dm-sans text-xs text-body-slate leading-relaxed bg-clinical-surface border border-border-line rounded-[8px] px-4 py-3">
             {copy.importantNotice}
           </p>
         </div>
@@ -87,13 +87,13 @@ export default function ConsentModal({ userId, lang: initialLang, onComplete }: 
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
           {sections.map((section) => (
             <div key={section.checkboxId}>
-              <h3 className="text-inst-blue font-bold text-sm mb-1">
+              <h3 className="font-dm-serif text-inst-blue text-base mb-1">
                 {section.title}
               </h3>
-              <p className="text-body-slate font-semibold text-xs mb-2">
+              <p className="font-dm-sans text-body-slate font-medium text-xs mb-2">
                 {section.summary}
               </p>
-              <pre className="text-archival-grey text-sm leading-relaxed whitespace-pre-wrap font-sans">
+              <pre className="font-dm-sans text-archival-grey text-sm leading-relaxed whitespace-pre-wrap">
                 {section.body}
               </pre>
 
@@ -102,7 +102,7 @@ export default function ConsentModal({ userId, lang: initialLang, onComplete }: 
 
           {/* Scroll prompt if user hasn't scrolled to bottom */}
           {!hasScrolledToBottom && (
-            <p className="text-center text-xs text-archival-grey animate-pulse py-2">
+            <p className="font-dm-sans text-center text-xs text-archival-grey animate-pulse py-2">
               {lang === 'en' ? '↓ Scroll to read all sections' : '↓ Desplácese para leer todas las secciones'}
             </p>
           )}
@@ -112,7 +112,7 @@ export default function ConsentModal({ userId, lang: initialLang, onComplete }: 
         <div className="px-6 py-4 border-t border-border-line shrink-0 space-y-3">
           {/* Recording consent — always visible */}
           <div className="bg-clinical-surface border border-border-line rounded-[8px] px-4 py-3">
-            <p className="text-xs text-inst-blue font-bold mb-2">
+            <p className="font-dm-sans text-xs text-inst-blue font-semibold mb-2">
               {lang === 'en' ? 'Consultation Recording (Section 14)' : 'Grabación de Consulta (Sección 14)'}
             </p>
             <div className="flex items-center gap-4">
@@ -124,7 +124,7 @@ export default function ConsentModal({ userId, lang: initialLang, onComplete }: 
                   onChange={() => setRecordingConsent(true)}
                   className="w-4 h-4 accent-clinical-teal"
                 />
-                <span className="text-sm text-body-slate font-semibold">
+                <span className="font-dm-sans text-sm text-body-slate font-medium">
                   {copy.recordingYes}
                 </span>
               </label>
@@ -136,7 +136,7 @@ export default function ConsentModal({ userId, lang: initialLang, onComplete }: 
                   onChange={() => setRecordingConsent(false)}
                   className="w-4 h-4 accent-clinical-teal"
                 />
-                <span className="text-sm text-body-slate font-semibold">
+                <span className="font-dm-sans text-sm text-body-slate font-medium">
                   {copy.recordingNo}
                 </span>
               </label>
@@ -150,7 +150,7 @@ export default function ConsentModal({ userId, lang: initialLang, onComplete }: 
               onChange={() => setAgreed(!agreed)}
               className="mt-0.5 w-5 h-5 shrink-0 accent-clinical-teal rounded"
             />
-            <span className="text-sm text-deep-charcoal font-semibold leading-snug">
+            <span className="font-dm-sans text-sm text-deep-charcoal font-medium leading-snug">
               {lang === 'en'
                 ? 'I have read, understood, and agree to all 15 sections of this acknowledgment form'
                 : 'He leído, comprendido y acepto las 15 secciones de este formulario de reconocimiento'}
@@ -161,7 +161,7 @@ export default function ConsentModal({ userId, lang: initialLang, onComplete }: 
             type="button"
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className={`w-full py-3.5 rounded-[12px] font-bold text-sm tracking-wide transition-all duration-200 ${
+            className={`font-dm-sans w-full py-3.5 rounded-[12px] font-semibold text-sm tracking-wide transition-all duration-200 ${
               canSubmit
                 ? 'bg-inst-blue text-white hover:bg-clinical-teal cursor-pointer'
                 : 'bg-inst-blue text-white opacity-40 cursor-not-allowed'
@@ -172,7 +172,7 @@ export default function ConsentModal({ userId, lang: initialLang, onComplete }: 
               : copy.agreeButton}
           </button>
 
-          <p className="text-center text-[10px] text-archival-grey tracking-wide">
+          <p className="font-dm-sans text-center text-[10px] text-archival-grey tracking-wide">
             {lang === 'en'
               ? `Form v${CONSENT_FORM_VERSION} · Your consent is recorded`
               : `Formulario v${CONSENT_FORM_VERSION} · Su consentimiento queda registrado`}

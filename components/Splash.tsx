@@ -41,7 +41,7 @@ export default function Splash({
             height={180}
             className="w-36 h-auto sm:w-44"
           />
-          <p className="text-sm text-white/60 leading-relaxed max-w-xs">
+          <p className="font-dm-sans text-sm text-white/60 leading-relaxed max-w-xs">
             Credentialed access only. Sign in with your authorized account.
           </p>
         </div>
@@ -52,7 +52,7 @@ export default function Splash({
               key={portal.label}
               type="button"
               onClick={portal.onClick}
-              className="w-full py-3.5 text-center text-base font-semibold tracking-wide text-white/80 border-b border-white/10 transition hover:text-white hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-clinical-teal"
+              className="font-dm-sans w-full py-3.5 text-center text-base font-semibold tracking-wide text-white/80 border-b border-white/10 transition hover:text-white hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-clinical-teal"
             >
               {portal.label}
             </button>
