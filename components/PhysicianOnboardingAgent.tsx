@@ -538,30 +538,40 @@ const PhysicianOnboardingAgent = forwardRef<
           appendMessage({ text: copy.invalidEmail });
           return true;
         }
-        // Check if email already exists
-        const exists = await checkPhysicianEmailExists(input);
-        if (exists) {
-          appendMessage({
-            text: lang === 'en'
-              ? 'This email is already registered in our network. Please use a different email or contact support if this is an error.'
-              : 'Este correo ya está registrado en nuestra red. Por favor use un correo diferente o contacte soporte si esto es un error.',
-          });
-          return true;
+
+        // Check if email already exists (with timeout to prevent hanging)
+        try {
+          const existsPromise = checkPhysicianEmailExists(input);
+          const timeoutPromise = new Promise<boolean>((_, reject) =>
+            setTimeout(() => reject(new Error('timeout')), 5000)
+          );
+          const exists = await Promise.race([existsPromise, timeoutPromise]);
+
+          if (exists) {
+            appendMessage({
+              text: lang === 'en'
+                ? 'This email is already registered in our network. Please use a different email or contact support if this is an error.'
+                : 'Este correo ya está registrado en nuestra red. Por favor use un correo diferente o contacte soporte si esto es un error.',
+            });
+            return true;
+          }
+        } catch (error) {
+          // Continue even if check fails - we'll catch duplicates on save
+          console.warn('Email check failed, continuing:', error);
         }
+
         data.email = input.toLowerCase();
 
-        // Log that onboarding started
-        await logOnboardingAudit({
+        // Log that onboarding started (fire and forget, don't block flow)
+        logOnboardingAudit({
           email: data.email,
           action: 'started',
           phase: 'identity',
           language: lang,
-        });
+        }).catch(err => console.warn('Audit log failed:', err));
 
-        askQuestion('has_linkedin', copy.askLinkedIn, [
-          { label: copy.yes, value: 'yes', type: 'primary' },
-          { label: copy.no, value: 'no', type: 'secondary' },
-        ]);
+        // Proceed to licensing phase
+        startLicensingPhase();
         break;
       }
 
