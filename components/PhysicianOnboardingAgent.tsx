@@ -39,6 +39,15 @@ export interface OnboardingBotMessage {
   text: string;
   actions?: OnboardingAction[];
   isVision?: boolean; // For inspirational/vision messages
+  showLinkedInConnect?: boolean; // Show LinkedIn OAuth connect button
+  linkedInPreview?: { // Show LinkedIn data for confirmation
+    fullName?: string;
+    email?: string;
+    photoUrl?: string;
+    medicalSchool?: string;
+    graduationYear?: number;
+    currentInstitutions?: string[];
+  };
   isSummary?: boolean; // For profile summary display
   summaryData?: Partial<PhysicianProfileData>;
 }
@@ -62,6 +71,7 @@ type QuestionKey =
   | 'email'
   | 'has_linkedin'
   | 'linkedin_url'
+  | 'linkedin_confirm'
   | 'linkedin_permission'
   | 'photo_upload'
   // Licensing
@@ -112,11 +122,22 @@ export interface PhysicianOnboardingAgentHandle {
   handleActionClick: (value: string) => Promise<boolean>;
 }
 
+interface LinkedInImportData {
+  fullName?: string;
+  email?: string;
+  photoUrl?: string;
+  medicalSchool?: string;
+  graduationYear?: number;
+  currentInstitutions?: string[];
+}
+
 interface PhysicianOnboardingAgentProps {
   lang: SupportedLang;
   appendMessage: (message: OnboardingBotMessage) => void;
   onStateChange?: (state: OnboardingAgentState) => void;
   onComplete?: (physicianId: string) => void;
+  linkedInData?: LinkedInImportData;
+  sessionId?: string;
 }
 
 // Validation helpers
@@ -142,8 +163,11 @@ const PhysicianOnboardingAgent = forwardRef<
   PhysicianOnboardingAgentHandle,
   PhysicianOnboardingAgentProps
 >((props, ref) => {
-  const { lang, appendMessage, onStateChange, onComplete } = props;
+  const { lang, appendMessage, onStateChange, onComplete, linkedInData, sessionId } = props;
   const copy = useMemo(() => onboardingCopy[lang], [lang]);
+
+  // Track if LinkedIn data has been applied
+  const linkedInApplied = useRef(false);
 
   // State
   const [state, setState] = useState<OnboardingAgentState>('idle');
@@ -933,19 +957,82 @@ const PhysicianOnboardingAgent = forwardRef<
   // Handle action button clicks
   const handleActionClick = useCallback(async (value: string): Promise<boolean> => {
     const currentQuestion = question;
+    const data = dataRef.current;
 
     switch (currentQuestion) {
       case 'has_linkedin':
         if (value === 'yes') {
-          askQuestion('linkedin_url',
-            lang === 'en'
-              ? 'Please share your LinkedIn profile URL:'
-              : 'Por favor comparta la URL de su perfil de LinkedIn:'
-          );
+          // Check if LinkedIn data was already imported via OAuth
+          if (linkedInData && !linkedInApplied.current) {
+            linkedInApplied.current = true;
+
+            // Show confirmation message with imported data
+            appendMessage({
+              text: lang === 'en'
+                ? `Great! We pulled your information from LinkedIn. Please confirm the data below:`
+                : `¡Excelente! Obtuvimos tu información de LinkedIn. Por favor confirma los datos a continuación:`,
+              linkedInPreview: linkedInData,
+            } as OnboardingBotMessage);
+
+            // Store LinkedIn URL if we have name
+            if (linkedInData.fullName) {
+              data.linkedinUrl = `https://linkedin.com/in/${sessionId || 'profile'}`;
+              data.linkedinImported = true;
+            }
+
+            setQuestion('linkedin_confirm');
+            updateState('awaiting_user');
+          } else {
+            // Show connect button - will redirect to OAuth
+            appendMessage({
+              text: lang === 'en'
+                ? 'Click the button below to connect your LinkedIn account. We\'ll import your profile information automatically.'
+                : 'Haz clic en el botón de abajo para conectar tu cuenta de LinkedIn. Importaremos tu información de perfil automáticamente.',
+              showLinkedInConnect: true,
+            } as OnboardingBotMessage);
+
+            // Also offer manual entry as fallback
+            askQuestion('linkedin_url',
+              lang === 'en'
+                ? 'Or paste your LinkedIn profile URL here:'
+                : 'O pega la URL de tu perfil de LinkedIn aquí:'
+            );
+          }
         } else {
           startLicensingPhase();
         }
         return true;
+
+      case 'linkedin_confirm':
+        if (value === 'linkedin_confirm' && linkedInData) {
+          // Apply LinkedIn data to profile
+          if (linkedInData.fullName) data.fullName = linkedInData.fullName;
+          if (linkedInData.email) data.email = linkedInData.email;
+          if (linkedInData.photoUrl) data.photoUrl = linkedInData.photoUrl;
+          if (linkedInData.medicalSchool) data.medicalSchool = linkedInData.medicalSchool;
+          if (linkedInData.graduationYear) data.graduationYear = linkedInData.graduationYear;
+          if (linkedInData.currentInstitutions) data.currentInstitutions = linkedInData.currentInstitutions;
+          data.linkedinImported = true;
+
+          appendMessage({
+            text: lang === 'en'
+              ? `✓ LinkedIn data confirmed! We've pre-filled your name${linkedInData.email ? ' and email' : ''}. Let's continue with your credentials.`
+              : `✓ ¡Datos de LinkedIn confirmados! Hemos pre-llenado tu nombre${linkedInData.email ? ' y correo' : ''}. Continuemos con tus credenciales.`,
+          });
+
+          startLicensingPhase();
+          return true;
+        } else if (value === 'linkedin_edit') {
+          // User wants to edit - proceed with manual flow
+          appendMessage({
+            text: lang === 'en'
+              ? 'No problem! You can update any information as we go through the form.'
+              : '¡No hay problema! Puedes actualizar cualquier información mientras avanzamos en el formulario.',
+          });
+          startLicensingPhase();
+          return true;
+        }
+        break;
 
       case 'countries_licensed':
         // Country quick-select

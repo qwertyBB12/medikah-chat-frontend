@@ -8,6 +8,7 @@ import PhysicianOnboardingAgent, {
   OnboardingBotMessage,
   OnboardingAgentState,
 } from '../../components/PhysicianOnboardingAgent';
+import LinkedInConnectButton, { LinkedInProfilePreview } from '../../components/LinkedInConnectButton';
 import { LOGO_SRC } from '../../lib/assets';
 import { SupportedLang } from '../../lib/i18n';
 
@@ -17,7 +18,21 @@ type Message = {
   isVision?: boolean;
   isSummary?: boolean;
   actions?: { label: string; value: string; type?: 'primary' | 'secondary' | 'skip' }[];
+  showLinkedInConnect?: boolean;
+  linkedInPreview?: {
+    fullName?: string;
+    email?: string;
+    photoUrl?: string;
+    medicalSchool?: string;
+    graduationYear?: number;
+    currentInstitutions?: string[];
+  };
 };
+
+// Generate a unique session ID for LinkedIn OAuth
+function generateSessionId(): string {
+  return `onboard_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+}
 
 export default function PhysicianOnboardingPage() {
   const router = useRouter();
@@ -29,10 +44,16 @@ export default function PhysicianOnboardingPage() {
   const [agentState, setAgentState] = useState<OnboardingAgentState>('idle');
   const [completedPhysicianId, setCompletedPhysicianId] = useState<string | null>(null);
 
+  // LinkedIn OAuth state
+  const [sessionId] = useState(() => generateSessionId());
+  const [linkedInData, setLinkedInData] = useState<Message['linkedInPreview'] | null>(null);
+  const [linkedInConnected, setLinkedInConnected] = useState(false);
+
   const agentRef = useRef<PhysicianOnboardingAgentHandle>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const hasStarted = useRef(false);
+  const linkedInChecked = useRef(false);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -50,6 +71,42 @@ export default function PhysicianOnboardingPage() {
   useEffect(() => {
     adjustTextareaHeight();
   }, [input]);
+
+  // Check for LinkedIn callback params
+  useEffect(() => {
+    if (linkedInChecked.current) return;
+    linkedInChecked.current = true;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const linkedinStatus = urlParams.get('linkedin');
+    const sessionParam = urlParams.get('session');
+
+    if (linkedinStatus === 'connected' && sessionParam) {
+      // Fetch the LinkedIn profile data
+      fetch(`/api/auth/linkedin/profile?session_id=${encodeURIComponent(sessionParam)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.mappedData) {
+            setLinkedInData(data.mappedData);
+            setLinkedInConnected(true);
+
+            // Clean up URL params
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, '', newUrl);
+          }
+        })
+        .catch(err => {
+          console.error('Failed to fetch LinkedIn profile:', err);
+        });
+    } else if (linkedinStatus === 'error') {
+      const errorMsg = urlParams.get('error');
+      console.error('LinkedIn OAuth error:', errorMsg);
+
+      // Clean up URL params
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, []);
 
   // Start the onboarding when page loads
   useEffect(() => {
@@ -248,6 +305,41 @@ export default function PhysicianOnboardingPage() {
                         ))}
                       </div>
                     )}
+
+                    {/* LinkedIn Connect Button */}
+                    {message.showLinkedInConnect && !linkedInConnected && (
+                      <div className="mt-4">
+                        <LinkedInConnectButton
+                          sessionId={sessionId}
+                          lang={lang}
+                          disabled={!isAwaitingInput}
+                          onError={(error) => {
+                            setMessages(prev => [
+                              ...prev,
+                              { sender: 'bot', text: error },
+                            ]);
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {/* LinkedIn Profile Preview */}
+                    {message.linkedInPreview && (
+                      <div className="mt-4">
+                        <LinkedInProfilePreview
+                          profile={message.linkedInPreview}
+                          lang={lang}
+                          onConfirm={() => {
+                            // Send confirmation to agent
+                            handleActionClick('linkedin_confirm');
+                          }}
+                          onEdit={() => {
+                            // Send edit request to agent
+                            handleActionClick('linkedin_edit');
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -336,6 +428,8 @@ export default function PhysicianOnboardingPage() {
           appendMessage={appendMessage}
           onStateChange={handleStateChange}
           onComplete={handleComplete}
+          linkedInData={linkedInConnected && linkedInData ? linkedInData : undefined}
+          sessionId={sessionId}
         />
       </div>
     </>
