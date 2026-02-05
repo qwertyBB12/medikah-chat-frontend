@@ -118,12 +118,35 @@ export default function PhysicianOnboardingPage() {
 
   // Start the onboarding when page loads
   useEffect(() => {
-    if (!hasStarted.current && agentRef.current) {
-      hasStarted.current = true;
-      setTimeout(() => {
-        agentRef.current?.start();
-      }, 500);
-    }
+    if (hasStarted.current) return;
+
+    // Use an interval to wait for the ref to be populated
+    const checkAndStart = () => {
+      if (agentRef.current && !hasStarted.current) {
+        hasStarted.current = true;
+        // Small delay for smooth UX
+        setTimeout(() => {
+          agentRef.current?.start();
+        }, 300);
+        return true;
+      }
+      return false;
+    };
+
+    // Try immediately
+    if (checkAndStart()) return;
+
+    // If ref not ready, retry a few times
+    let attempts = 0;
+    const maxAttempts = 10;
+    const interval = setInterval(() => {
+      attempts++;
+      if (checkAndStart() || attempts >= maxAttempts) {
+        clearInterval(interval);
+      }
+    }, 100);
+
+    return () => clearInterval(interval);
   }, []);
 
   // Append message from agent
