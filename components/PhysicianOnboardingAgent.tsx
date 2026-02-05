@@ -305,28 +305,63 @@ const PhysicianOnboardingAgent = forwardRef<
     return lines.join('\n');
   }, [copy.profileSummaryTitle, lang]);
 
+  // Get time-based greeting
+  const getTimeBasedGreeting = useCallback(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return copy.greetingMorning;
+    if (hour < 18) return copy.greetingAfternoon;
+    return copy.greetingEvening;
+  }, [copy]);
+
   // Phase handlers
   const startBriefing = useCallback(() => {
     setPhase('briefing');
     updateState('briefing');
 
-    // Executive briefing
-    copy.welcomeBriefing.forEach((paragraph, i) => {
+    // Conversational opening sequence
+    const messages: Array<{ text: string; isVision?: boolean; delay: number }> = [
+      { text: getTimeBasedGreeting(), isVision: true, delay: 0 },
+      { text: copy.howAreYou, delay: 1200 },
+      { text: copy.sessionIntro, delay: 2400 },
+      { text: copy.sessionOverview, delay: 4000 },
+      { text: copy.medikahSnippet1, isVision: true, delay: 5800 },
+    ];
+
+    // Queue the opening messages
+    messages.forEach(({ text, isVision, delay }) => {
       setTimeout(() => {
-        appendMessage({ text: paragraph, isVision: true });
-      }, i * 800);
+        appendMessage({ text, isVision });
+      }, delay);
     });
 
-    // After briefing, start identity phase
+    // After opening, ask for LinkedIn first (this is the key entry point)
     setTimeout(() => {
       setPhase('identity');
-      askQuestion('full_name', copy.askFullName);
-    }, copy.welcomeBriefing.length * 800 + 500);
-  }, [copy, appendMessage, updateState, askQuestion]);
+      setQuestion('has_linkedin');
+      updateState('awaiting_user');
+      appendMessage({
+        text: copy.askLinkedIn,
+        actions: [
+          { label: copy.yes, value: 'yes', type: 'primary' },
+          { label: copy.no, value: 'no', type: 'secondary' },
+        ],
+      });
+    }, 7500);
+  }, [copy, appendMessage, updateState, getTimeBasedGreeting]);
 
   const startLicensingPhase = useCallback(() => {
     setPhase('licensing');
-    showVisionMessage(copy.phase2Vision);
+
+    // Weave in Medikah context before licensing questions
+    appendMessage({
+      text: copy.medikahSnippet2,
+      isVision: true,
+    });
+
+    setTimeout(() => {
+      appendMessage({ text: copy.phase2Vision });
+    }, 1000);
+
     setTimeout(() => {
       const countryActions: OnboardingAction[] = LICENSED_COUNTRIES.slice(0, 6).map(c => ({
         label: c.name,
@@ -334,18 +369,28 @@ const PhysicianOnboardingAgent = forwardRef<
         type: 'secondary',
       }));
       askQuestion('countries_licensed', copy.askCountriesLicensed, countryActions);
-    }, 600);
-  }, [copy, showVisionMessage, askQuestion]);
+    }, 2200);
+  }, [copy, appendMessage, askQuestion]);
 
   const startSpecialtyPhase = useCallback(() => {
     setPhase('specialty');
-    const specialtyActions: OnboardingAction[] = MEDICAL_SPECIALTIES.slice(0, 4).map(s => ({
-      label: s,
-      value: s,
-      type: 'secondary',
-    }));
-    askQuestion('primary_specialty', copy.askPrimarySpecialty, specialtyActions);
-  }, [copy, askQuestion]);
+
+    // Transition message
+    appendMessage({
+      text: lang === 'en'
+        ? 'Now let\'s talk about your expertise. This helps patients find the right specialist.'
+        : 'Ahora hablemos de su especialidad. Esto ayuda a los pacientes a encontrar al especialista adecuado.',
+    });
+
+    setTimeout(() => {
+      const specialtyActions: OnboardingAction[] = MEDICAL_SPECIALTIES.slice(0, 4).map(s => ({
+        label: s,
+        value: s,
+        type: 'secondary',
+      }));
+      askQuestion('primary_specialty', copy.askPrimarySpecialty, specialtyActions);
+    }, 1000);
+  }, [copy, lang, appendMessage, askQuestion]);
 
   const startEducationPhase = useCallback(() => {
     setPhase('education');
@@ -370,7 +415,16 @@ const PhysicianOnboardingAgent = forwardRef<
 
   const startConfirmationPhase = useCallback(() => {
     setPhase('confirmation');
-    showVisionMessage(copy.phase7Vision);
+
+    // Add the "founding physicians" snippet
+    appendMessage({
+      text: copy.medikahSnippet4,
+      isVision: true,
+    });
+
+    setTimeout(() => {
+      appendMessage({ text: copy.phase7Vision });
+    }, 1200);
 
     setTimeout(() => {
       const summary = generateProfileSummary();
@@ -385,9 +439,9 @@ const PhysicianOnboardingAgent = forwardRef<
           { label: copy.yes, value: 'confirm', type: 'primary' },
           { label: copy.editPrompt, value: 'edit', type: 'secondary' },
         ]);
-      }, 500);
-    }, 600);
-  }, [copy, showVisionMessage, generateProfileSummary, appendMessage, askQuestion]);
+      }, 800);
+    }, 2400);
+  }, [copy, generateProfileSummary, appendMessage, askQuestion]);
 
   const completeOnboarding = useCallback(async () => {
     updateState('processing');
@@ -1174,7 +1228,15 @@ const PhysicianOnboardingAgent = forwardRef<
             );
           }
         } else {
-          startLicensingPhase();
+          // No LinkedIn - ask for basic info manually
+          appendMessage({
+            text: lang === 'en'
+              ? 'No problem at all. Let\'s get to know you the old-fashioned way.'
+              : 'No hay problema. Conozcámosle de la manera tradicional.',
+          });
+          setTimeout(() => {
+            askQuestion('full_name', copy.askFullName);
+          }, 800);
         }
         return true;
 

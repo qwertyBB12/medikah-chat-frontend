@@ -7,6 +7,8 @@ interface ChatInputProps {
   onKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
   textareaRef: RefObject<HTMLTextAreaElement | null>;
   isSending: boolean;
+  placeholder?: string;
+  accentColor?: 'blue' | 'teal';
 }
 
 export default function ChatInput({
@@ -16,7 +18,12 @@ export default function ChatInput({
   onKeyDown,
   textareaRef,
   isSending,
+  placeholder = 'Describe what you are feeling…',
+  accentColor = 'blue',
 }: ChatInputProps) {
+  const bgColorClass = accentColor === 'teal'
+    ? 'bg-clinical-teal'
+    : 'bg-inst-blue';
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (isSending) return;
@@ -35,8 +42,8 @@ export default function ChatInput({
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={onKeyDown}
           aria-label="Message Medikah"
-          placeholder="Describe what you are feeling…"
-          className="font-dm-sans w-full resize-none bg-inst-blue text-white text-base leading-relaxed font-normal placeholder:text-white/50 caret-clinical-teal selection:bg-clinical-teal/20 rounded-[16px] pl-6 pr-[120px] py-[18px] min-h-[56px] max-h-[200px] shadow-[0_2px_8px_rgba(27,42,65,0.12),0_8px_24px_rgba(27,42,65,0.08)] transition-shadow duration-300 focus:outline-none focus:shadow-[0_3px_12px_rgba(27,42,65,0.16),0_12px_32px_rgba(27,42,65,0.12),0_0_0_3px_rgba(44,122,140,0.3)]"
+          placeholder={placeholder}
+          className={`font-dm-sans w-full resize-none ${bgColorClass} text-white text-base leading-relaxed font-normal placeholder:text-white/50 caret-clinical-teal selection:bg-clinical-teal/20 rounded-[16px] pl-6 pr-[120px] py-[18px] min-h-[56px] max-h-[200px] shadow-[0_2px_8px_rgba(27,42,65,0.12),0_8px_24px_rgba(27,42,65,0.08)] transition-shadow duration-300 focus:outline-none focus:shadow-[0_3px_12px_rgba(27,42,65,0.16),0_12px_32px_rgba(27,42,65,0.12),0_0_0_3px_rgba(44,122,140,0.3)]`}
           rows={1}
           spellCheck={false}
         />

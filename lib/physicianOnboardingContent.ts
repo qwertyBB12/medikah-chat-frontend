@@ -3,9 +3,23 @@ import { SupportedLang } from './i18n';
 export const ONBOARDING_VERSION = '1.0';
 
 export interface OnboardingCopy {
-  // Executive Briefing
+  // Conversational Opening
+  greetingMorning: string;
+  greetingAfternoon: string;
+  greetingEvening: string;
+  howAreYou: string;
+  sessionIntro: string;
+  sessionOverview: string;
+
+  // Executive Briefing (peppered throughout)
   welcomeTitle: string;
   welcomeBriefing: string[];
+
+  // Medikah context snippets (to weave in)
+  medikahSnippet1: string; // Why we exist
+  medikahSnippet2: string; // The network vision
+  medikahSnippet3: string; // Why this matters
+  medikahSnippet4: string; // Founding physicians
 
   // Phase 1: Identity
   phase1Title: string;
@@ -94,6 +108,14 @@ export interface OnboardingCopy {
 
 export const onboardingCopy: Record<SupportedLang, OnboardingCopy> = {
   en: {
+    // Conversational Opening
+    greetingMorning: 'Good morning, Doctor.',
+    greetingAfternoon: 'Good afternoon, Doctor.',
+    greetingEvening: 'Good evening, Doctor.',
+    howAreYou: 'How are you doing today?',
+    sessionIntro: 'I\'m here to guide you through joining the Medikah Physician Network. We\'ll have a conversation where you can simply tell me about yourself, and I\'ll help build your profile.',
+    sessionOverview: 'You can track our progress in the sidebar. Feel free to take your time—this is a conversation, not a form.',
+
     // Executive Briefing
     welcomeTitle: 'Welcome to the Medikah Physician Network',
     welcomeBriefing: [
@@ -102,10 +124,16 @@ export const onboardingCopy: Record<SupportedLang, OnboardingCopy> = {
       'Until now. You are among the founding physicians of this network. The ground floor of hemisphere-scale coordination. Let\'s build your profile so patients and colleagues can find you.',
     ],
 
+    // Medikah context snippets (to weave in throughout)
+    medikahSnippet1: 'Medikah exists because healthcare doesn\'t stop at borders, but until now, medical coordination did.',
+    medikahSnippet2: 'We\'re building the first credentialed physician network across the Americas—physicians like you who can serve patients wherever they are.',
+    medikahSnippet3: 'Your credentials tell a story of dedication. We\'re honored to have physicians of your caliber joining the network.',
+    medikahSnippet4: 'You\'re among the founding physicians of this network. That matters.',
+
     // Phase 1: Identity
     phase1Title: 'Let\'s start with who you are',
     askFullName: 'What is your full name, as it appears on your medical license?',
-    askLinkedIn: 'Do you have a LinkedIn profile? If so, I can help populate some of your information automatically.',
+    askLinkedIn: 'Do you have a LinkedIn profile? It helps me get to know you better and saves you some typing. I can pull in relevant information automatically.',
     linkedInFound: 'I found your LinkedIn profile. Here\'s what I can import:',
     askLinkedInPermission: 'May I use this information to pre-fill your profile? You can edit anything afterward.',
     askPhotoUpload: 'Please upload a professional photo. This is how patients and colleagues will recognize you in the network.',
@@ -192,6 +220,14 @@ export const onboardingCopy: Record<SupportedLang, OnboardingCopy> = {
   },
 
   es: {
+    // Conversational Opening
+    greetingMorning: 'Buenos días, Doctor.',
+    greetingAfternoon: 'Buenas tardes, Doctor.',
+    greetingEvening: 'Buenas noches, Doctor.',
+    howAreYou: '¿Cómo está hoy?',
+    sessionIntro: 'Estoy aquí para guiarle a través del proceso de unirse a la Red de Médicos de Medikah. Tendremos una conversación donde simplemente puede contarme sobre usted, y yo le ayudaré a construir su perfil.',
+    sessionOverview: 'Puede seguir nuestro progreso en la barra lateral. Tómese su tiempo—esto es una conversación, no un formulario.',
+
     // Executive Briefing
     welcomeTitle: 'Bienvenido a la Red de Médicos de Medikah',
     welcomeBriefing: [
@@ -200,10 +236,16 @@ export const onboardingCopy: Record<SupportedLang, OnboardingCopy> = {
       'Hasta ahora. Usted está entre los médicos fundadores de esta red. La planta baja de la coordinación a escala hemisférica. Construyamos su perfil para que pacientes y colegas puedan encontrarlo.',
     ],
 
+    // Medikah context snippets (to weave in throughout)
+    medikahSnippet1: 'Medikah existe porque la atención médica no se detiene en las fronteras, pero hasta ahora, la coordinación médica sí lo hacía.',
+    medikahSnippet2: 'Estamos construyendo la primera red de médicos acreditados en las Américas—médicos como usted que pueden atender pacientes donde sea que estén.',
+    medikahSnippet3: 'Sus credenciales cuentan una historia de dedicación. Nos honra tener médicos de su calibre uniéndose a la red.',
+    medikahSnippet4: 'Usted está entre los médicos fundadores de esta red. Eso importa.',
+
     // Phase 1: Identity
     phase1Title: 'Comencemos con quién es usted',
     askFullName: '¿Cuál es su nombre completo, tal como aparece en su licencia médica?',
-    askLinkedIn: '¿Tiene un perfil de LinkedIn? Si es así, puedo ayudar a completar parte de su información automáticamente.',
+    askLinkedIn: '¿Tiene un perfil de LinkedIn? Me ayuda a conocerlo mejor y le ahorra algo de escritura. Puedo extraer información relevante automáticamente.',
     linkedInFound: 'Encontré su perfil de LinkedIn. Esto es lo que puedo importar:',
     askLinkedInPermission: '¿Puedo usar esta información para prellenar su perfil? Puede editar cualquier cosa después.',
     askPhotoUpload: 'Por favor suba una foto profesional. Así es como los pacientes y colegas lo reconocerán en la red.',
