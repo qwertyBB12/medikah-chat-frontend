@@ -319,12 +319,12 @@ const PhysicianOnboardingAgent = forwardRef<
     updateState('briefing');
 
     // Conversational opening sequence
+    // Only truly inspirational/mission statements get isVision styling
     const messages: Array<{ text: string; isVision?: boolean; delay: number }> = [
-      { text: getTimeBasedGreeting(), isVision: true, delay: 0 },
+      { text: getTimeBasedGreeting(), delay: 0 },
       { text: copy.howAreYou, delay: 1200 },
       { text: copy.sessionIntro, delay: 2400 },
       { text: copy.sessionOverview, delay: 4000 },
-      { text: copy.medikahSnippet1, isVision: true, delay: 5800 },
     ];
 
     // Queue the opening messages
@@ -346,21 +346,14 @@ const PhysicianOnboardingAgent = forwardRef<
           { label: copy.no, value: 'no', type: 'secondary' },
         ],
       });
-    }, 7500);
+    }, 5800);
   }, [copy, appendMessage, updateState, getTimeBasedGreeting]);
 
   const startLicensingPhase = useCallback(() => {
     setPhase('licensing');
 
-    // Weave in Medikah context before licensing questions
-    appendMessage({
-      text: copy.medikahSnippet2,
-      isVision: true,
-    });
-
-    setTimeout(() => {
-      appendMessage({ text: copy.phase2Vision });
-    }, 1000);
+    // Transition to licensing with context
+    appendMessage({ text: copy.phase2Vision });
 
     setTimeout(() => {
       const countryActions: OnboardingAction[] = LICENSED_COUNTRIES.slice(0, 6).map(c => ({
@@ -369,7 +362,7 @@ const PhysicianOnboardingAgent = forwardRef<
         type: 'secondary',
       }));
       askQuestion('countries_licensed', copy.askCountriesLicensed, countryActions);
-    }, 2200);
+    }, 1200);
   }, [copy, appendMessage, askQuestion]);
 
   const startSpecialtyPhase = useCallback(() => {
@@ -416,15 +409,8 @@ const PhysicianOnboardingAgent = forwardRef<
   const startConfirmationPhase = useCallback(() => {
     setPhase('confirmation');
 
-    // Add the "founding physicians" snippet
-    appendMessage({
-      text: copy.medikahSnippet4,
-      isVision: true,
-    });
-
-    setTimeout(() => {
-      appendMessage({ text: copy.phase7Vision });
-    }, 1200);
+    // Transition to confirmation
+    appendMessage({ text: copy.phase7Vision });
 
     setTimeout(() => {
       const summary = generateProfileSummary();
@@ -440,7 +426,7 @@ const PhysicianOnboardingAgent = forwardRef<
           { label: copy.editPrompt, value: 'edit', type: 'secondary' },
         ]);
       }, 800);
-    }, 2400);
+    }, 1200);
   }, [copy, generateProfileSummary, appendMessage, askQuestion]);
 
   const completeOnboarding = useCallback(async () => {
