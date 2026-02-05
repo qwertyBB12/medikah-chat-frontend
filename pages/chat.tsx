@@ -11,9 +11,8 @@
 import Head from 'next/head';
 import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/router';
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useState, useRef } from 'react';
 import Splash from '../components/Splash';
-import { getPortalRedirect } from '../lib/portalAuth';
 
 export default function ChatPage() {
   const { data: session, status } = useSession();
@@ -26,13 +25,24 @@ export default function ChatPage() {
   const [showLoginForm, setShowLoginForm] = useState(false);
   const [portalSelection, setPortalSelection] = useState<'doctor' | 'patient' | null>(null);
 
+  // Track the portal selection for redirect after session updates
+  const pendingRedirectRef = useRef<'doctor' | 'patient' | null>(null);
+
   // Redirect authenticated users to their portal
   useEffect(() => {
     if (status === 'loading') return;
     if (session?.user) {
-      const role = session.user.role || 'patient';
-      const redirect = getPortalRedirect(role);
-      router.replace(redirect);
+      // Use pending redirect if we just signed in, otherwise use session role
+      if (pendingRedirectRef.current) {
+        const redirect = pendingRedirectRef.current === 'doctor' ? '/physicians' : '/patients';
+        pendingRedirectRef.current = null;
+        router.replace(redirect);
+      } else {
+        // User was already logged in and navigated to /chat - use their role
+        const role = session.user.role || 'patient';
+        const redirect = role === 'physician' ? '/physicians' : `/${role}s`;
+        router.replace(redirect);
+      }
     }
   }, [session, status, router]);
 
@@ -41,21 +51,19 @@ export default function ChatPage() {
     setIsSubmitting(true);
     setLoginError(null);
 
+    // Store portal selection before signing in
+    pendingRedirectRef.current = portalSelection;
+
     const result = await signIn('credentials', { redirect: false, email, password });
     setIsSubmitting(false);
 
     if (result?.error) {
+      pendingRedirectRef.current = null;
       setLoginError('Credentials not recognized. Please try again.');
       return;
     }
 
-    // Redirect based on portal selection (which button was clicked)
-    // This handles the case where the user isn't in the physicians table yet
-    if (portalSelection === 'doctor') {
-      router.replace('/physicians');
-    } else {
-      router.replace('/patients');
-    }
+    // The useEffect will handle the redirect when session updates
   };
 
   // Show loading while checking auth or redirecting
