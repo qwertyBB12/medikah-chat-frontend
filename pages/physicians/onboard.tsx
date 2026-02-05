@@ -175,12 +175,18 @@ export default function PhysicianOnboardingPage() {
       setIsTyping(false);
     } finally {
       isProcessingQueueRef.current = false;
-      // Check if more messages were added while processing
-      if (messageQueueRef.current.length > 0) {
-        processMessageQueue();
-      }
     }
   }, []);
+
+  // Trigger queue processing when messages are added
+  const triggerQueueProcessing = useCallback(() => {
+    // Use setTimeout to avoid race conditions
+    setTimeout(() => {
+      if (!isProcessingQueueRef.current && messageQueueRef.current.length > 0) {
+        processMessageQueue();
+      }
+    }, 0);
+  }, [processMessageQueue]);
 
   // Check for LinkedIn callback params
   useEffect(() => {
@@ -244,8 +250,8 @@ export default function PhysicianOnboardingPage() {
   // Append message from agent (with queuing for timing)
   const appendMessage = useCallback((message: OnboardingBotMessage) => {
     messageQueueRef.current.push(message);
-    processMessageQueue();
-  }, [processMessageQueue]);
+    triggerQueueProcessing();
+  }, [triggerQueueProcessing]);
 
   // Handle state changes from agent
   const handleStateChange = useCallback((state: OnboardingAgentState) => {
@@ -280,8 +286,8 @@ export default function PhysicianOnboardingPage() {
         : '¡Gracias por firmar el Acuerdo de Red de Médicos. Su registro está completo! Bienvenido a la Red Medikah.',
       isVision: true,
     });
-    processMessageQueue();
-  }, [lang, processMessageQueue]);
+    triggerQueueProcessing();
+  }, [lang, triggerQueueProcessing]);
 
   // Handle consent cancel
   const handleConsentCancel = useCallback(() => {

@@ -368,6 +368,7 @@ const PhysicianOnboardingAgent = forwardRef<
 
   const startSpecialtyPhase = useCallback(() => {
     setPhase('specialty');
+    updateState('processing');
 
     // Transition message
     appendMessage({
@@ -384,7 +385,7 @@ const PhysicianOnboardingAgent = forwardRef<
       }));
       askQuestion('primary_specialty', copy.askPrimarySpecialty, specialtyActions);
     }, 1000);
-  }, [copy, lang, appendMessage, askQuestion]);
+  }, [copy, lang, appendMessage, askQuestion, updateState]);
 
   const startEducationPhase = useCallback(() => {
     setPhase('education');
@@ -702,11 +703,10 @@ const PhysicianOnboardingAgent = forwardRef<
           }
         } else {
           // Transition to specialty phase
-          updateState('processing');
           appendMessage({ text: copy.licenseNote });
           setTimeout(() => {
             startSpecialtyPhase();
-          }, 600);
+          }, 1500);
           return true;
         }
         break;
