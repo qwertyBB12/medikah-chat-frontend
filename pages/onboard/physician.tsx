@@ -9,6 +9,8 @@ import PhysicianOnboardingAgent, {
   OnboardingAgentState,
 } from '../../components/PhysicianOnboardingAgent';
 import LinkedInConnectButton, { LinkedInProfilePreview } from '../../components/LinkedInConnectButton';
+import PublicationSelector, { ManualPublicationForm } from '../../components/PublicationSelector';
+import { Publication, PublicationSource } from '../../lib/publications';
 import { LOGO_SRC } from '../../lib/assets';
 import { SupportedLang } from '../../lib/i18n';
 
@@ -27,6 +29,12 @@ type Message = {
     graduationYear?: number;
     currentInstitutions?: string[];
   };
+  showPublicationSelector?: {
+    publications: Publication[];
+    source: PublicationSource;
+    profileName?: string;
+  };
+  showManualPublicationForm?: boolean;
 };
 
 // Generate a unique session ID for LinkedIn OAuth
@@ -336,6 +344,44 @@ export default function PhysicianOnboardingPage() {
                           onEdit={() => {
                             // Send edit request to agent
                             handleActionClick('linkedin_edit');
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Publication Selector */}
+                    {message.showPublicationSelector && (
+                      <div className="mt-4">
+                        <PublicationSelector
+                          publications={message.showPublicationSelector.publications}
+                          source={message.showPublicationSelector.source}
+                          profileName={message.showPublicationSelector.profileName}
+                          lang={lang}
+                          onConfirm={(selected) => {
+                            // Pass selected publications to agent
+                            agentRef.current?.handlePublicationSelection?.(selected);
+                          }}
+                          onCancel={() => {
+                            handleActionClick('publications_cancel');
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Manual Publication Form */}
+                    {message.showManualPublicationForm && (
+                      <div className="mt-4">
+                        <ManualPublicationForm
+                          lang={lang}
+                          onSubmit={(pub) => {
+                            agentRef.current?.handleManualPublication?.({
+                              ...pub,
+                              source: 'manual',
+                              includedInProfile: true,
+                            });
+                          }}
+                          onCancel={() => {
+                            handleActionClick('publications_done');
                           }}
                         />
                       </div>
