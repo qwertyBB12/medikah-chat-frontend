@@ -80,17 +80,13 @@ export default function PhysicianOnboardingPage() {
   const hasStarted = useRef(false);
   const linkedInChecked = useRef(false);
 
-  // Auth guard - redirect if not authenticated or not a physician
+  // Auth guard - redirect if not authenticated
+  // Note: We don't check role here because new physicians won't be in the
+  // physicians table yet - they need to complete onboarding first
   useEffect(() => {
     if (authStatus === 'loading') return;
 
     if (!session) {
-      router.replace('/chat');
-      return;
-    }
-
-    const role = session.user?.role;
-    if (role !== 'physician') {
       router.replace('/chat');
       return;
     }

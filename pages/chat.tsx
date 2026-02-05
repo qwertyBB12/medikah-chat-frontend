@@ -49,8 +49,13 @@ export default function ChatPage() {
       return;
     }
 
-    // Router will handle redirect via the useEffect above
-    await router.replace(router.asPath);
+    // Redirect based on portal selection (which button was clicked)
+    // This handles the case where the user isn't in the physicians table yet
+    if (portalSelection === 'doctor') {
+      router.replace('/physicians');
+    } else {
+      router.replace('/patients');
+    }
   };
 
   // Show loading while checking auth or redirecting

@@ -38,13 +38,7 @@ export default function PhysicianDashboard() {
       return;
     }
 
-    const role = session.user?.role;
-    if (role !== 'physician') {
-      router.replace('/chat');
-      return;
-    }
-
-    // Fetch physician status
+    // Fetch physician status - don't check role since it's based on DB lookup
     const email = session.user?.email;
     if (email) {
       getPhysicianOnboardingStatus(email).then((status) => {
@@ -59,6 +53,8 @@ export default function PhysicianDashboard() {
         setLoading(false);
         router.replace('/physicians/onboard');
       });
+    } else {
+      router.replace('/chat');
     }
   }, [session, authStatus, router]);
 

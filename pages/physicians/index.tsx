@@ -25,22 +25,16 @@ export default function PhysicianPortalRouter() {
       return;
     }
 
-    // Not a physician
-    const role = session.user?.role;
-    if (role !== 'physician') {
-      router.replace('/chat');
-      return;
-    }
-
-    // Check onboarding status
+    // Check onboarding status - don't check role here since new physicians
+    // won't be in the physicians table yet (they need to complete onboarding first)
     const email = session.user?.email;
     if (!email) {
       router.replace('/chat');
       return;
     }
 
-    getPhysicianOnboardingStatus(email).then((status) => {
-      if (status.isOnboarded && status.hasConsent) {
+    getPhysicianOnboardingStatus(email).then((onboardingStatus) => {
+      if (onboardingStatus.isOnboarded && onboardingStatus.hasConsent) {
         router.replace('/physicians/dashboard');
       } else {
         router.replace('/physicians/onboard');
