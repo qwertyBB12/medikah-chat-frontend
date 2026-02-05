@@ -351,9 +351,10 @@ const PhysicianOnboardingAgent = forwardRef<
 
   const startLicensingPhase = useCallback(() => {
     setPhase('licensing');
+    updateState('processing');
 
     // Transition to licensing with context
-    appendMessage({ text: copy.phase2Vision });
+    appendMessage({ text: copy.phase2Vision, isVision: true });
 
     setTimeout(() => {
       const countryActions: OnboardingAction[] = LICENSED_COUNTRIES.slice(0, 6).map(c => ({
@@ -363,7 +364,7 @@ const PhysicianOnboardingAgent = forwardRef<
       }));
       askQuestion('countries_licensed', copy.askCountriesLicensed, countryActions);
     }, 1200);
-  }, [copy, appendMessage, askQuestion]);
+  }, [copy, appendMessage, askQuestion, updateState]);
 
   const startSpecialtyPhase = useCallback(() => {
     setPhase('specialty');
@@ -570,9 +571,9 @@ const PhysicianOnboardingAgent = forwardRef<
           language: lang,
         }).catch(err => console.warn('Audit log failed:', err));
 
-        // Proceed to licensing phase
+        // Proceed to licensing phase (return early to avoid setQuestion(null))
         startLicensingPhase();
-        break;
+        return true;
       }
 
       case 'linkedin_url': {
@@ -590,7 +591,7 @@ const PhysicianOnboardingAgent = forwardRef<
           });
         }
         startLicensingPhase();
-        break;
+        return true;
       }
 
       // Licensing Phase
@@ -706,6 +707,7 @@ const PhysicianOnboardingAgent = forwardRef<
           setTimeout(() => {
             startSpecialtyPhase();
           }, 600);
+          return true;
         }
         break;
       }
@@ -748,7 +750,7 @@ const PhysicianOnboardingAgent = forwardRef<
         }
         appendMessage({ text: copy.specialtyNote });
         setTimeout(() => startEducationPhase(), 600);
-        break;
+        return true;
       }
 
       // Education Phase
@@ -827,7 +829,7 @@ const PhysicianOnboardingAgent = forwardRef<
           }];
         }
         startIntellectualPhase();
-        break;
+        return true;
       }
 
       // Intellectual Phase
@@ -1035,7 +1037,7 @@ const PhysicianOnboardingAgent = forwardRef<
         }
         appendMessage({ text: copy.intellectualNote });
         setTimeout(() => startPresencePhase(), 600);
-        break;
+        return true;
       }
 
       // Presence Phase
@@ -1146,7 +1148,7 @@ const PhysicianOnboardingAgent = forwardRef<
 
         data.languages = matchedLangs.length > 0 ? matchedLangs : ['es', 'en'];
         startConfirmationPhase();
-        break;
+        return true;
       }
 
       // Confirmation Phase
