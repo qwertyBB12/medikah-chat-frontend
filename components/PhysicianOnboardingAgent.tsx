@@ -48,6 +48,12 @@ export interface OnboardingBotMessage {
     graduationYear?: number;
     currentInstitutions?: string[];
   };
+  showPublicationSelector?: { // Show publication selection UI
+    publications: import('../lib/publications').Publication[];
+    source: import('../lib/publications').PublicationSource;
+    profileName?: string;
+  };
+  showManualPublicationForm?: boolean; // Show manual publication entry form
   isSummary?: boolean; // For profile summary display
   summaryData?: Partial<PhysicianProfileData>;
 }
@@ -92,6 +98,12 @@ type QuestionKey =
   | 'fellowships'
   // Intellectual
   | 'google_scholar'
+  | 'publication_source'
+  | 'pubmed_search'
+  | 'researchgate_url'
+  | 'academia_url'
+  | 'publications_manual'
+  | 'publications_select'
   | 'publications'
   | 'presentations'
   | 'books'
@@ -120,6 +132,8 @@ export interface PhysicianOnboardingAgentHandle {
   isAwaitingInput: () => boolean;
   handleUserInput: (input: string) => Promise<boolean>;
   handleActionClick: (value: string) => Promise<boolean>;
+  handlePublicationSelection?: (publications: import('../lib/publications').Publication[]) => void;
+  handleManualPublication?: (publication: import('../lib/publications').Publication) => void;
 }
 
 interface LinkedInImportData {
@@ -772,6 +786,171 @@ const PhysicianOnboardingAgent = forwardRef<
         break;
       }
 
+      case 'researchgate_url': {
+        if (!input || !input.includes('researchgate.net')) {
+          appendMessage({
+            text: lang === 'en'
+              ? 'Please enter a valid ResearchGate profile URL (e.g., https://www.researchgate.net/profile/Your-Name)'
+              : 'Por favor ingresa una URL válida de ResearchGate (ej., https://www.researchgate.net/profile/Tu-Nombre)',
+          });
+          return true;
+        }
+        data.researchgateUrl = input;
+        updateState('processing');
+
+        // Fetch publications
+        try {
+          const response = await fetch('/api/publications/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ source: 'researchgate', query: input }),
+          });
+          const result = await response.json();
+
+          if (result.success && result.publications.length > 0) {
+            appendMessage({
+              text: lang === 'en'
+                ? `Found ${result.publications.length} publications! Select which ones to include in your profile:`
+                : `¡Encontramos ${result.publications.length} publicaciones! Selecciona cuáles incluir en tu perfil:`,
+              showPublicationSelector: {
+                publications: result.publications,
+                source: 'researchgate',
+                profileName: result.profileName,
+              },
+            } as OnboardingBotMessage);
+            setQuestion('publications_select');
+            updateState('awaiting_user');
+          } else {
+            appendMessage({
+              text: lang === 'en'
+                ? 'Could not fetch publications from that profile. You can try another source or add manually.'
+                : 'No se pudieron obtener publicaciones de ese perfil. Puedes probar otra fuente o agregar manualmente.',
+              actions: [
+                { label: lang === 'en' ? 'Try another source' : 'Probar otra fuente', value: 'retry', type: 'primary' },
+                { label: lang === 'en' ? 'Skip publications' : 'Omitir publicaciones', value: 'skip', type: 'skip' },
+              ],
+            });
+            setQuestion('publication_source');
+            updateState('awaiting_user');
+          }
+        } catch {
+          appendMessage({ text: lang === 'en' ? 'Error fetching publications. Please try again.' : 'Error al obtener publicaciones. Por favor intenta de nuevo.' });
+          updateState('awaiting_user');
+        }
+        break;
+      }
+
+      case 'academia_url': {
+        if (!input || !input.includes('academia.edu')) {
+          appendMessage({
+            text: lang === 'en'
+              ? 'Please enter a valid Academia.edu profile URL'
+              : 'Por favor ingresa una URL válida de Academia.edu',
+          });
+          return true;
+        }
+        data.academiaEduUrl = input;
+        updateState('processing');
+
+        try {
+          const response = await fetch('/api/publications/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ source: 'academia', query: input }),
+          });
+          const result = await response.json();
+
+          if (result.success && result.publications.length > 0) {
+            appendMessage({
+              text: lang === 'en'
+                ? `Found ${result.publications.length} publications! Select which ones to include:`
+                : `¡Encontramos ${result.publications.length} publicaciones! Selecciona cuáles incluir:`,
+              showPublicationSelector: {
+                publications: result.publications,
+                source: 'academia',
+                profileName: result.profileName,
+              },
+            } as OnboardingBotMessage);
+            setQuestion('publications_select');
+            updateState('awaiting_user');
+          } else {
+            appendMessage({
+              text: lang === 'en'
+                ? 'Could not fetch publications. Try another source or add manually.'
+                : 'No se pudieron obtener publicaciones. Prueba otra fuente o agrega manualmente.',
+              actions: [
+                { label: lang === 'en' ? 'Try another source' : 'Probar otra fuente', value: 'retry', type: 'primary' },
+                { label: lang === 'en' ? 'Skip' : 'Omitir', value: 'skip', type: 'skip' },
+              ],
+            });
+            setQuestion('publication_source');
+            updateState('awaiting_user');
+          }
+        } catch {
+          appendMessage({ text: lang === 'en' ? 'Error fetching publications.' : 'Error al obtener publicaciones.' });
+          updateState('awaiting_user');
+        }
+        break;
+      }
+
+      case 'pubmed_search': {
+        if (!input || input.length < 3) {
+          appendMessage({
+            text: lang === 'en'
+              ? 'Please enter your name or ORCID ID'
+              : 'Por favor ingresa tu nombre o ORCID ID',
+          });
+          return true;
+        }
+        updateState('processing');
+
+        try {
+          const response = await fetch('/api/publications/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ source: 'pubmed', query: input }),
+          });
+          const result = await response.json();
+
+          if (result.success && result.publications.length > 0) {
+            appendMessage({
+              text: lang === 'en'
+                ? `Found ${result.publications.length} publications on PubMed! Select which ones to include:`
+                : `¡Encontramos ${result.publications.length} publicaciones en PubMed! Selecciona cuáles incluir:`,
+              showPublicationSelector: {
+                publications: result.publications,
+                source: 'pubmed',
+                profileName: result.profileName,
+              },
+            } as OnboardingBotMessage);
+            setQuestion('publications_select');
+            updateState('awaiting_user');
+          } else {
+            appendMessage({
+              text: lang === 'en'
+                ? 'No publications found on PubMed for that name. Try a different format or add manually.'
+                : 'No se encontraron publicaciones en PubMed para ese nombre. Prueba otro formato o agrega manualmente.',
+              actions: [
+                { label: lang === 'en' ? 'Try another source' : 'Probar otra fuente', value: 'retry', type: 'primary' },
+                { label: lang === 'en' ? 'Skip' : 'Omitir', value: 'skip', type: 'skip' },
+              ],
+            });
+            setQuestion('publication_source');
+            updateState('awaiting_user');
+          }
+        } catch {
+          appendMessage({ text: lang === 'en' ? 'Error searching PubMed.' : 'Error al buscar en PubMed.' });
+          updateState('awaiting_user');
+        }
+        break;
+      }
+
+      case 'publications_manual':
+      case 'publications_select': {
+        // Handled by component callbacks
+        break;
+      }
+
       case 'publications': {
         if (input.toLowerCase() !== 'skip' && input) {
           data.publications = input.split(/\n+/).map(p => ({
@@ -1064,13 +1243,89 @@ const PhysicianOnboardingAgent = forwardRef<
 
       case 'google_scholar':
         if (value === 'yes') {
-          askQuestion('publications',
-            lang === 'en'
-              ? 'Please share your Google Scholar URL, or list your key publications:'
-              : 'Por favor comparta su URL de Google Scholar, o liste sus publicaciones clave:'
-          );
+          // Show publication source options
+          appendMessage({
+            text: lang === 'en'
+              ? 'Great! How would you like to add your publications?'
+              : '¡Excelente! ¿Cómo te gustaría agregar tus publicaciones?',
+            actions: [
+              { label: 'ResearchGate', value: 'researchgate', type: 'secondary' },
+              { label: 'Academia.edu', value: 'academia', type: 'secondary' },
+              { label: 'PubMed', value: 'pubmed', type: 'secondary' },
+              { label: lang === 'en' ? 'Manual entry' : 'Entrada manual', value: 'manual', type: 'secondary' },
+            ],
+          });
+          setQuestion('publication_source');
+          updateState('awaiting_user');
         } else {
-          askQuestion('publications', copy.askPublications, [
+          askQuestion('presentations', copy.askPresentations, [
+            { label: copy.skipPrompt, value: 'skip', type: 'skip' },
+          ]);
+        }
+        return true;
+
+      case 'publication_source':
+        if (value === 'researchgate') {
+          askQuestion('researchgate_url',
+            lang === 'en'
+              ? 'Please paste your ResearchGate profile URL:'
+              : 'Por favor pega la URL de tu perfil de ResearchGate:'
+          );
+        } else if (value === 'academia') {
+          askQuestion('academia_url',
+            lang === 'en'
+              ? 'Please paste your Academia.edu profile URL:'
+              : 'Por favor pega la URL de tu perfil de Academia.edu:'
+          );
+        } else if (value === 'pubmed') {
+          askQuestion('pubmed_search',
+            lang === 'en'
+              ? 'Enter your name as it appears on PubMed (e.g., "Smith John" or ORCID ID):'
+              : 'Ingresa tu nombre como aparece en PubMed (ej., "García Juan" o ORCID ID):'
+          );
+        } else if (value === 'manual') {
+          appendMessage({
+            text: lang === 'en'
+              ? 'Add your publications using the form below. Click Cancel when done.'
+              : 'Agrega tus publicaciones usando el formulario. Haz clic en Cancelar cuando termines.',
+            showManualPublicationForm: true,
+          } as OnboardingBotMessage);
+          setQuestion('publications_manual');
+          updateState('awaiting_user');
+        } else if (value === 'retry') {
+          // Show source selection again
+          appendMessage({
+            text: lang === 'en'
+              ? 'Choose a different source for your publications:'
+              : 'Elige otra fuente para tus publicaciones:',
+            actions: [
+              { label: 'ResearchGate', value: 'researchgate', type: 'secondary' },
+              { label: 'Academia.edu', value: 'academia', type: 'secondary' },
+              { label: 'PubMed', value: 'pubmed', type: 'secondary' },
+              { label: lang === 'en' ? 'Manual entry' : 'Entrada manual', value: 'manual', type: 'secondary' },
+              { label: lang === 'en' ? 'Skip' : 'Omitir', value: 'skip', type: 'skip' },
+            ],
+          });
+          updateState('awaiting_user');
+        } else if (value === 'skip') {
+          // Skip publications, move to presentations
+          askQuestion('presentations', copy.askPresentations, [
+            { label: copy.skipPrompt, value: 'skip', type: 'skip' },
+          ]);
+        }
+        return true;
+
+      case 'publications_select':
+      case 'publications_manual':
+        if (value === 'publications_cancel' || value === 'publications_done') {
+          // User finished with publications
+          const pubCount = dataRef.current.publications?.length || 0;
+          appendMessage({
+            text: pubCount > 0
+              ? (lang === 'en' ? `Great! ${pubCount} publication(s) added to your profile.` : `¡Excelente! ${pubCount} publicación(es) agregadas a tu perfil.`)
+              : (lang === 'en' ? 'No publications added.' : 'No se agregaron publicaciones.'),
+          });
+          askQuestion('presentations', copy.askPresentations, [
             { label: copy.skipPrompt, value: 'skip', type: 'skip' },
           ]);
         }
@@ -1117,6 +1372,48 @@ const PhysicianOnboardingAgent = forwardRef<
     startBriefing();
   }, [state, startBriefing]);
 
+  // Handle publication selection from PublicationSelector component
+  const handlePublicationSelection = useCallback((publications: import('../lib/publications').Publication[]) => {
+    dataRef.current.publications = publications.map(p => ({
+      title: p.title,
+      journal: p.journal,
+      year: p.year,
+      url: p.url || (p.doi ? `https://doi.org/${p.doi}` : undefined),
+    }));
+
+    appendMessage({
+      text: lang === 'en'
+        ? `Added ${publications.length} publications to your profile.`
+        : `Se agregaron ${publications.length} publicaciones a tu perfil.`,
+    });
+
+    // Continue to presentations
+    askQuestion('presentations', copy.askPresentations, [
+      { label: copy.skipPrompt, value: 'skip', type: 'skip' },
+    ]);
+  }, [lang, appendMessage, copy, askQuestion]);
+
+  // Handle manual publication entry
+  const handleManualPublication = useCallback((publication: import('../lib/publications').Publication) => {
+    const existing = dataRef.current.publications || [];
+    dataRef.current.publications = [
+      ...existing,
+      {
+        title: publication.title,
+        journal: publication.journal,
+        year: publication.year,
+        url: publication.url || (publication.doi ? `https://doi.org/${publication.doi}` : undefined),
+      },
+    ];
+
+    appendMessage({
+      text: lang === 'en'
+        ? `Added: "${publication.title}". Add another or click Cancel when done.`
+        : `Agregado: "${publication.title}". Agrega otro o haz clic en Cancelar cuando termines.`,
+      showManualPublicationForm: true,
+    } as OnboardingBotMessage);
+  }, [lang, appendMessage]);
+
   // Expose methods via ref
   useImperativeHandle(ref, () => ({
     start,
@@ -1124,6 +1421,8 @@ const PhysicianOnboardingAgent = forwardRef<
     isAwaitingInput: () => state === 'awaiting_user',
     handleUserInput,
     handleActionClick,
+    handlePublicationSelection,
+    handleManualPublication,
   }));
 
   return null;
