@@ -9,6 +9,7 @@
 
 import { supabase } from '../supabase';
 import { PhysicianProfileData, PhysicianLicense } from '../physicianClient';
+import { sendVerificationUpdate } from '../email';
 import {
   VerificationResult,
   ManualReviewItem,
@@ -678,10 +679,26 @@ export async function approveManualReview(
     }
 
     // Recalculate overall status
-    await verifyPhysicianCredentials(review.physician_id);
+    const newStatus = await verifyPhysicianCredentials(review.physician_id);
+
+    // Send verification update email if fully verified
+    if (newStatus.overallStatus === 'verified') {
+      const physician = await getPhysicianData(review.physician_id);
+      if (physician) {
+        sendVerificationUpdate({
+          physicianId: review.physician_id,
+          fullName: physician.fullName,
+          email: physician.email,
+          newStatus: 'verified',
+          lang: (physician.onboardingLanguage as 'en' | 'es') || 'en',
+        }).catch(err => {
+          console.error('Failed to send verification email:', err);
+        });
+      }
+    }
 
     return { success: true };
-  } catch (err) {
+  } catch {
     return { success: false, error: 'Failed to approve review' };
   }
 }
@@ -741,8 +758,23 @@ export async function rejectManualReview(
     // Recalculate overall status
     await verifyPhysicianCredentials(review.physician_id);
 
+    // Send rejection email
+    const physician = await getPhysicianData(review.physician_id);
+    if (physician) {
+      sendVerificationUpdate({
+        physicianId: review.physician_id,
+        fullName: physician.fullName,
+        email: physician.email,
+        newStatus: 'rejected',
+        rejectionReason: reason,
+        lang: (physician.onboardingLanguage as 'en' | 'es') || 'en',
+      }).catch(err => {
+        console.error('Failed to send rejection email:', err);
+      });
+    }
+
     return { success: true };
-  } catch (err) {
+  } catch {
     return { success: false, error: 'Failed to reject review' };
   }
 }

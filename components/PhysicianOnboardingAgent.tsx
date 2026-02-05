@@ -26,6 +26,7 @@ import {
   logOnboardingAudit,
   checkPhysicianEmailExists,
 } from '../lib/physicianClient';
+import { sendPhysicianConfirmation } from '../lib/email';
 
 // Message types
 export interface OnboardingAction {
@@ -399,6 +400,16 @@ const PhysicianOnboardingAgent = forwardRef<
         action: 'completed',
         dataSnapshot: profileData as unknown as Record<string, unknown>,
         language: lang,
+      });
+
+      // Send confirmation email (fire and forget - don't block completion)
+      sendPhysicianConfirmation({
+        physicianId: result.physicianId,
+        profile: profileData,
+        verificationStatus: 'pending',
+        lang: lang as 'en' | 'es',
+      }).catch(err => {
+        console.error('Failed to send confirmation email:', err);
       });
 
       // Show completion messages
