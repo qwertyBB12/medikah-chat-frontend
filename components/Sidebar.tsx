@@ -30,14 +30,14 @@ export default function Sidebar({ onSignOut, onNewChat }: SidebarProps) {
       <div className="px-6 pb-4">
         <button
           onClick={onNewChat}
-          className="w-full text-center text-[15px] py-3.5 px-5 font-semibold tracking-[0.01em] text-white bg-white/[0.08] backdrop-blur-sm border-[1.5px] border-white/20 rounded-[10px] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-[rgba(44,122,140,0.2)] hover:border-[rgba(44,122,140,0.4)] hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(44,122,140,0.2)] active:translate-y-0"
+          className="font-dm-sans w-full text-center text-[15px] py-3.5 px-5 font-semibold tracking-[0.01em] text-white bg-white/[0.08] backdrop-blur-sm border-[1.5px] border-white/20 rounded-[10px] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:bg-[rgba(44,122,140,0.2)] hover:border-[rgba(44,122,140,0.4)] hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(44,122,140,0.2)] active:translate-y-0"
         >
           New conversation
         </button>
       </div>
 
       <div className="px-6 py-6">
-        <p className="font-normal text-[13px] text-white/65 leading-relaxed text-center">
+        <p className="font-dm-sans font-normal text-[13px] text-white/65 leading-relaxed text-center">
           Share what you are feeling. Your conversation stays private and helps your doctor prepare.
         </p>
       </div>
@@ -47,7 +47,7 @@ export default function Sidebar({ onSignOut, onNewChat }: SidebarProps) {
       <div className="px-6 py-6">
         <button
           onClick={onSignOut}
-          className="w-full px-4 py-2.5 font-medium tracking-wide text-sm text-white/80 border border-white/20 transition-all duration-200 hover:bg-white/5 hover:text-white hover:border-white/30 rounded-[8px] text-center"
+          className="font-dm-sans w-full px-4 py-2.5 font-medium tracking-wide text-sm text-white/80 border border-white/20 transition-all duration-200 hover:bg-white/5 hover:text-white hover:border-white/30 rounded-[8px] text-center"
         >
           Sign out
         </button>

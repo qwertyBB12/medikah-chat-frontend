@@ -28,10 +28,10 @@ export default function WelcomeRotator() {
         className="relative z-10 mx-auto max-w-lg text-center"
         aria-live="polite"
       >
-        <p className="text-[36px] font-bold text-inst-blue leading-[1.3] tracking-[-0.01em] animate-welcomeFade">
+        <p className="font-dm-serif text-[36px] text-inst-blue leading-[1.2] tracking-[-0.02em] animate-welcomeFade">
           {MESSAGES[index]}
         </p>
-        <p className="text-xl font-normal text-body-slate leading-relaxed mt-4 max-w-[480px] mx-auto animate-welcomeFadeDelay">
+        <p className="font-dm-sans text-xl font-normal text-body-slate leading-relaxed mt-4 max-w-[480px] mx-auto animate-welcomeFadeDelay">
           Coordinating your care across borders.
         </p>
       </div>
