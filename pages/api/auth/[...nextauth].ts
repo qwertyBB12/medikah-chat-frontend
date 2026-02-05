@@ -2,12 +2,14 @@ import NextAuth from 'next-auth';
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { supabase } from '../../../lib/supabase';
+import { detectUserRole } from '../../../lib/portalAuth';
 
 /**
  * NextAuth configuration
  *
  * Authenticates against Supabase Auth only.
  * Accounts are created manually via Supabase dashboard (invite-only).
+ * Role detection queries the physicians table to determine if user is a physician.
  */
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
@@ -36,14 +38,34 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        // Detect user role based on database records
+        const role = await detectUserRole(data.user.email || '');
+
         return {
           id: data.user.id,
           name: data.user.user_metadata?.name || data.user.email,
           email: data.user.email,
+          role,
         };
       }
     })
   ],
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.userId = user.id;
+        token.role = user.role || 'patient';
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.userId;
+        session.user.role = token.role;
+      }
+      return session;
+    },
+  },
   pages: {
     signIn: '/',
   }

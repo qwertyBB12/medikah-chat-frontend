@@ -4,17 +4,13 @@ import { LOGO_SRC, WORDMARK_SRC } from '../lib/assets';
 
 interface SplashProps {
   onDoctorLogin?: () => void;
-  onInsuranceEmployers?: () => void;
   onPatientLogin?: () => void;
-  onAdminAccess?: () => void;
   loginPanel?: ReactNode;
 }
 
 export default function Splash({
   onDoctorLogin,
-  onInsuranceEmployers,
   onPatientLogin,
-  onAdminAccess,
   loginPanel,
 }: SplashProps) {
   const portals = [
