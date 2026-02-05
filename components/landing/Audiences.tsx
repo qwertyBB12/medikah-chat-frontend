@@ -42,27 +42,27 @@ const AUDIENCES = [
 
 export default function Audiences() {
   return (
-    <section className="bg-clinical-surface px-6 py-24 sm:py-[100px]">
+    <section className="bg-clinical-surface px-6 py-28 sm:py-36">
       <div className="max-w-5xl mx-auto">
-        <h2 className="font-extrabold text-4xl md:text-[56px] text-inst-blue text-center mb-20 leading-[1.15] tracking-[-0.01em]">
+        <h2 className="font-dm-serif text-4xl md:text-[52px] lg:text-[64px] text-inst-blue text-center mb-20 leading-[0.98] tracking-[-0.02em]">
           Who Medikah Serves
         </h2>
 
-        <div className="space-y-16">
+        <div className="space-y-12">
           {AUDIENCES.map((audience) => (
             <div
               key={audience.label}
-              className="bg-white shadow-[0_1px_3px_rgba(27,42,65,0.06),0_8px_24px_rgba(27,42,65,0.04)] rounded-[12px] p-8 sm:p-12"
+              className="bg-white shadow-[0_1px_3px_rgba(27,42,65,0.04),0_8px_24px_rgba(27,42,65,0.06)] rounded-lg p-8 sm:p-12"
             >
-              <p className="text-[13px] font-bold uppercase tracking-[0.1em] text-archival-grey mb-3">
+              <p className="font-dm-sans text-[13px] font-semibold uppercase tracking-[0.12em] text-archival-grey mb-3">
                 {audience.label}
               </p>
-              <h3 className="font-extrabold text-3xl text-clinical-teal mb-6">
+              <h3 className="font-dm-serif text-2xl md:text-3xl text-clinical-teal mb-6 leading-[1.1]">
                 {audience.headline}
               </h3>
               <div className="max-w-[700px] space-y-5">
                 {audience.body.map((paragraph, i) => (
-                  <p key={i} className="text-lg text-body-slate leading-relaxed">
+                  <p key={i} className="font-dm-sans text-base md:text-lg text-body-slate leading-[1.7]">
                     {paragraph}
                   </p>
                 ))}
@@ -71,7 +71,7 @@ export default function Audiences() {
                 <div className="mt-8">
                   <a
                     href={audience.cta.href}
-                    className="inline-block px-7 py-3.5 bg-inst-blue text-white font-bold tracking-wide text-sm hover:bg-clinical-teal transition rounded-sm"
+                    className="inline-block px-7 py-3.5 bg-inst-blue text-white font-dm-sans font-semibold tracking-wide text-sm hover:bg-clinical-teal transition-colors duration-200"
                   >
                     {audience.cta.label}
                   </a>

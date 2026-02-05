@@ -1,10 +1,21 @@
 import Image from 'next/image';
 const LOGO_DARK = '/logo-BLU.png';
 
-export default function Hero() {
+/**
+ * VARIANT D: DM Serif Display + DM Sans
+ *
+ * Design principles:
+ * - DM Serif Display: Bold, confident, modern serif with presence
+ * - DM Sans: Designed as its natural pair - clean, geometric, highly legible
+ * - This pairing says "modern institution with confidence"
+ * - Balanced layout - not too traditional, not too startup
+ * - Strong hierarchy through scale and weight
+ */
+export default function HeroVariantD() {
   return (
     <section className="relative bg-white px-6 py-28 sm:py-36 md:py-44 lg:py-52 overflow-hidden hero-texture">
       <div className="max-w-5xl mx-auto">
+        {/* Logo */}
         <div className="mb-14 md:mb-20">
           <Image
             src={LOGO_DARK}
@@ -16,7 +27,9 @@ export default function Hero() {
           />
         </div>
 
+        {/* Main headline - DM Serif Display, commanding presence */}
         <h1 className="mb-10 md:mb-14 max-w-5xl">
+          {/* Primary statement - large, confident */}
           <span
             className="font-dm-serif text-clinical-teal block
                        text-[40px] sm:text-[56px] md:text-[76px] lg:text-[96px] xl:text-[112px]
@@ -31,6 +44,8 @@ export default function Hero() {
           >
             Across Borders.
           </span>
+
+          {/* Secondary line - italic for elegant contrast */}
           <span
             className="font-dm-serif italic text-inst-blue block mt-4 md:mt-8
                        text-[26px] sm:text-[34px] md:text-[44px] lg:text-[56px]
@@ -40,9 +55,10 @@ export default function Hero() {
           </span>
         </h1>
 
+        {/* Subheadlines - DM Sans, modern clarity */}
         <div className="max-w-2xl space-y-5 mb-14">
           <p className="font-dm-sans text-lg sm:text-xl md:text-[22px] text-body-slate leading-[1.6]">
-            The Americas function as one medical theater&mdash;but systems
+            The Americas function as one medical theater—but systems
             remain divided by borders that families and physicians routinely cross.
           </p>
 
@@ -54,6 +70,7 @@ export default function Hero() {
           </p>
         </div>
 
+        {/* CTAs - confident, substantial */}
         <div className="flex flex-col sm:flex-row gap-4">
           <a
             href="#early-access"

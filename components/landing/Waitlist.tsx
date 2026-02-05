@@ -41,10 +41,10 @@ export default function Waitlist() {
     return (
       <section id="early-access" className="bg-inst-blue px-6 py-24 sm:py-32">
         <div className="max-w-md mx-auto text-center space-y-4">
-          <p className="text-lg text-white">
+          <p className="font-dm-sans text-lg text-white">
             Thank you. We will be in touch.
           </p>
-          <p className="text-sm text-white/40">
+          <p className="font-dm-sans text-sm text-white/40">
             Gracias. Estaremos en contacto.
           </p>
         </div>
@@ -58,22 +58,22 @@ export default function Waitlist() {
         {/* Eyebrow — ecosystem pattern */}
         <div className="flex items-center justify-center gap-3 mb-6">
           <div className="w-10 h-[2px] bg-clinical-teal/60" />
-          <span className="text-xs font-semibold uppercase tracking-[0.15em] text-clinical-teal">
+          <span className="font-dm-sans text-xs font-semibold uppercase tracking-[0.15em] text-clinical-teal">
             Early access
           </span>
           <div className="w-10 h-[2px] bg-clinical-teal/60" />
         </div>
 
-        <h2 className="font-light text-xl tracking-wider text-white text-center mb-2">
+        <h2 className="font-dm-serif text-xl tracking-wider text-white text-center mb-2">
           Request early access
         </h2>
-        <p className="text-sm text-white/35 text-center mb-10">
+        <p className="font-dm-sans text-sm text-white/35 text-center mb-10">
           Solicitar acceso anticipado
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="flex flex-col gap-1">
-            <label htmlFor="wl-name" className="text-xs text-white/40 uppercase tracking-wider">
+            <label htmlFor="wl-name" className="font-dm-sans text-xs text-white/40 uppercase tracking-wider">
               Name
             </label>
             <input
@@ -81,13 +81,13 @@ export default function Waitlist() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-clinical-teal/60 rounded-none"
+              className="font-dm-sans bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-clinical-teal/60 rounded-none"
               required
             />
           </div>
 
           <div className="flex flex-col gap-1">
-            <label htmlFor="wl-email" className="text-xs text-white/40 uppercase tracking-wider">
+            <label htmlFor="wl-email" className="font-dm-sans text-xs text-white/40 uppercase tracking-wider">
               Email
             </label>
             <input
@@ -95,20 +95,20 @@ export default function Waitlist() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-clinical-teal/60 rounded-none"
+              className="font-dm-sans bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-clinical-teal/60 rounded-none"
               required
             />
           </div>
 
           <div className="flex flex-col gap-1">
-            <label htmlFor="wl-role" className="text-xs text-white/40 uppercase tracking-wider">
+            <label htmlFor="wl-role" className="font-dm-sans text-xs text-white/40 uppercase tracking-wider">
               I am a
             </label>
             <select
               id="wl-role"
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="bg-white/5 border border-white/15 px-4 py-3 text-white focus:outline-none focus:border-clinical-teal/60 rounded-none appearance-none"
+              className="font-dm-sans bg-white/5 border border-white/15 px-4 py-3 text-white focus:outline-none focus:border-clinical-teal/60 rounded-none appearance-none"
               required
             >
               <option value="" disabled className="text-deep-charcoal">Select</option>
@@ -121,12 +121,12 @@ export default function Waitlist() {
           </div>
 
           {status === 'duplicate' && (
-            <p className="text-sm text-clinical-teal text-center">
+            <p className="font-dm-sans text-sm text-clinical-teal text-center">
               This email is already registered.
             </p>
           )}
           {status === 'error' && (
-            <p className="text-sm text-alert-garnet text-center">
+            <p className="font-dm-sans text-sm text-alert-garnet text-center">
               Something went wrong. Please try again.
             </p>
           )}
@@ -134,7 +134,7 @@ export default function Waitlist() {
           <button
             type="submit"
             disabled={status === 'sending'}
-            className="w-full px-4 py-3.5 bg-inst-blue text-white font-bold tracking-wide text-sm border border-white/20 hover:bg-clinical-teal hover:border-clinical-teal transition rounded-sm disabled:opacity-50"
+            className="w-full px-4 py-3.5 bg-inst-blue text-white font-dm-sans font-semibold tracking-wide text-sm border border-white/20 hover:bg-clinical-teal hover:border-clinical-teal transition rounded-sm disabled:opacity-50"
           >
             {status === 'sending' ? 'Sending\u2026' : 'Submit'}
           </button>

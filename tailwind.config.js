@@ -34,6 +34,13 @@ module.exports = {
       fontFamily: {
         sans: ['var(--font-mulish)', 'sans-serif'],
         body: ['var(--font-mulish)', 'sans-serif'],
+        display: ['var(--font-fraunces)', 'Georgia', 'serif'],
+        instrument: ['var(--font-instrument)', 'Georgia', 'serif'],
+        inter: ['var(--font-inter)', 'system-ui', 'sans-serif'],
+        playfair: ['var(--font-playfair)', 'Georgia', 'serif'],
+        source: ['var(--font-source)', 'system-ui', 'sans-serif'],
+        'dm-serif': ['var(--font-dm-serif)', 'Georgia', 'serif'],
+        'dm-sans': ['var(--font-dm-sans)', 'system-ui', 'sans-serif'],
         mono: ['var(--font-mono)', 'monospace'],
       },
       borderRadius: {
