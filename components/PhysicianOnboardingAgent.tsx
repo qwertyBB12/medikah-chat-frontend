@@ -218,6 +218,7 @@ const PhysicianOnboardingAgent = forwardRef<
 
   // Stable wrapper functions that use refs
   const stableAppendMessage = useCallback((message: OnboardingBotMessage) => {
+    console.log('[ONBOARD] stableAppendMessage called:', message.text?.substring(0, 50));
     appendMessageRef.current(message);
   }, []);
 
@@ -687,6 +688,7 @@ const PhysicianOnboardingAgent = forwardRef<
       }
 
       case 'license_number': {
+        console.log('[ONBOARD] license_number case entered, input:', input);
         if (!input || input.length < 3) {
           stableAppendMessage({ text: copy.invalidLicense });
           return true;
@@ -694,6 +696,7 @@ const PhysicianOnboardingAgent = forwardRef<
 
         const countryCode = tempRef.current.currentCountry;
         const countryInfo = LICENSED_COUNTRIES.find(c => c.code === countryCode);
+        console.log('[ONBOARD] countryCode:', countryCode, 'countryInfo:', countryInfo?.name);
 
         const license: PhysicianLicense = tempRef.current.currentLicense
           ? { ...tempRef.current.currentLicense, number: input } as PhysicianLicense
@@ -710,6 +713,7 @@ const PhysicianOnboardingAgent = forwardRef<
         // Check if more countries to process
         const pending = tempRef.current.pendingCountries || [];
         const nextCountries = pending.slice(1);
+        console.log('[ONBOARD] pending countries:', pending, 'next:', nextCountries);
 
         if (nextCountries.length > 0) {
           tempRef.current.pendingCountries = nextCountries;
@@ -726,8 +730,12 @@ const PhysicianOnboardingAgent = forwardRef<
           }
         } else {
           // Transition to specialty phase
+          console.log('[ONBOARD] No more countries, transitioning to specialty phase');
+          console.log('[ONBOARD] licenseNote:', copy.licenseNote);
           stableAppendMessage({ text: copy.licenseNote });
+          console.log('[ONBOARD] Message appended, scheduling startSpecialtyPhase');
           setTimeout(() => {
+            console.log('[ONBOARD] setTimeout fired, calling startSpecialtyPhase');
             startSpecialtyPhase();
           }, 1500);
           return true;

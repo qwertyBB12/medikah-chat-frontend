@@ -133,13 +133,19 @@ export default function PhysicianOnboardingPage() {
 
   // Process message queue with conversational timing
   const processMessageQueue = useCallback(async () => {
-    if (isProcessingQueueRef.current || messageQueueRef.current.length === 0) return;
+    console.log('[QUEUE] processMessageQueue called, isProcessing:', isProcessingQueueRef.current, 'queueLength:', messageQueueRef.current.length);
+    if (isProcessingQueueRef.current || messageQueueRef.current.length === 0) {
+      console.log('[QUEUE] Skipping - already processing or empty queue');
+      return;
+    }
 
     isProcessingQueueRef.current = true;
+    console.log('[QUEUE] Started processing');
 
     try {
       while (messageQueueRef.current.length > 0) {
         const message = messageQueueRef.current.shift()!;
+        console.log('[QUEUE] Processing message:', message.text?.substring(0, 50));
 
         // Show typing indicator
         setIsTyping(true);
@@ -249,7 +255,10 @@ export default function PhysicianOnboardingPage() {
 
   // Append message from agent (with queuing for timing)
   const appendMessage = useCallback((message: OnboardingBotMessage) => {
+    console.log('[QUEUE] appendMessage called:', message.text?.substring(0, 50));
+    console.log('[QUEUE] Queue length before push:', messageQueueRef.current.length);
     messageQueueRef.current.push(message);
+    console.log('[QUEUE] Queue length after push:', messageQueueRef.current.length);
     triggerQueueProcessing();
   }, [triggerQueueProcessing]);
 
