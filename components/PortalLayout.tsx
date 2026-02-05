@@ -21,6 +21,8 @@ interface ChatInputConfig {
   onKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
   textareaRef: RefObject<HTMLTextAreaElement | null>;
   isSending: boolean;
+  placeholder?: string;
+  accentColor?: 'blue' | 'teal';
 }
 
 interface PortalLayoutProps {
@@ -175,6 +177,8 @@ export default function PortalLayout({
             onKeyDown={chatInputProps.onKeyDown}
             textareaRef={chatInputProps.textareaRef}
             isSending={chatInputProps.isSending}
+            placeholder={chatInputProps.placeholder}
+            accentColor={chatInputProps.accentColor}
           />
         )}
 

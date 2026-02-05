@@ -388,6 +388,8 @@ export default function PhysicianOnboardingPage() {
           onKeyDown: handleKeyDown,
           textareaRef,
           isSending: isSending || isTyping,
+          placeholder: lang === 'en' ? 'Type your response…' : 'Escriba su respuesta…',
+          accentColor: 'teal',
         } : undefined}
         headerTitle={lang === 'en' ? 'Join Network' : 'Únete'}
       >
