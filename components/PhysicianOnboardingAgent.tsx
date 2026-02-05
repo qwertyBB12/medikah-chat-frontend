@@ -26,7 +26,6 @@ import {
   logOnboardingAudit,
   checkPhysicianEmailExists,
 } from '../lib/physicianClient';
-import { sendPhysicianConfirmation } from '../lib/email';
 
 // Message types
 export interface OnboardingAction {
@@ -149,7 +148,7 @@ interface PhysicianOnboardingAgentProps {
   lang: SupportedLang;
   appendMessage: (message: OnboardingBotMessage) => void;
   onStateChange?: (state: OnboardingAgentState) => void;
-  onComplete?: (physicianId: string) => void;
+  onProfileReady?: (physicianId: string, physicianName: string) => void;
   linkedInData?: LinkedInImportData;
   sessionId?: string;
 }
@@ -177,7 +176,7 @@ const PhysicianOnboardingAgent = forwardRef<
   PhysicianOnboardingAgentHandle,
   PhysicianOnboardingAgentProps
 >((props, ref) => {
-  const { lang, appendMessage, onStateChange, onComplete, linkedInData, sessionId } = props;
+  const { lang, appendMessage, onStateChange, onProfileReady, linkedInData, sessionId } = props;
   const copy = useMemo(() => onboardingCopy[lang], [lang]);
 
   // Track if LinkedIn data has been applied
@@ -392,7 +391,14 @@ const PhysicianOnboardingAgent = forwardRef<
 
   const completeOnboarding = useCallback(async () => {
     updateState('processing');
-    appendMessage({ text: copy.completionMessage[0] });
+
+    // Show message about the agreement
+    appendMessage({
+      text: lang === 'en'
+        ? 'Excellent! Your profile is ready. Before we finalize your registration, please review and sign the Physician Network Agreement.'
+        : '¡Excelente! Su perfil está listo. Antes de finalizar su registro, por favor revise y firme el Acuerdo de Red de Médicos.',
+      isVision: true,
+    });
 
     // Create the physician profile
     const profileData: PhysicianProfileData = {
@@ -431,35 +437,25 @@ const PhysicianOnboardingAgent = forwardRef<
     const result = await createPhysicianProfile(profileData);
 
     if (result.success && result.physicianId) {
-      // Log completion
+      // Log profile creation (not yet completed - pending consent)
       await logOnboardingAudit({
         physicianId: result.physicianId,
         email: profileData.email,
-        action: 'completed',
+        action: 'phase_completed',
+        phase: 'profile_created',
         dataSnapshot: profileData as unknown as Record<string, unknown>,
         language: lang,
       });
 
-      // Send confirmation email (fire and forget - don't block completion)
-      sendPhysicianConfirmation({
-        physicianId: result.physicianId,
-        profile: profileData,
-        verificationStatus: 'pending',
-        lang: lang as 'en' | 'es',
-      }).catch(err => {
-        console.error('Failed to send confirmation email:', err);
-      });
+      // Trigger consent modal - completion happens after consent is signed
+      // Confirmation email will be sent after consent
+      const physicianId = result.physicianId;
+      setTimeout(() => {
+        onProfileReady?.(physicianId, profileData.fullName);
+      }, 800);
 
-      // Show completion messages
-      copy.completionMessage.slice(1).forEach((msg, i) => {
-        setTimeout(() => {
-          appendMessage({ text: msg, isVision: true });
-        }, (i + 1) * 600);
-      });
-
-      setPhase('completed');
-      updateState('completed');
-      onComplete?.(result.physicianId);
+      // Keep state as processing - will be updated after consent
+      setPhase('confirmation');
     } else {
       appendMessage({
         text: lang === 'en'
@@ -468,7 +464,7 @@ const PhysicianOnboardingAgent = forwardRef<
       });
       updateState('awaiting_user');
     }
-  }, [copy, lang, appendMessage, updateState, onComplete]);
+  }, [lang, appendMessage, updateState, onProfileReady]);
 
   // Handle user input
   const handleUserInput = useCallback(async (rawInput: string): Promise<boolean> => {

@@ -10,7 +10,9 @@ import PhysicianOnboardingAgent, {
 } from '../../components/PhysicianOnboardingAgent';
 import LinkedInConnectButton, { LinkedInProfilePreview } from '../../components/LinkedInConnectButton';
 import PublicationSelector, { ManualPublicationForm } from '../../components/PublicationSelector';
+import PhysicianConsentModal, { PhysicianConsentData } from '../../components/PhysicianConsentModal';
 import { Publication, PublicationSource } from '../../lib/publications';
+import { savePhysicianConsent } from '../../lib/physicianClient';
 import { LOGO_SRC } from '../../lib/assets';
 import { SupportedLang } from '../../lib/i18n';
 
@@ -56,6 +58,11 @@ export default function PhysicianOnboardingPage() {
   const [sessionId] = useState(() => generateSessionId());
   const [linkedInData, setLinkedInData] = useState<Message['linkedInPreview'] | null>(null);
   const [linkedInConnected, setLinkedInConnected] = useState(false);
+
+  // Consent modal state
+  const [showConsentModal, setShowConsentModal] = useState(false);
+  const [pendingPhysicianId, setPendingPhysicianId] = useState<string | null>(null);
+  const [pendingPhysicianName, setPendingPhysicianName] = useState<string>('');
 
   const agentRef = useRef<PhysicianOnboardingAgentHandle>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -168,9 +175,47 @@ export default function PhysicianOnboardingPage() {
     setAgentState(state);
   }, []);
 
-  // Handle completion
-  const handleComplete = useCallback((physicianId: string) => {
-    setCompletedPhysicianId(physicianId);
+  // Handle profile ready - show consent modal
+  const handleProfileReady = useCallback((physicianId: string, physicianName: string) => {
+    setPendingPhysicianId(physicianId);
+    setPendingPhysicianName(physicianName);
+    setShowConsentModal(true);
+  }, []);
+
+  // Handle consent completion
+  const handleConsentComplete = useCallback(async (consentData: PhysicianConsentData) => {
+    // Save consent to database
+    await savePhysicianConsent({
+      physicianId: consentData.physicianId,
+      language: consentData.language,
+      sections: consentData.sections,
+      recordingConsent: consentData.recordingConsent,
+      signedAt: consentData.signedAt,
+      formVersion: consentData.formVersion,
+    });
+
+    // Close modal and complete registration
+    setShowConsentModal(false);
+    setCompletedPhysicianId(consentData.physicianId);
+
+    // Add completion message
+    setMessages(prev => [
+      ...prev,
+      {
+        sender: 'bot',
+        text: lang === 'en'
+          ? 'Thank you for signing the Physician Network Agreement. Your registration is now complete!'
+          : '¡Gracias por firmar el Acuerdo de Red de Médicos. Su registro está completo!',
+        isVision: true,
+      },
+    ]);
+  }, [lang]);
+
+  // Handle consent cancel - go back to profile review
+  const handleConsentCancel = useCallback(() => {
+    setShowConsentModal(false);
+    setPendingPhysicianId(null);
+    setPendingPhysicianName('');
   }, []);
 
   // Send user message
@@ -496,10 +541,21 @@ export default function PhysicianOnboardingPage() {
           lang={lang}
           appendMessage={appendMessage}
           onStateChange={handleStateChange}
-          onComplete={handleComplete}
+          onProfileReady={handleProfileReady}
           linkedInData={linkedInConnected && linkedInData ? linkedInData : undefined}
           sessionId={sessionId}
         />
+
+        {/* Physician Consent Modal */}
+        {showConsentModal && pendingPhysicianId && (
+          <PhysicianConsentModal
+            physicianId={pendingPhysicianId}
+            physicianName={pendingPhysicianName}
+            lang={lang}
+            onComplete={handleConsentComplete}
+            onCancel={handleConsentCancel}
+          />
+        )}
       </div>
     </>
   );

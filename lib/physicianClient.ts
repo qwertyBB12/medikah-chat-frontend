@@ -349,3 +349,86 @@ export async function getPhysicianProfile(
     return null;
   }
 }
+
+/**
+ * Physician consent data for network agreement
+ */
+export interface PhysicianConsentRecord {
+  physicianId: string;
+  language: string;
+  sections: Record<string, boolean>;
+  recordingConsent: boolean | null;
+  signedAt: string;
+  formVersion: string;
+}
+
+/**
+ * Save physician consent record
+ */
+export async function savePhysicianConsent(
+  consent: PhysicianConsentRecord
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    if (!supabase) {
+      console.warn('Supabase not configured — consent record not persisted.');
+      return { success: true };
+    }
+
+    const { error } = await supabase.from('physician_consent_records').insert({
+      physician_id: consent.physicianId,
+      form_type: 'network_agreement',
+      form_version: consent.formVersion,
+      language: consent.language,
+      sections: consent.sections,
+      recording_consent: consent.recordingConsent,
+      signed_at: consent.signedAt,
+      user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+    });
+
+    if (error) {
+      console.error('Failed to save physician consent:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (err) {
+    console.error('Consent save error:', err);
+    return { success: false, error: 'Failed to save consent' };
+  }
+}
+
+/**
+ * Check if physician has valid consent
+ */
+export async function hasValidPhysicianConsent(
+  physicianId: string,
+  requiredVersion?: string
+): Promise<boolean> {
+  if (!supabase) {
+    return false;
+  }
+
+  try {
+    let query = supabase
+      .from('physician_consent_records')
+      .select('id')
+      .eq('physician_id', physicianId)
+      .eq('form_type', 'network_agreement')
+      .limit(1);
+
+    if (requiredVersion) {
+      query = query.eq('form_version', requiredVersion);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Failed to check physician consent:', error);
+      return false;
+    }
+
+    return Array.isArray(data) && data.length > 0;
+  } catch {
+    return false;
+  }
+}
