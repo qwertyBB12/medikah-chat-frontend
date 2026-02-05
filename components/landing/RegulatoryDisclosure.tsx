@@ -12,10 +12,10 @@ export default function RegulatoryDisclosure() {
               </svg>
             </div>
             <div>
-              <h3 className="font-bold text-lg text-inst-blue mb-4">
+              <h3 className="font-dm-serif text-xl text-inst-blue mb-4">
                 Important Information About Medikah
               </h3>
-              <div className="space-y-4 text-body-slate text-base leading-relaxed">
+              <div className="space-y-4 font-dm-sans text-body-slate text-base leading-[1.7]">
                 <p>
                   Medikah is a HIPAA-compliant technology platform.
                 </p>

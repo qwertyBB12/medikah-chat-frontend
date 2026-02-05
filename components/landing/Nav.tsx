@@ -53,7 +53,7 @@ export default function Nav() {
             <a
               key={link.label}
               href={link.href}
-              className="font-bold text-[17px] tracking-[0.02em] text-deep-charcoal hover:text-clinical-teal transition-colors"
+              className="font-dm-sans font-semibold text-[15px] tracking-[0.01em] text-deep-charcoal hover:text-clinical-teal transition-colors"
             >
               {link.label}
             </a>

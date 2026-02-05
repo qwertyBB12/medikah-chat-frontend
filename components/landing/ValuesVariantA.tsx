@@ -13,33 +13,43 @@ const VALUES = [
   },
 ];
 
-export default function Values() {
+/**
+ * VARIANT A: Values with Fraunces Headlines
+ *
+ * Design principles:
+ * - Section title in Fraunces serif (institutional)
+ * - Card titles in Fraunces (cohesive hierarchy)
+ * - Staggered card heights for visual rhythm
+ * - Left-aligned section title (matches Hero)
+ */
+export default function ValuesVariantA() {
   return (
-    <section className="bg-gradient-to-b from-white via-clinical-surface/50 to-white px-6 py-28 sm:py-36">
+    <section className="bg-gradient-to-b from-white via-clinical-surface to-white px-6 py-28 sm:py-36">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-16 md:mb-24">
-          <p className="font-dm-sans text-sm font-semibold text-clinical-teal uppercase tracking-[0.15em] mb-4">
+        {/* Section header - left-aligned with accent */}
+        <div className="mb-20 max-w-2xl">
+          <p className="font-body text-sm font-semibold text-clinical-teal uppercase tracking-[0.15em] mb-4">
             Our Foundation
           </p>
-          <h2 className="font-dm-serif text-4xl md:text-[52px] lg:text-[64px] text-inst-blue leading-[0.98] tracking-[-0.02em]">
+          <h2 className="font-display font-bold text-4xl md:text-[56px] lg:text-[64px] text-inst-blue leading-[0.95] tracking-[-0.02em]">
             What We Believe
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-          {VALUES.map((item) => (
+        {/* Cards with staggered offset */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {VALUES.map((item, index) => (
             <div
               key={item.title}
-              className="group bg-white rounded-lg p-8 md:p-10
-                         shadow-[0_1px_3px_rgba(27,42,65,0.04),0_8px_24px_rgba(27,42,65,0.06)]
-                         hover:shadow-[0_4px_12px_rgba(27,42,65,0.08),0_16px_40px_rgba(27,42,65,0.1)]
-                         transition-shadow duration-300"
+              className={`bg-white shadow-[0_1px_3px_rgba(27,42,65,0.06),0_8px_24px_rgba(27,42,65,0.04)]
+                         rounded-[12px] p-8 sm:p-10
+                         ${index === 1 ? 'md:mt-8' : ''}
+                         ${index === 2 ? 'md:mt-16' : ''}`}
             >
-              <h3 className="font-dm-serif text-2xl md:text-[28px] text-clinical-teal mb-4 leading-[1.15]
-                             group-hover:text-clinical-teal-dark transition-colors duration-200">
+              <h3 className="font-display font-semibold text-3xl md:text-[32px] text-clinical-teal mb-4 leading-[1.1] tracking-[-0.01em]">
                 {item.title}
               </h3>
-              <p className="font-dm-sans text-base text-body-slate leading-[1.7]">
+              <p className="text-lg text-body-slate leading-[1.7]">
                 {item.body}
               </p>
             </div>

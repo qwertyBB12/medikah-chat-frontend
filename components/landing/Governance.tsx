@@ -27,30 +27,30 @@ const PILLARS = [
 
 export default function Governance() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-inst-blue to-[#243447] px-6 py-[100px] md:py-[140px] compliance-dark">
+    <section className="relative overflow-hidden bg-gradient-to-br from-inst-blue to-[#243447] px-6 py-28 sm:py-36 md:py-44 compliance-dark">
       <div className="max-w-4xl mx-auto">
-        <h2 className="font-extrabold text-4xl md:text-[56px] text-white text-center mb-12 leading-[1.1] tracking-[-0.02em]">
+        <h2 className="font-dm-serif text-4xl md:text-[52px] lg:text-[64px] text-white text-center mb-12 leading-[0.98] tracking-[-0.02em]">
           Built for Institutional Scrutiny
         </h2>
 
-        <p className="text-lg text-white/90 leading-[1.7] text-center max-w-[900px] mx-auto mb-6">
+        <p className="font-dm-sans text-lg text-white/90 leading-[1.7] text-center max-w-[900px] mx-auto mb-6">
           Medikah&rsquo;s compliance framework was developed in consultation with
           regulatory experts across multiple jurisdictions. Our architecture is designed
           to withstand institutional audit from day one.
         </p>
 
-        <p className="font-semibold text-sm text-white/80 text-center mb-10">
+        <p className="font-dm-sans font-medium text-sm text-white/70 text-center mb-10 tracking-wide">
           Dual-jurisdiction compliance &middot; HIPAA and COFEPRIS frameworks &middot; Institutional governance from inception
         </p>
 
-        <p className="text-lg text-white/90 leading-relaxed text-center max-w-[800px] mx-auto mb-6">
+        <p className="font-dm-sans text-lg text-white/90 leading-[1.7] text-center max-w-[800px] mx-auto mb-6">
           Coordination across borders requires regulatory compliance, jurisdictional
           clarity, and institutional trust. Medikah operates within established
           frameworks&mdash;HIPAA, local medical licensing, bilateral agreements, and privacy
           standards.
         </p>
 
-        <p className="text-lg text-white/90 leading-relaxed text-center max-w-[800px] mx-auto mb-16">
+        <p className="font-dm-sans text-lg text-white/90 leading-[1.7] text-center max-w-[800px] mx-auto mb-16">
           Every interaction is audit-ready. Every provider is credentialed. Every coverage pathway is
           transparent. We do not operate in regulatory gray zones. We build infrastructure that
           institutions can trust and regulators can verify.
@@ -62,7 +62,7 @@ export default function Governance() {
               <div className="w-14 h-14 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center">
                 {pillar.icon}
               </div>
-              <p className="font-bold text-sm tracking-wide text-white">
+              <p className="font-dm-sans font-semibold text-sm tracking-wide text-white">
                 {pillar.label}
               </p>
             </div>

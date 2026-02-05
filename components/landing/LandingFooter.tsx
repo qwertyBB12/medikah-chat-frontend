@@ -5,10 +5,10 @@ export default function LandingFooter() {
     <footer className="bg-inst-blue px-6 pt-14 pb-10">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-10">
-          <p className="font-semibold text-[15px] text-white leading-relaxed mb-4">
+          <p className="font-dm-sans font-medium text-[15px] text-white leading-relaxed mb-4">
             Medikah Corporation · Incorporated in Delaware, USA
           </p>
-          <div className="text-sm space-y-1">
+          <div className="font-dm-sans text-sm space-y-1">
             <p>
               <a
                 href="mailto:partnerships@medikah.health"
@@ -37,10 +37,10 @@ export default function LandingFooter() {
         </div>
 
         <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-[13px] text-white/60">
+          <p className="font-dm-sans text-[13px] text-white/60">
             &copy; 2026 Medikah Corporation. All rights reserved.
           </p>
-          <div className="text-[13px]">
+          <div className="font-dm-sans text-[13px]">
             <Link href="/privacy" className="text-white/60 hover:text-white transition-colors">
               Privacy Policy
             </Link>

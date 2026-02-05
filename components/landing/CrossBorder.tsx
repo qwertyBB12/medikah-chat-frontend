@@ -1,18 +1,18 @@
 export default function CrossBorder() {
   return (
-    <section className="bg-white px-6 py-24 sm:py-32 overflow-hidden">
+    <section className="bg-white px-6 py-28 sm:py-36 overflow-hidden">
       <div className="max-w-5xl mx-auto">
-        <h2 className="font-extrabold text-4xl md:text-[56px] text-inst-blue text-center mb-8 leading-[1.15] tracking-[-0.01em]">
+        <h2 className="font-dm-serif text-4xl md:text-[52px] lg:text-[64px] text-inst-blue text-center mb-8 leading-[0.98] tracking-[-0.02em]">
           The Americas Are Already One Medical Theater
         </h2>
 
-        <p className="text-lg text-body-slate leading-relaxed text-center max-w-[900px] mx-auto mb-16">
+        <p className="font-dm-sans text-lg text-body-slate leading-[1.7] text-center max-w-[900px] mx-auto mb-12">
           Patients already live across borders. Families span multiple countries. Physicians trained
           in one nation practice in another. Insurers operate multinational employer groups. The
           medical reality is hemispheric&mdash;but the infrastructure isn&rsquo;t.
         </p>
 
-        <p className="text-lg text-body-slate leading-relaxed text-center max-w-[900px] mx-auto mb-20">
+        <p className="font-dm-sans text-lg text-body-slate leading-[1.7] text-center max-w-[900px] mx-auto mb-20">
           Medikah builds that infrastructure. Not as disruption. As coordination. Not as marketplace.
           As institutional layer. Not as movement. As recognition of what already exists.
         </p>

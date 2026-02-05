@@ -1,5 +1,5 @@
 import { Html, Head, Main, NextScript } from 'next/document';
-import { mulish, ibmPlexMono } from '../lib/fonts';
+import { mulish, ibmPlexMono, fraunces, instrumentSerif, inter, playfairDisplay, sourceSans3, dmSerifDisplay, dmSans } from '../lib/fonts';
 
 export default function Document() {
   return (
@@ -13,7 +13,7 @@ export default function Document() {
         <link rel="manifest" href="/site.webmanifest" />
         <meta name="theme-color" content="#1B2A41" />
       </Head>
-      <body className={`${mulish.variable} ${ibmPlexMono.variable} font-body`}>
+      <body className={`${mulish.variable} ${ibmPlexMono.variable} ${fraunces.variable} ${instrumentSerif.variable} ${inter.variable} ${playfairDisplay.variable} ${sourceSans3.variable} ${dmSerifDisplay.variable} ${dmSans.variable} font-body`}>
         <Main />
         <NextScript />
       </body>
