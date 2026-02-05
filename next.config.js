@@ -1,6 +1,19 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  i18n: {
+    locales: ['en', 'es'],
+    defaultLocale: 'en',
+  },
+  async redirects() {
+    return [
+      {
+        source: '/onboard/physician',
+        destination: '/physicians/onboard',
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {
