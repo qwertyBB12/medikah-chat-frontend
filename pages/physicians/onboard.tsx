@@ -2,15 +2,14 @@
  * Physician Onboarding Page
  *
  * Conversational onboarding flow for new physicians joining the Medikah Network.
- * Shows the consent modal at the end after profile completion.
+ * Uses the same PortalLayout and chat UI as patients for consistent experience.
  */
 
 import Head from 'next/head';
-import Image from 'next/image';
-import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/router';
-import { FormEvent, KeyboardEvent, useEffect, useRef, useState, useCallback } from 'react';
+import { KeyboardEvent, useEffect, useRef, useState, useCallback } from 'react';
+import PortalLayout from '../../components/PortalLayout';
 import PhysicianOnboardingAgent, {
   PhysicianOnboardingAgentHandle,
   OnboardingBotMessage,
@@ -22,7 +21,6 @@ import PhysicianConsentModal, { PhysicianConsentData } from '../../components/Ph
 import { Publication, PublicationSource } from '../../lib/publications';
 import { savePhysicianConsent } from '../../lib/physicianClient';
 import { getPhysicianOnboardingStatus } from '../../lib/portalAuth';
-import { LOGO_SRC } from '../../lib/assets';
 import { SupportedLang } from '../../lib/i18n';
 
 type Message = {
@@ -53,6 +51,16 @@ function generateSessionId(): string {
   return `onboard_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 }
 
+// Conversational timing delays (in ms)
+const TYPING_DELAY_BASE = 800; // Base delay before showing message
+const TYPING_DELAY_PER_CHAR = 15; // Additional delay per character
+const TYPING_DELAY_MAX = 2500; // Maximum delay
+
+function calculateTypingDelay(text: string): number {
+  const delay = TYPING_DELAY_BASE + Math.min(text.length * TYPING_DELAY_PER_CHAR, TYPING_DELAY_MAX - TYPING_DELAY_BASE);
+  return delay;
+}
+
 export default function PhysicianOnboardingPage() {
   const { data: session, status: authStatus } = useSession();
   const router = useRouter();
@@ -61,6 +69,7 @@ export default function PhysicianOnboardingPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const [agentState, setAgentState] = useState<OnboardingAgentState>('idle');
   const [completedPhysicianId, setCompletedPhysicianId] = useState<string | null>(null);
 
@@ -74,6 +83,10 @@ export default function PhysicianOnboardingPage() {
   const [pendingPhysicianId, setPendingPhysicianId] = useState<string | null>(null);
   const [pendingPhysicianName, setPendingPhysicianName] = useState<string>('');
 
+  // Message queue for conversational timing
+  const messageQueueRef = useRef<OnboardingBotMessage[]>([]);
+  const isProcessingQueueRef = useRef(false);
+
   const agentRef = useRef<PhysicianOnboardingAgentHandle>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -81,8 +94,6 @@ export default function PhysicianOnboardingPage() {
   const linkedInChecked = useRef(false);
 
   // Auth guard - redirect if not authenticated
-  // Note: We don't check role here because new physicians won't be in the
-  // physicians table yet - they need to complete onboarding first
   useEffect(() => {
     if (authStatus === 'loading') return;
 
@@ -105,19 +116,61 @@ export default function PhysicianOnboardingPage() {
   // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, isTyping]);
 
   // Auto-resize textarea
-  const adjustTextareaHeight = () => {
+  const adjustTextareaHeight = useCallback(() => {
     const el = textareaRef.current;
     if (!el) return;
     el.style.height = 'auto';
-    el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
-  };
+    el.style.height = `${Math.min(el.scrollHeight, 240)}px`;
+  }, []);
 
   useEffect(() => {
     adjustTextareaHeight();
-  }, [input]);
+  }, [input, adjustTextareaHeight]);
+
+  // Process message queue with conversational timing
+  const processMessageQueue = useCallback(async () => {
+    if (isProcessingQueueRef.current || messageQueueRef.current.length === 0) return;
+
+    isProcessingQueueRef.current = true;
+
+    while (messageQueueRef.current.length > 0) {
+      const message = messageQueueRef.current.shift()!;
+
+      // Show typing indicator
+      setIsTyping(true);
+
+      // Wait for typing delay
+      const delay = calculateTypingDelay(message.text);
+      await new Promise(resolve => setTimeout(resolve, delay));
+
+      // Hide typing indicator and show message
+      setIsTyping(false);
+      setMessages(prev => [
+        ...prev,
+        {
+          sender: 'bot',
+          text: message.text,
+          isVision: message.isVision,
+          isSummary: message.isSummary,
+          actions: message.actions,
+          showLinkedInConnect: message.showLinkedInConnect,
+          linkedInPreview: message.linkedInPreview,
+          showPublicationSelector: message.showPublicationSelector,
+          showManualPublicationForm: message.showManualPublicationForm,
+        },
+      ]);
+
+      // Small pause between messages if there are more
+      if (messageQueueRef.current.length > 0) {
+        await new Promise(resolve => setTimeout(resolve, 400));
+      }
+    }
+
+    isProcessingQueueRef.current = false;
+  }, []);
 
   // Check for LinkedIn callback params
   useEffect(() => {
@@ -129,15 +182,12 @@ export default function PhysicianOnboardingPage() {
     const sessionParam = urlParams.get('session');
 
     if (linkedinStatus === 'connected' && sessionParam) {
-      // Fetch the LinkedIn profile data
       fetch(`/api/auth/linkedin/profile?session_id=${encodeURIComponent(sessionParam)}`)
         .then(res => res.json())
         .then(data => {
           if (data.success && data.mappedData) {
             setLinkedInData(data.mappedData);
             setLinkedInConnected(true);
-
-            // Clean up URL params
             const newUrl = window.location.pathname;
             window.history.replaceState({}, '', newUrl);
           }
@@ -146,10 +196,6 @@ export default function PhysicianOnboardingPage() {
           console.error('Failed to fetch LinkedIn profile:', err);
         });
     } else if (linkedinStatus === 'error') {
-      const errorMsg = urlParams.get('error');
-      console.error('LinkedIn OAuth error:', errorMsg);
-
-      // Clean up URL params
       const newUrl = window.location.pathname;
       window.history.replaceState({}, '', newUrl);
     }
@@ -160,23 +206,19 @@ export default function PhysicianOnboardingPage() {
     if (hasStarted.current) return;
     if (authStatus !== 'authenticated') return;
 
-    // Use an interval to wait for the ref to be populated
     const checkAndStart = () => {
       if (agentRef.current && !hasStarted.current) {
         hasStarted.current = true;
-        // Small delay for smooth UX
         setTimeout(() => {
           agentRef.current?.start();
-        }, 300);
+        }, 500);
         return true;
       }
       return false;
     };
 
-    // Try immediately
     if (checkAndStart()) return;
 
-    // If ref not ready, retry a few times
     let attempts = 0;
     const maxAttempts = 10;
     const interval = setInterval(() => {
@@ -189,19 +231,11 @@ export default function PhysicianOnboardingPage() {
     return () => clearInterval(interval);
   }, [authStatus]);
 
-  // Append message from agent
+  // Append message from agent (with queuing for timing)
   const appendMessage = useCallback((message: OnboardingBotMessage) => {
-    setMessages(prev => [
-      ...prev,
-      {
-        sender: 'bot',
-        text: message.text,
-        isVision: message.isVision,
-        isSummary: message.isSummary,
-        actions: message.actions,
-      },
-    ]);
-  }, []);
+    messageQueueRef.current.push(message);
+    processMessageQueue();
+  }, [processMessageQueue]);
 
   // Handle state changes from agent
   const handleStateChange = useCallback((state: OnboardingAgentState) => {
@@ -217,7 +251,6 @@ export default function PhysicianOnboardingPage() {
 
   // Handle consent completion
   const handleConsentComplete = useCallback(async (consentData: PhysicianConsentData) => {
-    // Save consent to database
     await savePhysicianConsent({
       physicianId: consentData.physicianId,
       language: consentData.language,
@@ -227,24 +260,20 @@ export default function PhysicianOnboardingPage() {
       formVersion: consentData.formVersion,
     });
 
-    // Close modal and complete registration
     setShowConsentModal(false);
     setCompletedPhysicianId(consentData.physicianId);
 
-    // Add completion message
-    setMessages(prev => [
-      ...prev,
-      {
-        sender: 'bot',
-        text: lang === 'en'
-          ? 'Thank you for signing the Physician Network Agreement. Your registration is now complete!'
-          : '¡Gracias por firmar el Acuerdo de Red de Médicos. Su registro está completo!',
-        isVision: true,
-      },
-    ]);
-  }, [lang]);
+    // Add completion message with delay
+    messageQueueRef.current.push({
+      text: lang === 'en'
+        ? 'Thank you for signing the Physician Network Agreement. Your registration is now complete! Welcome to the Medikah Network.'
+        : '¡Gracias por firmar el Acuerdo de Red de Médicos. Su registro está completo! Bienvenido a la Red Medikah.',
+      isVision: true,
+    });
+    processMessageQueue();
+  }, [lang, processMessageQueue]);
 
-  // Handle consent cancel - go back to profile review
+  // Handle consent cancel
   const handleConsentCancel = useCallback(() => {
     setShowConsentModal(false);
     setPendingPhysicianId(null);
@@ -259,7 +288,6 @@ export default function PhysicianOnboardingPage() {
       return;
     }
 
-    // Add user message
     setMessages(prev => [...prev, { sender: 'user', text: trimmed }]);
     setInput('');
     setIsSending(true);
@@ -288,18 +316,12 @@ export default function PhysicianOnboardingPage() {
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
-      if (!isSending) sendMessage(input);
+      if (!isSending && !isTyping) sendMessage(input);
     }
   };
 
-  // Handle form submit
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!isSending) sendMessage(input);
-  };
-
   const isComplete = agentState === 'completed';
-  const isAwaitingInput = agentState === 'awaiting_user' && !isSending;
+  const isAwaitingInput = agentState === 'awaiting_user' && !isSending && !isTyping;
 
   // Show loading while checking auth
   if (authStatus === 'loading' || !session) {
@@ -314,107 +336,102 @@ export default function PhysicianOnboardingPage() {
     );
   }
 
+  // Sidebar content for onboarding progress
+  const sidebarContent = (
+    <div className="space-y-4">
+      <p className="font-dm-sans text-xs text-white/50 uppercase tracking-wider">
+        {lang === 'en' ? 'Onboarding Progress' : 'Progreso de Registro'}
+      </p>
+      <div className="space-y-2">
+        {['Briefing', 'Identity', 'Licensing', 'Specialty', 'Education', 'Publications', 'Availability'].map((step, idx) => (
+          <div key={step} className="flex items-center gap-3">
+            <div className={`w-2 h-2 rounded-full ${idx === 0 ? 'bg-clinical-teal' : 'bg-white/20'}`} />
+            <span className={`font-dm-sans text-sm ${idx === 0 ? 'text-white' : 'text-white/40'}`}>
+              {step}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <>
       <Head>
         <title>
           {lang === 'en'
-            ? 'Physician Onboarding — Medikah Network'
-            : 'Registro de Médicos — Red Medikah'}
+            ? 'Join the Network — Medikah'
+            : 'Únete a la Red — Medikah'}
         </title>
         <meta name="robots" content="noindex, nofollow" />
       </Head>
 
-      <div className="min-h-screen flex flex-col bg-[#FAFAFB]">
-        {/* Header */}
-        <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-border-line/50 px-6 py-4">
-          <div className="max-w-4xl mx-auto flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-3">
-              <Image
-                src={LOGO_SRC}
-                alt="Medikah"
-                width={40}
-                height={40}
-                priority
-                className="w-10 h-10"
-              />
-              <span className="font-dm-serif text-xl text-inst-blue">
-                {lang === 'en' ? 'Physician Network' : 'Red de Médicos'}
-              </span>
-            </Link>
+      {showConsentModal && pendingPhysicianId && (
+        <PhysicianConsentModal
+          physicianId={pendingPhysicianId}
+          physicianName={pendingPhysicianName}
+          lang={lang}
+          onComplete={handleConsentComplete}
+          onCancel={handleConsentCancel}
+        />
+      )}
 
-            <div className="flex items-center gap-3">
-              {/* Language toggle */}
-              <button
-                onClick={() => {
-                  const newLocale = lang === 'en' ? 'es' : 'en';
-                  router.push(router.pathname, router.asPath, { locale: newLocale });
-                }}
-                className="font-dm-sans text-sm font-medium px-3 py-1.5 border border-border-line rounded-lg text-body-slate hover:text-inst-blue hover:border-clinical-teal transition"
-              >
-                {lang === 'en' ? 'ES' : 'EN'}
-              </button>
-
-              {/* Sign out */}
-              <button
-                onClick={() => signOut({ callbackUrl: '/chat' })}
-                className="font-dm-sans text-sm font-medium px-3 py-1.5 text-body-slate hover:text-inst-blue transition"
-              >
-                {lang === 'en' ? 'Sign out' : 'Cerrar sesión'}
-              </button>
+      <PortalLayout
+        portal="physician"
+        onSignOut={() => signOut({ callbackUrl: '/chat' })}
+        sidebarContent={sidebarContent}
+        showChatInput={!isComplete}
+        chatInputProps={!isComplete ? {
+          value: input,
+          onChange: setInput,
+          onSubmit: sendMessage,
+          onKeyDown: handleKeyDown,
+          textareaRef,
+          isSending: isSending || isTyping,
+        } : undefined}
+        headerTitle={lang === 'en' ? 'Join Network' : 'Únete'}
+      >
+        {messages.length === 0 && !isTyping ? (
+          <div className="flex flex-col items-center justify-center h-full">
+            <div className="text-center px-6">
+              <h2 className="font-dm-serif text-2xl text-inst-blue mb-3">
+                {lang === 'en' ? 'Welcome to Medikah' : 'Bienvenido a Medikah'}
+              </h2>
+              <p className="font-dm-sans text-body-slate text-sm max-w-md">
+                {lang === 'en'
+                  ? 'Starting your onboarding conversation...'
+                  : 'Iniciando su conversación de registro...'}
+              </p>
             </div>
           </div>
-        </header>
-
-        {/* Main content */}
-        <main className="flex-1 overflow-y-auto">
-          <div className="max-w-3xl mx-auto px-4 py-8">
-            {/* Messages */}
-            <div className="space-y-6">
+        ) : (
+          <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-6 pb-[200px] h-full">
+            <div className="max-w-[900px] mx-auto w-full space-y-8">
               {messages.map((message, index) => (
                 <div
                   key={index}
-                  className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                  className={`flex animate-messageAppear ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[85%] ${
+                    className={`max-w-[700px] whitespace-pre-line transition-all duration-200 ${
                       message.sender === 'user'
-                        ? 'bg-clinical-surface border-l-[3px] border-clinical-teal px-5 py-4 rounded-[12px_12px_4px_12px]'
+                        ? 'bg-clinical-surface border-l-[3px] border-clinical-teal px-6 py-5 rounded-[12px_12px_4px_12px] shadow-[0_1px_3px_rgba(27,42,65,0.06),0_4px_12px_rgba(44,122,140,0.04)] hover:-translate-y-px hover:shadow-[0_2px_4px_rgba(27,42,65,0.08),0_8px_16px_rgba(44,122,140,0.06)] mr-5 sm:mr-10'
                         : message.isVision
-                        ? 'bg-gradient-to-br from-inst-blue to-[#243447] text-white px-6 py-5 rounded-[16px] shadow-lg'
+                        ? 'bg-gradient-to-br from-inst-blue to-[#243447] text-white px-7 py-6 rounded-[16px] shadow-lg ml-5 sm:ml-10'
                         : message.isSummary
-                        ? 'bg-white border-2 border-clinical-teal/30 px-6 py-5 rounded-[12px] shadow-sm'
-                        : 'bg-white border-l-4 border-inst-blue px-6 py-5 rounded-[12px_12px_12px_4px] shadow-sm'
+                        ? 'bg-white border-2 border-clinical-teal/30 px-7 py-6 rounded-[12px] shadow-sm ml-5 sm:ml-10'
+                        : 'bg-white border-l-4 border-inst-blue px-7 py-6 rounded-[12px_12px_12px_4px] shadow-[0_2px_4px_rgba(27,42,65,0.08),0_8px_20px_rgba(27,42,65,0.06)] hover:shadow-[0_3px_6px_rgba(27,42,65,0.08),0_12px_24px_rgba(27,42,65,0.06)] ml-5 sm:ml-10'
                     }`}
                   >
-                    <div
-                      className={`font-dm-sans text-base leading-[1.7] whitespace-pre-wrap ${
-                        message.sender === 'user'
-                          ? 'text-deep-charcoal'
-                          : message.isVision
-                          ? 'text-white/95'
-                          : 'text-body-slate'
-                      }`}
-                    >
-                      {/* Render markdown-like formatting */}
-                      {message.text.split('\n').map((line, i) => {
-                        if (line.startsWith('**') && line.endsWith('**')) {
-                          return (
-                            <p key={i} className="font-semibold text-inst-blue mb-2">
-                              {line.replace(/\*\*/g, '')}
-                            </p>
-                          );
-                        }
-                        if (line.startsWith('- ')) {
-                          return (
-                            <p key={i} className="ml-4">
-                              • {line.substring(2)}
-                            </p>
-                          );
-                        }
-                        return <p key={i}>{line}</p>;
-                      })}
-                    </div>
+                    <p className={`font-dm-sans text-base leading-[1.7] ${
+                      message.sender === 'user'
+                        ? 'text-deep-charcoal'
+                        : message.isVision
+                        ? 'text-white/95'
+                        : 'text-body-slate leading-[1.8]'
+                    }`}>
+                      {message.text}
+                    </p>
 
                     {/* Action buttons */}
                     {message.actions && message.actions.length > 0 && (
@@ -424,9 +441,9 @@ export default function PhysicianOnboardingPage() {
                             key={`${action.value}-${actionIdx}`}
                             onClick={() => handleActionClick(action.value)}
                             disabled={!isAwaitingInput}
-                            className={`font-dm-sans text-sm font-medium px-4 py-2 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+                            className={`font-dm-sans text-sm font-medium px-5 py-2.5 rounded-[10px] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
                               action.type === 'primary'
-                                ? 'bg-clinical-teal text-white hover:bg-clinical-teal-dark'
+                                ? 'bg-clinical-teal text-white hover:bg-[#2A8DA0] hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(44,122,140,0.3)]'
                                 : action.type === 'skip'
                                 ? 'text-archival-grey hover:text-body-slate border border-border-line hover:border-body-slate'
                                 : 'bg-inst-blue/10 text-inst-blue hover:bg-inst-blue/20 border border-inst-blue/30'
@@ -446,10 +463,8 @@ export default function PhysicianOnboardingPage() {
                           lang={lang}
                           disabled={!isAwaitingInput}
                           onError={(error) => {
-                            setMessages(prev => [
-                              ...prev,
-                              { sender: 'bot', text: error },
-                            ]);
+                            messageQueueRef.current.push({ text: error });
+                            processMessageQueue();
                           }}
                         />
                       </div>
@@ -461,14 +476,8 @@ export default function PhysicianOnboardingPage() {
                         <LinkedInProfilePreview
                           profile={message.linkedInPreview}
                           lang={lang}
-                          onConfirm={() => {
-                            // Send confirmation to agent
-                            handleActionClick('linkedin_confirm');
-                          }}
-                          onEdit={() => {
-                            // Send edit request to agent
-                            handleActionClick('linkedin_edit');
-                          }}
+                          onConfirm={() => handleActionClick('linkedin_confirm')}
+                          onEdit={() => handleActionClick('linkedin_edit')}
                         />
                       </div>
                     )}
@@ -482,12 +491,9 @@ export default function PhysicianOnboardingPage() {
                           profileName={message.showPublicationSelector.profileName}
                           lang={lang}
                           onConfirm={(selected) => {
-                            // Pass selected publications to agent
                             agentRef.current?.handlePublicationSelection?.(selected);
                           }}
-                          onCancel={() => {
-                            handleActionClick('publications_cancel');
-                          }}
+                          onCancel={() => handleActionClick('publications_cancel')}
                         />
                       </div>
                     )}
@@ -504,9 +510,7 @@ export default function PhysicianOnboardingPage() {
                               includedInProfile: true,
                             });
                           }}
-                          onCancel={() => {
-                            handleActionClick('publications_done');
-                          }}
+                          onCancel={() => handleActionClick('publications_done')}
                         />
                       </div>
                     )}
@@ -515,13 +519,13 @@ export default function PhysicianOnboardingPage() {
               ))}
 
               {/* Typing indicator */}
-              {isSending && (
-                <div className="flex justify-start">
-                  <div className="bg-white border-l-4 border-inst-blue px-6 py-4 rounded-[12px_12px_12px_4px] shadow-sm">
+              {(isSending || isTyping) && (
+                <div className="flex justify-start animate-messageAppear">
+                  <div className="bg-white border-l-4 border-inst-blue px-7 py-5 rounded-[12px_12px_12px_4px] shadow-[0_2px_4px_rgba(27,42,65,0.08),0_8px_20px_rgba(27,42,65,0.06)] ml-5 sm:ml-10">
                     <div className="flex items-center gap-1">
-                      <span className="w-2 h-2 bg-inst-blue/30 rounded-full animate-bounce" />
-                      <span className="w-2 h-2 bg-inst-blue/30 rounded-full animate-bounce [animation-delay:0.2s]" />
-                      <span className="w-2 h-2 bg-inst-blue/30 rounded-full animate-bounce [animation-delay:0.4s]" />
+                      <span className="w-1.5 h-1.5 bg-inst-blue/30 rounded-full animate-typingBounce" />
+                      <span className="w-1.5 h-1.5 bg-inst-blue/30 rounded-full animate-typingBounce [animation-delay:0.2s]" />
+                      <span className="w-1.5 h-1.5 bg-inst-blue/30 rounded-full animate-typingBounce [animation-delay:0.4s]" />
                     </div>
                   </div>
                 </div>
@@ -530,89 +534,52 @@ export default function PhysicianOnboardingPage() {
               <div ref={messagesEndRef} />
             </div>
           </div>
-        </main>
-
-        {/* Input area */}
-        {!isComplete && (
-          <div className="sticky bottom-0 bg-gradient-to-t from-[#FAFAFB] via-[#FAFAFB]/95 to-transparent px-4 py-6">
-            <form onSubmit={handleSubmit} className="max-w-3xl mx-auto relative">
-              <textarea
-                ref={textareaRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={!isAwaitingInput}
-                placeholder={
-                  isAwaitingInput
-                    ? lang === 'en'
-                      ? 'Type your response...'
-                      : 'Escriba su respuesta...'
-                    : ''
-                }
-                className="font-dm-sans w-full resize-none bg-white border border-border-line text-deep-charcoal text-base leading-relaxed placeholder:text-archival-grey rounded-[12px] pl-5 pr-24 py-4 min-h-[56px] max-h-[200px] shadow-sm transition-all duration-200 focus:outline-none focus:border-clinical-teal focus:shadow-[0_0_0_3px_rgba(44,122,140,0.1)] disabled:bg-clinical-surface disabled:cursor-not-allowed"
-                rows={1}
-              />
-              <button
-                type="submit"
-                disabled={!isAwaitingInput || !input.trim()}
-                className="font-dm-sans absolute right-3 bottom-3 px-5 py-2.5 font-semibold text-sm bg-clinical-teal text-white rounded-lg shadow-sm transition-all duration-200 hover:bg-clinical-teal-dark disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {lang === 'en' ? 'Send' : 'Enviar'}
-              </button>
-            </form>
-
-            <p className="font-dm-sans max-w-3xl mx-auto text-[12px] mt-2 text-center text-archival-grey">
-              {lang === 'en'
-                ? 'Press Enter to send. Shift+Enter for a new line.'
-                : 'Presione Enter para enviar. Shift+Enter para nueva línea.'}
-            </p>
-          </div>
         )}
 
-        {/* Completion state */}
+        {/* Completion overlay */}
         {isComplete && completedPhysicianId && (
-          <div className="sticky bottom-0 bg-white border-t border-border-line px-4 py-6">
-            <div className="max-w-3xl mx-auto text-center">
-              <p className="font-dm-sans text-sm text-body-slate mb-4">
-                {lang === 'en'
-                  ? 'Your profile has been submitted. Reference ID: '
-                  : 'Su perfil ha sido enviado. ID de referencia: '}
+          <div className="absolute inset-0 bg-white/95 flex items-center justify-center">
+            <div className="text-center px-6">
+              <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg className="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h2 className="font-dm-serif text-2xl text-inst-blue mb-2">
+                {lang === 'en' ? 'Registration Complete' : 'Registro Completo'}
+              </h2>
+              <p className="font-dm-sans text-body-slate mb-1">
+                {lang === 'en' ? 'Reference ID: ' : 'ID de Referencia: '}
                 <code className="font-mono text-xs bg-clinical-surface px-2 py-1 rounded">
                   {completedPhysicianId.slice(0, 8)}
                 </code>
               </p>
-              <Link
-                href="/physicians/dashboard"
-                className="font-dm-sans inline-block px-6 py-3 bg-inst-blue text-white font-semibold rounded-lg hover:bg-clinical-teal transition-colors"
+              <p className="font-dm-sans text-sm text-archival-grey mb-6">
+                {lang === 'en'
+                  ? 'Our team will review your credentials and be in touch soon.'
+                  : 'Nuestro equipo revisará sus credenciales y se pondrá en contacto pronto.'}
+              </p>
+              <button
+                onClick={() => router.push('/physicians/dashboard')}
+                className="font-dm-sans px-6 py-3 bg-inst-blue text-white font-semibold rounded-lg hover:bg-clinical-teal transition-colors"
               >
                 {lang === 'en' ? 'Go to Dashboard' : 'Ir al Panel'}
-              </Link>
+              </button>
             </div>
           </div>
         )}
+      </PortalLayout>
 
-        {/* Agent component (renders nothing, just logic) */}
-        <PhysicianOnboardingAgent
-          ref={agentRef}
-          lang={lang}
-          appendMessage={appendMessage}
-          onStateChange={handleStateChange}
-          onProfileReady={handleProfileReady}
-          linkedInData={linkedInConnected && linkedInData ? linkedInData : undefined}
-          sessionId={sessionId}
-        />
-
-        {/* Physician Consent Modal */}
-        {showConsentModal && pendingPhysicianId && (
-          <PhysicianConsentModal
-            physicianId={pendingPhysicianId}
-            physicianName={pendingPhysicianName}
-            lang={lang}
-            onComplete={handleConsentComplete}
-            onCancel={handleConsentCancel}
-          />
-        )}
-      </div>
+      {/* Agent component (renders nothing, just logic) */}
+      <PhysicianOnboardingAgent
+        ref={agentRef}
+        lang={lang}
+        appendMessage={appendMessage}
+        onStateChange={handleStateChange}
+        onProfileReady={handleProfileReady}
+        linkedInData={linkedInConnected && linkedInData ? linkedInData : undefined}
+        sessionId={sessionId}
+      />
     </>
   );
 }
