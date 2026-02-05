@@ -690,8 +690,12 @@ const PhysicianOnboardingAgent = forwardRef<
             );
           }
         } else {
+          // Transition to specialty phase
+          updateState('processing');
           appendMessage({ text: copy.licenseNote });
-          setTimeout(() => startSpecialtyPhase(), 600);
+          setTimeout(() => {
+            startSpecialtyPhase();
+          }, 600);
         }
         break;
       }
@@ -1164,7 +1168,7 @@ const PhysicianOnboardingAgent = forwardRef<
     setQuestion(null);
     return true;
   }, [
-    state, question, copy, lang, appendMessage, askQuestion,
+    state, question, copy, lang, appendMessage, askQuestion, updateState,
     startLicensingPhase, startSpecialtyPhase, startEducationPhase,
     startIntellectualPhase, startPresencePhase, startConfirmationPhase,
   ]);

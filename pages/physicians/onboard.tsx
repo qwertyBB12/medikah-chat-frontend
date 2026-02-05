@@ -56,7 +56,8 @@ const TYPING_DELAY_BASE = 800; // Base delay before showing message
 const TYPING_DELAY_PER_CHAR = 15; // Additional delay per character
 const TYPING_DELAY_MAX = 2500; // Maximum delay
 
-function calculateTypingDelay(text: string): number {
+function calculateTypingDelay(text: string | undefined): number {
+  if (!text) return TYPING_DELAY_BASE;
   const delay = TYPING_DELAY_BASE + Math.min(text.length * TYPING_DELAY_PER_CHAR, TYPING_DELAY_MAX - TYPING_DELAY_BASE);
   return delay;
 }
@@ -136,40 +137,49 @@ export default function PhysicianOnboardingPage() {
 
     isProcessingQueueRef.current = true;
 
-    while (messageQueueRef.current.length > 0) {
-      const message = messageQueueRef.current.shift()!;
+    try {
+      while (messageQueueRef.current.length > 0) {
+        const message = messageQueueRef.current.shift()!;
 
-      // Show typing indicator
-      setIsTyping(true);
+        // Show typing indicator
+        setIsTyping(true);
 
-      // Wait for typing delay
-      const delay = calculateTypingDelay(message.text);
-      await new Promise(resolve => setTimeout(resolve, delay));
+        // Wait for typing delay
+        const delay = calculateTypingDelay(message.text);
+        await new Promise(resolve => setTimeout(resolve, delay));
 
-      // Hide typing indicator and show message
+        // Hide typing indicator and show message
+        setIsTyping(false);
+        setMessages(prev => [
+          ...prev,
+          {
+            sender: 'bot',
+            text: message.text || '',
+            isVision: message.isVision,
+            isSummary: message.isSummary,
+            actions: message.actions,
+            showLinkedInConnect: message.showLinkedInConnect,
+            linkedInPreview: message.linkedInPreview,
+            showPublicationSelector: message.showPublicationSelector,
+            showManualPublicationForm: message.showManualPublicationForm,
+          },
+        ]);
+
+        // Small pause between messages if there are more
+        if (messageQueueRef.current.length > 0) {
+          await new Promise(resolve => setTimeout(resolve, 400));
+        }
+      }
+    } catch (error) {
+      console.error('Error processing message queue:', error);
       setIsTyping(false);
-      setMessages(prev => [
-        ...prev,
-        {
-          sender: 'bot',
-          text: message.text,
-          isVision: message.isVision,
-          isSummary: message.isSummary,
-          actions: message.actions,
-          showLinkedInConnect: message.showLinkedInConnect,
-          linkedInPreview: message.linkedInPreview,
-          showPublicationSelector: message.showPublicationSelector,
-          showManualPublicationForm: message.showManualPublicationForm,
-        },
-      ]);
-
-      // Small pause between messages if there are more
+    } finally {
+      isProcessingQueueRef.current = false;
+      // Check if more messages were added while processing
       if (messageQueueRef.current.length > 0) {
-        await new Promise(resolve => setTimeout(resolve, 400));
+        processMessageQueue();
       }
     }
-
-    isProcessingQueueRef.current = false;
   }, []);
 
   // Check for LinkedIn callback params
