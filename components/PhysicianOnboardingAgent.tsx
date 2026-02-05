@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   useCallback,
+  useEffect,
 } from 'react';
 import { SupportedLang } from '../lib/i18n';
 import {
@@ -182,6 +183,19 @@ const PhysicianOnboardingAgent = forwardRef<
   // Track if LinkedIn data has been applied
   const linkedInApplied = useRef(false);
 
+  // Refs to always have latest function references (for use in setTimeout)
+  const appendMessageRef = useRef(appendMessage);
+  const onStateChangeRef = useRef(onStateChange);
+
+  // Keep refs updated
+  useEffect(() => {
+    appendMessageRef.current = appendMessage;
+  }, [appendMessage]);
+
+  useEffect(() => {
+    onStateChangeRef.current = onStateChange;
+  }, [onStateChange]);
+
   // State
   const [state, setState] = useState<OnboardingAgentState>('idle');
   const [_phase, setPhase] = useState<OnboardingPhase>('briefing');
@@ -202,20 +216,29 @@ const PhysicianOnboardingAgent = forwardRef<
     currentFellowship?: Partial<Fellowship>;
   }>({});
 
+  // Stable wrapper functions that use refs
+  const stableAppendMessage = useCallback((message: OnboardingBotMessage) => {
+    appendMessageRef.current(message);
+  }, []);
+
+  const stableOnStateChange = useCallback((next: OnboardingAgentState) => {
+    onStateChangeRef.current?.(next);
+  }, []);
+
   const updateState = useCallback((next: OnboardingAgentState) => {
     setState(next);
-    onStateChange?.(next);
-  }, [onStateChange]);
+    stableOnStateChange(next);
+  }, [stableOnStateChange]);
 
   const askQuestion = useCallback((key: QuestionKey, message: string, actions?: OnboardingAction[]) => {
     setQuestion(key);
     updateState('awaiting_user');
-    appendMessage({ text: message, actions });
-  }, [updateState, appendMessage]);
+    stableAppendMessage({ text: message, actions });
+  }, [updateState, stableAppendMessage]);
 
   const showVisionMessage = useCallback((message: string) => {
-    appendMessage({ text: message, isVision: true });
-  }, [appendMessage]);
+    stableAppendMessage({ text: message, isVision: true });
+  }, [stableAppendMessage]);
 
   // Generate profile summary
   const generateProfileSummary = useCallback((): string => {
@@ -330,7 +353,7 @@ const PhysicianOnboardingAgent = forwardRef<
     // Queue the opening messages
     messages.forEach(({ text, isVision, delay }) => {
       setTimeout(() => {
-        appendMessage({ text, isVision });
+        stableAppendMessage({ text, isVision });
       }, delay);
     });
 
@@ -339,7 +362,7 @@ const PhysicianOnboardingAgent = forwardRef<
       setPhase('identity');
       setQuestion('has_linkedin');
       updateState('awaiting_user');
-      appendMessage({
+      stableAppendMessage({
         text: copy.askLinkedIn,
         actions: [
           { label: copy.yes, value: 'yes', type: 'primary' },
@@ -347,14 +370,14 @@ const PhysicianOnboardingAgent = forwardRef<
         ],
       });
     }, 5800);
-  }, [copy, appendMessage, updateState, getTimeBasedGreeting]);
+  }, [copy, stableAppendMessage, updateState, getTimeBasedGreeting]);
 
   const startLicensingPhase = useCallback(() => {
     setPhase('licensing');
     updateState('processing');
 
     // Transition to licensing with context
-    appendMessage({ text: copy.phase2Vision, isVision: true });
+    stableAppendMessage({ text: copy.phase2Vision, isVision: true });
 
     setTimeout(() => {
       const countryActions: OnboardingAction[] = LICENSED_COUNTRIES.slice(0, 6).map(c => ({
@@ -364,14 +387,14 @@ const PhysicianOnboardingAgent = forwardRef<
       }));
       askQuestion('countries_licensed', copy.askCountriesLicensed, countryActions);
     }, 1200);
-  }, [copy, appendMessage, askQuestion, updateState]);
+  }, [copy, stableAppendMessage, askQuestion, updateState]);
 
   const startSpecialtyPhase = useCallback(() => {
     setPhase('specialty');
     updateState('processing');
 
     // Transition message
-    appendMessage({
+    stableAppendMessage({
       text: lang === 'en'
         ? 'Now let\'s talk about your expertise. This helps patients find the right specialist.'
         : 'Ahora hablemos de su especialidad. Esto ayuda a los pacientes a encontrar al especialista adecuado.',
@@ -385,7 +408,7 @@ const PhysicianOnboardingAgent = forwardRef<
       }));
       askQuestion('primary_specialty', copy.askPrimarySpecialty, specialtyActions);
     }, 1000);
-  }, [copy, lang, appendMessage, askQuestion, updateState]);
+  }, [copy, lang, stableAppendMessage, askQuestion, updateState]);
 
   const startEducationPhase = useCallback(() => {
     setPhase('education');
@@ -412,11 +435,11 @@ const PhysicianOnboardingAgent = forwardRef<
     setPhase('confirmation');
 
     // Transition to confirmation
-    appendMessage({ text: copy.phase7Vision });
+    stableAppendMessage({ text: copy.phase7Vision });
 
     setTimeout(() => {
       const summary = generateProfileSummary();
-      appendMessage({
+      stableAppendMessage({
         text: summary,
         isSummary: true,
         summaryData: dataRef.current,
@@ -429,13 +452,13 @@ const PhysicianOnboardingAgent = forwardRef<
         ]);
       }, 800);
     }, 1200);
-  }, [copy, generateProfileSummary, appendMessage, askQuestion]);
+  }, [copy, generateProfileSummary, stableAppendMessage, askQuestion]);
 
   const completeOnboarding = useCallback(async () => {
     updateState('processing');
 
     // Show message about the agreement
-    appendMessage({
+    stableAppendMessage({
       text: lang === 'en'
         ? 'Excellent! Your profile is ready. Before we finalize your registration, please review and sign the Physician Network Agreement.'
         : '¡Excelente! Su perfil está listo. Antes de finalizar su registro, por favor revise y firme el Acuerdo de Red de Médicos.',
@@ -499,14 +522,14 @@ const PhysicianOnboardingAgent = forwardRef<
       // Keep state as processing - will be updated after consent
       setPhase('confirmation');
     } else {
-      appendMessage({
+      stableAppendMessage({
         text: lang === 'en'
           ? 'There was an issue saving your profile. Please try again or contact support@medikah.health.'
           : 'Hubo un problema al guardar su perfil. Por favor intente de nuevo o contacte support@medikah.health.',
       });
       updateState('awaiting_user');
     }
-  }, [lang, appendMessage, updateState, onProfileReady]);
+  }, [lang, stableAppendMessage, updateState, onProfileReady]);
 
   // Handle user input
   const handleUserInput = useCallback(async (rawInput: string): Promise<boolean> => {
@@ -527,7 +550,7 @@ const PhysicianOnboardingAgent = forwardRef<
       // Identity Phase
       case 'full_name': {
         if (!input || input.length < 3) {
-          appendMessage({ text: copy.invalidName });
+          stableAppendMessage({ text: copy.invalidName });
           return true;
         }
         data.fullName = input;
@@ -537,7 +560,7 @@ const PhysicianOnboardingAgent = forwardRef<
 
       case 'email': {
         if (!isValidEmail(input)) {
-          appendMessage({ text: copy.invalidEmail });
+          stableAppendMessage({ text: copy.invalidEmail });
           return true;
         }
 
@@ -550,7 +573,7 @@ const PhysicianOnboardingAgent = forwardRef<
           const exists = await Promise.race([existsPromise, timeoutPromise]);
 
           if (exists) {
-            appendMessage({
+            stableAppendMessage({
               text: lang === 'en'
                 ? 'This email is already registered in our network. Please use a different email or contact support if this is an error.'
                 : 'Este correo ya está registrado en nuestra red. Por favor use un correo diferente o contacte soporte si esto es un error.',
@@ -579,13 +602,13 @@ const PhysicianOnboardingAgent = forwardRef<
 
       case 'linkedin_url': {
         if (input && !isValidUrl(input)) {
-          appendMessage({ text: copy.invalidUrl });
+          stableAppendMessage({ text: copy.invalidUrl });
           return true;
         }
         if (input) {
           data.linkedinUrl = input;
           // For now, just proceed - LinkedIn import would be a future feature
-          appendMessage({
+          stableAppendMessage({
             text: lang === 'en'
               ? 'Great! I\'ve saved your LinkedIn profile. In the future, we\'ll be able to import your information automatically.'
               : '¡Excelente! He guardado su perfil de LinkedIn. En el futuro, podremos importar su información automáticamente.',
@@ -599,7 +622,7 @@ const PhysicianOnboardingAgent = forwardRef<
       case 'countries_licensed': {
         const countries = input.split(/[,\s]+/).map(c => c.trim()).filter(Boolean);
         if (countries.length === 0) {
-          appendMessage({
+          stableAppendMessage({
             text: lang === 'en'
               ? 'Please list at least one country where you hold a medical license.'
               : 'Por favor liste al menos un país donde tenga licencia médica.',
@@ -620,7 +643,7 @@ const PhysicianOnboardingAgent = forwardRef<
         });
 
         if (matchedCountries.length === 0) {
-          appendMessage({
+          stableAppendMessage({
             text: lang === 'en'
               ? 'I didn\'t recognize those countries. Please try again with countries like: Mexico, USA, Colombia, Brazil, Argentina, etc.'
               : 'No reconocí esos países. Por favor intente de nuevo con países como: México, EE.UU., Colombia, Brasil, Argentina, etc.',
@@ -665,7 +688,7 @@ const PhysicianOnboardingAgent = forwardRef<
 
       case 'license_number': {
         if (!input || input.length < 3) {
-          appendMessage({ text: copy.invalidLicense });
+          stableAppendMessage({ text: copy.invalidLicense });
           return true;
         }
 
@@ -703,7 +726,7 @@ const PhysicianOnboardingAgent = forwardRef<
           }
         } else {
           // Transition to specialty phase
-          appendMessage({ text: copy.licenseNote });
+          stableAppendMessage({ text: copy.licenseNote });
           setTimeout(() => {
             startSpecialtyPhase();
           }, 1500);
@@ -715,7 +738,7 @@ const PhysicianOnboardingAgent = forwardRef<
       // Specialty Phase
       case 'primary_specialty': {
         if (!input) {
-          appendMessage({
+          stableAppendMessage({
             text: lang === 'en'
               ? 'Please provide your primary medical specialty.'
               : 'Por favor proporcione su especialidad médica principal.',
@@ -748,7 +771,7 @@ const PhysicianOnboardingAgent = forwardRef<
           }));
           data.boardCertifications = certs;
         }
-        appendMessage({ text: copy.specialtyNote });
+        stableAppendMessage({ text: copy.specialtyNote });
         setTimeout(() => startEducationPhase(), 600);
         return true;
       }
@@ -756,7 +779,7 @@ const PhysicianOnboardingAgent = forwardRef<
       // Education Phase
       case 'medical_school': {
         if (!input) {
-          appendMessage({
+          stableAppendMessage({
             text: lang === 'en'
               ? 'Please provide your medical school.'
               : 'Por favor proporcione su escuela de medicina.',
@@ -776,7 +799,7 @@ const PhysicianOnboardingAgent = forwardRef<
 
       case 'graduation_year': {
         if (!isValidYear(input)) {
-          appendMessage({ text: copy.invalidYear });
+          stableAppendMessage({ text: copy.invalidYear });
           return true;
         }
         data.graduationYear = parseInt(input, 10);
@@ -840,7 +863,7 @@ const PhysicianOnboardingAgent = forwardRef<
 
       case 'researchgate_url': {
         if (!input || !input.includes('researchgate.net')) {
-          appendMessage({
+          stableAppendMessage({
             text: lang === 'en'
               ? 'Please enter a valid ResearchGate profile URL (e.g., https://www.researchgate.net/profile/Your-Name)'
               : 'Por favor ingresa una URL válida de ResearchGate (ej., https://www.researchgate.net/profile/Tu-Nombre)',
@@ -860,7 +883,7 @@ const PhysicianOnboardingAgent = forwardRef<
           const result = await response.json();
 
           if (result.success && result.publications.length > 0) {
-            appendMessage({
+            stableAppendMessage({
               text: lang === 'en'
                 ? `Found ${result.publications.length} publications! Select which ones to include in your profile:`
                 : `¡Encontramos ${result.publications.length} publicaciones! Selecciona cuáles incluir en tu perfil:`,
@@ -873,7 +896,7 @@ const PhysicianOnboardingAgent = forwardRef<
             setQuestion('publications_select');
             updateState('awaiting_user');
           } else {
-            appendMessage({
+            stableAppendMessage({
               text: lang === 'en'
                 ? 'Could not fetch publications from that profile. You can try another source or add manually.'
                 : 'No se pudieron obtener publicaciones de ese perfil. Puedes probar otra fuente o agregar manualmente.',
@@ -886,7 +909,7 @@ const PhysicianOnboardingAgent = forwardRef<
             updateState('awaiting_user');
           }
         } catch {
-          appendMessage({ text: lang === 'en' ? 'Error fetching publications. Please try again.' : 'Error al obtener publicaciones. Por favor intenta de nuevo.' });
+          stableAppendMessage({ text: lang === 'en' ? 'Error fetching publications. Please try again.' : 'Error al obtener publicaciones. Por favor intenta de nuevo.' });
           updateState('awaiting_user');
         }
         break;
@@ -894,7 +917,7 @@ const PhysicianOnboardingAgent = forwardRef<
 
       case 'academia_url': {
         if (!input || !input.includes('academia.edu')) {
-          appendMessage({
+          stableAppendMessage({
             text: lang === 'en'
               ? 'Please enter a valid Academia.edu profile URL'
               : 'Por favor ingresa una URL válida de Academia.edu',
@@ -913,7 +936,7 @@ const PhysicianOnboardingAgent = forwardRef<
           const result = await response.json();
 
           if (result.success && result.publications.length > 0) {
-            appendMessage({
+            stableAppendMessage({
               text: lang === 'en'
                 ? `Found ${result.publications.length} publications! Select which ones to include:`
                 : `¡Encontramos ${result.publications.length} publicaciones! Selecciona cuáles incluir:`,
@@ -926,7 +949,7 @@ const PhysicianOnboardingAgent = forwardRef<
             setQuestion('publications_select');
             updateState('awaiting_user');
           } else {
-            appendMessage({
+            stableAppendMessage({
               text: lang === 'en'
                 ? 'Could not fetch publications. Try another source or add manually.'
                 : 'No se pudieron obtener publicaciones. Prueba otra fuente o agrega manualmente.',
@@ -939,7 +962,7 @@ const PhysicianOnboardingAgent = forwardRef<
             updateState('awaiting_user');
           }
         } catch {
-          appendMessage({ text: lang === 'en' ? 'Error fetching publications.' : 'Error al obtener publicaciones.' });
+          stableAppendMessage({ text: lang === 'en' ? 'Error fetching publications.' : 'Error al obtener publicaciones.' });
           updateState('awaiting_user');
         }
         break;
@@ -947,7 +970,7 @@ const PhysicianOnboardingAgent = forwardRef<
 
       case 'pubmed_search': {
         if (!input || input.length < 3) {
-          appendMessage({
+          stableAppendMessage({
             text: lang === 'en'
               ? 'Please enter your name or ORCID ID'
               : 'Por favor ingresa tu nombre o ORCID ID',
@@ -965,7 +988,7 @@ const PhysicianOnboardingAgent = forwardRef<
           const result = await response.json();
 
           if (result.success && result.publications.length > 0) {
-            appendMessage({
+            stableAppendMessage({
               text: lang === 'en'
                 ? `Found ${result.publications.length} publications on PubMed! Select which ones to include:`
                 : `¡Encontramos ${result.publications.length} publicaciones en PubMed! Selecciona cuáles incluir:`,
@@ -978,7 +1001,7 @@ const PhysicianOnboardingAgent = forwardRef<
             setQuestion('publications_select');
             updateState('awaiting_user');
           } else {
-            appendMessage({
+            stableAppendMessage({
               text: lang === 'en'
                 ? 'No publications found on PubMed for that name. Try a different format or add manually.'
                 : 'No se encontraron publicaciones en PubMed para ese nombre. Prueba otro formato o agrega manualmente.',
@@ -991,7 +1014,7 @@ const PhysicianOnboardingAgent = forwardRef<
             updateState('awaiting_user');
           }
         } catch {
-          appendMessage({ text: lang === 'en' ? 'Error searching PubMed.' : 'Error al buscar en PubMed.' });
+          stableAppendMessage({ text: lang === 'en' ? 'Error searching PubMed.' : 'Error al buscar en PubMed.' });
           updateState('awaiting_user');
         }
         break;
@@ -1035,7 +1058,7 @@ const PhysicianOnboardingAgent = forwardRef<
             role: 'author' as const,
           }));
         }
-        appendMessage({ text: copy.intellectualNote });
+        stableAppendMessage({ text: copy.intellectualNote });
         setTimeout(() => startPresencePhase(), 600);
         return true;
       }
@@ -1054,7 +1077,7 @@ const PhysicianOnboardingAgent = forwardRef<
       case 'website': {
         if (input.toLowerCase() !== 'skip' && input) {
           if (!isValidUrl(input)) {
-            appendMessage({ text: copy.invalidUrl });
+            stableAppendMessage({ text: copy.invalidUrl });
             return true;
           }
           data.websiteUrl = input;
@@ -1160,7 +1183,7 @@ const PhysicianOnboardingAgent = forwardRef<
       case 'edit_choice': {
         // For simplicity, restart from beginning
         // In production, would allow editing specific sections
-        appendMessage({
+        stableAppendMessage({
           text: lang === 'en'
             ? 'Let\'s start over. You can update any information.'
             : 'Comencemos de nuevo. Puede actualizar cualquier información.',
@@ -1180,7 +1203,7 @@ const PhysicianOnboardingAgent = forwardRef<
     setQuestion(null);
     return true;
   }, [
-    state, question, copy, lang, appendMessage, askQuestion, updateState,
+    state, question, copy, lang, stableAppendMessage, askQuestion, updateState,
     startLicensingPhase, startSpecialtyPhase, startEducationPhase,
     startIntellectualPhase, startPresencePhase, startConfirmationPhase,
   ]);
@@ -1198,7 +1221,7 @@ const PhysicianOnboardingAgent = forwardRef<
             linkedInApplied.current = true;
 
             // Show confirmation message with imported data
-            appendMessage({
+            stableAppendMessage({
               text: lang === 'en'
                 ? `Great! We pulled your information from LinkedIn. Please confirm the data below:`
                 : `¡Excelente! Obtuvimos tu información de LinkedIn. Por favor confirma los datos a continuación:`,
@@ -1215,7 +1238,7 @@ const PhysicianOnboardingAgent = forwardRef<
             updateState('awaiting_user');
           } else {
             // Show connect button - will redirect to OAuth
-            appendMessage({
+            stableAppendMessage({
               text: lang === 'en'
                 ? 'Click the button below to connect your LinkedIn account. We\'ll import your profile information automatically.'
                 : 'Haz clic en el botón de abajo para conectar tu cuenta de LinkedIn. Importaremos tu información de perfil automáticamente.',
@@ -1231,7 +1254,7 @@ const PhysicianOnboardingAgent = forwardRef<
           }
         } else {
           // No LinkedIn - ask for basic info manually
-          appendMessage({
+          stableAppendMessage({
             text: lang === 'en'
               ? 'No problem at all. Let\'s get to know you the old-fashioned way.'
               : 'No hay problema. Conozcámosle de la manera tradicional.',
@@ -1253,7 +1276,7 @@ const PhysicianOnboardingAgent = forwardRef<
           if (linkedInData.currentInstitutions) data.currentInstitutions = linkedInData.currentInstitutions;
           data.linkedinImported = true;
 
-          appendMessage({
+          stableAppendMessage({
             text: lang === 'en'
               ? `✓ LinkedIn data confirmed! We've pre-filled your name${linkedInData.email ? ' and email' : ''}. Let's continue with your credentials.`
               : `✓ ¡Datos de LinkedIn confirmados! Hemos pre-llenado tu nombre${linkedInData.email ? ' y correo' : ''}. Continuemos con tus credenciales.`,
@@ -1263,7 +1286,7 @@ const PhysicianOnboardingAgent = forwardRef<
           return true;
         } else if (value === 'linkedin_edit') {
           // User wants to edit - proceed with manual flow
-          appendMessage({
+          stableAppendMessage({
             text: lang === 'en'
               ? 'No problem! You can update any information as we go through the form.'
               : '¡No hay problema! Puedes actualizar cualquier información mientras avanzamos en el formulario.',
@@ -1304,7 +1327,7 @@ const PhysicianOnboardingAgent = forwardRef<
       case 'google_scholar':
         if (value === 'yes') {
           // Show publication source options
-          appendMessage({
+          stableAppendMessage({
             text: lang === 'en'
               ? 'Great! How would you like to add your publications?'
               : '¡Excelente! ¿Cómo te gustaría agregar tus publicaciones?',
@@ -1344,7 +1367,7 @@ const PhysicianOnboardingAgent = forwardRef<
               : 'Ingresa tu nombre como aparece en PubMed (ej., "García Juan" o ORCID ID):'
           );
         } else if (value === 'manual') {
-          appendMessage({
+          stableAppendMessage({
             text: lang === 'en'
               ? 'Add your publications using the form below. Click Cancel when done.'
               : 'Agrega tus publicaciones usando el formulario. Haz clic en Cancelar cuando termines.',
@@ -1354,7 +1377,7 @@ const PhysicianOnboardingAgent = forwardRef<
           updateState('awaiting_user');
         } else if (value === 'retry') {
           // Show source selection again
-          appendMessage({
+          stableAppendMessage({
             text: lang === 'en'
               ? 'Choose a different source for your publications:'
               : 'Elige otra fuente para tus publicaciones:',
@@ -1380,7 +1403,7 @@ const PhysicianOnboardingAgent = forwardRef<
         if (value === 'publications_cancel' || value === 'publications_done') {
           // User finished with publications
           const pubCount = dataRef.current.publications?.length || 0;
-          appendMessage({
+          stableAppendMessage({
             text: pubCount > 0
               ? (lang === 'en' ? `Great! ${pubCount} publication(s) added to your profile.` : `¡Excelente! ${pubCount} publicación(es) agregadas a tu perfil.`)
               : (lang === 'en' ? 'No publications added.' : 'No se agregaron publicaciones.'),
@@ -1441,7 +1464,7 @@ const PhysicianOnboardingAgent = forwardRef<
       url: p.url || (p.doi ? `https://doi.org/${p.doi}` : undefined),
     }));
 
-    appendMessage({
+    stableAppendMessage({
       text: lang === 'en'
         ? `Added ${publications.length} publications to your profile.`
         : `Se agregaron ${publications.length} publicaciones a tu perfil.`,
@@ -1451,7 +1474,7 @@ const PhysicianOnboardingAgent = forwardRef<
     askQuestion('presentations', copy.askPresentations, [
       { label: copy.skipPrompt, value: 'skip', type: 'skip' },
     ]);
-  }, [lang, appendMessage, copy, askQuestion]);
+  }, [lang, stableAppendMessage, copy, askQuestion]);
 
   // Handle manual publication entry
   const handleManualPublication = useCallback((publication: import('../lib/publications').Publication) => {
@@ -1466,13 +1489,13 @@ const PhysicianOnboardingAgent = forwardRef<
       },
     ];
 
-    appendMessage({
+    stableAppendMessage({
       text: lang === 'en'
         ? `Added: "${publication.title}". Add another or click Cancel when done.`
         : `Agregado: "${publication.title}". Agrega otro o haz clic en Cancelar cuando termines.`,
       showManualPublicationForm: true,
     } as OnboardingBotMessage);
-  }, [lang, appendMessage]);
+  }, [lang, stableAppendMessage]);
 
   // Expose methods via ref
   useImperativeHandle(ref, () => ({
