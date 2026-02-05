@@ -417,12 +417,12 @@ export default function PhysicianOnboardingPage() {
                   <div
                     className={`max-w-[700px] whitespace-pre-line transition-all duration-200 ${
                       message.sender === 'user'
-                        ? 'bg-clinical-surface border-l-[3px] border-clinical-teal px-6 py-5 rounded-[12px_12px_4px_12px] shadow-[0_1px_3px_rgba(27,42,65,0.06),0_4px_12px_rgba(44,122,140,0.04)] hover:-translate-y-px hover:shadow-[0_2px_4px_rgba(27,42,65,0.08),0_8px_16px_rgba(44,122,140,0.06)] mr-5 sm:mr-10'
+                        ? 'bg-clinical-surface border-l-[3px] border-inst-blue px-6 py-5 rounded-[12px_12px_4px_12px] shadow-[0_1px_3px_rgba(27,42,65,0.06),0_4px_12px_rgba(44,122,140,0.04)] hover:-translate-y-px hover:shadow-[0_2px_4px_rgba(27,42,65,0.08),0_8px_16px_rgba(44,122,140,0.06)] mr-5 sm:mr-10'
                         : message.isVision
-                        ? 'bg-gradient-to-br from-inst-blue to-[#243447] text-white px-7 py-6 rounded-[16px] shadow-lg ml-5 sm:ml-10'
+                        ? 'bg-gradient-to-br from-clinical-teal to-[#1a5a66] text-white px-7 py-6 rounded-[16px] shadow-lg ml-5 sm:ml-10'
                         : message.isSummary
                         ? 'bg-white border-2 border-clinical-teal/30 px-7 py-6 rounded-[12px] shadow-sm ml-5 sm:ml-10'
-                        : 'bg-white border-l-4 border-inst-blue px-7 py-6 rounded-[12px_12px_12px_4px] shadow-[0_2px_4px_rgba(27,42,65,0.08),0_8px_20px_rgba(27,42,65,0.06)] hover:shadow-[0_3px_6px_rgba(27,42,65,0.08),0_12px_24px_rgba(27,42,65,0.06)] ml-5 sm:ml-10'
+                        : 'bg-white border-l-4 border-clinical-teal px-7 py-6 rounded-[12px_12px_12px_4px] shadow-[0_2px_4px_rgba(27,42,65,0.08),0_8px_20px_rgba(27,42,65,0.06)] hover:shadow-[0_3px_6px_rgba(27,42,65,0.08),0_12px_24px_rgba(27,42,65,0.06)] ml-5 sm:ml-10'
                     }`}
                   >
                     <p className={`font-dm-sans text-base leading-[1.7] ${
@@ -448,7 +448,7 @@ export default function PhysicianOnboardingPage() {
                                 ? 'bg-clinical-teal text-white hover:bg-[#2A8DA0] hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(44,122,140,0.3)]'
                                 : action.type === 'skip'
                                 ? 'text-archival-grey hover:text-body-slate border border-border-line hover:border-body-slate'
-                                : 'bg-inst-blue/10 text-inst-blue hover:bg-inst-blue/20 border border-inst-blue/30'
+                                : 'bg-clinical-teal/10 text-clinical-teal hover:bg-clinical-teal/20 border border-clinical-teal/30'
                             }`}
                           >
                             {action.label}
@@ -523,11 +523,11 @@ export default function PhysicianOnboardingPage() {
               {/* Typing indicator */}
               {(isSending || isTyping) && (
                 <div className="flex justify-start animate-messageAppear">
-                  <div className="bg-white border-l-4 border-inst-blue px-7 py-5 rounded-[12px_12px_12px_4px] shadow-[0_2px_4px_rgba(27,42,65,0.08),0_8px_20px_rgba(27,42,65,0.06)] ml-5 sm:ml-10">
+                  <div className="bg-white border-l-4 border-clinical-teal px-7 py-5 rounded-[12px_12px_12px_4px] shadow-[0_2px_4px_rgba(27,42,65,0.08),0_8px_20px_rgba(27,42,65,0.06)] ml-5 sm:ml-10">
                     <div className="flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 bg-inst-blue/30 rounded-full animate-typingBounce" />
-                      <span className="w-1.5 h-1.5 bg-inst-blue/30 rounded-full animate-typingBounce [animation-delay:0.2s]" />
-                      <span className="w-1.5 h-1.5 bg-inst-blue/30 rounded-full animate-typingBounce [animation-delay:0.4s]" />
+                      <span className="w-1.5 h-1.5 bg-clinical-teal/30 rounded-full animate-typingBounce" />
+                      <span className="w-1.5 h-1.5 bg-clinical-teal/30 rounded-full animate-typingBounce [animation-delay:0.2s]" />
+                      <span className="w-1.5 h-1.5 bg-clinical-teal/30 rounded-full animate-typingBounce [animation-delay:0.4s]" />
                     </div>
                   </div>
                 </div>

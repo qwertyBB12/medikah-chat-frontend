@@ -14,6 +14,29 @@ import Footer from './Footer';
 
 export type PortalType = 'patient' | 'physician' | 'insurer' | 'employer';
 
+// Portal-specific color schemes
+const portalColors: Record<PortalType, {
+  sidebarGradient: string;
+  accentBorder: string;
+}> = {
+  patient: {
+    sidebarGradient: 'from-inst-blue to-[#243447]',
+    accentBorder: 'border-inst-blue',
+  },
+  physician: {
+    sidebarGradient: 'from-clinical-teal to-[#1a5a66]',
+    accentBorder: 'border-clinical-teal',
+  },
+  insurer: {
+    sidebarGradient: 'from-inst-blue to-[#243447]',
+    accentBorder: 'border-inst-blue',
+  },
+  employer: {
+    sidebarGradient: 'from-inst-blue to-[#243447]',
+    accentBorder: 'border-inst-blue',
+  },
+};
+
 interface ChatInputConfig {
   value: string;
   onChange: (value: string) => void;
@@ -66,11 +89,12 @@ export default function PortalLayout({
   headerTitle,
 }: PortalLayoutProps) {
   const labels = portalLabels[portal];
+  const colors = portalColors[portal];
 
   return (
     <div className="min-h-screen md:h-screen md:overflow-hidden flex flex-col md:flex-row bg-[#FAFAFB] text-deep-charcoal">
       {/* Sidebar - Desktop */}
-      <aside className="hidden md:flex md:flex-col md:w-72 lg:w-80 bg-gradient-to-b from-inst-blue to-[#243447] text-white md:sticky md:top-0 md:h-screen md:max-h-screen">
+      <aside className={`hidden md:flex md:flex-col md:w-72 lg:w-80 bg-gradient-to-b ${colors.sidebarGradient} text-white md:sticky md:top-0 md:h-screen md:max-h-screen`}>
         <div className="flex flex-col items-center justify-center py-10 px-6">
           <Image
             src={LOGO_SRC}
@@ -127,7 +151,7 @@ export default function PortalLayout({
       {/* Main content area */}
       <div className="flex-1 flex flex-col bg-[#FAFAFB]">
         {/* Mobile header */}
-        <header className="md:hidden px-4 py-4 bg-gradient-to-r from-inst-blue to-[#243447] text-white">
+        <header className={`md:hidden px-4 py-4 bg-gradient-to-r ${colors.sidebarGradient} text-white`}>
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2">
               <Image
