@@ -16,6 +16,7 @@
  */
 
 import { supabase } from './supabase';
+import { supabaseAdmin } from './supabaseServer';
 
 // LinkedIn OAuth configuration
 const LINKEDIN_CLIENT_ID = process.env.LINKEDIN_CLIENT_ID || '';
@@ -248,8 +249,9 @@ export async function storeLinkedInSession(
   profile: LinkedInProfile,
   tokens: LinkedInTokens
 ): Promise<void> {
-  if (!supabase) {
-    // Store in memory/session if no Supabase
+  // Use admin client to bypass RLS (this is called from server-side API routes)
+  const client = supabaseAdmin || supabase;
+  if (!client) {
     console.warn('Supabase not configured - LinkedIn data not persisted');
     return;
   }
@@ -258,7 +260,7 @@ export async function storeLinkedInSession(
   // Tokens are encrypted and session expires after 24 hours
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-  await supabase.from('linkedin_oauth_sessions').upsert({
+  const { error } = await client.from('linkedin_oauth_sessions').upsert({
     session_id: sessionId,
     profile_data: profile,
     // Don't store raw tokens in DB - use encrypted storage or session
@@ -266,6 +268,11 @@ export async function storeLinkedInSession(
     expires_at: expiresAt,
     created_at: new Date().toISOString(),
   });
+
+  if (error) {
+    console.error('Error storing LinkedIn session:', error);
+    throw new Error('Failed to store LinkedIn session');
+  }
 }
 
 /**
@@ -274,9 +281,11 @@ export async function storeLinkedInSession(
 export async function getLinkedInSession(
   sessionId: string
 ): Promise<LinkedInProfile | null> {
-  if (!supabase) return null;
+  // Use admin client to bypass RLS (called from server-side API routes)
+  const client = supabaseAdmin || supabase;
+  if (!client) return null;
 
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from('linkedin_oauth_sessions')
     .select('profile_data, expires_at')
     .eq('session_id', sessionId)
@@ -287,7 +296,7 @@ export async function getLinkedInSession(
   // Check if expired
   if (new Date(data.expires_at) < new Date()) {
     // Clean up expired session
-    await supabase
+    await client
       .from('linkedin_oauth_sessions')
       .delete()
       .eq('session_id', sessionId);
@@ -301,9 +310,10 @@ export async function getLinkedInSession(
  * Clear LinkedIn session after onboarding completes
  */
 export async function clearLinkedInSession(sessionId: string): Promise<void> {
-  if (!supabase) return;
+  const client = supabaseAdmin || supabase;
+  if (!client) return;
 
-  await supabase
+  await client
     .from('linkedin_oauth_sessions')
     .delete()
     .eq('session_id', sessionId);
