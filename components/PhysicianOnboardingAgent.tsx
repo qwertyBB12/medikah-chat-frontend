@@ -556,7 +556,7 @@ const PhysicianOnboardingAgent = forwardRef<
         }
         data.fullName = input;
         askQuestion('email', lang === 'en' ? 'What is your professional email address?' : '¿Cuál es su correo electrónico profesional?');
-        break;
+        return true;
       }
 
       case 'email': {
@@ -672,7 +672,7 @@ const PhysicianOnboardingAgent = forwardRef<
         } else {
           askQuestion('license_number', prompt);
         }
-        break;
+        return true;
       }
 
       case 'usa_states': {
@@ -684,7 +684,7 @@ const PhysicianOnboardingAgent = forwardRef<
           state: states[0], // For simplicity, take first state
         };
         askQuestion('license_number', copy.askUSALicense);
-        break;
+        return true;
       }
 
       case 'license_number': {
@@ -728,6 +728,7 @@ const PhysicianOnboardingAgent = forwardRef<
               copy.askOtherLicense.replace('{country}', nextCountryInfo?.name || nextCountry)
             );
           }
+          return true;
         } else {
           // Transition to specialty phase
           console.log('[ONBOARD] No more countries, transitioning to specialty phase');
@@ -740,7 +741,6 @@ const PhysicianOnboardingAgent = forwardRef<
           }, 1500);
           return true;
         }
-        break;
       }
 
       // Specialty Phase
@@ -757,7 +757,7 @@ const PhysicianOnboardingAgent = forwardRef<
         askQuestion('sub_specialties', copy.askSubSpecialties, [
           { label: copy.skipPrompt, value: 'skip', type: 'skip' },
         ]);
-        break;
+        return true;
       }
 
       case 'sub_specialties': {
@@ -767,7 +767,7 @@ const PhysicianOnboardingAgent = forwardRef<
         askQuestion('board_certifications', copy.askBoardCertifications, [
           { label: copy.skipPrompt, value: 'skip', type: 'skip' },
         ]);
-        break;
+        return true;
       }
 
       case 'board_certifications': {
@@ -796,13 +796,13 @@ const PhysicianOnboardingAgent = forwardRef<
         }
         data.medicalSchool = input;
         askQuestion('medical_school_country', copy.askMedicalSchoolCountry);
-        break;
+        return true;
       }
 
       case 'medical_school_country': {
         data.medicalSchoolCountry = input;
         askQuestion('graduation_year', copy.askGraduationYear);
-        break;
+        return true;
       }
 
       case 'graduation_year': {
@@ -814,7 +814,7 @@ const PhysicianOnboardingAgent = forwardRef<
         askQuestion('honors', copy.askHonors, [
           { label: copy.skipPrompt, value: 'skip', type: 'skip' },
         ]);
-        break;
+        return true;
       }
 
       case 'honors': {
@@ -822,13 +822,13 @@ const PhysicianOnboardingAgent = forwardRef<
           data.honors = input.split(/[,;]+/).map(h => h.trim()).filter(Boolean);
         }
         askQuestion('residency_institution', copy.askResidency);
-        break;
+        return true;
       }
 
       case 'residency_institution': {
         tempRef.current.currentResidency = { institution: input };
         askQuestion('residency_years', copy.askResidencyYears);
-        break;
+        return true;
       }
 
       case 'residency_years': {
@@ -846,7 +846,7 @@ const PhysicianOnboardingAgent = forwardRef<
         askQuestion('fellowships', copy.askFellowships, [
           { label: copy.skipPrompt, value: 'skip', type: 'skip' },
         ]);
-        break;
+        return true;
       }
 
       case 'fellowships': {
@@ -866,7 +866,7 @@ const PhysicianOnboardingAgent = forwardRef<
       // Intellectual Phase
       case 'google_scholar': {
         // Handled by action click
-        break;
+        return true;
       }
 
       case 'researchgate_url': {
@@ -920,7 +920,7 @@ const PhysicianOnboardingAgent = forwardRef<
           stableAppendMessage({ text: lang === 'en' ? 'Error fetching publications. Please try again.' : 'Error al obtener publicaciones. Por favor intenta de nuevo.' });
           updateState('awaiting_user');
         }
-        break;
+        return true;
       }
 
       case 'academia_url': {
@@ -973,7 +973,7 @@ const PhysicianOnboardingAgent = forwardRef<
           stableAppendMessage({ text: lang === 'en' ? 'Error fetching publications.' : 'Error al obtener publicaciones.' });
           updateState('awaiting_user');
         }
-        break;
+        return true;
       }
 
       case 'pubmed_search': {
@@ -1025,13 +1025,13 @@ const PhysicianOnboardingAgent = forwardRef<
           stableAppendMessage({ text: lang === 'en' ? 'Error searching PubMed.' : 'Error al buscar en PubMed.' });
           updateState('awaiting_user');
         }
-        break;
+        return true;
       }
 
       case 'publications_manual':
       case 'publications_select': {
         // Handled by component callbacks
-        break;
+        return true;
       }
 
       case 'publications': {
@@ -1043,7 +1043,7 @@ const PhysicianOnboardingAgent = forwardRef<
         askQuestion('presentations', copy.askPresentations, [
           { label: copy.skipPrompt, value: 'skip', type: 'skip' },
         ]);
-        break;
+        return true;
       }
 
       case 'presentations': {
@@ -1056,7 +1056,7 @@ const PhysicianOnboardingAgent = forwardRef<
         askQuestion('books', copy.askBooks, [
           { label: copy.skipPrompt, value: 'skip', type: 'skip' },
         ]);
-        break;
+        return true;
       }
 
       case 'books': {
@@ -1079,7 +1079,7 @@ const PhysicianOnboardingAgent = forwardRef<
         askQuestion('website', copy.askWebsite, [
           { label: copy.skipPrompt, value: 'skip', type: 'skip' },
         ]);
-        break;
+        return true;
       }
 
       case 'website': {
@@ -1093,7 +1093,7 @@ const PhysicianOnboardingAgent = forwardRef<
         askQuestion('social_profiles', copy.askSocialProfiles, [
           { label: copy.skipPrompt, value: 'skip', type: 'skip' },
         ]);
-        break;
+        return true;
       }
 
       case 'social_profiles': {
@@ -1116,7 +1116,7 @@ const PhysicianOnboardingAgent = forwardRef<
           type: 'secondary',
         }));
         askQuestion('available_days', copy.askAvailableDays, dayActions);
-        break;
+        return true;
       }
 
       case 'available_days': {
@@ -1130,7 +1130,7 @@ const PhysicianOnboardingAgent = forwardRef<
 
         data.availableDays = matchedDays.length > 0 ? matchedDays : ['monday', 'wednesday', 'friday'];
         askQuestion('available_hours', copy.askAvailableHours);
-        break;
+        return true;
       }
 
       case 'available_hours': {
@@ -1149,7 +1149,7 @@ const PhysicianOnboardingAgent = forwardRef<
           type: 'secondary',
         }));
         askQuestion('timezone', copy.askTimezone, tzActions);
-        break;
+        return true;
       }
 
       case 'timezone': {
@@ -1165,7 +1165,7 @@ const PhysicianOnboardingAgent = forwardRef<
           type: 'secondary',
         }));
         askQuestion('languages', copy.askLanguages, langActions);
-        break;
+        return true;
       }
 
       case 'languages': {
@@ -1185,7 +1185,7 @@ const PhysicianOnboardingAgent = forwardRef<
       // Confirmation Phase
       case 'confirm_profile': {
         // Handled by action click
-        break;
+        return true;
       }
 
       case 'edit_choice': {
@@ -1201,15 +1201,12 @@ const PhysicianOnboardingAgent = forwardRef<
           setPhase('identity');
           askQuestion('full_name', copy.askFullName);
         }, 500);
-        break;
+        return true;
       }
 
       default:
         return false;
     }
-
-    setQuestion(null);
-    return true;
   }, [
     state, question, copy, lang, stableAppendMessage, askQuestion, updateState,
     startLicensingPhase, startSpecialtyPhase, startEducationPhase,
