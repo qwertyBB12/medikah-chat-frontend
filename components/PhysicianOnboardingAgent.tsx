@@ -16,6 +16,7 @@ import {
   AMERICAS_TIMEZONES,
   DAYS_OF_WEEK,
   CONSULTATION_LANGUAGES,
+  TIMEZONES_BY_COUNTRY,
 } from '../lib/physicianOnboardingContent';
 import {
   PhysicianProfileData,
@@ -32,7 +33,8 @@ import {
 export interface OnboardingAction {
   label: string;
   value: string;
-  type?: 'primary' | 'secondary' | 'skip';
+  type?: 'primary' | 'secondary' | 'skip' | 'toggle';
+  selected?: boolean; // For toggle buttons in multi-select mode
 }
 
 export interface OnboardingBotMessage {
@@ -134,6 +136,7 @@ export interface PhysicianOnboardingAgentHandle {
   handleActionClick: (value: string) => Promise<boolean>;
   handlePublicationSelection?: (publications: import('../lib/publications').Publication[]) => void;
   handleManualPublication?: (publication: import('../lib/publications').Publication) => void;
+  updateToggleData: (values: string[]) => void;
 }
 
 interface LinkedInImportData {
@@ -1110,25 +1113,39 @@ const PhysicianOnboardingAgent = forwardRef<
             }
           });
         }
-        const dayActions: OnboardingAction[] = DAYS_OF_WEEK.map(d => ({
-          label: d[lang],
-          value: d.value,
-          type: 'secondary',
-        }));
-        askQuestion('available_days', copy.askAvailableDays, dayActions);
+        // Multi-select toggle buttons for days
+        const dayActions: OnboardingAction[] = [
+          ...DAYS_OF_WEEK.map(d => ({
+            label: d[lang],
+            value: d.value,
+            type: 'toggle' as const,
+            selected: false,
+          })),
+          { label: lang === 'en' ? 'Done' : 'Listo', value: '__done__', type: 'primary' as const },
+        ];
+        askQuestion('available_days', copy.askAvailableDays + (lang === 'en'
+          ? ' (Select all that apply, then click Done)'
+          : ' (Selecciona todos los que apliquen, luego haz clic en Listo)'), dayActions);
         return true;
       }
 
       case 'available_days': {
-        const days = input.toLowerCase().split(/[,\s]+/).map(d => d.trim()).filter(Boolean);
-        const matchedDays = days.map(d => {
-          const match = DAYS_OF_WEEK.find(
-            dw => dw.value.startsWith(d) || dw.en.toLowerCase().startsWith(d) || dw.es.toLowerCase().startsWith(d)
-          );
-          return match?.value;
-        }).filter(Boolean) as string[];
-
-        data.availableDays = matchedDays.length > 0 ? matchedDays : ['monday', 'wednesday', 'friday'];
+        // Handle both text input and multi-select done action
+        if (input === '__done__') {
+          // Days were selected via toggle, already stored
+          if (!data.availableDays || data.availableDays.length === 0) {
+            data.availableDays = ['monday', 'wednesday', 'friday'];
+          }
+        } else {
+          const days = input.toLowerCase().split(/[,\s]+/).map(d => d.trim()).filter(Boolean);
+          const matchedDays = days.map(d => {
+            const match = DAYS_OF_WEEK.find(
+              dw => dw.value.startsWith(d) || dw.en.toLowerCase().startsWith(d) || dw.es.toLowerCase().startsWith(d)
+            );
+            return match?.value;
+          }).filter(Boolean) as string[];
+          data.availableDays = matchedDays.length > 0 ? matchedDays : ['monday', 'wednesday', 'friday'];
+        }
         askQuestion('available_hours', copy.askAvailableHours);
         return true;
       }
@@ -1160,7 +1177,28 @@ const PhysicianOnboardingAgent = forwardRef<
           data.availableHoursEnd = '17:00:00';
         }
 
-        const tzActions: OnboardingAction[] = AMERICAS_TIMEZONES.slice(0, 4).map(tz => ({
+        // Get relevant timezones based on licensed countries
+        const licensedCountries = data.licenses?.map(l => l.country) || [];
+        const relevantTimezones: { value: string; label: string }[] = [];
+
+        // Add timezones for each licensed country
+        licensedCountries.forEach(country => {
+          const countryTimezones = TIMEZONES_BY_COUNTRY[country];
+          if (countryTimezones) {
+            countryTimezones.forEach(tz => {
+              if (!relevantTimezones.some(r => r.value === tz.value)) {
+                relevantTimezones.push(tz);
+              }
+            });
+          }
+        });
+
+        // If no licensed countries or no matching timezones, show common Americas timezones
+        if (relevantTimezones.length === 0) {
+          relevantTimezones.push(...AMERICAS_TIMEZONES.slice(0, 8));
+        }
+
+        const tzActions: OnboardingAction[] = relevantTimezones.map(tz => ({
           label: tz.label,
           value: tz.value,
           type: 'secondary',
@@ -1170,31 +1208,47 @@ const PhysicianOnboardingAgent = forwardRef<
       }
 
       case 'timezone': {
-        const tz = AMERICAS_TIMEZONES.find(
+        // First check relevant timezones, then fall back to all Americas timezones
+        const allTimezones = [...Object.values(TIMEZONES_BY_COUNTRY).flat(), ...AMERICAS_TIMEZONES];
+        const tz = allTimezones.find(
           t => t.value.toLowerCase().includes(input.toLowerCase()) ||
                t.label.toLowerCase().includes(input.toLowerCase())
         );
         data.timezone = tz?.value || 'America/Mexico_City';
 
-        const langActions: OnboardingAction[] = CONSULTATION_LANGUAGES.map(l => ({
-          label: l[lang],
-          value: l.code,
-          type: 'secondary',
-        }));
-        askQuestion('languages', copy.askLanguages, langActions);
+        // Multi-select toggle buttons for languages
+        const langActions: OnboardingAction[] = [
+          ...CONSULTATION_LANGUAGES.map(l => ({
+            label: l[lang],
+            value: l.code,
+            type: 'toggle' as const,
+            selected: l.code === 'es' || l.code === 'en', // Pre-select Spanish and English
+          })),
+          { label: lang === 'en' ? 'Done' : 'Listo', value: '__done__', type: 'primary' as const },
+        ];
+        askQuestion('languages', copy.askLanguages + (lang === 'en'
+          ? ' (Select all that apply, then click Done)'
+          : ' (Selecciona todos los que apliquen, luego haz clic en Listo)'), langActions);
         return true;
       }
 
       case 'languages': {
-        const langs = input.toLowerCase().split(/[,\s]+/).map(l => l.trim()).filter(Boolean);
-        const matchedLangs = langs.map(l => {
-          const match = CONSULTATION_LANGUAGES.find(
-            cl => cl.code === l || cl.en.toLowerCase().startsWith(l) || cl.es.toLowerCase().startsWith(l)
-          );
-          return match?.code;
-        }).filter(Boolean) as string[];
-
-        data.languages = matchedLangs.length > 0 ? matchedLangs : ['es', 'en'];
+        // Handle both text input and multi-select done action
+        if (input === '__done__') {
+          // Languages were selected via toggle, already stored
+          if (!data.languages || data.languages.length === 0) {
+            data.languages = ['es', 'en'];
+          }
+        } else {
+          const langs = input.toLowerCase().split(/[,\s]+/).map(l => l.trim()).filter(Boolean);
+          const matchedLangs = langs.map(l => {
+            const match = CONSULTATION_LANGUAGES.find(
+              cl => cl.code === l || cl.en.toLowerCase().startsWith(l) || cl.es.toLowerCase().startsWith(l)
+            );
+            return match?.code;
+          }).filter(Boolean) as string[];
+          data.languages = matchedLangs.length > 0 ? matchedLangs : ['es', 'en'];
+        }
         startConfirmationPhase();
         return true;
       }
@@ -1519,6 +1573,17 @@ const PhysicianOnboardingAgent = forwardRef<
     } as OnboardingBotMessage);
   }, [lang, stableAppendMessage]);
 
+  // Update toggle data from parent component (for multi-select days/languages)
+  const updateToggleData = useCallback((values: string[]) => {
+    const data = dataRef.current;
+    // Determine what field to update based on current question
+    if (question === 'available_days') {
+      data.availableDays = values;
+    } else if (question === 'languages') {
+      data.languages = values.length > 0 ? values : ['es', 'en'];
+    }
+  }, [question]);
+
   // Expose methods via ref
   useImperativeHandle(ref, () => ({
     start,
@@ -1528,6 +1593,7 @@ const PhysicianOnboardingAgent = forwardRef<
     handleActionClick,
     handlePublicationSelection,
     handleManualPublication,
+    updateToggleData,
   }));
 
   return null;

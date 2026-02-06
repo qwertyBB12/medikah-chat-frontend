@@ -21,7 +21,7 @@ type Message = {
   text: string;
   isVision?: boolean;
   isSummary?: boolean;
-  actions?: { label: string; value: string; type?: 'primary' | 'secondary' | 'skip' }[];
+  actions?: { label: string; value: string; type?: 'primary' | 'secondary' | 'skip' | 'toggle'; selected?: boolean }[];
   showLinkedInConnect?: boolean;
   linkedInPreview?: {
     fullName?: string;

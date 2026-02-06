@@ -28,7 +28,7 @@ type Message = {
   text: string;
   isVision?: boolean;
   isSummary?: boolean;
-  actions?: { label: string; value: string; type?: 'primary' | 'secondary' | 'skip' }[];
+  actions?: { label: string; value: string; type?: 'primary' | 'secondary' | 'skip' | 'toggle'; selected?: boolean }[];
   showLinkedInConnect?: boolean;
   linkedInPreview?: {
     fullName?: string;
@@ -83,6 +83,9 @@ export default function PhysicianOnboardingPage() {
   const [showConsentModal, setShowConsentModal] = useState(false);
   const [pendingPhysicianId, setPendingPhysicianId] = useState<string | null>(null);
   const [pendingPhysicianName, setPendingPhysicianName] = useState<string>('');
+
+  // Toggle button selections for multi-select (days, languages)
+  const [toggleSelections, setToggleSelections] = useState<Set<string>>(new Set());
 
   // Message queue for conversational timing
   const messageQueueRef = useRef<OnboardingBotMessage[]>([]);
@@ -478,22 +481,69 @@ export default function PhysicianOnboardingPage() {
                     {/* Action buttons */}
                     {message.actions && message.actions.length > 0 && (
                       <div className="mt-4 flex flex-wrap gap-2">
-                        {message.actions.map((action, actionIdx) => (
-                          <button
-                            key={`${action.value}-${actionIdx}`}
-                            onClick={() => handleActionClick(action.value)}
-                            disabled={!isAwaitingInput}
-                            className={`font-dm-sans text-sm font-medium px-5 py-2.5 rounded-[10px] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
-                              action.type === 'primary'
-                                ? 'bg-clinical-teal text-white hover:bg-[#2A8DA0] hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(44,122,140,0.3)]'
-                                : action.type === 'skip'
-                                ? 'text-archival-grey hover:text-body-slate border border-border-line hover:border-body-slate'
-                                : 'bg-clinical-teal/10 text-clinical-teal hover:bg-clinical-teal/20 border border-clinical-teal/30'
-                            }`}
-                          >
-                            {action.label}
-                          </button>
-                        ))}
+                        {message.actions.map((action, actionIdx) => {
+                          const isToggle = action.type === 'toggle';
+                          const isSelected = isToggle && (toggleSelections.has(action.value) || action.selected);
+
+                          return (
+                            <button
+                              key={`${action.value}-${actionIdx}`}
+                              onClick={() => {
+                                if (isToggle) {
+                                  // Toggle selection
+                                  setToggleSelections(prev => {
+                                    const next = new Set(prev);
+                                    if (next.has(action.value)) {
+                                      next.delete(action.value);
+                                    } else {
+                                      next.add(action.value);
+                                    }
+                                    // Update data in agent via a ref call
+                                    const agent = agentRef.current;
+                                    if (agent) {
+                                      const currentQuestion = messages[messages.length - 1]?.actions?.[0]?.type === 'toggle'
+                                        ? 'toggle_question' : '';
+                                      // Store selected values for days or languages
+                                      const selectedValues = Array.from(next);
+                                      // Pass to agent data store
+                                      (agent as unknown as { updateToggleData?: (key: string, values: string[]) => void })
+                                        .updateToggleData?.('toggleSelections', selectedValues);
+                                    }
+                                    return next;
+                                  });
+                                } else {
+                                  // For primary/done button, pass selections to agent then reset
+                                  if (action.value === '__done__') {
+                                    const selectedValues = Array.from(toggleSelections);
+                                    // Update agent data before triggering done
+                                    const agent = agentRef.current;
+                                    if (agent) {
+                                      (agent as unknown as { updateToggleData?: (values: string[]) => void })
+                                        .updateToggleData?.(selectedValues);
+                                    }
+                                    setToggleSelections(new Set());
+                                  }
+                                  handleActionClick(action.value);
+                                }
+                              }}
+                              disabled={!isAwaitingInput}
+                              className={`font-dm-sans text-sm font-medium px-5 py-2.5 rounded-[10px] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+                                action.type === 'primary'
+                                  ? 'bg-clinical-teal text-white hover:bg-[#2A8DA0] hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(44,122,140,0.3)]'
+                                  : action.type === 'skip'
+                                  ? 'text-archival-grey hover:text-body-slate border border-border-line hover:border-body-slate'
+                                  : isToggle
+                                  ? isSelected
+                                    ? 'bg-clinical-teal text-white border border-clinical-teal hover:bg-[#2A8DA0]'
+                                    : 'bg-white text-clinical-teal hover:bg-clinical-teal/10 border border-clinical-teal/30'
+                                  : 'bg-clinical-teal/10 text-clinical-teal hover:bg-clinical-teal/20 border border-clinical-teal/30'
+                              }`}
+                            >
+                              {isToggle && isSelected && <span className="mr-1">✓</span>}
+                              {action.label}
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
 
