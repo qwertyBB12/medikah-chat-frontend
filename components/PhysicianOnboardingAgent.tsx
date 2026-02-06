@@ -1380,23 +1380,42 @@ const PhysicianOnboardingAgent = forwardRef<
 
           stableAppendMessage({
             text: lang === 'en'
-              ? `✓ LinkedIn data confirmed! We've pre-filled your name${linkedInData.email ? ' and email' : ''}. Let's continue with your credentials.`
-              : `✓ ¡Datos de LinkedIn confirmados! Hemos pre-llenado tu nombre${linkedInData.email ? ' y correo' : ''}. Continuemos con tus credenciales.`,
+              ? `✓ LinkedIn data confirmed!${linkedInData.fullName ? ` We've pre-filled your name` : ''}${linkedInData.email ? ' and email' : ''}.`
+              : `✓ ¡Datos de LinkedIn confirmados!${linkedInData.fullName ? ` Hemos pre-llenado tu nombre` : ''}${linkedInData.email ? ' y correo' : ''}.`,
           });
 
-          startLicensingPhase();
+          // If LinkedIn didn't provide fullName, ask for it first
+          if (!linkedInData.fullName) {
+            setTimeout(() => {
+              askQuestion('full_name', lang === 'en'
+                ? 'What is your full name, as it appears on your medical license? (LinkedIn didn\'t provide this)'
+                : '¿Cuál es su nombre completo, tal como aparece en su licencia médica? (LinkedIn no proporcionó esto)');
+            }, 500);
+          } else if (!linkedInData.email) {
+            // If LinkedIn didn't provide email, ask for it
+            setTimeout(() => {
+              askQuestion('email', lang === 'en'
+                ? 'What is your professional email address? (LinkedIn didn\'t provide this)'
+                : '¿Cuál es su correo electrónico profesional? (LinkedIn no proporcionó esto)');
+            }, 500);
+          } else {
+            // Both name and email available, proceed to licensing
+            startLicensingPhase();
+          }
           return true;
         } else if (value === 'linkedin_edit') {
-          // User wants to edit - proceed with manual flow
+          // User wants to edit - ask for name and email manually
           stableAppendMessage({
             text: lang === 'en'
-              ? 'No problem! You can update any information as we go through the form.'
-              : '¡No hay problema! Puedes actualizar cualquier información mientras avanzamos en el formulario.',
+              ? 'No problem! Let\'s enter your information manually.'
+              : '¡No hay problema! Ingresemos tu información manualmente.',
           });
-          startLicensingPhase();
+          setTimeout(() => {
+            askQuestion('full_name', copy.askFullName);
+          }, 500);
           return true;
         }
-        break;
+        return true;
 
       case 'countries_licensed':
         // Country quick-select
