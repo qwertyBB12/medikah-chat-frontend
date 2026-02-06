@@ -103,20 +103,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // 3. Generate magic link for password setup
     let magicLink: string | null = null;
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://medikah.health';
+    const redirectTo = `${baseUrl}/physicians/dashboard?welcome=true`;
 
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'magiclink',
       email,
       options: {
-        redirectTo: `${baseUrl}/physicians/dashboard?welcome=true`,
+        redirectTo,
       },
     });
 
     if (linkError) {
       console.error('Error generating magic link:', linkError);
       // Don't fail the request - they can use "forgot password" later
-    } else {
-      magicLink = linkData?.properties?.action_link || null;
+    } else if (linkData?.properties?.action_link) {
+      // The action_link from Supabase may not respect redirectTo properly
+      // We need to ensure the redirect_to param is set correctly
+      const actionLink = linkData.properties.action_link;
+      try {
+        const url = new URL(actionLink);
+        url.searchParams.set('redirect_to', redirectTo);
+        magicLink = url.toString();
+      } catch {
+        magicLink = actionLink;
+      }
     }
 
     // 4. Send welcome email
