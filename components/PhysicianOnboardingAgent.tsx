@@ -405,12 +405,16 @@ const PhysicianOnboardingAgent = forwardRef<
     });
 
     setTimeout(() => {
-      const specialtyActions: OnboardingAction[] = MEDICAL_SPECIALTIES.slice(0, 4).map(s => ({
+      // Show all specialties as buttons - user can click or type their own
+      const specialtyActions: OnboardingAction[] = MEDICAL_SPECIALTIES.map(s => ({
         label: s,
         value: s,
         type: 'secondary',
       }));
-      askQuestion('primary_specialty', copy.askPrimarySpecialty, specialtyActions);
+      const questionText = copy.askPrimarySpecialty + (lang === 'en'
+        ? ' (Select from the list or type your specialty if not shown)'
+        : ' (Selecciona de la lista o escribe tu especialidad si no aparece)');
+      askQuestion('primary_specialty', questionText, specialtyActions);
     }, 1000);
   }, [copy, lang, stableAppendMessage, askQuestion, updateState]);
 
