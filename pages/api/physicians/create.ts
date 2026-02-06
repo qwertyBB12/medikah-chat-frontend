@@ -103,7 +103,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // 3. Generate magic link for password setup
     let magicLink: string | null = null;
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://medikah.health';
-    const redirectTo = `${baseUrl}/physicians/dashboard?welcome=true`;
+    const redirectTo = `${baseUrl}/physicians/setup`;
 
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'magiclink',
