@@ -26,14 +26,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const data = req.body;
 
-    console.log('[API] Received physician data:', JSON.stringify(data, null, 2));
-
     if (!data || !data.fullName || !data.email) {
-      console.error('[API] Missing required fields. Data received:', data);
-      return res.status(400).json({
-        error: 'Full name and email are required',
-        received: { fullName: data?.fullName, email: data?.email }
-      });
+      return res.status(400).json({ error: 'Full name and email are required' });
     }
 
     // Convert to snake_case for database
