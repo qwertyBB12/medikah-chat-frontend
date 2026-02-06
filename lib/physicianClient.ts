@@ -138,30 +138,29 @@ function toSnakeCase(data: PhysicianProfileData): Record<string, unknown> {
 }
 
 /**
- * Create a new physician profile
+ * Create a new physician profile via API route
+ * Uses server-side service role to bypass RLS
  */
 export async function createPhysicianProfile(
   data: PhysicianProfileData
 ): Promise<{ success: boolean; physicianId?: string; error?: string }> {
   try {
-    if (!supabase) {
-      return { success: false, error: 'Database not configured' };
+    const response = await fetch('/api/physicians/create', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error('Error creating physician profile:', result.error);
+      return { success: false, error: result.error || 'Failed to create profile' };
     }
 
-    const dbData = toSnakeCase(data);
-
-    const { data: result, error } = await supabase
-      .from('physicians')
-      .insert(dbData)
-      .select('id')
-      .single();
-
-    if (error) {
-      console.error('Error creating physician profile:', error);
-      return { success: false, error: error.message };
-    }
-
-    return { success: true, physicianId: result.id };
+    return { success: true, physicianId: result.physicianId };
   } catch (err) {
     console.error('Exception creating physician profile:', err);
     return { success: false, error: 'Failed to create profile' };
