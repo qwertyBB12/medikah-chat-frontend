@@ -405,15 +405,19 @@ const PhysicianOnboardingAgent = forwardRef<
     });
 
     setTimeout(() => {
-      // Show all specialties as buttons - user can click or type their own
-      const specialtyActions: OnboardingAction[] = MEDICAL_SPECIALTIES.map(s => ({
-        label: s,
-        value: s,
-        type: 'secondary',
-      }));
+      // Show all specialties as toggle buttons for multi-select
+      const specialtyActions: OnboardingAction[] = [
+        ...MEDICAL_SPECIALTIES.map(s => ({
+          label: s,
+          value: s,
+          type: 'toggle' as const,
+          selected: false,
+        })),
+        { label: lang === 'en' ? 'Done' : 'Listo', value: '__done__', type: 'primary' as const },
+      ];
       const questionText = copy.askPrimarySpecialty + (lang === 'en'
-        ? ' (Select from the list or type your specialty if not shown)'
-        : ' (Selecciona de la lista o escribe tu especialidad si no aparece)');
+        ? ' (Select all that apply, then click Done. You can also type additional specialties.)'
+        : ' (Selecciona todas las que apliquen, luego haz clic en Listo. También puedes escribir especialidades adicionales.)');
       askQuestion('primary_specialty', questionText, specialtyActions);
     }, 1000);
   }, [copy, lang, stableAppendMessage, askQuestion, updateState]);
@@ -474,6 +478,7 @@ const PhysicianOnboardingAgent = forwardRef<
     });
 
     // Create the physician profile
+    console.log('[ONBOARD] dataRef.current before creating profile:', JSON.stringify(dataRef.current, null, 2));
     const profileData: PhysicianProfileData = {
       fullName: dataRef.current.fullName || '',
       email: dataRef.current.email || '',
@@ -752,7 +757,25 @@ const PhysicianOnboardingAgent = forwardRef<
 
       // Specialty Phase
       case 'primary_specialty': {
-        if (!input) {
+        // Handle multi-select done action
+        if (input === '__done__') {
+          // Specialties were selected via toggle, stored in data.subSpecialties temporarily
+          // First one becomes primary, rest become sub-specialties
+          if (data.subSpecialties && data.subSpecialties.length > 0) {
+            data.primarySpecialty = data.subSpecialties[0];
+            data.subSpecialties = data.subSpecialties.slice(1);
+          } else {
+            stableAppendMessage({
+              text: lang === 'en'
+                ? 'Please select at least one specialty.'
+                : 'Por favor selecciona al menos una especialidad.',
+            });
+            return true;
+          }
+        } else if (input) {
+          // User typed a specialty
+          data.primarySpecialty = input;
+        } else {
           stableAppendMessage({
             text: lang === 'en'
               ? 'Please provide your primary medical specialty.'
@@ -760,8 +783,7 @@ const PhysicianOnboardingAgent = forwardRef<
           });
           return true;
         }
-        data.primarySpecialty = input;
-        askQuestion('sub_specialties', copy.askSubSpecialties, [
+        askQuestion('board_certifications', copy.askBoardCertifications, [
           { label: copy.skipPrompt, value: 'skip', type: 'skip' },
         ]);
         return true;
@@ -1577,7 +1599,7 @@ const PhysicianOnboardingAgent = forwardRef<
     } as OnboardingBotMessage);
   }, [lang, stableAppendMessage]);
 
-  // Update toggle data from parent component (for multi-select days/languages)
+  // Update toggle data from parent component (for multi-select days/languages/specialties)
   const updateToggleData = useCallback((values: string[]) => {
     const data = dataRef.current;
     // Determine what field to update based on current question
@@ -1585,6 +1607,10 @@ const PhysicianOnboardingAgent = forwardRef<
       data.availableDays = values;
     } else if (question === 'languages') {
       data.languages = values.length > 0 ? values : ['es', 'en'];
+    } else if (question === 'primary_specialty') {
+      // Store all selected specialties temporarily in subSpecialties
+      // Will be split into primary + sub when processing __done__
+      data.subSpecialties = values;
     }
   }, [question]);
 
