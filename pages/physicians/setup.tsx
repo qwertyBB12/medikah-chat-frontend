@@ -42,7 +42,7 @@ export default function PhysicianSetup() {
       } else {
         // No session - might need to wait for URL hash processing
         // Listen for auth state change
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
+        const { data: { subscription } } = supabase!.auth.onAuthStateChange((event, newSession) => {
           if (event === 'SIGNED_IN' && newSession?.user) {
             setEmail(newSession.user.email || null);
             setStatus('ready');
@@ -50,14 +50,15 @@ export default function PhysicianSetup() {
         });
 
         // Timeout if no session appears
-        setTimeout(() => {
-          if (status === 'loading') {
-            setError('Invalid or expired link. Please request a new one.');
-            setStatus('error');
-          }
+        const timeoutId = setTimeout(() => {
+          setError('Invalid or expired link. Please request a new one.');
+          setStatus('error');
         }, 5000);
 
-        return () => subscription.unsubscribe();
+        return () => {
+          subscription.unsubscribe();
+          clearTimeout(timeoutId);
+        };
       }
     });
   }, []);
