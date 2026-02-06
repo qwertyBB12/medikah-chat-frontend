@@ -1,4 +1,3 @@
-import { supabase } from './supabase';
 import { CONSENT_FORM_VERSION } from './consentContent';
 
 export interface ConsentFormData {
@@ -20,26 +19,24 @@ export interface ConsentRecord extends ConsentFormData {
 export async function saveConsentRecord(
   data: ConsentFormData,
 ): Promise<{ success: boolean; error?: string }> {
-  if (!supabase) {
-    console.warn('Supabase not configured — consent record not persisted.');
-    return { success: true };
-  }
-
   try {
-    const { error } = await supabase.from('consent_records').insert({
-      user_id: data.userId,
-      form_type: 'cross_border_ack',
-      form_version: CONSENT_FORM_VERSION,
-      language: data.language,
-      checkboxes: data.checkboxes,
-      recording_consent: data.recordingConsent,
-      ip_address: null,
-      user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+    const response = await fetch('/api/consent/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: data.userId,
+        language: data.language,
+        checkboxes: data.checkboxes,
+        recordingConsent: data.recordingConsent,
+        formVersion: CONSENT_FORM_VERSION,
+      }),
     });
 
-    if (error) {
-      console.error('Failed to save consent record:', error);
-      return { success: false, error: error.message };
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error('Failed to save consent record:', result.error);
+      return { success: false, error: result.error };
     }
 
     return { success: true };
@@ -50,33 +47,24 @@ export async function saveConsentRecord(
 }
 
 export async function hasValidConsent(userId: string): Promise<boolean> {
-  if (!supabase) {
-    return false;
-  }
-
   try {
-    const timeout = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Consent check timed out')), 5000),
-    );
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-    const query = supabase
-      .from('consent_records')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('form_type', 'cross_border_ack')
-      .eq('form_version', CONSENT_FORM_VERSION)
-      .limit(1);
+    const response = await fetch(`/api/consent/check?userId=${encodeURIComponent(userId)}`, {
+      signal: controller.signal,
+    });
 
-    const { data, error } = await Promise.race([query, timeout]);
+    clearTimeout(timeoutId);
 
-    if (error) {
-      console.error('Failed to check consent:', error);
+    if (!response.ok) {
       return false;
     }
 
-    return Array.isArray(data) && data.length > 0;
+    const result = await response.json();
+    return result.hasConsent === true;
   } catch (err) {
-    console.error('Consent check network error:', err);
+    console.error('Consent check error:', err);
     return false;
   }
 }
