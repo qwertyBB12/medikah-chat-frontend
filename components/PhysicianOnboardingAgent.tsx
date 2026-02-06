@@ -1134,13 +1134,30 @@ const PhysicianOnboardingAgent = forwardRef<
       }
 
       case 'available_hours': {
-        const timeMatch = input.match(/(\d{1,2}(?::\d{2})?)\s*(?:am|pm)?\s*[-–to]+\s*(\d{1,2}(?::\d{2})?)\s*(?:am|pm)?/i);
+        // Parse time range like "9-5", "9am-5pm", "09:00-17:00"
+        const timeMatch = input.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s*[-–to]+\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
         if (timeMatch) {
-          data.availableHoursStart = timeMatch[1];
-          data.availableHoursEnd = timeMatch[2];
+          let startHour = parseInt(timeMatch[1], 10);
+          const startMin = timeMatch[2] || '00';
+          const startAmPm = timeMatch[3]?.toLowerCase();
+          let endHour = parseInt(timeMatch[4], 10);
+          const endMin = timeMatch[5] || '00';
+          const endAmPm = timeMatch[6]?.toLowerCase();
+
+          // Convert to 24-hour format
+          if (startAmPm === 'pm' && startHour < 12) startHour += 12;
+          if (startAmPm === 'am' && startHour === 12) startHour = 0;
+          if (endAmPm === 'pm' && endHour < 12) endHour += 12;
+          if (endAmPm === 'am' && endHour === 12) endHour = 0;
+
+          // If no am/pm specified and end hour is small (like 5), assume PM
+          if (!endAmPm && endHour >= 1 && endHour <= 8) endHour += 12;
+
+          data.availableHoursStart = `${startHour.toString().padStart(2, '0')}:${startMin}:00`;
+          data.availableHoursEnd = `${endHour.toString().padStart(2, '0')}:${endMin}:00`;
         } else {
-          data.availableHoursStart = '09:00';
-          data.availableHoursEnd = '17:00';
+          data.availableHoursStart = '09:00:00';
+          data.availableHoursEnd = '17:00:00';
         }
 
         const tzActions: OnboardingAction[] = AMERICAS_TIMEZONES.slice(0, 4).map(tz => ({
