@@ -439,4 +439,75 @@ export const CONSULTATION_LANGUAGES = [
   { code: 'en', en: 'English', es: 'Inglés' },
   { code: 'pt', en: 'Portuguese', es: 'Portugués' },
   { code: 'fr', en: 'French', es: 'Francés' },
+  { code: 'de', en: 'German', es: 'Alemán' },
+  { code: 'it', en: 'Italian', es: 'Italiano' },
+  { code: 'zh', en: 'Mandarin Chinese', es: 'Chino Mandarín' },
+  { code: 'ja', en: 'Japanese', es: 'Japonés' },
+  { code: 'ko', en: 'Korean', es: 'Coreano' },
+  { code: 'ar', en: 'Arabic', es: 'Árabe' },
+  { code: 'hi', en: 'Hindi', es: 'Hindi' },
+  { code: 'ru', en: 'Russian', es: 'Ruso' },
 ];
+
+// Timezones grouped by region for context-aware selection
+export const TIMEZONES_BY_COUNTRY: Record<string, { value: string; label: string }[]> = {
+  MX: [
+    { value: 'America/Mexico_City', label: 'Ciudad de México (CST)' },
+    { value: 'America/Monterrey', label: 'Monterrey (CST)' },
+    { value: 'America/Tijuana', label: 'Tijuana (PST)' },
+    { value: 'America/Cancun', label: 'Cancún (EST)' },
+    { value: 'America/Hermosillo', label: 'Hermosillo (MST)' },
+    { value: 'America/Mazatlan', label: 'Mazatlán (MST)' },
+  ],
+  US: [
+    { value: 'America/New_York', label: 'Eastern Time (EST)' },
+    { value: 'America/Chicago', label: 'Central Time (CST)' },
+    { value: 'America/Denver', label: 'Mountain Time (MST)' },
+    { value: 'America/Los_Angeles', label: 'Pacific Time (PST)' },
+    { value: 'America/Anchorage', label: 'Alaska Time (AKST)' },
+    { value: 'Pacific/Honolulu', label: 'Hawaii Time (HST)' },
+  ],
+  CO: [
+    { value: 'America/Bogota', label: 'Bogotá (COT)' },
+  ],
+  BR: [
+    { value: 'America/Sao_Paulo', label: 'São Paulo (BRT)' },
+    { value: 'America/Manaus', label: 'Manaus (AMT)' },
+    { value: 'America/Recife', label: 'Recife (BRT)' },
+  ],
+  AR: [
+    { value: 'America/Argentina/Buenos_Aires', label: 'Buenos Aires (ART)' },
+  ],
+  CL: [
+    { value: 'America/Santiago', label: 'Santiago (CLT)' },
+  ],
+  PE: [
+    { value: 'America/Lima', label: 'Lima (PET)' },
+  ],
+  CA: [
+    { value: 'America/Toronto', label: 'Toronto (EST)' },
+    { value: 'America/Vancouver', label: 'Vancouver (PST)' },
+    { value: 'America/Edmonton', label: 'Edmonton (MST)' },
+  ],
+  EC: [
+    { value: 'America/Guayaquil', label: 'Guayaquil (ECT)' },
+  ],
+  VE: [
+    { value: 'America/Caracas', label: 'Caracas (VET)' },
+  ],
+  PA: [
+    { value: 'America/Panama', label: 'Panama (EST)' },
+  ],
+  CR: [
+    { value: 'America/Costa_Rica', label: 'San José (CST)' },
+  ],
+  GT: [
+    { value: 'America/Guatemala', label: 'Guatemala City (CST)' },
+  ],
+  DO: [
+    { value: 'America/Santo_Domingo', label: 'Santo Domingo (AST)' },
+  ],
+  PR: [
+    { value: 'America/Puerto_Rico', label: 'Puerto Rico (AST)' },
+  ],
+};
