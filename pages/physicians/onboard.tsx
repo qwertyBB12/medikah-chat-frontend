@@ -307,18 +307,25 @@ export default function PhysicianOnboardingPage() {
 
   // Send user message
   const sendMessage = async (text: string): Promise<void> => {
+    console.log('[SEND] sendMessage called with:', text);
     const trimmed = text.trim();
-    if (!trimmed || !agentRef.current?.isAwaitingInput()) {
+    const isAwaiting = agentRef.current?.isAwaitingInput();
+    console.log('[SEND] trimmed:', trimmed, 'isAwaitingInput:', isAwaiting);
+
+    if (!trimmed || !isAwaiting) {
+      console.log('[SEND] Blocked - empty or not awaiting input');
       setInput('');
       return;
     }
 
+    console.log('[SEND] Adding user message and calling handleUserInput');
     setMessages(prev => [...prev, { sender: 'user', text: trimmed }]);
     setInput('');
     setIsSending(true);
 
     try {
-      await agentRef.current.handleUserInput(trimmed);
+      const result = await agentRef.current.handleUserInput(trimmed);
+      console.log('[SEND] handleUserInput returned:', result);
     } finally {
       setIsSending(false);
       requestAnimationFrame(adjustTextareaHeight);
@@ -341,7 +348,12 @@ export default function PhysicianOnboardingPage() {
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
-      if (!isSending && !isTyping) sendMessage(input);
+      console.log('[KEY] Enter pressed, isSending:', isSending, 'isTyping:', isTyping, 'input:', input);
+      if (!isSending && !isTyping) {
+        sendMessage(input);
+      } else {
+        console.log('[KEY] Blocked - isSending or isTyping is true');
+      }
     }
   };
 
