@@ -324,8 +324,11 @@ export default function PhysicianOnboardingPage() {
     setIsSending(true);
 
     try {
-      const result = await agentRef.current.handleUserInput(trimmed);
-      console.log('[SEND] handleUserInput returned:', result);
+      const agent = agentRef.current;
+      if (agent) {
+        const result = await agent.handleUserInput(trimmed);
+        console.log('[SEND] handleUserInput returned:', result);
+      }
     } finally {
       setIsSending(false);
       requestAnimationFrame(adjustTextareaHeight);
