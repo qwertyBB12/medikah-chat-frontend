@@ -89,15 +89,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       error = insertResult.error;
     }
 
-    if (error) {
+    if (error || !result) {
       console.error('Error creating physician profile:', error);
 
       // Check for duplicate email
-      if (error.code === '23505') {
+      if (error?.code === '23505') {
         return res.status(409).json({ error: 'Email already registered' });
       }
 
-      return res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: error?.message || 'Failed to create profile' });
     }
 
     // 3. Generate magic link for password setup
