@@ -567,6 +567,7 @@ const PhysicianOnboardingAgent = forwardRef<
           return true;
         }
         data.fullName = input;
+        console.log('[ONBOARD] Stored fullName:', data.fullName, 'dataRef.current.fullName:', dataRef.current.fullName);
         askQuestion('email', lang === 'en' ? 'What is your professional email address?' : '¿Cuál es su correo electrónico profesional?');
         return true;
       }
@@ -599,6 +600,7 @@ const PhysicianOnboardingAgent = forwardRef<
         }
 
         data.email = input.toLowerCase();
+        console.log('[ONBOARD] Stored email:', data.email, 'dataRef.current.email:', dataRef.current.email);
 
         // Log that onboarding started (fire and forget, don't block flow)
         logOnboardingAudit({
@@ -620,14 +622,16 @@ const PhysicianOnboardingAgent = forwardRef<
         }
         if (input) {
           data.linkedinUrl = input;
-          // For now, just proceed - LinkedIn import would be a future feature
           stableAppendMessage({
             text: lang === 'en'
-              ? 'Great! I\'ve saved your LinkedIn profile. In the future, we\'ll be able to import your information automatically.'
-              : '¡Excelente! He guardado su perfil de LinkedIn. En el futuro, podremos importar su información automáticamente.',
+              ? 'Great! I\'ve saved your LinkedIn profile.'
+              : '¡Excelente! He guardado su perfil de LinkedIn.',
           });
         }
-        startLicensingPhase();
+        // We still need name and email - ask for them
+        setTimeout(() => {
+          askQuestion('full_name', copy.askFullName);
+        }, 500);
         return true;
       }
 
@@ -1571,6 +1575,7 @@ const PhysicianOnboardingAgent = forwardRef<
   // Start the onboarding
   const start = useCallback(() => {
     if (state !== 'idle') return;
+    console.log('[ONBOARD] Starting onboarding, initializing dataRef');
     dataRef.current = { licenses: [], languages: ['es', 'en'] };
     tempRef.current = {};
     startBriefing();
