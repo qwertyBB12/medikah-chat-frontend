@@ -96,7 +96,7 @@ function buildRedirectUrl(
   name?: string
 ): string {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
-  const redirectPath = state.redirectPath || '/onboard/physician';
+  const redirectPath = state.redirectPath || '/physicians/onboard';
 
   const params = new URLSearchParams({
     linkedin: success ? 'connected' : 'error',
@@ -133,5 +133,5 @@ function redirectWithError(
     'linkedin_oauth_state=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0',
   ]);
 
-  res.redirect(302, `${baseUrl}/onboard/physician?${params.toString()}`);
+  res.redirect(302, `${baseUrl}/physicians/onboard?${params.toString()}`);
 }

@@ -38,8 +38,10 @@ export default function LinkedInConnectButton({
     const left = window.screenX + (window.outerWidth - width) / 2;
     const top = window.screenY + (window.outerHeight - height) / 2;
 
+    // Pass current path as redirect so callback returns to the right page
+    const currentPath = window.location.pathname;
     const popup = window.open(
-      `/api/auth/linkedin?session_id=${encodeURIComponent(sessionId)}`,
+      `/api/auth/linkedin?session_id=${encodeURIComponent(sessionId)}&redirect=${encodeURIComponent(currentPath)}`,
       'linkedin-oauth',
       `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,location=no,status=no`
     );
