@@ -221,7 +221,6 @@ const PhysicianOnboardingAgent = forwardRef<
 
   // Stable wrapper functions that use refs
   const stableAppendMessage = useCallback((message: OnboardingBotMessage) => {
-    console.log('[ONBOARD] stableAppendMessage called:', message.text?.substring(0, 50));
     appendMessageRef.current(message);
   }, []);
 
@@ -478,7 +477,6 @@ const PhysicianOnboardingAgent = forwardRef<
     });
 
     // Create the physician profile
-    console.log('[ONBOARD] dataRef.current before creating profile:', JSON.stringify(dataRef.current, null, 2));
     const profileData: PhysicianProfileData = {
       fullName: dataRef.current.fullName || '',
       email: dataRef.current.email || '',
@@ -567,7 +565,6 @@ const PhysicianOnboardingAgent = forwardRef<
           return true;
         }
         data.fullName = input;
-        console.log('[ONBOARD] Stored fullName:', data.fullName, 'dataRef.current.fullName:', dataRef.current.fullName);
         askQuestion('email', lang === 'en' ? 'What is your professional email address?' : '¿Cuál es su correo electrónico profesional?');
         return true;
       }
@@ -600,7 +597,6 @@ const PhysicianOnboardingAgent = forwardRef<
         }
 
         data.email = input.toLowerCase();
-        console.log('[ONBOARD] Stored email:', data.email, 'dataRef.current.email:', dataRef.current.email);
 
         // Log that onboarding started (fire and forget, don't block flow)
         logOnboardingAudit({
@@ -704,7 +700,6 @@ const PhysicianOnboardingAgent = forwardRef<
       }
 
       case 'license_number': {
-        console.log('[ONBOARD] license_number case entered, input:', input);
         if (!input || input.length < 3) {
           stableAppendMessage({ text: copy.invalidLicense });
           return true;
@@ -712,7 +707,6 @@ const PhysicianOnboardingAgent = forwardRef<
 
         const countryCode = tempRef.current.currentCountry;
         const countryInfo = LICENSED_COUNTRIES.find(c => c.code === countryCode);
-        console.log('[ONBOARD] countryCode:', countryCode, 'countryInfo:', countryInfo?.name);
 
         const license: PhysicianLicense = tempRef.current.currentLicense
           ? { ...tempRef.current.currentLicense, number: input } as PhysicianLicense
@@ -729,7 +723,6 @@ const PhysicianOnboardingAgent = forwardRef<
         // Check if more countries to process
         const pending = tempRef.current.pendingCountries || [];
         const nextCountries = pending.slice(1);
-        console.log('[ONBOARD] pending countries:', pending, 'next:', nextCountries);
 
         if (nextCountries.length > 0) {
           tempRef.current.pendingCountries = nextCountries;
@@ -747,12 +740,8 @@ const PhysicianOnboardingAgent = forwardRef<
           return true;
         } else {
           // Transition to specialty phase
-          console.log('[ONBOARD] No more countries, transitioning to specialty phase');
-          console.log('[ONBOARD] licenseNote:', copy.licenseNote);
           stableAppendMessage({ text: copy.licenseNote });
-          console.log('[ONBOARD] Message appended, scheduling startSpecialtyPhase');
           setTimeout(() => {
-            console.log('[ONBOARD] setTimeout fired, calling startSpecialtyPhase');
             startSpecialtyPhase();
           }, 1500);
           return true;
@@ -1575,7 +1564,6 @@ const PhysicianOnboardingAgent = forwardRef<
   // Start the onboarding
   const start = useCallback(() => {
     if (state !== 'idle') return;
-    console.log('[ONBOARD] Starting onboarding, initializing dataRef');
     dataRef.current = { licenses: [], languages: ['es', 'en'] };
     tempRef.current = {};
     startBriefing();
