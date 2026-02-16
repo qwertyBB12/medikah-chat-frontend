@@ -1,77 +1,109 @@
-import Image from 'next/image';
-const LOGO_DARK = '/logo-BLU.png';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 
 export default function Hero() {
+  const router = useRouter();
+  const locale = (router.locale || 'en') as 'en' | 'es';
+
+  const t = {
+    eyebrow: { en: 'Pan-American Telehealth', es: 'Telesalud Panamericana' },
+    line1: { en: 'Care That', es: 'Cuidado Que' },
+    line2: { en: 'Crosses Borders', es: 'Cruza Fronteras' },
+    bilingual: {
+      en: 'Atenci\u00f3n que cruza fronteras.',
+      es: 'Care that crosses borders.',
+    },
+    ctaPrimary: { en: 'Get Started', es: 'Comenzar' },
+    ctaSecondary: { en: 'For Physicians', es: 'Para M\u00e9dicos' },
+    scroll: { en: 'Scroll', es: 'Desplazar' },
+  };
+
   return (
-    <section className="relative bg-white px-6 py-28 sm:py-36 md:py-44 lg:py-52 overflow-hidden hero-texture">
-      <div className="max-w-5xl mx-auto">
-        <div className="mb-14 md:mb-20">
-          <Image
-            src={LOGO_DARK}
-            alt="Medikah"
-            width={96}
-            height={96}
-            priority
-            className="w-20 h-auto sm:w-24"
-          />
+    <section
+      className="relative min-h-screen flex flex-col items-center justify-center text-center overflow-hidden"
+      style={{
+        background: 'linear-gradient(180deg, #2D2B29 0%, #1A1918 100%)',
+      }}
+    >
+      {/* Grain texture overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none z-[1]"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.012'/%3E%3C/svg%3E")`,
+        }}
+      />
+
+      {/* Overlapping circles */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] pointer-events-none">
+        <div
+          className="absolute w-[320px] h-[320px] rounded-full opacity-[0.08]"
+          style={{ background: '#2C7A8C', top: '30%', left: '15%' }}
+        />
+        <div
+          className="absolute w-[320px] h-[320px] rounded-full opacity-[0.08]"
+          style={{ background: '#B0ABA6', top: '20%', right: '15%' }}
+        />
+      </div>
+
+      {/* Content */}
+      <div className="relative z-[2] max-w-[1000px] px-[clamp(1.5rem,6vw,6rem)]">
+        {/* Eyebrow */}
+        <div className="flex items-center justify-center gap-4 mb-[clamp(1.5rem,3vh,3rem)]">
+          <span className="w-12 h-px bg-teal-400" />
+          <span className="font-body text-[0.6875rem] font-medium uppercase tracking-[0.3em] text-teal-300">
+            {t.eyebrow[locale]}
+          </span>
+          <span className="w-12 h-px bg-teal-400" />
         </div>
 
-        <h1 className="mb-10 md:mb-14 max-w-5xl">
-          <span
-            className="font-dm-serif text-clinical-teal block
-                       text-[40px] sm:text-[56px] md:text-[76px] lg:text-[96px] xl:text-[112px]
-                       leading-[0.95] tracking-[-0.02em]"
-          >
-            Connect With Physicians
+        {/* Headline */}
+        <h1 className="font-heading font-medium uppercase leading-[0.9] tracking-[-0.03em]">
+          <span className="block text-white text-[clamp(3.5rem,12vw,10rem)]">
+            {t.line1[locale]}
           </span>
-          <span
-            className="font-dm-serif text-clinical-teal block
-                       text-[40px] sm:text-[56px] md:text-[76px] lg:text-[96px] xl:text-[112px]
-                       leading-[0.95] tracking-[-0.02em]"
-          >
-            Across Borders.
-          </span>
-          <span
-            className="font-dm-serif italic text-inst-blue block mt-4 md:mt-8
-                       text-[26px] sm:text-[34px] md:text-[44px] lg:text-[56px]
-                       leading-[1.05] tracking-[-0.01em]"
-          >
-            Receive Care Where They&rsquo;re Licensed.
+          <span className="block text-teal-400 text-[clamp(3.5rem,12vw,10rem)]">
+            {t.line2[locale]}
           </span>
         </h1>
 
-        <div className="max-w-2xl space-y-5 mb-14">
-          <p className="font-dm-sans text-lg sm:text-xl md:text-[22px] text-body-slate leading-[1.6]">
-            The Americas function as one medical theater&mdash;but systems
-            remain divided by borders that families and physicians routinely cross.
-          </p>
+        {/* Bilingual subtitle */}
+        <p className="font-body text-[clamp(0.9375rem,1.5vw,1.125rem)] font-light italic text-cream-500 opacity-50 mt-[clamp(1rem,2vh,2rem)]">
+          {t.bilingual[locale]}
+        </p>
 
-          <p className="font-dm-sans font-medium text-lg sm:text-xl md:text-[22px] text-inst-blue leading-[1.6]">
-            Medikah provides the coordination infrastructure these realities require.
-            <span className="block text-clinical-teal mt-1">
-              Not as innovation. As institutional necessity.
+        {/* CTAs */}
+        <div className="flex gap-5 justify-center mt-[clamp(2rem,4vh,3.5rem)] flex-col sm:flex-row items-center">
+          <Link
+            href="/chat"
+            className="inline-flex items-center gap-2 font-body text-xs font-medium uppercase tracking-[0.1em] px-10 py-4 bg-teal-500 text-white border-2 border-teal-500 rounded-sm hover:bg-teal-600 hover:border-teal-600 hover:-translate-y-[3px] hover:shadow-[0_12px_32px_rgba(44,122,140,0.3)] transition-all duration-300"
+          >
+            {t.ctaPrimary[locale]} &rarr;
+          </Link>
+          <Link
+            href="/chat?role=physician"
+            className="inline-flex items-center gap-2 font-body text-xs font-medium uppercase tracking-[0.1em] px-10 py-4 bg-transparent text-white border-2 border-white/30 rounded-sm hover:bg-white/10 hover:border-white/50 hover:-translate-y-[3px] transition-all duration-300"
+          >
+            {t.ctaSecondary[locale]} &rarr;
+          </Link>
+        </div>
+
+        {/* Trust badges */}
+        <div className="flex gap-6 justify-center items-center mt-[clamp(2.5rem,5vh,4rem)] flex-wrap">
+          {['HIPAA Compliant', 'Bilingual EN/ES', 'Cross-Border'].map((badge) => (
+            <span key={badge} className="flex items-center gap-2 font-body text-[0.6875rem] font-medium uppercase tracking-[0.08em] text-cream-500">
+              <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
+              {badge}
             </span>
-          </p>
+          ))}
         </div>
+      </div>
 
-        <div className="flex flex-col sm:flex-row gap-4">
-          <a
-            href="#early-access"
-            className="inline-block px-9 py-4 bg-inst-blue text-white font-dm-sans font-semibold text-base tracking-wide
-                       hover:bg-clinical-teal transition-colors duration-200 text-center
-                       shadow-[0_2px_12px_rgba(27,42,65,0.15)] hover:shadow-[0_4px_20px_rgba(44,122,140,0.25)]"
-          >
-            Begin Coordination
-          </a>
-          <a
-            href="mailto:partnerships@medikah.health"
-            className="inline-block px-9 py-4 text-inst-blue font-dm-sans font-semibold text-base tracking-wide
-                       border-2 border-inst-blue/80 hover:bg-inst-blue hover:text-white
-                       transition-all duration-200 text-center"
-          >
-            Institutional Partnerships
-          </a>
-        </div>
+      {/* Scroll hint */}
+      <div className="absolute bottom-[clamp(1.5rem,3vh,3rem)] right-[clamp(1.5rem,4vw,4rem)] flex flex-col items-center gap-2 z-[2]">
+        <div className="w-px h-12 bg-gradient-to-b from-teal-400 to-transparent animate-scrollPulse origin-top" />
+        <span className="text-[0.625rem] font-medium uppercase tracking-[0.2em] text-cream-500" style={{ writingMode: 'vertical-rl' }}>
+          {t.scroll[locale]}
+        </span>
       </div>
     </section>
   );

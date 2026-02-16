@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Link from 'next/link';
 import { ReactNode } from 'react';
 import { LOGO_SRC, WORDMARK_SRC } from '../lib/assets';
 
@@ -19,7 +20,12 @@ export default function Splash({
   ];
 
   return (
-    <div className="relative min-h-screen flex flex-col justify-center px-6 py-16 bg-inst-blue">
+    <div
+      className="relative min-h-screen flex flex-col justify-center px-6 py-16"
+      style={{
+        background: 'linear-gradient(180deg, #2D2B29 0%, #1A1918 100%)',
+      }}
+    >
       <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-12 text-center">
         <div className="flex flex-col items-center gap-5">
           <Image
@@ -37,7 +43,7 @@ export default function Splash({
             height={180}
             className="w-36 h-auto sm:w-44"
           />
-          <p className="font-dm-sans text-sm text-white/60 leading-relaxed max-w-xs">
+          <p className="font-body text-sm text-cream-400/60 leading-relaxed max-w-xs">
             Credentialed access only. Sign in with your authorized account.
           </p>
         </div>
@@ -48,7 +54,7 @@ export default function Splash({
               key={portal.label}
               type="button"
               onClick={portal.onClick}
-              className="font-dm-sans w-full py-3.5 text-center text-base font-semibold tracking-wide text-white/80 border-b border-white/10 transition hover:text-white hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-clinical-teal"
+              className="font-body w-full py-3.5 text-center text-base font-medium tracking-wide text-white/80 border-b border-white/10 transition hover:text-white hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500 rounded-sm"
             >
               {portal.label}
             </button>
@@ -56,6 +62,19 @@ export default function Splash({
         </div>
 
         {loginPanel && <div className="w-full text-left">{loginPanel}</div>}
+      </div>
+
+      {/* Footer */}
+      <div className="absolute bottom-0 left-0 right-0 px-6 py-5">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 font-body text-[11px] text-cream-500/40">
+          <span>&copy; {new Date().getFullYear()} Medikah Corporation</span>
+          <span className="hidden sm:inline">&middot;</span>
+          <div className="flex items-center gap-2">
+            <Link href="/privacy" className="hover:text-cream-500/70 transition-colors">Privacy Policy</Link>
+            <span>&middot;</span>
+            <Link href="/terms" className="hover:text-cream-500/70 transition-colors">Terms of Service</Link>
+          </div>
+        </div>
       </div>
     </div>
   );

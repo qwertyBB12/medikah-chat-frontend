@@ -5,6 +5,7 @@
  */
 
 import { supabase } from './supabase';
+import { supabaseAdmin } from './supabaseServer';
 
 export type PortalRole = 'patient' | 'physician' | 'insurer' | 'employer';
 
@@ -136,4 +137,48 @@ export async function hasValidPatientConsent(
   } catch {
     return false;
   }
+}
+
+/**
+ * Ensure a Supabase Auth user exists for a social login.
+ * Looks up by email first; creates if not found.
+ * Returns the Supabase user ID.
+ */
+export async function ensureSupabaseUser(
+  email: string,
+  metadata: { name?: string | null; provider?: string; image?: string | null }
+): Promise<string> {
+  if (!supabaseAdmin) {
+    throw new Error('Supabase admin client not configured');
+  }
+
+  const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+
+  if (listError) {
+    throw new Error(`Failed to list users: ${listError.message}`);
+  }
+
+  const existingUser = listData.users.find(
+    (u) => u.email?.toLowerCase() === email.toLowerCase()
+  );
+
+  if (existingUser) {
+    return existingUser.id;
+  }
+
+  const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+    email,
+    email_confirm: true,
+    user_metadata: {
+      name: metadata.name ?? undefined,
+      provider: metadata.provider,
+      image: metadata.image ?? undefined,
+    },
+  });
+
+  if (createError) {
+    throw new Error(`Failed to create user: ${createError.message}`);
+  }
+
+  return newUser.user.id;
 }

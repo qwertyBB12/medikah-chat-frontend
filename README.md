@@ -1,3 +1,12 @@
+## Governance Integration
+
+@extends /.governance/guides/06-medikah.md
+
+**Always read first:**
+1. `/.governance/CLAUDE.md`
+2. `/.governance/quick-ref/forbidden.md`
+3. This file
+
 # Medikah Chat Frontend
 
 This is the Next.js frontend for the Medikah MVP Chat. It provides a basic chat interface

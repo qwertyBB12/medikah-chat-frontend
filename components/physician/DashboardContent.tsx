@@ -2,11 +2,17 @@
  * Physician Dashboard Content Component
  *
  * Main content area for the physician dashboard showing
- * welcome message, verification status, and quick actions.
+ * profile overview, verification status, AI diagnosis tool,
+ * patient inquiries, availability editor, and network card.
  */
 
+import { useEffect, useState } from 'react';
 import { SupportedLang } from '../../lib/i18n';
 import VerificationBadge from './VerificationBadge';
+import ProfileOverview from './ProfileOverview';
+import AIDiagnosisTool from './AIDiagnosisTool';
+import InquiryList from './InquiryList';
+import AvailabilityEditor from './AvailabilityEditor';
 
 interface DashboardContentProps {
   physicianId: string | null;
@@ -14,6 +20,16 @@ interface DashboardContentProps {
   verificationStatus: string | null;
   lang: SupportedLang;
 }
+
+interface DashboardData {
+  specialty?: string;
+  photoUrl?: string;
+  email?: string;
+  inquiryCount: number;
+  upcomingAppointments: number;
+}
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 const content = {
   en: {
@@ -26,18 +42,6 @@ const content = {
       verifiedDesc: 'Your credentials have been verified. You can now receive consultations.',
       rejectedDesc: 'Additional information is needed. Please check your email for details.',
     },
-    profileCard: {
-      title: 'Your Profile',
-      viewProfile: 'View Profile',
-      editProfile: 'Edit Profile',
-    },
-    actionsCard: {
-      title: 'Quick Actions',
-      viewConsultations: 'View Consultations',
-      updateAvailability: 'Update Availability',
-      viewDocuments: 'View Documents',
-      contactSupport: 'Contact Support',
-    },
     networkCard: {
       title: 'Medikah Network',
       description: 'You are part of a network of credentialed physicians across the Americas, connecting patients with quality healthcare.',
@@ -47,31 +51,19 @@ const content = {
   },
   es: {
     welcome: 'Bienvenido de nuevo',
-    dashboardTitle: 'Panel del Médico',
+    dashboardTitle: 'Panel del Medico',
     statusCard: {
-      title: 'Estado de Verificación',
-      pendingDesc: 'Sus credenciales están siendo revisadas. Esto generalmente toma 2-5 días hábiles.',
-      underReviewDesc: 'Un especialista en verificación está revisando sus documentos.',
+      title: 'Estado de Verificacion',
+      pendingDesc: 'Sus credenciales estan siendo revisadas. Esto generalmente toma 2-5 dias habiles.',
+      underReviewDesc: 'Un especialista en verificacion esta revisando sus documentos.',
       verifiedDesc: 'Sus credenciales han sido verificadas. Ya puede recibir consultas.',
-      rejectedDesc: 'Se necesita información adicional. Por favor revise su correo electrónico para más detalles.',
-    },
-    profileCard: {
-      title: 'Su Perfil',
-      viewProfile: 'Ver Perfil',
-      editProfile: 'Editar Perfil',
-    },
-    actionsCard: {
-      title: 'Acciones Rápidas',
-      viewConsultations: 'Ver Consultas',
-      updateAvailability: 'Actualizar Disponibilidad',
-      viewDocuments: 'Ver Documentos',
-      contactSupport: 'Contactar Soporte',
+      rejectedDesc: 'Se necesita informacion adicional. Por favor revise su correo electronico para mas detalles.',
     },
     networkCard: {
       title: 'Red Medikah',
-      description: 'Usted es parte de una red de médicos acreditados en las Américas, conectando pacientes con atención médica de calidad.',
-      membersActive: 'médicos activos',
-      countriesServed: 'países atendidos',
+      description: 'Usted es parte de una red de medicos acreditados en las Americas, conectando pacientes con atencion medica de calidad.',
+      membersActive: 'medicos activos',
+      countriesServed: 'paises atendidos',
     },
   },
 };
@@ -84,6 +76,33 @@ export default function DashboardContent({
 }: DashboardContentProps) {
   const t = content[lang];
   const normalizedStatus = verificationStatus?.toLowerCase() || 'pending';
+
+  const [dashboardData, setDashboardData] = useState<DashboardData>({
+    inquiryCount: 0,
+    upcomingAppointments: 0,
+  });
+
+  // Fetch dashboard data from backend
+  useEffect(() => {
+    if (!physicianId) return;
+    (async () => {
+      try {
+        const res = await fetch(`${API_URL}/physicians/${physicianId}/dashboard`);
+        if (res.ok) {
+          const data = await res.json();
+          setDashboardData({
+            specialty: data.specialty,
+            photoUrl: data.photo_url,
+            email: data.email,
+            inquiryCount: data.inquiry_count || 0,
+            upcomingAppointments: data.upcoming_appointments || 0,
+          });
+        }
+      } catch {
+        // Use defaults
+      }
+    })();
+  }, [physicianId]);
 
   // Get status description
   const getStatusDescription = () => {
@@ -99,26 +118,25 @@ export default function DashboardContent({
     }
   };
 
-  // Extract first name for greeting
-  const firstName = physicianName.split(' ')[0] || physicianName;
-
   return (
-    <div className="px-6 py-8 max-w-5xl mx-auto">
-      {/* Welcome Header */}
-      <div className="mb-8">
-        <p className="font-dm-sans text-sm text-body-slate mb-1">{t.welcome},</p>
-        <h1 className="font-dm-serif text-3xl text-inst-blue mb-2">
-          Dr. {firstName}
-        </h1>
-        <p className="font-dm-sans text-sm text-archival-grey">
-          {physicianId ? `ID: ${physicianId.slice(0, 8)}` : ''}
-        </p>
-      </div>
-
-      {/* Dashboard Grid */}
+    <div className="px-4 sm:px-6 py-8 max-w-5xl mx-auto space-y-6">
+      {/* Row 1: Profile Overview + Verification Status */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Profile Overview */}
+        <ProfileOverview
+          physicianId={physicianId}
+          physicianName={physicianName}
+          email={dashboardData.email}
+          specialty={dashboardData.specialty}
+          photoUrl={dashboardData.photoUrl}
+          verificationStatus={verificationStatus}
+          inquiryCount={dashboardData.inquiryCount}
+          upcomingAppointments={dashboardData.upcomingAppointments}
+          lang={lang}
+        />
+
         {/* Verification Status Card */}
-        <div className="bg-white rounded-xl border border-border-line p-6 shadow-sm">
+        <div className="bg-white rounded-[12px] border border-border-line p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-dm-sans font-semibold text-lg text-deep-charcoal">
               {t.statusCard.title}
@@ -159,51 +177,33 @@ export default function DashboardContent({
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Quick Actions Card */}
-        <div className="bg-white rounded-xl border border-border-line p-6 shadow-sm">
-          <h2 className="font-dm-sans font-semibold text-lg text-deep-charcoal mb-4">
-            {t.actionsCard.title}
-          </h2>
-          <div className="space-y-3">
-            <button
-              disabled={normalizedStatus !== 'verified'}
-              className="font-dm-sans w-full text-left px-4 py-3 rounded-lg border border-border-line text-body-slate hover:bg-clinical-surface hover:text-inst-blue hover:border-clinical-teal transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {t.actionsCard.viewConsultations}
-            </button>
-            <button
-              disabled={normalizedStatus !== 'verified'}
-              className="font-dm-sans w-full text-left px-4 py-3 rounded-lg border border-border-line text-body-slate hover:bg-clinical-surface hover:text-inst-blue hover:border-clinical-teal transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {t.actionsCard.updateAvailability}
-            </button>
-            <button className="font-dm-sans w-full text-left px-4 py-3 rounded-lg border border-border-line text-body-slate hover:bg-clinical-surface hover:text-inst-blue hover:border-clinical-teal transition">
-              {t.actionsCard.viewDocuments}
-            </button>
-            <button className="font-dm-sans w-full text-left px-4 py-3 rounded-lg border border-border-line text-body-slate hover:bg-clinical-surface hover:text-inst-blue hover:border-clinical-teal transition">
-              {t.actionsCard.contactSupport}
-            </button>
+      {/* Row 2: AI Diagnosis Tool - Full width */}
+      <AIDiagnosisTool lang={lang} />
+
+      {/* Row 3: Inquiry List - Full width */}
+      {physicianId && <InquiryList physicianId={physicianId} lang={lang} />}
+
+      {/* Row 4: Availability Editor - Full width */}
+      {physicianId && <AvailabilityEditor physicianId={physicianId} lang={lang} />}
+
+      {/* Network Card - Full width */}
+      <div className="bg-gradient-to-br from-inst-blue to-[#243447] rounded-[12px] p-6 text-white shadow-lg">
+        <h2 className="font-dm-sans font-semibold text-lg mb-3">
+          {t.networkCard.title}
+        </h2>
+        <p className="font-dm-sans text-sm text-white/80 leading-relaxed mb-6">
+          {t.networkCard.description}
+        </p>
+        <div className="flex items-center gap-8">
+          <div>
+            <p className="font-dm-sans text-3xl font-bold">250+</p>
+            <p className="font-dm-sans text-xs text-white/60">{t.networkCard.membersActive}</p>
           </div>
-        </div>
-
-        {/* Network Card - Full width */}
-        <div className="md:col-span-2 bg-gradient-to-br from-inst-blue to-[#243447] rounded-xl p-6 text-white shadow-lg">
-          <h2 className="font-dm-sans font-semibold text-lg mb-3">
-            {t.networkCard.title}
-          </h2>
-          <p className="font-dm-sans text-sm text-white/80 leading-relaxed mb-6">
-            {t.networkCard.description}
-          </p>
-          <div className="flex items-center gap-8">
-            <div>
-              <p className="font-dm-serif text-3xl font-bold">250+</p>
-              <p className="font-dm-sans text-xs text-white/60">{t.networkCard.membersActive}</p>
-            </div>
-            <div>
-              <p className="font-dm-serif text-3xl font-bold">12</p>
-              <p className="font-dm-sans text-xs text-white/60">{t.networkCard.countriesServed}</p>
-            </div>
+          <div>
+            <p className="font-dm-sans text-3xl font-bold">12</p>
+            <p className="font-dm-sans text-xs text-white/60">{t.networkCard.countriesServed}</p>
           </div>
         </div>
       </div>

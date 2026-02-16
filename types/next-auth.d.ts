@@ -6,6 +6,12 @@ declare module 'next-auth' {
     user: {
       id: string;
       role: 'patient' | 'physician' | 'insurer' | 'employer';
+      provider?: 'credentials' | 'google' | 'linkedin';
+      linkedInProfile?: {
+        fullName?: string | null;
+        email?: string | null;
+        photoUrl?: string | null;
+      };
     } & DefaultSession['user'];
   }
 
@@ -19,5 +25,11 @@ declare module 'next-auth/jwt' {
   interface JWT {
     role: 'patient' | 'physician' | 'insurer' | 'employer';
     userId: string;
+    provider?: string;
+    linkedInProfile?: {
+      fullName?: string | null;
+      email?: string | null;
+      photoUrl?: string | null;
+    };
   }
 }
