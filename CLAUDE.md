@@ -1,3 +1,28 @@
+## Governance Integration
+
+@extends /.governance/guides/06-medikah.md
+
+**Always read first:**
+1. `/.governance/CLAUDE.md` (global instructions)
+2. `/.governance/quick-ref/forbidden.md` (absolute rules)
+3. `/MedikahHub/CLAUDE.md` (parent project)
+4. This file (frontend-specific)
+
+---
+
+## Approved Design Overrides
+
+@override accent-color
+Uses Institutional Navy `#1B2A41` (`inst-blue`) as dominant brand color. Clinical Teal `#2C7A8C` is the accent/CTA color. See parent CLAUDE.md for rationale.
+
+@override typography
+Uses DM Sans (UI) and DM Serif (display) alongside Mulish (body). Predates governance layer. Medikah wordmark uses Mulish lowercase per governance.
+
+@override border-radius
+Uses variable radii: `rounded-sm` (2px, auth), `rounded-lg`/`rounded-xl` (8-12px, cards). Governance specifies 4px for Medikah.
+
+---
+
 # CLAUDE.md - Medikah Project Brief
 
 > This file provides context for Claude Code sessions and agent teammates working on this repository.
@@ -39,16 +64,29 @@
 - Bilingual support (English/Spanish)
 
 ### Physician Portal (`/physicians`)
-- **Onboarding** (`/physicians/onboard`) - Multi-phase conversational agent:
+- **Onboarding** (`/physicians/onboard`) - Batched form card agent (~12 exchanges):
   - LinkedIn OAuth integration for profile import
-  - Multi-country medical licensing (Mexico, USA, Colombia, Brazil, etc.)
-  - Specialty and sub-specialty selection
-  - Board certifications, residency, fellowships
+  - BatchedLicensingForm: multi-country licensing in one card
+  - BatchedSpecialtyForm: primary + sub-specialties + board certs
+  - BatchedEducationForm: school + residency + fellowships
+  - BatchedPresenceForm: availability + timezone + languages + institutions
   - Publication search (PubMed, ResearchGate, Academia.edu)
-  - Availability scheduling with timezone
   - Network agreement consent
 
-- **Dashboard** (`/physicians/dashboard`) - Profile summary and verification status
+- **Dashboard** (`/physicians/dashboard`) - Full physician management:
+  - ProfileOverview: photo, stats, completeness bar
+  - AIDiagnosisTool: GPT-4o differential diagnosis (via backend `/ai/diagnosis`)
+  - InquiryList: patient queue with accept/decline, filter tabs, pagination
+  - AvailabilityEditor: weekly schedule grid with timezone
+  - Verification status card
+  - Network stats card
+
+- **Public Profiles** (`/dr/[slug]`) - SSR physician profile pages:
+  - 7 sections: Hero, About, SpecialtiesGrid, CredentialsBadges, Publications, Availability, CTA
+  - Scroll animations via FadeInSection (IntersectionObserver)
+  - JSON-LD structured data + dynamic SEO meta tags
+  - Only renders verified physicians (404 for unverified)
+  - Slug computed from `full_name`
 
 - **Account Setup** (`/physicians/setup`) - Magic link password creation
 
@@ -78,7 +116,6 @@
 |---------|--------|-------|
 | Insurer Portal | Placeholder | `/insurers` exists but not built |
 | Employer Portal | Placeholder | `/employers` exists but not built |
-| Physician Public Profiles | Planned | `medikah.health/dr/[slug]` |
 | Physician Verification Emails | Needs testing | Status update notifications |
 | Doxy.me Integration | Configured | Uses shared room URL |
 
@@ -94,6 +131,7 @@ medikah-chat-frontend/
 │   │   ├── consent/          # Save/check consent records
 │   │   ├── physicians/       # Physician CRUD + verification
 │   │   └── publications/     # Academic publication search
+│   ├── dr/                   # Public physician profiles (/dr/[slug])
 │   ├── patients/             # Patient portal
 │   ├── physicians/           # Physician portal
 │   ├── employers/            # Employer portal (placeholder)
@@ -102,6 +140,8 @@ medikah-chat-frontend/
 ├── components/               # React components
 │   ├── landing/              # Landing page sections (29 components)
 │   ├── physician/            # Physician-specific components
+│   │   ├── onboarding/       # Batched form components (Licensing, Specialty, Education, Presence)
+│   │   └── profile/          # Public profile sections (Hero, About, Grid, Badges, CTA, etc.)
 │   └── [shared components]   # PortalLayout, ChatInput, Sidebar, etc.
 │
 ├── lib/                      # Utilities and services
@@ -274,7 +314,9 @@ RESEND_API_KEY=re_xxx
 EMAIL_FROM=welcome@medikah.health
 NEXT_PUBLIC_BASE_URL=https://medikah.health
 
-# LinkedIn OAuth
+# Social OAuth (Google + LinkedIn)
+GOOGLE_CLIENT_ID=xxx
+GOOGLE_CLIENT_SECRET=xxx
 LINKEDIN_CLIENT_ID=xxx
 LINKEDIN_CLIENT_SECRET=xxx
 LINKEDIN_REDIRECT_URI=https://medikah.health/api/auth/linkedin/callback
@@ -355,13 +397,23 @@ npm run lint          # ESLint check
 
 ## Authentication Flow
 
-1. User enters credentials on `/chat`
-2. NextAuth calls Supabase `signInWithPassword`
-3. `detectUserRole(email)` queries `physicians` table
-4. JWT includes `userId` and `role`
-5. Pages use `useSession()` to route by role
+### Auth Gateway (`/chat`)
 
-### Physician Magic Link Flow
+`/chat` is the unified auth gateway with role selection and social login:
+
+**Providers:** Google, LinkedIn (OIDC), Credentials (email/password)
+
+1. User selects role: "I'm a Patient" or "I'm a Physician"
+2. Patient options: Google or email/password
+3. Physician options: LinkedIn (preferred), Google, or email/password
+4. Social login users synced to Supabase Auth via `ensureSupabaseUser()` in `lib/portalAuth.ts`
+5. `detectUserRole(email)` queries `physicians` table for role
+6. JWT includes `userId`, `role`, `provider`, and `linkedInProfile` (if LinkedIn auth)
+7. Pages use `useSession()` to route by role
+
+**Route:** `/doctor/onboard` → redirects to `/physicians/onboard`
+
+### Physician Magic Link Flow (returning users)
 
 1. Onboarding creates Supabase Auth user + physician record
 2. Magic link sent via Resend email
@@ -384,7 +436,9 @@ npm run lint          # ESLint check
 
 - RLS enabled on all Supabase tables
 - Service role key is server-side only
+- Social auth gate prevents anonymous access to AI-powered features
 - CSRF protection on LinkedIn OAuth (10-min state expiry)
+- Rate limiting per authenticated user (not just IP)
 - IP anonymization in GA4 for HIPAA considerations
 - CSP headers configured for Supabase, GA, Sentry
 

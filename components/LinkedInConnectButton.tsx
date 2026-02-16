@@ -3,9 +3,13 @@
  *
  * Initiates LinkedIn OAuth flow for profile data import.
  * Used during physician onboarding to auto-populate profile.
+ *
+ * Checks /api/auth/linkedin/status before opening the OAuth popup.
+ * When OAuth is not configured, shows a helpful message directing
+ * the user to paste their LinkedIn URL instead.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 interface LinkedInConnectButtonProps {
   sessionId: string;
@@ -16,6 +20,31 @@ interface LinkedInConnectButtonProps {
   className?: string;
 }
 
+const i18n = {
+  en: {
+    connect: 'Connect with LinkedIn',
+    connecting: 'Connecting...',
+    checking: 'Checking...',
+    popupBlocked:
+      'Please allow popups for this site to connect with LinkedIn.',
+    unavailable:
+      'LinkedIn import is currently being set up. You can paste your LinkedIn profile URL below instead.',
+    errorGeneric:
+      'Could not connect to LinkedIn right now. You can paste your LinkedIn profile URL below instead.',
+  },
+  es: {
+    connect: 'Conectar con LinkedIn',
+    connecting: 'Conectando...',
+    checking: 'Verificando...',
+    popupBlocked:
+      'Por favor permita ventanas emergentes para conectar con LinkedIn.',
+    unavailable:
+      'La importacion de LinkedIn se esta configurando. Puede pegar la URL de su perfil de LinkedIn abajo.',
+    errorGeneric:
+      'No se pudo conectar con LinkedIn en este momento. Puede pegar la URL de su perfil de LinkedIn abajo.',
+  },
+};
+
 export default function LinkedInConnectButton({
   sessionId,
   onConnect,
@@ -25,11 +54,40 @@ export default function LinkedInConnectButton({
   className = '',
 }: LinkedInConnectButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [isUnavailable, setIsUnavailable] = useState(false);
+  const t = i18n[lang];
+
+  // Check LinkedIn OAuth availability on mount
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/auth/linkedin/status')
+      .then((res) => res.json())
+      .then((data: { configured: boolean }) => {
+        if (!cancelled && !data.configured) {
+          setIsUnavailable(true);
+        }
+      })
+      .catch(() => {
+        // If the status endpoint itself fails, we'll catch errors during the popup flow
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleConnect = useCallback(() => {
     if (disabled || isLoading) return;
 
+    // If we already know OAuth is unavailable, show message immediately
+    if (isUnavailable) {
+      setStatusMessage(t.unavailable);
+      onError?.(t.unavailable);
+      return;
+    }
+
     setIsLoading(true);
+    setStatusMessage(null);
     onConnect?.();
 
     // Open LinkedIn OAuth in a popup
@@ -38,7 +96,6 @@ export default function LinkedInConnectButton({
     const left = window.screenX + (window.outerWidth - width) / 2;
     const top = window.screenY + (window.outerHeight - height) / 2;
 
-    // Pass current path as redirect so callback returns to the right page
     const currentPath = window.location.pathname;
     const popup = window.open(
       `/api/auth/linkedin?session_id=${encodeURIComponent(sessionId)}&redirect=${encodeURIComponent(currentPath)}`,
@@ -48,26 +105,38 @@ export default function LinkedInConnectButton({
 
     if (!popup) {
       setIsLoading(false);
-      onError?.(
-        lang === 'en'
-          ? 'Please allow popups for this site to connect with LinkedIn'
-          : 'Por favor permita ventanas emergentes para conectar con LinkedIn'
-      );
+      setStatusMessage(t.popupBlocked);
+      onError?.(t.popupBlocked);
       return;
     }
 
     // Poll for popup closure or success
     const checkPopup = setInterval(() => {
+      try {
+        // Detect 503 from the popup (LinkedIn not configured)
+        if (popup.document?.title?.includes('503') || popup.document?.body?.textContent?.includes('not configured')) {
+          clearInterval(checkPopup);
+          popup.close();
+          setIsLoading(false);
+          setIsUnavailable(true);
+          setStatusMessage(t.unavailable);
+          onError?.(t.unavailable);
+          return;
+        }
+      } catch {
+        // Cross-origin - popup navigated to LinkedIn, which is expected
+      }
+
       if (popup.closed) {
         clearInterval(checkPopup);
         setIsLoading(false);
 
-        // Check URL for result (page will reload with params if OAuth completed)
         const urlParams = new URLSearchParams(window.location.search);
         const linkedinStatus = urlParams.get('linkedin');
 
         if (linkedinStatus === 'error') {
-          const errorMsg = urlParams.get('error') || 'LinkedIn connection failed';
+          const errorMsg = urlParams.get('error') || t.errorGeneric;
+          setStatusMessage(errorMsg);
           onError?.(errorMsg);
         }
       }
@@ -81,45 +150,47 @@ export default function LinkedInConnectButton({
       }
       setIsLoading(false);
     }, 5 * 60 * 1000);
-  }, [sessionId, disabled, isLoading, onConnect, onError, lang]);
+  }, [sessionId, disabled, isLoading, isUnavailable, onConnect, onError, t]);
 
-  const buttonText = isLoading
-    ? lang === 'en'
-      ? 'Connecting...'
-      : 'Conectando...'
-    : lang === 'en'
-    ? 'Connect with LinkedIn'
-    : 'Conectar con LinkedIn';
+  const buttonText = isLoading ? t.connecting : t.connect;
 
   return (
-    <button
-      type="button"
-      onClick={handleConnect}
-      disabled={disabled || isLoading}
-      className={`
-        inline-flex items-center justify-center gap-2
-        px-5 py-3 rounded-lg
-        font-dm-sans font-semibold text-sm
-        bg-[#0A66C2] text-white
-        hover:bg-[#004182]
-        disabled:opacity-50 disabled:cursor-not-allowed
-        transition-all duration-200
-        ${className}
-      `}
-    >
-      {/* LinkedIn Logo */}
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="18"
-        height="18"
-        viewBox="0 0 24 24"
-        fill="currentColor"
-        className={isLoading ? 'animate-pulse' : ''}
+    <div className="w-full">
+      <button
+        type="button"
+        onClick={handleConnect}
+        disabled={disabled || isLoading}
+        className={`
+          inline-flex items-center justify-center gap-2
+          px-5 py-3 rounded-lg
+          font-dm-sans font-semibold text-sm
+          bg-[#0A66C2] text-white hover:bg-[#004182]
+          disabled:opacity-50 disabled:cursor-not-allowed
+          transition-all duration-200
+          ${className}
+        `}
       >
-        <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
-      </svg>
-      {buttonText}
-    </button>
+        {/* LinkedIn Logo */}
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          className={isLoading ? 'animate-pulse' : ''}
+        >
+          <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+        </svg>
+        {buttonText}
+      </button>
+
+      {/* Status / error message */}
+      {statusMessage && (
+        <p className="mt-2 text-sm text-body-slate bg-linen rounded-md px-3 py-2 font-dm-sans">
+          {statusMessage}
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -155,7 +226,7 @@ export function LinkedInProfilePreview({
         name: 'Nombre',
         email: 'Correo',
         school: 'Escuela de Medicina',
-        gradYear: 'Año de Graduación',
+        gradYear: 'Ano de Graduacion',
         institutions: 'Instituciones Actuales',
         confirm: 'Confirmar Datos',
         edit: 'Editar',

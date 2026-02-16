@@ -45,7 +45,7 @@
 .prose-medikah h2 {
   font-size: 28px;
   font-weight: 800;
-  color: #1B2A41;
+  color: #2D2B29;
   line-height: 1.2;
   letter-spacing: -0.01em;
   margin: 48px 0 20px;
@@ -101,24 +101,7 @@
   margin: 48px 0;
 }
 
-/* Dramatic breathing room between sections */
-.landing-sections > .fade-in-section + .fade-in-section {
-  margin-top: 160px;
-}
-
-.landing-sections > :first-child + .fade-in-section {
-  margin-top: 120px;
-}
-
-@media (max-width: 768px) {
-  .landing-sections > .fade-in-section + .fade-in-section {
-    margin-top: 100px;
-  }
-
-  .landing-sections > :first-child + .fade-in-section {
-    margin-top: 80px;
-  }
-}
+/* Landing page section spacing — removed for avant-garde layout which uses its own spacing */
 
 /* Compliance section dark anchor texture */
 .compliance-dark::before {
@@ -230,7 +213,7 @@
   transform: translateX(-50%);
   z-index: 10000;
   padding: 12px 24px;
-  background: #1B2A41;
+  background: #2D2B29;
   color: #FFFFFF;
   font-family: var(--font-mulish), 'Mulish', sans-serif;
   font-size: 16px;

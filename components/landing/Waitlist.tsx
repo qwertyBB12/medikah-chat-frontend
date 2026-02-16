@@ -1,17 +1,38 @@
 import { FormEvent, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 
 const ROLES = [
-  { value: 'patient', label: 'Patient' },
-  { value: 'doctor', label: 'Physician' },
-  { value: 'insurer', label: 'Insurer' },
-  { value: 'employer', label: 'Employer' },
+  { value: 'patient', label: { en: 'Patient', es: 'Paciente' } },
+  { value: 'doctor', label: { en: 'Physician', es: 'M\u00e9dico' } },
+  { value: 'insurer', label: { en: 'Insurer', es: 'Asegurador' } },
+  { value: 'employer', label: { en: 'Employer', es: 'Empleador' } },
 ] as const;
+
+type Locale = 'en' | 'es';
 
 export default function Waitlist() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('');
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'duplicate' | 'error'>('idle');
+  const router = useRouter();
+  const locale = (router.locale || 'en') as Locale;
+
+  const t = {
+    eyebrow: { en: 'Early access', es: 'Acceso anticipado' },
+    heading: { en: 'Request early access', es: 'Solicitar acceso anticipado' },
+    nameLabel: { en: 'Name', es: 'Nombre' },
+    emailLabel: { en: 'Email', es: 'Correo electr\u00f3nico' },
+    roleLabel: { en: 'I am a', es: 'Soy un/a' },
+    selectPlaceholder: { en: 'Select', es: 'Seleccionar' },
+    submit: { en: 'Submit', es: 'Enviar' },
+    sending: { en: 'Sending\u2026', es: 'Enviando\u2026' },
+    duplicate: { en: 'This email is already registered.', es: 'Este correo ya est\u00e1 registrado.' },
+    errorMsg: { en: 'Something went wrong. Please try again.', es: 'Algo sali\u00f3 mal. Int\u00e9ntelo de nuevo.' },
+    thankYou: { en: 'Thank you. We will be in touch.', es: 'Gracias. Estaremos en contacto.' },
+    orGetStarted: { en: 'Or get started now', es: 'O comience ahora' },
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -39,106 +60,115 @@ export default function Waitlist() {
 
   if (status === 'success') {
     return (
-      <section id="early-access" className="bg-inst-blue px-6 py-24 sm:py-32">
+      <section id="early-access" className="bg-warm-gray-800 px-6 py-24 sm:py-32">
         <div className="max-w-md mx-auto text-center space-y-4">
-          <p className="font-dm-sans text-lg text-white">
-            Thank you. We will be in touch.
+          <p className="font-body text-lg text-white">
+            {t.thankYou[locale]}
           </p>
-          <p className="font-dm-sans text-sm text-white/40">
-            Gracias. Estaremos en contacto.
-          </p>
+          <Link
+            href="/chat"
+            className="inline-block mt-4 px-7 py-3.5 bg-teal-500 text-white font-body font-medium tracking-wide text-sm hover:bg-teal-600 transition-all duration-200 rounded-sm"
+          >
+            {t.orGetStarted[locale]}
+          </Link>
         </div>
       </section>
     );
   }
 
   return (
-    <section id="early-access" className="bg-inst-blue px-6 py-24 sm:py-32">
+    <section id="early-access" className="bg-warm-gray-800 px-6 py-24 sm:py-32">
       <div className="max-w-sm mx-auto">
-        {/* Eyebrow — ecosystem pattern */}
+        {/* Eyebrow */}
         <div className="flex items-center justify-center gap-3 mb-6">
-          <div className="w-10 h-[2px] bg-clinical-teal/60" />
-          <span className="font-dm-sans text-xs font-semibold uppercase tracking-[0.15em] text-clinical-teal">
-            Early access
+          <div className="w-10 h-[2px] bg-teal-500/60" />
+          <span className="font-body text-xs font-medium uppercase tracking-[0.15em] text-teal-400">
+            {t.eyebrow[locale]}
           </span>
-          <div className="w-10 h-[2px] bg-clinical-teal/60" />
+          <div className="w-10 h-[2px] bg-teal-500/60" />
         </div>
 
-        <h2 className="font-dm-serif text-xl tracking-wider text-white text-center mb-2">
-          Request early access
+        <h2 className="font-heading text-xl tracking-wider text-white text-center mb-10 uppercase">
+          {t.heading[locale]}
         </h2>
-        <p className="font-dm-sans text-sm text-white/35 text-center mb-10">
-          Solicitar acceso anticipado
-        </p>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="flex flex-col gap-1">
-            <label htmlFor="wl-name" className="font-dm-sans text-xs text-white/40 uppercase tracking-wider">
-              Name
+            <label htmlFor="wl-name" className="font-body text-xs text-white/40 uppercase tracking-wider">
+              {t.nameLabel[locale]}
             </label>
             <input
               id="wl-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="font-dm-sans bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-clinical-teal/60 rounded-none"
+              className="font-body bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-teal-400/60 rounded-sm"
               required
             />
           </div>
 
           <div className="flex flex-col gap-1">
-            <label htmlFor="wl-email" className="font-dm-sans text-xs text-white/40 uppercase tracking-wider">
-              Email
+            <label htmlFor="wl-email" className="font-body text-xs text-white/40 uppercase tracking-wider">
+              {t.emailLabel[locale]}
             </label>
             <input
               id="wl-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="font-dm-sans bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-clinical-teal/60 rounded-none"
+              className="font-body bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-teal-400/60 rounded-sm"
               required
             />
           </div>
 
           <div className="flex flex-col gap-1">
-            <label htmlFor="wl-role" className="font-dm-sans text-xs text-white/40 uppercase tracking-wider">
-              I am a
+            <label htmlFor="wl-role" className="font-body text-xs text-white/40 uppercase tracking-wider">
+              {t.roleLabel[locale]}
             </label>
             <select
               id="wl-role"
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="font-dm-sans bg-white/5 border border-white/15 px-4 py-3 text-white focus:outline-none focus:border-clinical-teal/60 rounded-none appearance-none"
+              className="font-body bg-white/5 border border-white/15 px-4 py-3 text-white focus:outline-none focus:border-teal-400/60 rounded-sm appearance-none"
               required
             >
-              <option value="" disabled className="text-deep-charcoal">Select</option>
+              <option value="" disabled className="text-deep-charcoal">{t.selectPlaceholder[locale]}</option>
               {ROLES.map((r) => (
                 <option key={r.value} value={r.value} className="text-deep-charcoal">
-                  {r.label}
+                  {r.label[locale]}
                 </option>
               ))}
             </select>
           </div>
 
           {status === 'duplicate' && (
-            <p className="font-dm-sans text-sm text-clinical-teal text-center">
-              This email is already registered.
+            <p className="font-body text-sm text-teal-400 text-center">
+              {t.duplicate[locale]}
             </p>
           )}
           {status === 'error' && (
-            <p className="font-dm-sans text-sm text-alert-garnet text-center">
-              Something went wrong. Please try again.
+            <p className="font-body text-sm text-alert-garnet text-center">
+              {t.errorMsg[locale]}
             </p>
           )}
 
           <button
             type="submit"
             disabled={status === 'sending'}
-            className="w-full px-4 py-3.5 bg-inst-blue text-white font-dm-sans font-semibold tracking-wide text-sm border border-white/20 hover:bg-clinical-teal hover:border-clinical-teal transition rounded-sm disabled:opacity-50"
+            className="w-full px-4 py-3.5 bg-warm-gray-700 text-white font-body font-medium tracking-wide text-sm border border-white/20 hover:bg-teal-500 hover:border-teal-500 transition rounded-sm disabled:opacity-50"
           >
-            {status === 'sending' ? 'Sending\u2026' : 'Submit'}
+            {status === 'sending' ? t.sending[locale] : t.submit[locale]}
           </button>
         </form>
+
+        <div className="mt-8 text-center">
+          <Link
+            href="/chat"
+            className="font-body text-sm text-teal-400 hover:text-teal-300 transition-colors duration-200 underline underline-offset-4"
+          >
+            {t.orGetStarted[locale]}
+          </Link>
+        </div>
       </div>
     </section>
   );

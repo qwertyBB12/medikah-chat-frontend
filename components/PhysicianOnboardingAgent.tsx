@@ -10,13 +10,9 @@ import {
 import { SupportedLang } from '../lib/i18n';
 import {
   onboardingCopy,
-  LICENSED_COUNTRIES,
-  US_STATES,
-  MEDICAL_SPECIALTIES,
-  AMERICAS_TIMEZONES,
   DAYS_OF_WEEK,
+  AMERICAS_TIMEZONES,
   CONSULTATION_LANGUAGES,
-  TIMEZONES_BY_COUNTRY,
 } from '../lib/physicianOnboardingContent';
 import {
   PhysicianProfileData,
@@ -34,15 +30,15 @@ export interface OnboardingAction {
   label: string;
   value: string;
   type?: 'primary' | 'secondary' | 'skip' | 'toggle';
-  selected?: boolean; // For toggle buttons in multi-select mode
+  selected?: boolean;
 }
 
 export interface OnboardingBotMessage {
   text: string;
   actions?: OnboardingAction[];
-  isVision?: boolean; // For inspirational/vision messages
-  showLinkedInConnect?: boolean; // Show LinkedIn OAuth connect button
-  linkedInPreview?: { // Show LinkedIn data for confirmation
+  isVision?: boolean;
+  showLinkedInConnect?: boolean;
+  linkedInPreview?: {
     fullName?: string;
     email?: string;
     photoUrl?: string;
@@ -50,17 +46,19 @@ export interface OnboardingBotMessage {
     graduationYear?: number;
     currentInstitutions?: string[];
   };
-  showPublicationSelector?: { // Show publication selection UI
+  showPublicationSelector?: {
     publications: import('../lib/publications').Publication[];
     source: import('../lib/publications').PublicationSource;
     profileName?: string;
   };
-  showManualPublicationForm?: boolean; // Show manual publication entry form
-  isSummary?: boolean; // For profile summary display
+  showManualPublicationForm?: boolean;
+  isSummary?: boolean;
   summaryData?: Partial<PhysicianProfileData>;
+  // Batched form rendering
+  showBatchedForm?: 'licensing' | 'specialty' | 'education' | 'presence';
 }
 
-// Phases
+// Phases (simplified with batched forms)
 type OnboardingPhase =
   | 'briefing'
   | 'identity'
@@ -72,7 +70,7 @@ type OnboardingPhase =
   | 'confirmation'
   | 'completed';
 
-// Questions within each phase
+// Questions within each phase (reduced set)
 type QuestionKey =
   // Identity
   | 'full_name'
@@ -80,25 +78,11 @@ type QuestionKey =
   | 'has_linkedin'
   | 'linkedin_url'
   | 'linkedin_confirm'
-  | 'linkedin_permission'
-  | 'photo_upload'
-  // Licensing
-  | 'countries_licensed'
-  | 'license_number'
-  | 'usa_states'
-  // Specialty
-  | 'primary_specialty'
-  | 'sub_specialties'
-  | 'board_certifications'
-  // Education
-  | 'medical_school'
-  | 'medical_school_country'
-  | 'graduation_year'
-  | 'honors'
-  | 'residency_institution'
-  | 'residency_years'
-  | 'fellowships'
-  // Intellectual
+  // Batched forms (single question per phase)
+  | 'licensing_form'
+  | 'specialty_form'
+  | 'education_form'
+  // Intellectual (kept conversational - optional phase)
   | 'google_scholar'
   | 'publication_source'
   | 'pubmed_search'
@@ -106,17 +90,10 @@ type QuestionKey =
   | 'academia_url'
   | 'publications_manual'
   | 'publications_select'
-  | 'publications'
   | 'presentations'
   | 'books'
-  // Presence
-  | 'current_institutions'
-  | 'website'
-  | 'social_profiles'
-  | 'available_days'
-  | 'available_hours'
-  | 'timezone'
-  | 'languages'
+  // Batched form
+  | 'presence_form'
   // Confirmation
   | 'confirm_profile'
   | 'edit_choice';
@@ -137,6 +114,19 @@ export interface PhysicianOnboardingAgentHandle {
   handlePublicationSelection?: (publications: import('../lib/publications').Publication[]) => void;
   handleManualPublication?: (publication: import('../lib/publications').Publication) => void;
   updateToggleData: (values: string[]) => void;
+  // Batched form callbacks
+  handleLicensingSubmit?: (data: { licenses: PhysicianLicense[] }) => void;
+  handleSpecialtySubmit?: (data: { primarySpecialty: string; subSpecialties: string[]; boardCertifications: BoardCertification[] }) => void;
+  handleEducationSubmit?: (data: { medicalSchool: string; medicalSchoolCountry: string; graduationYear: number; honors: string[]; residency: Residency[]; fellowships: Fellowship[] }) => void;
+  handlePresenceSubmit?: (data: {
+    currentInstitutions: string[]; websiteUrl?: string; twitterUrl?: string;
+    researchgateUrl?: string; academiaEduUrl?: string;
+    availableDays: string[]; availableHoursStart: string; availableHoursEnd: string;
+    timezone: string; languages: string[];
+  }) => void;
+  handleFormCancel?: () => void;
+  getCollectedData: () => Partial<PhysicianProfileData>;
+  getLicensedCountryCodes: () => string[];
 }
 
 interface LinkedInImportData {
@@ -155,6 +145,11 @@ interface PhysicianOnboardingAgentProps {
   onProfileReady?: (physicianId: string, physicianName: string) => void;
   linkedInData?: LinkedInImportData;
   sessionId?: string;
+  sessionLinkedInData?: {
+    fullName?: string | null;
+    email?: string | null;
+    photoUrl?: string | null;
+  };
 }
 
 // Validation helpers
@@ -162,42 +157,63 @@ function isValidEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
-function isValidUrl(value: string): boolean {
+/**
+ * Parse a LinkedIn profile URL, accepting various formats.
+ * Returns { valid, slug, normalizedUrl } or { valid: false } if invalid.
+ */
+function parseLinkedInUrl(raw: string): {
+  valid: boolean;
+  slug?: string;
+  normalizedUrl?: string;
+} {
+  let url = raw.trim();
+  if (!/^https?:\/\//i.test(url)) {
+    url = 'https://' + url;
+  }
   try {
-    new URL(value);
-    return true;
+    const parsed = new URL(url);
+    const host = parsed.hostname.replace(/^www\./, '');
+    if (host !== 'linkedin.com') return { valid: false };
+    const pathMatch = parsed.pathname.match(/^(?:\/[a-z]{2})?\/in\/([\w-]+)\/?$/i);
+    if (!pathMatch) return { valid: false };
+    const slug = pathMatch[1];
+    return { valid: true, slug, normalizedUrl: `https://www.linkedin.com/in/${slug}` };
   } catch {
-    return false;
+    return { valid: false };
   }
 }
 
-function isValidYear(value: string): boolean {
-  const year = parseInt(value, 10);
-  return !isNaN(year) && year >= 1950 && year <= new Date().getFullYear();
+/**
+ * Attempt to derive a human-readable name from a LinkedIn slug.
+ */
+function slugToName(slug: string): string | null {
+  if (/^\d+$/.test(slug) || !slug.includes('-')) return null;
+  const parts = slug.split('-').filter(Boolean);
+  if (parts.length < 2 || parts.length > 6) return null;
+  if (parts.some(p => p.length > 15 || /\d{3,}/.test(p))) return null;
+  return parts
+    .map(p => {
+      if (p.toLowerCase() === 'dr') return 'Dr.';
+      if (p.toLowerCase() === 'md') return 'MD';
+      if (p.toLowerCase() === 'phd') return 'PhD';
+      return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+    })
+    .join(' ');
 }
 
 const PhysicianOnboardingAgent = forwardRef<
   PhysicianOnboardingAgentHandle,
   PhysicianOnboardingAgentProps
 >((props, ref) => {
-  const { lang, appendMessage, onStateChange, onProfileReady, linkedInData, sessionId } = props;
+  const { lang, appendMessage, onStateChange, onProfileReady, linkedInData, sessionId, sessionLinkedInData } = props;
   const copy = useMemo(() => onboardingCopy[lang], [lang]);
 
-  // Track if LinkedIn data has been applied
   const linkedInApplied = useRef(false);
-
-  // Refs to always have latest function references (for use in setTimeout)
   const appendMessageRef = useRef(appendMessage);
   const onStateChangeRef = useRef(onStateChange);
 
-  // Keep refs updated
-  useEffect(() => {
-    appendMessageRef.current = appendMessage;
-  }, [appendMessage]);
-
-  useEffect(() => {
-    onStateChangeRef.current = onStateChange;
-  }, [onStateChange]);
+  useEffect(() => { appendMessageRef.current = appendMessage; }, [appendMessage]);
+  useEffect(() => { onStateChangeRef.current = onStateChange; }, [onStateChange]);
 
   // State
   const [state, setState] = useState<OnboardingAgentState>('idle');
@@ -210,16 +226,7 @@ const PhysicianOnboardingAgent = forwardRef<
     languages: ['es', 'en'],
   });
 
-  // Temporary state for multi-step questions
-  const tempRef = useRef<{
-    currentCountry?: string;
-    currentLicense?: Partial<PhysicianLicense>;
-    pendingCountries?: string[];
-    currentResidency?: Partial<Residency>;
-    currentFellowship?: Partial<Fellowship>;
-  }>({});
-
-  // Stable wrapper functions that use refs
+  // Stable wrappers
   const stableAppendMessage = useCallback((message: OnboardingBotMessage) => {
     appendMessageRef.current(message);
   }, []);
@@ -239,23 +246,24 @@ const PhysicianOnboardingAgent = forwardRef<
     stableAppendMessage({ text: message, actions });
   }, [updateState, stableAppendMessage]);
 
-  const showVisionMessage = useCallback((message: string) => {
-    stableAppendMessage({ text: message, isVision: true });
-  }, [stableAppendMessage]);
+  // Get time-based greeting
+  const getTimeBasedGreeting = useCallback(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return copy.greetingMorning;
+    if (hour < 18) return copy.greetingAfternoon;
+    return copy.greetingEvening;
+  }, [copy]);
 
   // Generate profile summary
   const generateProfileSummary = useCallback((): string => {
     const data = dataRef.current;
     const lines: string[] = [];
-
     lines.push(`**${copy.profileSummaryTitle}**\n`);
 
-    // Identity
     if (data.fullName) lines.push(`**Name:** ${data.fullName}`);
     if (data.email) lines.push(`**Email:** ${data.email}`);
     if (data.linkedinUrl) lines.push(`**LinkedIn:** ${data.linkedinUrl}`);
 
-    // Licensing
     if (data.licenses && data.licenses.length > 0) {
       lines.push(`\n**Licenses:**`);
       data.licenses.forEach(lic => {
@@ -264,7 +272,6 @@ const PhysicianOnboardingAgent = forwardRef<
       });
     }
 
-    // Specialty
     if (data.primarySpecialty) lines.push(`\n**Primary Specialty:** ${data.primarySpecialty}`);
     if (data.subSpecialties?.length) lines.push(`**Sub-specialties:** ${data.subSpecialties.join(', ')}`);
     if (data.boardCertifications?.length) {
@@ -274,13 +281,11 @@ const PhysicianOnboardingAgent = forwardRef<
       });
     }
 
-    // Education
     if (data.medicalSchool) {
       lines.push(`\n**Medical School:** ${data.medicalSchool}${data.medicalSchoolCountry ? `, ${data.medicalSchoolCountry}` : ''}${data.graduationYear ? ` (${data.graduationYear})` : ''}`);
     }
     if (data.honors?.length) lines.push(`**Honors:** ${data.honors.join(', ')}`);
 
-    // Training
     if (data.residency?.length) {
       lines.push(`\n**Residency:**`);
       data.residency.forEach(r => {
@@ -294,18 +299,15 @@ const PhysicianOnboardingAgent = forwardRef<
       });
     }
 
-    // Intellectual
     if (data.googleScholarUrl) lines.push(`\n**Google Scholar:** ${data.googleScholarUrl}`);
     if (data.publications?.length) lines.push(`**Publications:** ${data.publications.length} listed`);
     if (data.presentations?.length) lines.push(`**Presentations:** ${data.presentations.length} listed`);
 
-    // Presence
     if (data.currentInstitutions?.length) {
       lines.push(`\n**Current Practice:** ${data.currentInstitutions.join(', ')}`);
     }
     if (data.websiteUrl) lines.push(`**Website:** ${data.websiteUrl}`);
 
-    // Availability
     if (data.availableDays?.length) {
       const dayLabels = data.availableDays.map(d => {
         const day = DAYS_OF_WEEK.find(dw => dw.value === d);
@@ -331,21 +333,51 @@ const PhysicianOnboardingAgent = forwardRef<
     return lines.join('\n');
   }, [copy.profileSummaryTitle, lang]);
 
-  // Get time-based greeting
-  const getTimeBasedGreeting = useCallback(() => {
-    const hour = new Date().getHours();
-    if (hour < 12) return copy.greetingMorning;
-    if (hour < 18) return copy.greetingAfternoon;
-    return copy.greetingEvening;
-  }, [copy]);
+  // ── Phase transitions ──
 
-  // Phase handlers
   const startBriefing = useCallback(() => {
     setPhase('briefing');
     updateState('briefing');
 
-    // Conversational opening sequence
-    // Only truly inspirational/mission statements get isVision styling
+    // Priority 1: Session-based LinkedIn data (signed in via LinkedIn provider)
+    const effectiveLinkedInData: LinkedInImportData | undefined = sessionLinkedInData
+      ? {
+          fullName: sessionLinkedInData.fullName ?? undefined,
+          email: sessionLinkedInData.email ?? undefined,
+          photoUrl: sessionLinkedInData.photoUrl ?? undefined,
+        }
+      : linkedInData;
+
+    // If LinkedIn data is already available (from session or OAuth callback),
+    // skip full briefing and go straight to LinkedIn confirmation
+    if (effectiveLinkedInData && !linkedInApplied.current) {
+      linkedInApplied.current = true;
+      const data = dataRef.current;
+
+      if (effectiveLinkedInData.fullName) {
+        data.linkedinUrl = `https://linkedin.com/in/${sessionId || 'profile'}`;
+        data.linkedinImported = true;
+      }
+
+      stableAppendMessage({ text: getTimeBasedGreeting() });
+
+      setTimeout(() => {
+        stableAppendMessage({
+          text: lang === 'en'
+            ? 'Welcome back! We\'ve connected your LinkedIn profile. Please confirm the imported data:'
+            : '\u00a1Bienvenido de nuevo! Hemos conectado tu perfil de LinkedIn. Por favor confirma los datos importados:',
+          linkedInPreview: effectiveLinkedInData,
+        } as OnboardingBotMessage);
+
+        setPhase('identity');
+        setQuestion('linkedin_confirm');
+        updateState('awaiting_user');
+      }, 1200);
+
+      return;
+    }
+
+    // Normal briefing flow
     const messages: Array<{ text: string; isVision?: boolean; delay: number }> = [
       { text: getTimeBasedGreeting(), delay: 0 },
       { text: copy.howAreYou, delay: 1200 },
@@ -353,14 +385,13 @@ const PhysicianOnboardingAgent = forwardRef<
       { text: copy.sessionOverview, delay: 4000 },
     ];
 
-    // Queue the opening messages
     messages.forEach(({ text, isVision, delay }) => {
       setTimeout(() => {
         stableAppendMessage({ text, isVision });
       }, delay);
     });
 
-    // After opening, ask for LinkedIn first (this is the key entry point)
+    // Ask for LinkedIn first
     setTimeout(() => {
       setPhase('identity');
       setQuestion('has_linkedin');
@@ -373,30 +404,30 @@ const PhysicianOnboardingAgent = forwardRef<
         ],
       });
     }, 5800);
-  }, [copy, stableAppendMessage, updateState, getTimeBasedGreeting]);
+  }, [copy, stableAppendMessage, updateState, getTimeBasedGreeting, linkedInData, sessionLinkedInData, lang, sessionId]);
 
   const startLicensingPhase = useCallback(() => {
     setPhase('licensing');
     updateState('processing');
 
-    // Transition to licensing with context
     stableAppendMessage({ text: copy.phase2Vision, isVision: true });
 
     setTimeout(() => {
-      const countryActions: OnboardingAction[] = LICENSED_COUNTRIES.slice(0, 6).map(c => ({
-        label: c.name,
-        value: c.code,
-        type: 'secondary',
-      }));
-      askQuestion('countries_licensed', copy.askCountriesLicensed, countryActions);
+      setQuestion('licensing_form');
+      updateState('awaiting_user');
+      stableAppendMessage({
+        text: lang === 'en'
+          ? 'Please fill in your medical license information below.'
+          : 'Por favor complete su informaci\u00f3n de licencia m\u00e9dica a continuaci\u00f3n.',
+        showBatchedForm: 'licensing',
+      });
     }, 1200);
-  }, [copy, stableAppendMessage, askQuestion, updateState]);
+  }, [copy, lang, stableAppendMessage, updateState]);
 
   const startSpecialtyPhase = useCallback(() => {
     setPhase('specialty');
     updateState('processing');
 
-    // Transition message
     stableAppendMessage({
       text: lang === 'en'
         ? 'Now let\'s talk about your expertise. This helps patients find the right specialist.'
@@ -404,48 +435,55 @@ const PhysicianOnboardingAgent = forwardRef<
     });
 
     setTimeout(() => {
-      // Show all specialties as toggle buttons for multi-select
-      const specialtyActions: OnboardingAction[] = [
-        ...MEDICAL_SPECIALTIES.map(s => ({
-          label: s,
-          value: s,
-          type: 'toggle' as const,
-          selected: false,
-        })),
-        { label: lang === 'en' ? 'Done' : 'Listo', value: '__done__', type: 'primary' as const },
-      ];
-      const questionText = copy.askPrimarySpecialty + (lang === 'en'
-        ? ' (Select all that apply, then click Done. You can also type additional specialties.)'
-        : ' (Selecciona todas las que apliquen, luego haz clic en Listo. También puedes escribir especialidades adicionales.)');
-      askQuestion('primary_specialty', questionText, specialtyActions);
+      setQuestion('specialty_form');
+      updateState('awaiting_user');
+      stableAppendMessage({
+        text: lang === 'en'
+          ? 'Select your specialties and certifications below.'
+          : 'Seleccione sus especialidades y certificaciones a continuaci\u00f3n.',
+        showBatchedForm: 'specialty',
+      });
     }, 1000);
-  }, [copy, lang, stableAppendMessage, askQuestion, updateState]);
+  }, [lang, stableAppendMessage, updateState]);
 
   const startEducationPhase = useCallback(() => {
     setPhase('education');
-    askQuestion('medical_school', copy.askMedicalSchool);
-  }, [copy, askQuestion]);
+    setQuestion('education_form');
+    updateState('awaiting_user');
+    stableAppendMessage({
+      text: lang === 'en'
+        ? 'Tell us about your medical education and training.'
+        : 'Cu\u00e9ntenos sobre su educaci\u00f3n y formaci\u00f3n m\u00e9dica.',
+      showBatchedForm: 'education',
+    });
+  }, [lang, stableAppendMessage, updateState]);
 
   const startIntellectualPhase = useCallback(() => {
     setPhase('intellectual');
-    showVisionMessage(copy.phase5Vision);
+    stableAppendMessage({ text: copy.phase5Vision, isVision: true });
     setTimeout(() => {
       askQuestion('google_scholar', copy.askGoogleScholar, [
         { label: copy.yes, value: 'yes', type: 'primary' },
         { label: copy.no, value: 'no', type: 'secondary' },
       ]);
     }, 600);
-  }, [copy, showVisionMessage, askQuestion]);
+  }, [copy, stableAppendMessage, askQuestion]);
 
   const startPresencePhase = useCallback(() => {
     setPhase('presence');
-    askQuestion('current_institutions', copy.askCurrentInstitutions);
-  }, [copy, askQuestion]);
+    setQuestion('presence_form');
+    updateState('awaiting_user');
+    stableAppendMessage({
+      text: lang === 'en'
+        ? 'Almost done! Tell us about your practice and availability.'
+        : '\u00a1Casi terminamos! Cu\u00e9ntenos sobre su pr\u00e1ctica y disponibilidad.',
+      showBatchedForm: 'presence',
+    });
+  }, [lang, stableAppendMessage, updateState]);
 
   const startConfirmationPhase = useCallback(() => {
     setPhase('confirmation');
 
-    // Transition to confirmation
     stableAppendMessage({ text: copy.phase7Vision });
 
     setTimeout(() => {
@@ -468,15 +506,13 @@ const PhysicianOnboardingAgent = forwardRef<
   const completeOnboarding = useCallback(async () => {
     updateState('processing');
 
-    // Show message about the agreement
     stableAppendMessage({
       text: lang === 'en'
         ? 'Excellent! Your profile is ready. Before we finalize your registration, please review and sign the Physician Network Agreement.'
-        : '¡Excelente! Su perfil está listo. Antes de finalizar su registro, por favor revise y firme el Acuerdo de Red de Médicos.',
+        : '\u00a1Excelente! Su perfil est\u00e1 listo. Antes de finalizar su registro, por favor revise y firme el Acuerdo de Red de M\u00e9dicos.',
       isVision: true,
     });
 
-    // Create the physician profile
     const profileData: PhysicianProfileData = {
       fullName: dataRef.current.fullName || '',
       email: dataRef.current.email || '',
@@ -513,7 +549,6 @@ const PhysicianOnboardingAgent = forwardRef<
     const result = await createPhysicianProfile(profileData);
 
     if (result.success && result.physicianId) {
-      // Log profile creation (not yet completed - pending consent)
       await logOnboardingAudit({
         physicianId: result.physicianId,
         email: profileData.email,
@@ -523,14 +558,11 @@ const PhysicianOnboardingAgent = forwardRef<
         language: lang,
       });
 
-      // Trigger consent modal - completion happens after consent is signed
-      // Confirmation email will be sent after consent
       const physicianId = result.physicianId;
       setTimeout(() => {
         onProfileReady?.(physicianId, profileData.fullName);
       }, 800);
 
-      // Keep state as processing - will be updated after consent
       setPhase('confirmation');
     } else {
       stableAppendMessage({
@@ -542,7 +574,83 @@ const PhysicianOnboardingAgent = forwardRef<
     }
   }, [lang, stableAppendMessage, updateState, onProfileReady]);
 
-  // Handle user input
+  // ── Batched form handlers ──
+
+  const handleLicensingSubmit = useCallback((formData: { licenses: PhysicianLicense[] }) => {
+    dataRef.current.licenses = formData.licenses;
+    stableAppendMessage({
+      text: lang === 'en'
+        ? `${formData.licenses.length} license(s) recorded. ${copy.licenseNote}`
+        : `${formData.licenses.length} licencia(s) registrada(s). ${copy.licenseNote}`,
+    });
+    setTimeout(() => startSpecialtyPhase(), 600);
+  }, [lang, copy, stableAppendMessage, startSpecialtyPhase]);
+
+  const handleSpecialtySubmit = useCallback((formData: {
+    primarySpecialty: string;
+    subSpecialties: string[];
+    boardCertifications: BoardCertification[];
+  }) => {
+    dataRef.current.primarySpecialty = formData.primarySpecialty;
+    dataRef.current.subSpecialties = formData.subSpecialties;
+    dataRef.current.boardCertifications = formData.boardCertifications;
+    stableAppendMessage({ text: copy.specialtyNote });
+    setTimeout(() => startEducationPhase(), 600);
+  }, [copy, stableAppendMessage, startEducationPhase]);
+
+  const handleEducationSubmit = useCallback((formData: {
+    medicalSchool: string;
+    medicalSchoolCountry: string;
+    graduationYear: number;
+    honors: string[];
+    residency: Residency[];
+    fellowships: Fellowship[];
+  }) => {
+    dataRef.current.medicalSchool = formData.medicalSchool;
+    dataRef.current.medicalSchoolCountry = formData.medicalSchoolCountry;
+    dataRef.current.graduationYear = formData.graduationYear;
+    dataRef.current.honors = formData.honors;
+    dataRef.current.residency = formData.residency;
+    dataRef.current.fellowships = formData.fellowships;
+    startIntellectualPhase();
+  }, [startIntellectualPhase]);
+
+  const handlePresenceSubmit = useCallback((formData: {
+    currentInstitutions: string[];
+    websiteUrl?: string;
+    twitterUrl?: string;
+    researchgateUrl?: string;
+    academiaEduUrl?: string;
+    availableDays: string[];
+    availableHoursStart: string;
+    availableHoursEnd: string;
+    timezone: string;
+    languages: string[];
+  }) => {
+    dataRef.current.currentInstitutions = formData.currentInstitutions;
+    dataRef.current.websiteUrl = formData.websiteUrl;
+    dataRef.current.twitterUrl = formData.twitterUrl;
+    dataRef.current.researchgateUrl = formData.researchgateUrl;
+    dataRef.current.academiaEduUrl = formData.academiaEduUrl;
+    dataRef.current.availableDays = formData.availableDays;
+    dataRef.current.availableHoursStart = formData.availableHoursStart;
+    dataRef.current.availableHoursEnd = formData.availableHoursEnd;
+    dataRef.current.timezone = formData.timezone;
+    dataRef.current.languages = formData.languages;
+    startConfirmationPhase();
+  }, [startConfirmationPhase]);
+
+  const handleFormCancel = useCallback(() => {
+    // Go back to previous phase - user can re-approach
+    stableAppendMessage({
+      text: lang === 'en'
+        ? 'No worries. Let me know when you\'re ready to continue.'
+        : 'No se preocupe. Av\u00edseme cuando est\u00e9 listo para continuar.',
+    });
+  }, [lang, stableAppendMessage]);
+
+  // ── Handle user text input ──
+
   const handleUserInput = useCallback(async (rawInput: string): Promise<boolean> => {
     if (state === 'idle' || state === 'completed' || state === 'processing') {
       return false;
@@ -550,10 +658,7 @@ const PhysicianOnboardingAgent = forwardRef<
 
     const input = rawInput.trim();
     const currentQuestion = question;
-
-    if (!currentQuestion) {
-      return false;
-    }
+    if (!currentQuestion) return false;
 
     const data = dataRef.current;
 
@@ -565,7 +670,7 @@ const PhysicianOnboardingAgent = forwardRef<
           return true;
         }
         data.fullName = input;
-        askQuestion('email', lang === 'en' ? 'What is your professional email address?' : '¿Cuál es su correo electrónico profesional?');
+        askQuestion('email', lang === 'en' ? 'What is your professional email address?' : '\u00bfCu\u00e1l es su correo electr\u00f3nico profesional?');
         return true;
       }
 
@@ -575,7 +680,6 @@ const PhysicianOnboardingAgent = forwardRef<
           return true;
         }
 
-        // Check if email already exists (with timeout to prevent hanging)
         try {
           const existsPromise = checkPhysicianEmailExists(input);
           const timeoutPromise = new Promise<boolean>((_, reject) =>
@@ -587,18 +691,16 @@ const PhysicianOnboardingAgent = forwardRef<
             stableAppendMessage({
               text: lang === 'en'
                 ? 'This email is already registered in our network. Please use a different email or contact support if this is an error.'
-                : 'Este correo ya está registrado en nuestra red. Por favor use un correo diferente o contacte soporte si esto es un error.',
+                : 'Este correo ya est\u00e1 registrado en nuestra red. Por favor use un correo diferente o contacte soporte si esto es un error.',
             });
             return true;
           }
         } catch (error) {
-          // Continue even if check fails - we'll catch duplicates on save
           console.warn('Email check failed, continuing:', error);
         }
 
         data.email = input.toLowerCase();
 
-        // Log that onboarding started (fire and forget, don't block flow)
         logOnboardingAudit({
           email: data.email,
           action: 'started',
@@ -606,304 +708,80 @@ const PhysicianOnboardingAgent = forwardRef<
           language: lang,
         }).catch(err => console.warn('Audit log failed:', err));
 
-        // Proceed to licensing phase (return early to avoid setQuestion(null))
         startLicensingPhase();
         return true;
       }
 
       case 'linkedin_url': {
-        if (input && !isValidUrl(input)) {
-          stableAppendMessage({ text: copy.invalidUrl });
+        if (!input) {
+          setTimeout(() => { askQuestion('full_name', copy.askFullName); }, 500);
           return true;
         }
-        if (input) {
-          data.linkedinUrl = input;
-          stableAppendMessage({
-            text: lang === 'en'
-              ? 'Great! I\'ve saved your LinkedIn profile.'
-              : '¡Excelente! He guardado su perfil de LinkedIn.',
-          });
-        }
-        // We still need name and email - ask for them
-        setTimeout(() => {
-          askQuestion('full_name', copy.askFullName);
-        }, 500);
-        return true;
-      }
 
-      // Licensing Phase
-      case 'countries_licensed': {
-        const countries = input.split(/[,\s]+/).map(c => c.trim()).filter(Boolean);
-        if (countries.length === 0) {
+        const parsed = parseLinkedInUrl(input);
+        if (!parsed.valid) {
           stableAppendMessage({
             text: lang === 'en'
-              ? 'Please list at least one country where you hold a medical license.'
-              : 'Por favor liste al menos un país donde tenga licencia médica.',
+              ? 'That doesn\'t look like a valid LinkedIn profile URL. Please enter a URL like: https://linkedin.com/in/your-name'
+              : 'Eso no parece ser una URL de perfil de LinkedIn v\u00e1lida. Por favor ingrese una URL como: https://linkedin.com/in/su-nombre',
           });
           return true;
         }
 
-        // Match countries to our known list
-        const matchedCountries: string[] = [];
-        countries.forEach(c => {
-          const match = LICENSED_COUNTRIES.find(
-            lc => lc.name.toLowerCase().includes(c.toLowerCase()) ||
-                  lc.code.toLowerCase() === c.toLowerCase()
-          );
-          if (match && !matchedCountries.includes(match.code)) {
-            matchedCountries.push(match.code);
-          }
+        data.linkedinUrl = parsed.normalizedUrl;
+        const displayUrl = `linkedin.com/in/${parsed.slug}`;
+        stableAppendMessage({
+          text: lang === 'en'
+            ? `LinkedIn profile linked: ${displayUrl}`
+            : `Perfil de LinkedIn vinculado: ${displayUrl}`,
         });
 
-        if (matchedCountries.length === 0) {
-          stableAppendMessage({
-            text: lang === 'en'
-              ? 'I didn\'t recognize those countries. Please try again with countries like: Mexico, USA, Colombia, Brazil, Argentina, etc.'
-              : 'No reconocí esos países. Por favor intente de nuevo con países como: México, EE.UU., Colombia, Brasil, Argentina, etc.',
-          });
-          return true;
-        }
+        const suggestedName = parsed.slug ? slugToName(parsed.slug) : null;
 
-        tempRef.current.pendingCountries = matchedCountries;
-        const firstCountry = matchedCountries[0];
-        tempRef.current.currentCountry = firstCountry;
-
-        const countryInfo = LICENSED_COUNTRIES.find(c => c.code === firstCountry);
-        const prompt = countryInfo?.code === 'US'
-          ? copy.askUSAState
-          : (copy.askOtherLicense.replace('{country}', countryInfo?.name || firstCountry) +
-            ` (${countryInfo?.licenseType || 'License Number'})`);
-
-        if (countryInfo?.code === 'US') {
-          const stateActions: OnboardingAction[] = US_STATES.slice(0, 4).map(s => ({
-            label: s,
-            value: s,
-            type: 'secondary',
-          }));
-          askQuestion('usa_states', prompt, stateActions);
-        } else {
-          askQuestion('license_number', prompt);
-        }
-        return true;
-      }
-
-      case 'usa_states': {
-        const states = input.split(/[,]+/).map(s => s.trim()).filter(Boolean);
-        tempRef.current.currentLicense = {
-          country: 'United States',
-          countryCode: 'US',
-          type: 'State Medical License',
-          state: states[0], // For simplicity, take first state
-        };
-        askQuestion('license_number', copy.askUSALicense);
-        return true;
-      }
-
-      case 'license_number': {
-        if (!input || input.length < 3) {
-          stableAppendMessage({ text: copy.invalidLicense });
-          return true;
-        }
-
-        const countryCode = tempRef.current.currentCountry;
-        const countryInfo = LICENSED_COUNTRIES.find(c => c.code === countryCode);
-
-        const license: PhysicianLicense = tempRef.current.currentLicense
-          ? { ...tempRef.current.currentLicense, number: input } as PhysicianLicense
-          : {
-              country: countryInfo?.name || countryCode || '',
-              countryCode: countryCode || '',
-              type: countryInfo?.licenseType || 'License',
-              number: input,
-            };
-
-        data.licenses = [...(data.licenses || []), license];
-        tempRef.current.currentLicense = undefined;
-
-        // Check if more countries to process
-        const pending = tempRef.current.pendingCountries || [];
-        const nextCountries = pending.slice(1);
-
-        if (nextCountries.length > 0) {
-          tempRef.current.pendingCountries = nextCountries;
-          const nextCountry = nextCountries[0];
-          tempRef.current.currentCountry = nextCountry;
-
-          const nextCountryInfo = LICENSED_COUNTRIES.find(c => c.code === nextCountry);
-          if (nextCountry === 'US') {
-            askQuestion('usa_states', copy.askUSAState);
-          } else {
-            askQuestion('license_number',
-              copy.askOtherLicense.replace('{country}', nextCountryInfo?.name || nextCountry)
+        setTimeout(() => {
+          if (suggestedName) {
+            askQuestion('full_name',
+              lang === 'en'
+                ? `Based on your LinkedIn, is your name **${suggestedName}**?`
+                : `Seg\u00fan su LinkedIn, \u00bfsu nombre es **${suggestedName}**?`,
+              [
+                { label: lang === 'en' ? 'Yes, that\'s correct' : 'S\u00ed, es correcto', value: `__accept_name__${suggestedName}`, type: 'primary' },
+                { label: lang === 'en' ? 'No, let me type it' : 'No, d\u00e9jeme escribirlo', value: '__reject_name__', type: 'secondary' },
+              ]
             );
-          }
-          return true;
-        } else {
-          // Transition to specialty phase
-          stableAppendMessage({ text: copy.licenseNote });
-          setTimeout(() => {
-            startSpecialtyPhase();
-          }, 1500);
-          return true;
-        }
-      }
-
-      // Specialty Phase
-      case 'primary_specialty': {
-        // Handle multi-select done action
-        if (input === '__done__') {
-          // Specialties were selected via toggle, stored in data.subSpecialties temporarily
-          // First one becomes primary, rest become sub-specialties
-          if (data.subSpecialties && data.subSpecialties.length > 0) {
-            data.primarySpecialty = data.subSpecialties[0];
-            data.subSpecialties = data.subSpecialties.slice(1);
           } else {
-            stableAppendMessage({
-              text: lang === 'en'
-                ? 'Please select at least one specialty.'
-                : 'Por favor selecciona al menos una especialidad.',
-            });
-            return true;
+            askQuestion('full_name', copy.askFullName);
           }
-        } else if (input) {
-          // User typed a specialty
-          data.primarySpecialty = input;
-        } else {
-          stableAppendMessage({
-            text: lang === 'en'
-              ? 'Please provide your primary medical specialty.'
-              : 'Por favor proporcione su especialidad médica principal.',
-          });
-          return true;
-        }
-        askQuestion('board_certifications', copy.askBoardCertifications, [
-          { label: copy.skipPrompt, value: 'skip', type: 'skip' },
-        ]);
+        }, 600);
         return true;
       }
 
-      case 'sub_specialties': {
-        if (input.toLowerCase() !== 'skip' && input) {
-          data.subSpecialties = input.split(/[,]+/).map(s => s.trim()).filter(Boolean);
-        }
-        askQuestion('board_certifications', copy.askBoardCertifications, [
-          { label: copy.skipPrompt, value: 'skip', type: 'skip' },
-        ]);
+      // Batched form phases - text input is not expected, but handle gracefully
+      case 'licensing_form':
+      case 'specialty_form':
+      case 'education_form':
+      case 'presence_form': {
+        stableAppendMessage({
+          text: lang === 'en'
+            ? 'Please use the form above to enter your information.'
+            : 'Por favor use el formulario de arriba para ingresar su informaci\u00f3n.',
+        });
         return true;
       }
 
-      case 'board_certifications': {
-        if (input.toLowerCase() !== 'skip' && input) {
-          // Simple parsing - in production would have more structured input
-          const certs: BoardCertification[] = input.split(/[,;]+/).map(c => ({
-            board: c.trim(),
-            certification: c.trim(),
-          }));
-          data.boardCertifications = certs;
-        }
-        stableAppendMessage({ text: copy.specialtyNote });
-        setTimeout(() => startEducationPhase(), 600);
-        return true;
-      }
-
-      // Education Phase
-      case 'medical_school': {
-        if (!input) {
-          stableAppendMessage({
-            text: lang === 'en'
-              ? 'Please provide your medical school.'
-              : 'Por favor proporcione su escuela de medicina.',
-          });
-          return true;
-        }
-        data.medicalSchool = input;
-        askQuestion('medical_school_country', copy.askMedicalSchoolCountry);
-        return true;
-      }
-
-      case 'medical_school_country': {
-        data.medicalSchoolCountry = input;
-        askQuestion('graduation_year', copy.askGraduationYear);
-        return true;
-      }
-
-      case 'graduation_year': {
-        if (!isValidYear(input)) {
-          stableAppendMessage({ text: copy.invalidYear });
-          return true;
-        }
-        data.graduationYear = parseInt(input, 10);
-        askQuestion('honors', copy.askHonors, [
-          { label: copy.skipPrompt, value: 'skip', type: 'skip' },
-        ]);
-        return true;
-      }
-
-      case 'honors': {
-        if (input.toLowerCase() !== 'skip' && input) {
-          data.honors = input.split(/[,;]+/).map(h => h.trim()).filter(Boolean);
-        }
-        askQuestion('residency_institution', copy.askResidency);
-        return true;
-      }
-
-      case 'residency_institution': {
-        tempRef.current.currentResidency = { institution: input };
-        askQuestion('residency_years', copy.askResidencyYears);
-        return true;
-      }
-
-      case 'residency_years': {
-        const yearMatch = input.match(/(\d{4})\s*[-–]\s*(\d{4})/);
-        if (yearMatch) {
-          const residency: Residency = {
-            institution: tempRef.current.currentResidency?.institution || '',
-            specialty: data.primarySpecialty || '',
-            startYear: parseInt(yearMatch[1], 10),
-            endYear: parseInt(yearMatch[2], 10),
-          };
-          data.residency = [residency];
-        }
-        tempRef.current.currentResidency = undefined;
-        askQuestion('fellowships', copy.askFellowships, [
-          { label: copy.skipPrompt, value: 'skip', type: 'skip' },
-        ]);
-        return true;
-      }
-
-      case 'fellowships': {
-        if (input.toLowerCase() !== 'skip' && input) {
-          // Simple parsing
-          data.fellowships = [{
-            institution: input,
-            specialty: '',
-            startYear: 0,
-            endYear: 0,
-          }];
-        }
-        startIntellectualPhase();
-        return true;
-      }
-
-      // Intellectual Phase
-      case 'google_scholar': {
-        // Handled by action click
-        return true;
-      }
-
+      // Intellectual Phase (kept conversational)
       case 'researchgate_url': {
         if (!input || !input.includes('researchgate.net')) {
           stableAppendMessage({
             text: lang === 'en'
               ? 'Please enter a valid ResearchGate profile URL (e.g., https://www.researchgate.net/profile/Your-Name)'
-              : 'Por favor ingresa una URL válida de ResearchGate (ej., https://www.researchgate.net/profile/Tu-Nombre)',
+              : 'Por favor ingresa una URL v\u00e1lida de ResearchGate (ej., https://www.researchgate.net/profile/Tu-Nombre)',
           });
           return true;
         }
         data.researchgateUrl = input;
         updateState('processing');
 
-        // Fetch publications
         try {
           const response = await fetch('/api/publications/search', {
             method: 'POST',
@@ -916,7 +794,7 @@ const PhysicianOnboardingAgent = forwardRef<
             stableAppendMessage({
               text: lang === 'en'
                 ? `Found ${result.publications.length} publications! Select which ones to include in your profile:`
-                : `¡Encontramos ${result.publications.length} publicaciones! Selecciona cuáles incluir en tu perfil:`,
+                : `\u00a1Encontramos ${result.publications.length} publicaciones! Selecciona cu\u00e1les incluir en tu perfil:`,
               showPublicationSelector: {
                 publications: result.publications,
                 source: 'researchgate',
@@ -950,7 +828,7 @@ const PhysicianOnboardingAgent = forwardRef<
           stableAppendMessage({
             text: lang === 'en'
               ? 'Please enter a valid Academia.edu profile URL'
-              : 'Por favor ingresa una URL válida de Academia.edu',
+              : 'Por favor ingresa una URL v\u00e1lida de Academia.edu',
           });
           return true;
         }
@@ -969,7 +847,7 @@ const PhysicianOnboardingAgent = forwardRef<
             stableAppendMessage({
               text: lang === 'en'
                 ? `Found ${result.publications.length} publications! Select which ones to include:`
-                : `¡Encontramos ${result.publications.length} publicaciones! Selecciona cuáles incluir:`,
+                : `\u00a1Encontramos ${result.publications.length} publicaciones! Selecciona cu\u00e1les incluir:`,
               showPublicationSelector: {
                 publications: result.publications,
                 source: 'academia',
@@ -1021,7 +899,7 @@ const PhysicianOnboardingAgent = forwardRef<
             stableAppendMessage({
               text: lang === 'en'
                 ? `Found ${result.publications.length} publications on PubMed! Select which ones to include:`
-                : `¡Encontramos ${result.publications.length} publicaciones en PubMed! Selecciona cuáles incluir:`,
+                : `\u00a1Encontramos ${result.publications.length} publicaciones en PubMed! Selecciona cu\u00e1les incluir:`,
               showPublicationSelector: {
                 publications: result.publications,
                 source: 'pubmed',
@@ -1052,19 +930,6 @@ const PhysicianOnboardingAgent = forwardRef<
 
       case 'publications_manual':
       case 'publications_select': {
-        // Handled by component callbacks
-        return true;
-      }
-
-      case 'publications': {
-        if (input.toLowerCase() !== 'skip' && input) {
-          data.publications = input.split(/\n+/).map(p => ({
-            title: p.trim(),
-          }));
-        }
-        askQuestion('presentations', copy.askPresentations, [
-          { label: copy.skipPrompt, value: 'skip', type: 'skip' },
-        ]);
         return true;
       }
 
@@ -1093,198 +958,16 @@ const PhysicianOnboardingAgent = forwardRef<
         return true;
       }
 
-      // Presence Phase
-      case 'current_institutions': {
-        if (input) {
-          data.currentInstitutions = input.split(/[,;]+/).map(i => i.trim()).filter(Boolean);
-        }
-        askQuestion('website', copy.askWebsite, [
-          { label: copy.skipPrompt, value: 'skip', type: 'skip' },
-        ]);
-        return true;
-      }
-
-      case 'website': {
-        if (input.toLowerCase() !== 'skip' && input) {
-          if (!isValidUrl(input)) {
-            stableAppendMessage({ text: copy.invalidUrl });
-            return true;
-          }
-          data.websiteUrl = input;
-        }
-        askQuestion('social_profiles', copy.askSocialProfiles, [
-          { label: copy.skipPrompt, value: 'skip', type: 'skip' },
-        ]);
-        return true;
-      }
-
-      case 'social_profiles': {
-        if (input.toLowerCase() !== 'skip' && input) {
-          // Parse URLs
-          const urls = input.split(/[\s,]+/).filter(u => isValidUrl(u));
-          urls.forEach(url => {
-            if (url.includes('twitter.com') || url.includes('x.com')) {
-              data.twitterUrl = url;
-            } else if (url.includes('researchgate.net')) {
-              data.researchgateUrl = url;
-            } else if (url.includes('academia.edu')) {
-              data.academiaEduUrl = url;
-            }
-          });
-        }
-        // Multi-select toggle buttons for days
-        const dayActions: OnboardingAction[] = [
-          ...DAYS_OF_WEEK.map(d => ({
-            label: d[lang],
-            value: d.value,
-            type: 'toggle' as const,
-            selected: false,
-          })),
-          { label: lang === 'en' ? 'Done' : 'Listo', value: '__done__', type: 'primary' as const },
-        ];
-        askQuestion('available_days', copy.askAvailableDays + (lang === 'en'
-          ? ' (Select all that apply, then click Done)'
-          : ' (Selecciona todos los que apliquen, luego haz clic en Listo)'), dayActions);
-        return true;
-      }
-
-      case 'available_days': {
-        // Handle both text input and multi-select done action
-        if (input === '__done__') {
-          // Days were selected via toggle, already stored
-          if (!data.availableDays || data.availableDays.length === 0) {
-            data.availableDays = ['monday', 'wednesday', 'friday'];
-          }
-        } else {
-          const days = input.toLowerCase().split(/[,\s]+/).map(d => d.trim()).filter(Boolean);
-          const matchedDays = days.map(d => {
-            const match = DAYS_OF_WEEK.find(
-              dw => dw.value.startsWith(d) || dw.en.toLowerCase().startsWith(d) || dw.es.toLowerCase().startsWith(d)
-            );
-            return match?.value;
-          }).filter(Boolean) as string[];
-          data.availableDays = matchedDays.length > 0 ? matchedDays : ['monday', 'wednesday', 'friday'];
-        }
-        askQuestion('available_hours', copy.askAvailableHours);
-        return true;
-      }
-
-      case 'available_hours': {
-        // Parse time range like "9-5", "9am-5pm", "09:00-17:00"
-        const timeMatch = input.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s*[-–to]+\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
-        if (timeMatch) {
-          let startHour = parseInt(timeMatch[1], 10);
-          const startMin = timeMatch[2] || '00';
-          const startAmPm = timeMatch[3]?.toLowerCase();
-          let endHour = parseInt(timeMatch[4], 10);
-          const endMin = timeMatch[5] || '00';
-          const endAmPm = timeMatch[6]?.toLowerCase();
-
-          // Convert to 24-hour format
-          if (startAmPm === 'pm' && startHour < 12) startHour += 12;
-          if (startAmPm === 'am' && startHour === 12) startHour = 0;
-          if (endAmPm === 'pm' && endHour < 12) endHour += 12;
-          if (endAmPm === 'am' && endHour === 12) endHour = 0;
-
-          // If no am/pm specified and end hour is small (like 5), assume PM
-          if (!endAmPm && endHour >= 1 && endHour <= 8) endHour += 12;
-
-          data.availableHoursStart = `${startHour.toString().padStart(2, '0')}:${startMin}:00`;
-          data.availableHoursEnd = `${endHour.toString().padStart(2, '0')}:${endMin}:00`;
-        } else {
-          data.availableHoursStart = '09:00:00';
-          data.availableHoursEnd = '17:00:00';
-        }
-
-        // Get relevant timezones based on licensed countries
-        const licensedCountries = data.licenses?.map(l => l.country) || [];
-        const relevantTimezones: { value: string; label: string }[] = [];
-
-        // Add timezones for each licensed country
-        licensedCountries.forEach(country => {
-          const countryTimezones = TIMEZONES_BY_COUNTRY[country];
-          if (countryTimezones) {
-            countryTimezones.forEach(tz => {
-              if (!relevantTimezones.some(r => r.value === tz.value)) {
-                relevantTimezones.push(tz);
-              }
-            });
-          }
-        });
-
-        // If no licensed countries or no matching timezones, show common Americas timezones
-        if (relevantTimezones.length === 0) {
-          relevantTimezones.push(...AMERICAS_TIMEZONES.slice(0, 8));
-        }
-
-        const tzActions: OnboardingAction[] = relevantTimezones.map(tz => ({
-          label: tz.label,
-          value: tz.value,
-          type: 'secondary',
-        }));
-        askQuestion('timezone', copy.askTimezone, tzActions);
-        return true;
-      }
-
-      case 'timezone': {
-        // First check relevant timezones, then fall back to all Americas timezones
-        const allTimezones = [...Object.values(TIMEZONES_BY_COUNTRY).flat(), ...AMERICAS_TIMEZONES];
-        const tz = allTimezones.find(
-          t => t.value.toLowerCase().includes(input.toLowerCase()) ||
-               t.label.toLowerCase().includes(input.toLowerCase())
-        );
-        data.timezone = tz?.value || 'America/Mexico_City';
-
-        // Multi-select toggle buttons for languages
-        const langActions: OnboardingAction[] = [
-          ...CONSULTATION_LANGUAGES.map(l => ({
-            label: l[lang],
-            value: l.code,
-            type: 'toggle' as const,
-            selected: l.code === 'es' || l.code === 'en', // Pre-select Spanish and English
-          })),
-          { label: lang === 'en' ? 'Done' : 'Listo', value: '__done__', type: 'primary' as const },
-        ];
-        askQuestion('languages', copy.askLanguages + (lang === 'en'
-          ? ' (Select all that apply, then click Done)'
-          : ' (Selecciona todos los que apliquen, luego haz clic en Listo)'), langActions);
-        return true;
-      }
-
-      case 'languages': {
-        // Handle both text input and multi-select done action
-        if (input === '__done__') {
-          // Languages were selected via toggle, already stored
-          if (!data.languages || data.languages.length === 0) {
-            data.languages = ['es', 'en'];
-          }
-        } else {
-          const langs = input.toLowerCase().split(/[,\s]+/).map(l => l.trim()).filter(Boolean);
-          const matchedLangs = langs.map(l => {
-            const match = CONSULTATION_LANGUAGES.find(
-              cl => cl.code === l || cl.en.toLowerCase().startsWith(l) || cl.es.toLowerCase().startsWith(l)
-            );
-            return match?.code;
-          }).filter(Boolean) as string[];
-          data.languages = matchedLangs.length > 0 ? matchedLangs : ['es', 'en'];
-        }
-        startConfirmationPhase();
-        return true;
-      }
-
       // Confirmation Phase
       case 'confirm_profile': {
-        // Handled by action click
         return true;
       }
 
       case 'edit_choice': {
-        // For simplicity, restart from beginning
-        // In production, would allow editing specific sections
         stableAppendMessage({
           text: lang === 'en'
             ? 'Let\'s start over. You can update any information.'
-            : 'Comencemos de nuevo. Puede actualizar cualquier información.',
+            : 'Comencemos de nuevo. Puede actualizar cualquier informaci\u00f3n.',
         });
         dataRef.current = { licenses: [], languages: ['es', 'en'] };
         setTimeout(() => {
@@ -1299,11 +982,12 @@ const PhysicianOnboardingAgent = forwardRef<
     }
   }, [
     state, question, copy, lang, stableAppendMessage, askQuestion, updateState,
-    startLicensingPhase, startSpecialtyPhase, startEducationPhase,
-    startIntellectualPhase, startPresencePhase, startConfirmationPhase,
+    startLicensingPhase, startIntellectualPhase, startPresencePhase,
+    startConfirmationPhase,
   ]);
 
-  // Handle action button clicks
+  // ── Handle action button clicks ──
+
   const handleActionClick = useCallback(async (value: string): Promise<boolean> => {
     const currentQuestion = question;
     const data = dataRef.current;
@@ -1311,20 +995,24 @@ const PhysicianOnboardingAgent = forwardRef<
     switch (currentQuestion) {
       case 'has_linkedin':
         if (value === 'yes') {
-          // Check if LinkedIn data was already imported via OAuth
-          if (linkedInData && !linkedInApplied.current) {
-            linkedInApplied.current = true;
+          const effectiveData: LinkedInImportData | undefined = sessionLinkedInData
+            ? {
+                fullName: sessionLinkedInData.fullName ?? undefined,
+                email: sessionLinkedInData.email ?? undefined,
+                photoUrl: sessionLinkedInData.photoUrl ?? undefined,
+              }
+            : linkedInData;
 
-            // Show confirmation message with imported data
+          if (effectiveData && !linkedInApplied.current) {
+            linkedInApplied.current = true;
             stableAppendMessage({
               text: lang === 'en'
                 ? `Great! We pulled your information from LinkedIn. Please confirm the data below:`
-                : `¡Excelente! Obtuvimos tu información de LinkedIn. Por favor confirma los datos a continuación:`,
-              linkedInPreview: linkedInData,
+                : `\u00a1Excelente! Obtuvimos tu informaci\u00f3n de LinkedIn. Por favor confirma los datos a continuaci\u00f3n:`,
+              linkedInPreview: effectiveData,
             } as OnboardingBotMessage);
 
-            // Store LinkedIn URL if we have name
-            if (linkedInData.fullName) {
+            if (effectiveData.fullName) {
               data.linkedinUrl = `https://linkedin.com/in/${sessionId || 'profile'}`;
               data.linkedinImported = true;
             }
@@ -1332,27 +1020,24 @@ const PhysicianOnboardingAgent = forwardRef<
             setQuestion('linkedin_confirm');
             updateState('awaiting_user');
           } else {
-            // Show connect button - will redirect to OAuth
             stableAppendMessage({
               text: lang === 'en'
-                ? 'Click the button below to connect your LinkedIn account. We\'ll import your profile information automatically.'
-                : 'Haz clic en el botón de abajo para conectar tu cuenta de LinkedIn. Importaremos tu información de perfil automáticamente.',
+                ? 'You can connect your LinkedIn account using the button below, or simply paste your LinkedIn profile URL.'
+                : 'Puedes conectar tu cuenta de LinkedIn con el bot\u00f3n de abajo, o simplemente pegar la URL de tu perfil de LinkedIn.',
               showLinkedInConnect: true,
             } as OnboardingBotMessage);
 
-            // Also offer manual entry as fallback
             askQuestion('linkedin_url',
               lang === 'en'
-                ? 'Or paste your LinkedIn profile URL here:'
-                : 'O pega la URL de tu perfil de LinkedIn aquí:'
+                ? 'Paste your LinkedIn profile URL here (e.g., https://linkedin.com/in/your-name):'
+                : 'Pega la URL de tu perfil de LinkedIn aqu\u00ed (ej., https://linkedin.com/in/su-nombre):'
             );
           }
         } else {
-          // No LinkedIn - ask for basic info manually
           stableAppendMessage({
             text: lang === 'en'
               ? 'No problem at all. Let\'s get to know you the old-fashioned way.'
-              : 'No hay problema. Conozcámosle de la manera tradicional.',
+              : 'No hay problema. Conozc\u00e1mosle de la manera tradicional.',
           });
           setTimeout(() => {
             askQuestion('full_name', copy.askFullName);
@@ -1360,48 +1045,51 @@ const PhysicianOnboardingAgent = forwardRef<
         }
         return true;
 
-      case 'linkedin_confirm':
-        if (value === 'linkedin_confirm' && linkedInData) {
-          // Apply LinkedIn data to profile
-          if (linkedInData.fullName) data.fullName = linkedInData.fullName;
-          if (linkedInData.email) data.email = linkedInData.email;
-          if (linkedInData.photoUrl) data.photoUrl = linkedInData.photoUrl;
-          if (linkedInData.medicalSchool) data.medicalSchool = linkedInData.medicalSchool;
-          if (linkedInData.graduationYear) data.graduationYear = linkedInData.graduationYear;
-          if (linkedInData.currentInstitutions) data.currentInstitutions = linkedInData.currentInstitutions;
+      case 'linkedin_confirm': {
+        const confirmData: LinkedInImportData | undefined = sessionLinkedInData
+          ? {
+              fullName: sessionLinkedInData.fullName ?? undefined,
+              email: sessionLinkedInData.email ?? undefined,
+              photoUrl: sessionLinkedInData.photoUrl ?? undefined,
+            }
+          : linkedInData;
+
+        if (value === 'linkedin_confirm' && confirmData) {
+          if (confirmData.fullName) data.fullName = confirmData.fullName;
+          if (confirmData.email) data.email = confirmData.email;
+          if (confirmData.photoUrl) data.photoUrl = confirmData.photoUrl;
+          if (confirmData.medicalSchool) data.medicalSchool = confirmData.medicalSchool;
+          if (confirmData.graduationYear) data.graduationYear = confirmData.graduationYear;
+          if (confirmData.currentInstitutions) data.currentInstitutions = confirmData.currentInstitutions;
           data.linkedinImported = true;
 
           stableAppendMessage({
             text: lang === 'en'
-              ? `✓ LinkedIn data confirmed!${linkedInData.fullName ? ` We've pre-filled your name` : ''}${linkedInData.email ? ' and email' : ''}.`
-              : `✓ ¡Datos de LinkedIn confirmados!${linkedInData.fullName ? ` Hemos pre-llenado tu nombre` : ''}${linkedInData.email ? ' y correo' : ''}.`,
+              ? `LinkedIn data confirmed!${confirmData.fullName ? ' We\'ve pre-filled your name' : ''}${confirmData.email ? ' and email' : ''}.`
+              : `\u00a1Datos de LinkedIn confirmados!${confirmData.fullName ? ' Hemos pre-llenado tu nombre' : ''}${confirmData.email ? ' y correo' : ''}.`,
           });
 
-          // If LinkedIn didn't provide fullName, ask for it first
-          if (!linkedInData.fullName) {
+          if (!confirmData.fullName) {
             setTimeout(() => {
               askQuestion('full_name', lang === 'en'
                 ? 'What is your full name, as it appears on your medical license? (LinkedIn didn\'t provide this)'
-                : '¿Cuál es su nombre completo, tal como aparece en su licencia médica? (LinkedIn no proporcionó esto)');
+                : '\u00bfCu\u00e1l es su nombre completo, tal como aparece en su licencia m\u00e9dica? (LinkedIn no proporcion\u00f3 esto)');
             }, 500);
-          } else if (!linkedInData.email) {
-            // If LinkedIn didn't provide email, ask for it
+          } else if (!confirmData.email) {
             setTimeout(() => {
               askQuestion('email', lang === 'en'
                 ? 'What is your professional email address? (LinkedIn didn\'t provide this)'
-                : '¿Cuál es su correo electrónico profesional? (LinkedIn no proporcionó esto)');
+                : '\u00bfCu\u00e1l es su correo electr\u00f3nico profesional? (LinkedIn no proporcion\u00f3 esto)');
             }, 500);
           } else {
-            // Both name and email available, proceed to licensing
             startLicensingPhase();
           }
           return true;
         } else if (value === 'linkedin_edit') {
-          // User wants to edit - ask for name and email manually
           stableAppendMessage({
             text: lang === 'en'
               ? 'No problem! Let\'s enter your information manually.'
-              : '¡No hay problema! Ingresemos tu información manualmente.',
+              : '\u00a1No hay problema! Ingresemos tu informaci\u00f3n manualmente.',
           });
           setTimeout(() => {
             askQuestion('full_name', copy.askFullName);
@@ -1409,42 +1097,33 @@ const PhysicianOnboardingAgent = forwardRef<
           return true;
         }
         return true;
+      }
 
-      case 'countries_licensed':
-        // Country quick-select
-        const country = LICENSED_COUNTRIES.find(c => c.code === value);
-        if (country) {
-          return handleUserInput(country.name);
-        }
-        break;
-
-      case 'usa_states':
-        return handleUserInput(value);
-
-      case 'primary_specialty':
-        return handleUserInput(value);
-
-      case 'sub_specialties':
-      case 'board_certifications':
-      case 'honors':
-      case 'fellowships':
-      case 'publications':
-      case 'presentations':
-      case 'books':
-      case 'website':
-      case 'social_profiles':
-        if (value === 'skip') {
-          return handleUserInput('skip');
+      case 'full_name':
+        if (value.startsWith('__accept_name__')) {
+          const acceptedName = value.replace('__accept_name__', '');
+          data.fullName = acceptedName;
+          stableAppendMessage({
+            text: lang === 'en'
+              ? `Great, ${acceptedName}!`
+              : `Perfecto, ${acceptedName}!`,
+          });
+          setTimeout(() => {
+            askQuestion('email', lang === 'en' ? 'What is your professional email address?' : '\u00bfCu\u00e1l es su correo electr\u00f3nico profesional?');
+          }, 400);
+          return true;
+        } else if (value === '__reject_name__') {
+          askQuestion('full_name', copy.askFullName);
+          return true;
         }
         break;
 
       case 'google_scholar':
         if (value === 'yes') {
-          // Show publication source options
           stableAppendMessage({
             text: lang === 'en'
               ? 'Great! How would you like to add your publications?'
-              : '¡Excelente! ¿Cómo te gustaría agregar tus publicaciones?',
+              : '\u00a1Excelente! \u00bfC\u00f3mo te gustar\u00eda agregar tus publicaciones?',
             actions: [
               { label: 'ResearchGate', value: 'researchgate', type: 'secondary' },
               { label: 'Academia.edu', value: 'academia', type: 'secondary' },
@@ -1455,9 +1134,9 @@ const PhysicianOnboardingAgent = forwardRef<
           setQuestion('publication_source');
           updateState('awaiting_user');
         } else {
-          askQuestion('presentations', copy.askPresentations, [
-            { label: copy.skipPrompt, value: 'skip', type: 'skip' },
-          ]);
+          // Skip publications entirely, go to presence
+          stableAppendMessage({ text: copy.intellectualNote });
+          setTimeout(() => startPresencePhase(), 600);
         }
         return true;
 
@@ -1478,7 +1157,7 @@ const PhysicianOnboardingAgent = forwardRef<
           askQuestion('pubmed_search',
             lang === 'en'
               ? 'Enter your name as it appears on PubMed (e.g., "Smith John" or ORCID ID):'
-              : 'Ingresa tu nombre como aparece en PubMed (ej., "García Juan" o ORCID ID):'
+              : 'Ingresa tu nombre como aparece en PubMed (ej., "Garc\u00eda Juan" o ORCID ID):'
           );
         } else if (value === 'manual') {
           stableAppendMessage({
@@ -1490,7 +1169,6 @@ const PhysicianOnboardingAgent = forwardRef<
           setQuestion('publications_manual');
           updateState('awaiting_user');
         } else if (value === 'retry') {
-          // Show source selection again
           stableAppendMessage({
             text: lang === 'en'
               ? 'Choose a different source for your publications:'
@@ -1515,11 +1193,10 @@ const PhysicianOnboardingAgent = forwardRef<
       case 'publications_select':
       case 'publications_manual':
         if (value === 'publications_cancel' || value === 'publications_done') {
-          // User finished with publications
           const pubCount = dataRef.current.publications?.length || 0;
           stableAppendMessage({
             text: pubCount > 0
-              ? (lang === 'en' ? `Great! ${pubCount} publication(s) added to your profile.` : `¡Excelente! ${pubCount} publicación(es) agregadas a tu perfil.`)
+              ? (lang === 'en' ? `Great! ${pubCount} publication(s) added to your profile.` : `\u00a1Excelente! ${pubCount} publicaci\u00f3n(es) agregadas a tu perfil.`)
               : (lang === 'en' ? 'No publications added.' : 'No se agregaron publicaciones.'),
           });
           askQuestion('presentations', copy.askPresentations, [
@@ -1528,22 +1205,17 @@ const PhysicianOnboardingAgent = forwardRef<
         }
         return true;
 
-      case 'available_days':
-        // Toggle day selection
-        const currentDays = dataRef.current.availableDays || [];
-        if (currentDays.includes(value)) {
-          dataRef.current.availableDays = currentDays.filter(d => d !== value);
-        } else {
-          dataRef.current.availableDays = [...currentDays, value];
+      case 'presentations':
+        if (value === 'skip') {
+          return handleUserInput('skip');
         }
-        // Continue to next question after any selection
-        return handleUserInput(dataRef.current.availableDays.join(', '));
+        break;
 
-      case 'timezone':
-        return handleUserInput(value);
-
-      case 'languages':
-        return handleUserInput(value);
+      case 'books':
+        if (value === 'skip') {
+          return handleUserInput('skip');
+        }
+        break;
 
       case 'confirm_profile':
         if (value === 'confirm') {
@@ -1557,15 +1229,15 @@ const PhysicianOnboardingAgent = forwardRef<
 
     return false;
   }, [
-    question, lang, copy, askQuestion, handleUserInput,
-    startLicensingPhase, completeOnboarding,
+    question, lang, copy, askQuestion, handleUserInput, updateState,
+    startLicensingPhase, startPresencePhase, completeOnboarding,
+    linkedInData, sessionLinkedInData, sessionId, stableAppendMessage,
   ]);
 
   // Start the onboarding
   const start = useCallback(() => {
     if (state !== 'idle') return;
     dataRef.current = { licenses: [], languages: ['es', 'en'] };
-    tempRef.current = {};
     startBriefing();
   }, [state, startBriefing]);
 
@@ -1584,7 +1256,6 @@ const PhysicianOnboardingAgent = forwardRef<
         : `Se agregaron ${publications.length} publicaciones a tu perfil.`,
     });
 
-    // Continue to presentations
     askQuestion('presentations', copy.askPresentations, [
       { label: copy.skipPrompt, value: 'skip', type: 'skip' },
     ]);
@@ -1611,20 +1282,10 @@ const PhysicianOnboardingAgent = forwardRef<
     } as OnboardingBotMessage);
   }, [lang, stableAppendMessage]);
 
-  // Update toggle data from parent component (for multi-select days/languages/specialties)
-  const updateToggleData = useCallback((values: string[]) => {
-    const data = dataRef.current;
-    // Determine what field to update based on current question
-    if (question === 'available_days') {
-      data.availableDays = values;
-    } else if (question === 'languages') {
-      data.languages = values.length > 0 ? values : ['es', 'en'];
-    } else if (question === 'primary_specialty') {
-      // Store all selected specialties temporarily in subSpecialties
-      // Will be split into primary + sub when processing __done__
-      data.subSpecialties = values;
-    }
-  }, [question]);
+  // Update toggle data (kept for backward compatibility)
+  const updateToggleData = useCallback((_values: string[]) => {
+    // No longer used for batched forms, but kept for interface compatibility
+  }, []);
 
   // Expose methods via ref
   useImperativeHandle(ref, () => ({
@@ -1636,6 +1297,14 @@ const PhysicianOnboardingAgent = forwardRef<
     handlePublicationSelection,
     handleManualPublication,
     updateToggleData,
+    handleLicensingSubmit,
+    handleSpecialtySubmit,
+    handleEducationSubmit,
+    handlePresenceSubmit,
+    handleFormCancel,
+    getCollectedData: () => ({ ...dataRef.current }),
+    getLicensedCountryCodes: () =>
+      (dataRef.current.licenses || []).map((l) => l.countryCode).filter(Boolean),
   }));
 
   return null;

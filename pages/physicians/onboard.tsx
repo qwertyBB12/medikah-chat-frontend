@@ -18,6 +18,10 @@ import PhysicianOnboardingAgent, {
 import LinkedInConnectButton, { LinkedInProfilePreview } from '../../components/LinkedInConnectButton';
 import PublicationSelector, { ManualPublicationForm } from '../../components/PublicationSelector';
 import PhysicianConsentModal, { PhysicianConsentData } from '../../components/PhysicianConsentModal';
+import BatchedLicensingForm from '../../components/physician/onboarding/BatchedLicensingForm';
+import BatchedSpecialtyForm from '../../components/physician/onboarding/BatchedSpecialtyForm';
+import BatchedEducationForm from '../../components/physician/onboarding/BatchedEducationForm';
+import BatchedPresenceForm from '../../components/physician/onboarding/BatchedPresenceForm';
 import { Publication, PublicationSource } from '../../lib/publications';
 import { savePhysicianConsent } from '../../lib/physicianClient';
 import { getPhysicianOnboardingStatus } from '../../lib/portalAuth';
@@ -44,6 +48,7 @@ type Message = {
     profileName?: string;
   };
   showManualPublicationForm?: boolean;
+  showBatchedForm?: 'licensing' | 'specialty' | 'education' | 'presence';
 };
 
 // Generate a unique session ID for LinkedIn OAuth
@@ -74,10 +79,14 @@ export default function PhysicianOnboardingPage() {
   const [agentState, setAgentState] = useState<OnboardingAgentState>('idle');
   const [completedPhysicianId, setCompletedPhysicianId] = useState<string | null>(null);
 
+  // LinkedIn data from NextAuth session (social login)
+  const sessionLinkedInData = session?.user?.linkedInProfile ?? null;
+
   // LinkedIn OAuth state
   const [sessionId] = useState(() => generateSessionId());
   const [linkedInData, setLinkedInData] = useState<Message['linkedInPreview'] | null>(null);
   const [linkedInConnected, setLinkedInConnected] = useState(false);
+  const returningFromLinkedIn = useRef(false);
 
   // Consent modal state
   const [showConsentModal, setShowConsentModal] = useState(false);
@@ -167,6 +176,7 @@ export default function PhysicianOnboardingPage() {
             linkedInPreview: message.linkedInPreview,
             showPublicationSelector: message.showPublicationSelector,
             showManualPublicationForm: message.showManualPublicationForm,
+            showBatchedForm: message.showBatchedForm,
           },
         ]);
 
@@ -193,64 +203,90 @@ export default function PhysicianOnboardingPage() {
     }, 0);
   }, [processMessageQueue]);
 
-  // Check for LinkedIn callback params
+  // Use LinkedIn data from NextAuth session if available
+  useEffect(() => {
+    if (sessionLinkedInData && !linkedInConnected && !linkedInData) {
+      setLinkedInData({
+        fullName: sessionLinkedInData.fullName ?? undefined,
+        email: sessionLinkedInData.email ?? undefined,
+        photoUrl: sessionLinkedInData.photoUrl ?? undefined,
+      });
+      setLinkedInConnected(true);
+    }
+  }, [sessionLinkedInData, linkedInConnected, linkedInData]);
+
+  // Check for LinkedIn callback params (fallback for custom OAuth flow)
   useEffect(() => {
     if (linkedInChecked.current) return;
     linkedInChecked.current = true;
+
+    // Skip if we already have LinkedIn data from session
+    if (sessionLinkedInData) return;
 
     const urlParams = new URLSearchParams(window.location.search);
     const linkedinStatus = urlParams.get('linkedin');
     const sessionParam = urlParams.get('session');
 
     if (linkedinStatus === 'connected' && sessionParam) {
+      returningFromLinkedIn.current = true;
       fetch(`/api/auth/linkedin/profile?session_id=${encodeURIComponent(sessionParam)}`)
         .then(res => res.json())
         .then(data => {
           if (data.success && data.mappedData) {
             setLinkedInData(data.mappedData);
             setLinkedInConnected(true);
-            const newUrl = window.location.pathname;
-            window.history.replaceState({}, '', newUrl);
+          } else {
+            returningFromLinkedIn.current = false;
           }
+          window.history.replaceState({}, '', window.location.pathname);
         })
         .catch(err => {
           console.error('Failed to fetch LinkedIn profile:', err);
+          returningFromLinkedIn.current = false;
+          window.history.replaceState({}, '', window.location.pathname);
         });
     } else if (linkedinStatus === 'error') {
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, '', newUrl);
+      window.history.replaceState({}, '', window.location.pathname);
     }
-  }, []);
+  }, [sessionLinkedInData]);
 
-  // Start the onboarding when page loads
+  // Start the onboarding when page loads — waits for LinkedIn data if returning from OAuth
   useEffect(() => {
     if (hasStarted.current) return;
     if (authStatus !== 'authenticated') return;
 
     const checkAndStart = () => {
-      if (agentRef.current && !hasStarted.current) {
-        hasStarted.current = true;
-        setTimeout(() => {
-          agentRef.current?.start();
-        }, 500);
-        return true;
+      if (!agentRef.current || hasStarted.current) return false;
+
+      // If returning from LinkedIn OAuth, wait until linkedInData is available
+      if (returningFromLinkedIn.current && !linkedInConnected) {
+        return false;
       }
-      return false;
+
+      hasStarted.current = true;
+      setTimeout(() => {
+        agentRef.current?.start();
+      }, 500);
+      return true;
     };
 
     if (checkAndStart()) return;
 
     let attempts = 0;
-    const maxAttempts = 10;
+    const maxAttempts = 50;
     const interval = setInterval(() => {
       attempts++;
       if (checkAndStart() || attempts >= maxAttempts) {
         clearInterval(interval);
+        if (!hasStarted.current && agentRef.current) {
+          hasStarted.current = true;
+          agentRef.current.start();
+        }
       }
     }, 100);
 
     return () => clearInterval(interval);
-  }, [authStatus]);
+  }, [authStatus, linkedInConnected]);
 
   // Append message from agent (with queuing for timing)
   const appendMessage = useCallback((message: OnboardingBotMessage) => {
@@ -599,6 +635,44 @@ export default function PhysicianOnboardingPage() {
                         />
                       </div>
                     )}
+
+                    {/* Batched Form Components */}
+                    {message.showBatchedForm === 'licensing' && (
+                      <div className="mt-4">
+                        <BatchedLicensingForm
+                          lang={lang}
+                          onSubmit={(data) => agentRef.current?.handleLicensingSubmit?.(data)}
+                          onCancel={() => agentRef.current?.handleFormCancel?.()}
+                        />
+                      </div>
+                    )}
+                    {message.showBatchedForm === 'specialty' && (
+                      <div className="mt-4">
+                        <BatchedSpecialtyForm
+                          lang={lang}
+                          onSubmit={(data) => agentRef.current?.handleSpecialtySubmit?.(data)}
+                          onCancel={() => agentRef.current?.handleFormCancel?.()}
+                        />
+                      </div>
+                    )}
+                    {message.showBatchedForm === 'education' && (
+                      <div className="mt-4">
+                        <BatchedEducationForm
+                          lang={lang}
+                          onSubmit={(data) => agentRef.current?.handleEducationSubmit?.(data)}
+                          onCancel={() => agentRef.current?.handleFormCancel?.()}
+                        />
+                      </div>
+                    )}
+                    {message.showBatchedForm === 'presence' && (
+                      <div className="mt-4">
+                        <BatchedPresenceForm
+                          lang={lang}
+                          onSubmit={(data) => agentRef.current?.handlePresenceSubmit?.(data)}
+                          onCancel={() => agentRef.current?.handleFormCancel?.()}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -664,6 +738,11 @@ export default function PhysicianOnboardingPage() {
         onProfileReady={handleProfileReady}
         linkedInData={linkedInConnected && linkedInData ? linkedInData : undefined}
         sessionId={sessionId}
+        sessionLinkedInData={sessionLinkedInData ? {
+          fullName: sessionLinkedInData.fullName,
+          email: sessionLinkedInData.email,
+          photoUrl: sessionLinkedInData.photoUrl,
+        } : undefined}
       />
     </>
   );

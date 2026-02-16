@@ -511,3 +511,215 @@ export const TIMEZONES_BY_COUNTRY: Record<string, { value: string; label: string
     { value: 'America/Puerto_Rico', label: 'Puerto Rico (AST)' },
   ],
 };
+
+// Batched form labels (bilingual)
+export interface BatchedFormLabels {
+  // Common
+  back: string;
+  continue: string;
+  add: string;
+  remove: string;
+  optional: string;
+  country: string;
+  selectCountry: string;
+  year: string;
+
+  // Licensing form
+  licensingTitle: string;
+  licensingDescription: string;
+  state: string;
+  selectState: string;
+  licenseType: string;
+  licenseNumber: string;
+  enterLicenseNumber: string;
+  addAnotherLicense: string;
+  removeLicense: string;
+
+  // Specialty form
+  specialtyTitle: string;
+  specialtyDescription: string;
+  primarySpecialty: string;
+  selectPrimarySpecialty: string;
+  subSpecialties: string;
+  addCustomSpecialty: string;
+  boardCertifications: string;
+  certifyingBoard: string;
+  certificationName: string;
+  addCertification: string;
+
+  // Education form
+  educationTitle: string;
+  educationDescription: string;
+  medicalSchoolSection: string;
+  medicalSchoolName: string;
+  enterMedicalSchool: string;
+  graduationYear: string;
+  enterValidYear: string;
+  honors: string;
+  honorsPlaceholder: string;
+  residencySection: string;
+  institutionName: string;
+  startYear: string;
+  endYear: string;
+  addResidency: string;
+  fellowshipsSection: string;
+  specialtyField: string;
+  addFellowship: string;
+
+  // Presence form
+  presenceTitle: string;
+  presenceDescription: string;
+  currentPractice: string;
+  institutions: string;
+  institutionsPlaceholder: string;
+  website: string;
+  availabilitySection: string;
+  availableDays: string;
+  selectAtLeastOneDay: string;
+  startTime: string;
+  endTime: string;
+  timezone: string;
+  consultationLanguages: string;
+  selectAtLeastOneLanguage: string;
+}
+
+export const batchedFormLabels: Record<SupportedLang, BatchedFormLabels> = {
+  en: {
+    // Common
+    back: 'Back',
+    continue: 'Continue',
+    add: 'Add',
+    remove: 'Remove',
+    optional: '(optional)',
+    country: 'Country',
+    selectCountry: 'Select country',
+    year: 'Year',
+
+    // Licensing
+    licensingTitle: 'Medical Licenses',
+    licensingDescription: 'Enter all countries where you hold active medical licenses. Your licenses define where you can serve patients in the Medikah network.',
+    state: 'State',
+    selectState: 'Select state',
+    licenseType: 'License Type',
+    licenseNumber: 'License Number',
+    enterLicenseNumber: 'Enter license number',
+    addAnotherLicense: 'Add another license',
+    removeLicense: 'Remove license',
+
+    // Specialty
+    specialtyTitle: 'Specialty & Certifications',
+    specialtyDescription: 'Select your medical specialties and board certifications. This helps patients find the right specialist.',
+    primarySpecialty: 'Primary Specialty',
+    selectPrimarySpecialty: 'Select your primary specialty',
+    subSpecialties: 'Sub-specialties',
+    addCustomSpecialty: 'Type to add a custom specialty...',
+    boardCertifications: 'Board Certifications',
+    certifyingBoard: 'Certifying board',
+    certificationName: 'Certification name',
+    addCertification: 'Add certification',
+
+    // Education
+    educationTitle: 'Education & Training',
+    educationDescription: 'Tell us about your medical education, residency, and any advanced training.',
+    medicalSchoolSection: 'Medical School',
+    medicalSchoolName: 'School Name',
+    enterMedicalSchool: 'Enter medical school name',
+    graduationYear: 'Graduation Year',
+    enterValidYear: 'Please enter a valid year',
+    honors: 'Honors & Distinctions',
+    honorsPlaceholder: 'e.g., Cum Laude, Dean\'s List, scholarships...',
+    residencySection: 'Residency',
+    institutionName: 'Institution name',
+    startYear: 'Start year',
+    endYear: 'End year',
+    addResidency: 'Add another residency',
+    fellowshipsSection: 'Fellowships',
+    specialtyField: 'Specialty/Field',
+    addFellowship: 'Add fellowship',
+
+    // Presence
+    presenceTitle: 'Practice & Availability',
+    presenceDescription: 'Where do you practice and when are you available for consultations?',
+    currentPractice: 'Current Practice',
+    institutions: 'Hospital, Clinic, or Practice',
+    institutionsPlaceholder: 'e.g., Mayo Clinic, Private Practice...',
+    website: 'Website',
+    availabilitySection: 'Availability',
+    availableDays: 'Available Days',
+    selectAtLeastOneDay: 'Please select at least one day',
+    startTime: 'Start Time',
+    endTime: 'End Time',
+    timezone: 'Timezone',
+    consultationLanguages: 'Consultation Languages',
+    selectAtLeastOneLanguage: 'Please select at least one language',
+  },
+  es: {
+    // Common
+    back: 'Atr\u00e1s',
+    continue: 'Continuar',
+    add: 'Agregar',
+    remove: 'Eliminar',
+    optional: '(opcional)',
+    country: 'Pa\u00eds',
+    selectCountry: 'Seleccionar pa\u00eds',
+    year: 'A\u00f1o',
+
+    // Licensing
+    licensingTitle: 'Licencias M\u00e9dicas',
+    licensingDescription: 'Ingrese todos los pa\u00edses donde tiene licencias m\u00e9dicas activas. Sus licencias definen d\u00f3nde puede atender pacientes en la red Medikah.',
+    state: 'Estado',
+    selectState: 'Seleccionar estado',
+    licenseType: 'Tipo de Licencia',
+    licenseNumber: 'N\u00famero de Licencia',
+    enterLicenseNumber: 'Ingrese n\u00famero de licencia',
+    addAnotherLicense: 'Agregar otra licencia',
+    removeLicense: 'Eliminar licencia',
+
+    // Specialty
+    specialtyTitle: 'Especialidad y Certificaciones',
+    specialtyDescription: 'Seleccione sus especialidades m\u00e9dicas y certificaciones de consejo. Esto ayuda a los pacientes a encontrar al especialista adecuado.',
+    primarySpecialty: 'Especialidad Principal',
+    selectPrimarySpecialty: 'Seleccione su especialidad principal',
+    subSpecialties: 'Subespecialidades',
+    addCustomSpecialty: 'Escriba para agregar una especialidad...',
+    boardCertifications: 'Certificaciones de Consejo',
+    certifyingBoard: 'Consejo certificador',
+    certificationName: 'Nombre de certificaci\u00f3n',
+    addCertification: 'Agregar certificaci\u00f3n',
+
+    // Education
+    educationTitle: 'Educaci\u00f3n y Formaci\u00f3n',
+    educationDescription: 'Cu\u00e9ntenos sobre su educaci\u00f3n m\u00e9dica, residencia y formaci\u00f3n avanzada.',
+    medicalSchoolSection: 'Escuela de Medicina',
+    medicalSchoolName: 'Nombre de la Escuela',
+    enterMedicalSchool: 'Ingrese nombre de la escuela de medicina',
+    graduationYear: 'A\u00f1o de Graduaci\u00f3n',
+    enterValidYear: 'Por favor ingrese un a\u00f1o v\u00e1lido',
+    honors: 'Honores y Distinciones',
+    honorsPlaceholder: 'ej., Cum Laude, Lista del Dec\u00e1n, becas...',
+    residencySection: 'Residencia',
+    institutionName: 'Nombre de la instituci\u00f3n',
+    startYear: 'A\u00f1o inicio',
+    endYear: 'A\u00f1o fin',
+    addResidency: 'Agregar otra residencia',
+    fellowshipsSection: 'Fellowships',
+    specialtyField: 'Especialidad/Campo',
+    addFellowship: 'Agregar fellowship',
+
+    // Presence
+    presenceTitle: 'Pr\u00e1ctica y Disponibilidad',
+    presenceDescription: '\u00bfD\u00f3nde ejerce y cu\u00e1ndo est\u00e1 disponible para consultas?',
+    currentPractice: 'Pr\u00e1ctica Actual',
+    institutions: 'Hospital, Cl\u00ednica o Consultorio',
+    institutionsPlaceholder: 'ej., Hospital General, Consultorio Privado...',
+    website: 'Sitio Web',
+    availabilitySection: 'Disponibilidad',
+    availableDays: 'D\u00edas Disponibles',
+    selectAtLeastOneDay: 'Por favor seleccione al menos un d\u00eda',
+    startTime: 'Hora de Inicio',
+    endTime: 'Hora de Fin',
+    timezone: 'Zona Horaria',
+    consultationLanguages: 'Idiomas de Consulta',
+    selectAtLeastOneLanguage: 'Por favor seleccione al menos un idioma',
+  },
+};

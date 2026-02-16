@@ -1,36 +1,37 @@
 import Head from 'next/head';
 import Nav from '../components/landing/Nav';
 import Hero from '../components/landing/Hero';
-import Values from '../components/landing/Values';
-import WhyExists from '../components/landing/WhyExists';
-import Audiences from '../components/landing/Audiences';
-import Architecture from '../components/landing/Architecture';
-import CrossBorder from '../components/landing/CrossBorder';
-import Governance from '../components/landing/Governance';
-import ClosingStatement from '../components/landing/ClosingStatement';
+import CurveDivider from '../components/landing/CurveDivider';
+import HowItWorks from '../components/landing/HowItWorks';
+import HorizontalStats from '../components/landing/HorizontalStats';
+import Monument from '../components/landing/Monument';
+import StaggeredGrid from '../components/landing/StaggeredGrid';
+import ChatShowcase from '../components/landing/ChatShowcase';
+import DarkFeatures from '../components/landing/DarkFeatures';
+import Collaborators from '../components/landing/Collaborators';
+import CTAMonument from '../components/landing/CTAMonument';
 import RegulatoryDisclosure from '../components/landing/RegulatoryDisclosure';
 import Waitlist from '../components/landing/Waitlist';
 import LandingFooter from '../components/landing/LandingFooter';
-import FadeInSection from '../components/landing/FadeInSection';
 
 export default function LandingPage() {
   return (
     <>
       <Head>
-        <title>Medikah — Connect With Physicians Across Borders</title>
-        <meta name="description" content="Medikah coordinates healthcare across the Americas with continuity, compliance, and institutional rigor." />
+        <title>Medikah — Care That Crosses Borders</title>
+        <meta name="description" content="Medikah coordinates healthcare across the Americas. AI-powered triage, verified physicians, secure telemedicine — in your language, on your terms." />
         <link rel="canonical" href="https://medikah.health/" />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://medikah.health/" />
-        <meta property="og:title" content="Medikah — Connect With Physicians Across Borders" />
-        <meta property="og:description" content="Medikah coordinates healthcare across the Americas with continuity, compliance, and institutional rigor." />
+        <meta property="og:title" content="Medikah — Care That Crosses Borders" />
+        <meta property="og:description" content="AI-powered triage, verified physicians, secure telemedicine — in your language, on your terms." />
         <meta property="og:image" content="https://medikah.health/og-image.png" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta property="og:site_name" content="Medikah" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Medikah — Connect With Physicians Across Borders" />
-        <meta name="twitter:description" content="Medikah coordinates healthcare across the Americas with continuity, compliance, and institutional rigor." />
+        <meta name="twitter:title" content="Medikah — Care That Crosses Borders" />
+        <meta name="twitter:description" content="AI-powered triage, verified physicians, secure telemedicine — in your language, on your terms." />
         <meta name="twitter:image" content="https://medikah.health/og-image.png" />
         <script
           type="application/ld+json"
@@ -62,20 +63,53 @@ export default function LandingPage() {
 
       <Nav />
 
-      <main id="main-content" className="font-body pt-20 landing-sections">
+      <main id="main-content" className="font-body bg-linen" style={{ scrollBehavior: 'smooth' }}>
+        {/* 1. Hero — warm gray gradient, CARE THAT / CROSSES BORDERS */}
         <Hero />
-        <FadeInSection><Values /></FadeInSection>
-        <FadeInSection><WhyExists /></FadeInSection>
-        <FadeInSection><Audiences /></FadeInSection>
-        <FadeInSection><Architecture /></FadeInSection>
-        <FadeInSection><CrossBorder /></FadeInSection>
-        <FadeInSection><Governance /></FadeInSection>
-        {/* Future: Medikah Institutional Research section
-            (white papers, policy briefs, clinical case studies)
-            attributed to "Medikah Research" — not founder narrative content */}
-        <FadeInSection><ClosingStatement /></FadeInSection>
+
+        {/* Curve: dark to linen */}
+        <CurveDivider from="#2D2B29" bg="#F0EAE0" />
+
+        {/* 2. How It Works — split pinned/scrolling */}
+        <HowItWorks />
+
+        {/* Curve: linen-warm to dark */}
+        <CurveDivider from="#E8E0D5" bg="#1A1918" flip />
+
+        {/* 3. Horizontal Stats — scroll-jacked */}
+        <HorizontalStats />
+
+        {/* 4. Monument — 24/7 */}
+        <Monument />
+
+        {/* Curve: linen to linen-light */}
+        <CurveDivider from="#F0EAE0" bg="#F5F1EA" />
+
+        {/* 5. Staggered Grid — Patient & Physician cards */}
+        <StaggeredGrid />
+
+        {/* 6. Chat UI Showcase — THE MEDIKAH EXPERIENCE */}
+        <ChatShowcase />
+
+        {/* Curve: linen-warm to dark */}
+        <CurveDivider from="#E8E0D5" bg="#1A1918" flip />
+
+        {/* 7. Dark Features — The Platform */}
+        <DarkFeatures />
+
+        {/* 8. Collaborators */}
+        <Collaborators />
+
+        {/* 9. CTA Monument */}
+        <CTAMonument />
+
+        {/* Regulatory disclosure */}
         <RegulatoryDisclosure />
+
+        {/* Waitlist */}
         <Waitlist />
+
+        {/* Footer — warm gray gradient, rounded top */}
         <LandingFooter />
       </main>
     </>

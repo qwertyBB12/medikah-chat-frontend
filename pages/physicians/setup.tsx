@@ -6,6 +6,7 @@
  */
 
 import Head from 'next/head';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { signIn } from 'next-auth/react';
@@ -264,9 +265,14 @@ export default function PhysicianSetup() {
           </div>
 
           {/* Footer */}
-          <p className="text-center text-xs text-body-slate/60 mt-6">
-            Medikah Corporation · Delaware, USA
-          </p>
+          <div className="text-center text-[11px] text-body-slate/60 mt-6 space-y-1">
+            <p>&copy; {new Date().getFullYear()} Medikah Corporation</p>
+            <p>
+              <Link href="/privacy" className="hover:text-body-slate transition">Privacy Policy</Link>
+              <span className="mx-1.5">·</span>
+              <Link href="/terms" className="hover:text-body-slate transition">Terms of Service</Link>
+            </p>
+          </div>
         </div>
       </div>
     </>
