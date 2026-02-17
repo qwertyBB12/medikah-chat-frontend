@@ -28,7 +28,7 @@ export default function Perspectives({ items }: Props) {
           Perspectives
         </h2>
         <p className="font-light text-center text-white/70 mb-14 max-w-xl mx-auto">
-          Curated writing and conversations from across the ecosystem.
+          Curated writing and conversations on hemispheric health coordination.
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
