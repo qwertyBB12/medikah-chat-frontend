@@ -48,7 +48,7 @@ export default function DarkFeatures() {
     <section
       className="relative"
       style={{
-        background: 'linear-gradient(180deg, #1A1918 0%, #2D2B29 100%)',
+        background: 'linear-gradient(180deg, #0D1520 0%, #1B2A41 100%)',
       }}
       id="physicians"
     >

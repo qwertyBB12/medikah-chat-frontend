@@ -22,7 +22,7 @@ export default function Hero() {
     <section
       className="relative min-h-screen flex flex-col items-center justify-center text-center overflow-hidden"
       style={{
-        background: 'linear-gradient(180deg, #2D2B29 0%, #1A1918 100%)',
+        background: 'linear-gradient(180deg, #1B2A41 0%, #0D1520 100%)',
       }}
     >
       {/* Grain texture overlay */}
@@ -41,7 +41,7 @@ export default function Hero() {
         />
         <div
           className="absolute w-[320px] h-[320px] rounded-full opacity-[0.08]"
-          style={{ background: '#B0ABA6', top: '20%', right: '15%' }}
+          style={{ background: '#3A5A85', top: '20%', right: '15%' }}
         />
       </div>
 

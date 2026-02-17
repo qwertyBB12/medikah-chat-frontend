@@ -9,7 +9,7 @@ export default function LandingFooter() {
     <footer
       className="relative overflow-hidden"
       style={{
-        background: 'linear-gradient(180deg, #2D2B29 0%, #1A1918 100%)',
+        background: 'linear-gradient(180deg, #1B2A41 0%, #0D1520 100%)',
         borderRadius: '32px 32px 0 0',
       }}
     >

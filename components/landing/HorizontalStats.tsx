@@ -72,7 +72,7 @@ export default function HorizontalStats() {
       <div
         className="sticky top-0 h-screen overflow-hidden flex items-center relative"
         style={{
-          background: 'linear-gradient(135deg, #1A1918 0%, #2D2B29 100%)',
+          background: 'linear-gradient(135deg, #0D1520 0%, #1B2A41 100%)',
         }}
       >
         {/* Grain */}

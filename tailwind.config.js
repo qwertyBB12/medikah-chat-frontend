@@ -22,18 +22,18 @@ module.exports = {
         },
         'steady-teal': '#E8F4F6',
 
-        // Warm Gray — replaces Institutional Navy
+        // Institutional Navy — authority/darks
         'warm-gray': {
-          900: '#1A1918',
-          800: '#2D2B29',
-          700: '#3F3D3A',
-          600: '#5A5754',
-          500: '#6B6360',
-          400: '#8A8580',
-          300: '#B0ABA6',
+          900: '#0D1520',
+          800: '#1B2A41',
+          700: '#243856',
+          600: '#2E476B',
+          500: '#3A5A85',
+          400: '#5A7AAA',
+          300: '#A8B4C0',
         },
-        // Backward-compat alias: inst-blue now maps to warm-gray-800
-        'inst-blue': '#2D2B29',
+        // inst-blue maps to navy-800
+        'inst-blue': '#1B2A41',
 
         // Linen — ground
         'linen': '#F0EAE0',
@@ -53,13 +53,13 @@ module.exports = {
           100: '#FFFFFF',
           300: '#F5F0EA',
           400: '#EBE4DC',
-          500: '#C4BEB8',
+          500: '#A8B4C0',
         },
 
         // Text semantic
         'text-primary': '#1C1C1E',
-        'text-secondary': '#4A4744',
-        'text-muted': '#7A7572',
+        'text-secondary': '#4A5568',
+        'text-muted': '#718096',
 
         // Semantic
         'confirm-green': '#2D7D5F',

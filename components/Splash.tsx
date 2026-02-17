@@ -23,7 +23,7 @@ export default function Splash({
     <div
       className="relative min-h-screen flex flex-col justify-center px-6 py-16"
       style={{
-        background: 'linear-gradient(180deg, #2D2B29 0%, #1A1918 100%)',
+        background: 'linear-gradient(180deg, #1B2A41 0%, #0D1520 100%)',
       }}
     >
       <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-12 text-center">
