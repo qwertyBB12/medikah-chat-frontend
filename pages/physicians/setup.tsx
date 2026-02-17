@@ -258,7 +258,7 @@ export default function PhysicianSetup() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <h2 className="text-xl font-bold text-inst-blue mb-2">Password Set!</h2>
+                <h2 className="text-xl font-bold text-inst-blue mb-2">Password Set</h2>
                 <p className="text-body-slate">Signing you in...</p>
               </div>
             )}
