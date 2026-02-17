@@ -60,7 +60,7 @@ export default function BatchedSpecialtyForm({
   const addCustomSpecialty = useCallback(() => {
     const trimmed = customSpecialty.trim();
     if (trimmed && !selectedSubSpecialties.has(trimmed)) {
-      setSelectedSubSpecialties((prev) => new Set([...prev, trimmed]));
+      setSelectedSubSpecialties((prev) => new Set([...Array.from(prev), trimmed]));
       setCustomSpecialty('');
     }
   }, [customSpecialty, selectedSubSpecialties]);

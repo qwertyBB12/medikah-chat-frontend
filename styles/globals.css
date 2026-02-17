@@ -45,7 +45,7 @@
 .prose-medikah h2 {
   font-size: 28px;
   font-weight: 800;
-  color: #2D2B29;
+  color: #1B2A41;
   line-height: 1.2;
   letter-spacing: -0.01em;
   margin: 48px 0 20px;
@@ -213,7 +213,7 @@
   transform: translateX(-50%);
   z-index: 10000;
   padding: 12px 24px;
-  background: #2D2B29;
+  background: #1B2A41;
   color: #FFFFFF;
   font-family: var(--font-mulish), 'Mulish', sans-serif;
   font-size: 16px;

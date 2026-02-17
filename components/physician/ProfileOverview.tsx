@@ -41,7 +41,7 @@ const content = {
 
 function computeCompleteness(props: ProfileOverviewProps): number {
   let filled = 0;
-  let total = 5;
+  const total = 5;
   if (props.physicianName) filled++;
   if (props.email) filled++;
   if (props.specialty) filled++;

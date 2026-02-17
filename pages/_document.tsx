@@ -11,7 +11,7 @@ export default function Document() {
         <link rel="icon" href="/favicon-96x96.png" type="image/png" sizes="96x96" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/site.webmanifest" />
-        <meta name="theme-color" content="#2D2B29" />
+        <meta name="theme-color" content="#1B2A41" />
       </Head>
       <body className={`${mulish.variable} ${ibmPlexMono.variable} ${fraunces.variable} ${instrumentSerif.variable} ${inter.variable} ${playfairDisplay.variable} ${sourceSans3.variable} ${dmSerifDisplay.variable} ${dmSans.variable} ${oswald.variable} font-body`}>
         <Main />
