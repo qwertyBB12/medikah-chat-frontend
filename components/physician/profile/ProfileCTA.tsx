@@ -37,8 +37,8 @@ export default function ProfileCTA({
 
           <p className="text-lg text-white/80 leading-[1.7] max-w-[65ch] mx-auto mb-12">
             {isEs
-              ? 'Coordinación de salud que cruza fronteras. Atención que nunca lo hace.'
-              : 'Healthcare coordination that crosses borders. Care that never does.'}
+              ? 'Atención sin distancia.'
+              : 'Care Without Distance.'}
           </p>
 
           <button

@@ -16,10 +16,10 @@
 Uses Institutional Navy `#1B2A41` (`inst-blue`) as dominant brand color. Clinical Teal `#2C7A8C` is the accent/CTA color. See parent CLAUDE.md for rationale.
 
 @override typography
-Uses DM Sans (UI) and DM Serif (display) alongside Mulish (body). Predates governance layer. Medikah wordmark uses Mulish lowercase per governance.
+Uses Oswald (`font-heading`) for ALL CAPS display headlines, DM Sans (`font-dm-sans`) for UI labels/buttons, DM Serif (`font-dm-serif`) for accent display, and Mulish (`font-body`) for body text + wordmark. Predates governance layer. Medikah wordmark uses Mulish lowercase per governance.
 
 @override border-radius
-Uses variable radii: `rounded-sm` (2px, auth), `rounded-lg`/`rounded-xl` (8-12px, cards). Governance specifies 4px for Medikah.
+Uses custom radii in `tailwind.config.js`: `rounded-sm` (8px), `rounded-md` (16px), `rounded-lg` (24px), `rounded-xl` (32px). Governance specifies 4px for Medikah.
 
 ---
 
@@ -98,11 +98,10 @@ Uses variable radii: `rounded-sm` (2px, auth), `rounded-lg`/`rounded-xl` (8-12px
 - **Tier 3 Manual:** Queue for human review
 
 ### Landing Page (`/`)
-- Hero section with value proposition
+- Hero with Oswald ALL CAPS headlines, alternating light/dark sections with curve dividers
+- Key sections: HowItWorks, HorizontalStats, Monument, StaggeredGrid, ChatShowcase, DarkFeatures, Collaborators, CTAMonument, RegulatoryDisclosure, Waitlist, LandingFooter
 - Multi-audience targeting (patients, physicians, insurers, employers)
-- Architecture diagram
 - Governance and regulatory disclosure
-- Waitlist signup
 
 ### Legal Pages
 - Privacy Policy (`/privacy`) - 38KB comprehensive document
@@ -196,9 +195,15 @@ Schemas are managed in a separate Sanity Studio (not in this repo).
 ## Design System
 
 ### Typography
-**Primary Font:** Mulish (weights: 300, 400, 600, 700, 800, 900)
 
-Display/accent fonts available but Mulish is the standard for all UI text.
+| Font | Tailwind Class | Role |
+|------|---------------|------|
+| Mulish | `font-body` | Body text, wordmark |
+| Oswald | `font-heading` | Display headlines, ALL CAPS sections |
+| DM Sans | `font-dm-sans` | UI labels, buttons, auth forms |
+| DM Serif | `font-dm-serif` | Accent display |
+
+Mulish weights: 300, 400, 600, 700, 800, 900.
 
 ### Color Palette
 
