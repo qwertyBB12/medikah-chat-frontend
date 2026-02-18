@@ -6,24 +6,24 @@ export default function Hero() {
   const locale = (router.locale || 'en') as 'en' | 'es';
 
   const t = {
-    eyebrow: { en: 'Cross-Border Coordination', es: 'Coordinaci\u00f3n Transfronteriza' },
-    line1: { en: 'Connect With Physicians', es: 'Con\u00e9ctese Con M\u00e9dicos' },
-    line2: { en: 'Across Borders', es: 'A Trav\u00e9s De Fronteras' },
+    eyebrow: { en: 'Human Care, No Borders', es: 'Atención humana, sin fronteras' },
+    line1: { en: 'Connect With Physicians', es: 'Conéctese con médicos' },
+    line2: { en: 'Across Borders', es: 'más allá de la frontera' },
     subtitle: {
-      en: 'Receive Care Where They\u2019re Licensed.',
-      es: 'Reciba Atenci\u00f3n Donde Est\u00e1n Autorizados.',
+      en: 'Care from real doctors. In your language. Wherever you are.',
+      es: 'Médicos reales. En su idioma. Donde usted esté.',
     },
     body1: {
-      en: 'The Americas function as one medical theater \u2014 but systems remain divided by borders that families and physicians routinely cross.',
-      es: 'Las Am\u00e9ricas funcionan como un solo teatro m\u00e9dico \u2014 pero los sistemas permanecen divididos por fronteras que familias y m\u00e9dicos cruzan rutinariamente.',
+      en: 'Families cross borders every day \u2014 but healthcare stops at the line. Patients lose access. Doctors lose reach. Care gets interrupted.',
+      es: 'Las familias cruzan fronteras a diario \u2014 pero la salud se queda del otro lado. Los pacientes pierden acceso. Los médicos pierden alcance. La atención se interrumpe.',
     },
     body2: {
-      en: 'Medikah provides the coordination infrastructure these realities require. Not as innovation. As institutional necessity.',
-      es: 'Medikah provee la infraestructura de coordinaci\u00f3n que estas realidades requieren. No como innovaci\u00f3n. Como necesidad institucional.',
+      en: 'Medikah removes those barriers so patients and doctors can focus on what matters \u2014 the consultation, the relationship, the care.',
+      es: 'Medikah elimina esas barreras para que pacientes y médicos se concentren en lo que importa \u2014 la consulta, la relación, el cuidado.',
     },
-    ctaPrimary: { en: 'Begin Coordination', es: 'Iniciar Coordinaci\u00f3n' },
-    ctaSecondary: { en: 'Institutional Partnerships', es: 'Alianzas Institucionales' },
-    scroll: { en: 'Scroll', es: 'Desplazar' },
+    ctaPrimary: { en: 'Find a doctor', es: 'Encontrar un médico' },
+    ctaSecondary: { en: 'For institutions', es: 'Para instituciones' },
+    scroll: { en: 'Scroll', es: 'Deslizar' },
   };
 
   return (
@@ -113,7 +113,7 @@ export default function Hero() {
 
         {/* Trust badges */}
         <div className="flex gap-3 justify-center mt-[clamp(2rem,4vh,3rem)] flex-wrap">
-          {['HIPAA Compliant', 'Bilingual EN/ES', 'Cross-Border'].map((badge) => (
+          {['HIPAA Compliant', 'English & Spanish', 'The Americas'].map((badge) => (
             <span key={badge} className="inline-flex items-center font-body text-[0.6875rem] font-medium uppercase tracking-[0.04em] text-teal-300 bg-[rgba(44,122,140,0.15)] px-3.5 py-[5px] rounded-lg">
               {badge}
             </span>

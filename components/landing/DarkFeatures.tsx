@@ -5,33 +5,33 @@ type Locale = 'en' | 'es';
 const FEATURES = [
   {
     roman: 'I',
-    eyebrow: { en: 'Intelligence', es: 'Inteligencia' },
-    title: { en: 'Cross-Border\nCoordination', es: 'Coordinaci\u00f3n\nTransfronteriza' },
+    eyebrow: { en: 'Listening', es: 'Escuchar' },
+    title: { en: 'We listen in\nboth languages', es: 'Escuchamos en\nambos idiomas' },
     body: {
-      en: 'Conversational intake technology that captures health concerns in both languages, organizes information for physician review, and navigates cross-border regulatory requirements automatically.',
-      es: 'Tecnolog\u00eda de admisi\u00f3n conversacional que captura inquietudes de salud en ambos idiomas, organiza informaci\u00f3n para revisi\u00f3n m\u00e9dica, y navega requisitos regulatorios transfronterizos autom\u00e1ticamente.',
+      en: 'Tell us what you need in English or Spanish. We organize your information and navigate the cross-border requirements \u2014 so your doctor gets a complete picture before you even meet.',
+      es: 'Cuéntenos lo que necesita en inglés o español. Organizamos su información y gestionamos los requisitos entre países \u2014 para que su médico tenga el panorama completo antes de conocerse.',
     },
     tags: ['Bilingual', 'Automated', '24/7'],
   },
   {
     roman: 'II',
-    eyebrow: { en: 'Network', es: 'Red' },
-    title: { en: 'Physician\nNetwork', es: 'Red de\nM\u00e9dicos' },
+    eyebrow: { en: 'Trust', es: 'Confianza' },
+    title: { en: 'Every doctor\nis verified', es: 'Cada médico\nestá verificado' },
     body: {
-      en: 'Verified physicians across borders with three-tier credential verification. Auto-verify through COFEPRIS and US State Medical Boards, semi-auto LinkedIn matching, manual review queue.',
-      es: 'M\u00e9dicos verificados transfronterizamente con verificaci\u00f3n de credenciales de tres niveles. Verificaci\u00f3n autom\u00e1tica a trav\u00e9s de COFEPRIS y juntas m\u00e9dicas de EE.UU.',
+      en: 'Three levels of verification \u2014 automated license checks through COFEPRIS and US medical boards, professional profile matching, and manual review. Because trust isn\u2019t optional.',
+      es: 'Tres niveles de verificación \u2014 validación automática de licencias vía COFEPRIS y juntas médicas de EE.\u202fUU., cotejo de perfil profesional y revisión manual. Porque la confianza no es opcional.',
     },
     tags: ['3-Tier Verify', 'Cross-Border'],
   },
   {
     roman: 'III',
-    eyebrow: { en: 'Connection', es: 'Conexi\u00f3n' },
-    title: { en: 'Secure\nTechnology', es: 'Tecnolog\u00eda\nSegura' },
+    eyebrow: { en: 'Privacy', es: 'Privacidad' },
+    title: { en: 'Your conversation\nstays private', es: 'Su conversación\nes privada' },
     body: {
-      en: 'HIPAA-compliant video conferencing via Doxy.me, appointment scheduling with timezone intelligence, digital consent, and encrypted communication.',
-      es: 'Videoconferencias compatibles con HIPAA v\u00eda Doxy.me, programaci\u00f3n de citas con inteligencia de zona horaria, consentimiento digital y comunicaci\u00f3n encriptada.',
+      en: 'HIPAA-compliant video, scheduling that adjusts to your timezone, digital consent, and encrypted communication. The technology stays invisible \u2014 the care doesn\u2019t.',
+      es: 'Video que cumple con HIPAA, agenda ajustada a su zona horaria, consentimiento digital y comunicación cifrada. La tecnología pasa desapercibida \u2014 el cuidado, no.',
     },
-    tags: ['Doxy.me', 'HIPAA', 'Encrypted'],
+    tags: ['Video', 'HIPAA', 'Encrypted'],
   },
 ];
 
@@ -40,8 +40,8 @@ export default function DarkFeatures() {
   const locale = (router.locale || 'en') as Locale;
 
   const t = {
-    eyebrow: { en: 'Platform Architecture', es: 'Arquitectura de Plataforma' },
-    heading: { en: 'The Platform', es: 'La Plataforma' },
+    eyebrow: { en: 'What makes it possible', es: 'Lo que lo hace posible' },
+    heading: { en: 'Built for human care', es: 'Construido para el cuidado humano' },
   };
 
   return (

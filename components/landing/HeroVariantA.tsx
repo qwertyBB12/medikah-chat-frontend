@@ -1,5 +1,6 @@
 import Image from 'next/image';
-const LOGO_DARK = '/logo-BLU.png';
+import { LOGO_DARK_SRC } from '../../lib/assets';
+const LOGO_DARK = LOGO_DARK_SRC;
 
 /**
  * VARIANT A: Fraunces Serif Headlines

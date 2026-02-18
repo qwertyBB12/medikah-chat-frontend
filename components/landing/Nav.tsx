@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 
 const LINKS = [
   { label: { en: 'Patients', es: 'Pacientes' }, href: '#patients' },
-  { label: { en: 'Physicians', es: 'Médicos' }, href: '#physicians' },
+  { label: { en: 'Physicians', es: 'M\u00e9dicos' }, href: '#physicians' },
   { label: { en: 'About', es: 'Acerca' }, href: '#about' },
   { label: { en: 'Contact', es: 'Contacto' }, href: 'mailto:partnerships@medikah.health' },
   { label: { en: 'Get Started', es: 'Comenzar' }, href: '/chat' },
@@ -21,6 +21,10 @@ export default function Nav() {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  function switchLocale(newLocale: 'en' | 'es') {
+    router.push(router.pathname, router.asPath, { locale: newLocale });
+  }
 
   return (
     <nav
@@ -57,6 +61,36 @@ export default function Nav() {
               {link.label[locale]}
             </Link>
           ))}
+
+          {/* Language toggle */}
+          <div className={`flex rounded-sm overflow-hidden border transition-colors duration-400 ${
+            scrolled ? 'border-warm-gray-800/15' : 'border-white/15'
+          }`}>
+            <button
+              onClick={() => switchLocale('en')}
+              className={`font-body text-[0.6875rem] font-medium tracking-[0.06em] px-2.5 py-1 transition-all duration-200 border-none cursor-pointer ${
+                locale === 'en'
+                  ? 'bg-teal-500 text-white'
+                  : scrolled
+                    ? 'bg-transparent text-text-muted hover:text-deep-charcoal'
+                    : 'bg-transparent text-white/50 hover:text-white/80'
+              }`}
+            >
+              EN
+            </button>
+            <button
+              onClick={() => switchLocale('es')}
+              className={`font-body text-[0.6875rem] font-medium tracking-[0.06em] px-2.5 py-1 transition-all duration-200 border-none cursor-pointer ${
+                locale === 'es'
+                  ? 'bg-teal-500 text-white'
+                  : scrolled
+                    ? 'bg-transparent text-text-muted hover:text-deep-charcoal'
+                    : 'bg-transparent text-white/50 hover:text-white/80'
+              }`}
+            >
+              ES
+            </button>
+          </div>
         </div>
 
         {/* Mobile hamburger */}
@@ -90,6 +124,30 @@ export default function Nav() {
               {link.label[locale]}
             </Link>
           ))}
+
+          {/* Mobile language toggle */}
+          <div className="flex rounded-sm overflow-hidden border border-warm-gray-800/15 w-fit mt-2">
+            <button
+              onClick={() => { switchLocale('en'); setMobileOpen(false); }}
+              className={`font-body text-[0.6875rem] font-medium tracking-[0.06em] px-3 py-1.5 transition-all duration-200 border-none cursor-pointer ${
+                locale === 'en'
+                  ? 'bg-teal-500 text-white'
+                  : 'bg-transparent text-text-muted hover:text-deep-charcoal'
+              }`}
+            >
+              EN
+            </button>
+            <button
+              onClick={() => { switchLocale('es'); setMobileOpen(false); }}
+              className={`font-body text-[0.6875rem] font-medium tracking-[0.06em] px-3 py-1.5 transition-all duration-200 border-none cursor-pointer ${
+                locale === 'es'
+                  ? 'bg-teal-500 text-white'
+                  : 'bg-transparent text-text-muted hover:text-deep-charcoal'
+              }`}
+            >
+              ES
+            </button>
+          </div>
         </div>
       )}
     </nav>

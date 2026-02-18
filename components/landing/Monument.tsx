@@ -5,17 +5,17 @@ export default function Monument() {
   const locale = (router.locale || 'en') as 'en' | 'es';
 
   const t = {
-    label: { en: 'Always Available', es: 'Siempre Disponible' },
+    label: { en: 'Always open', es: 'Siempre abierto' },
     desc: {
-      en: 'AI-powered care that never sleeps. Describe your symptoms in your language, at any hour, from any country.',
-      es: 'Atenci\u00f3n con IA que nunca duerme. Describa sus s\u00edntomas en su idioma, a cualquier hora, desde cualquier pa\u00eds.',
+      en: 'Real doctors. Real care. And a door that\u2019s always open. Start in your language, at any hour, from wherever you are.',
+      es: 'Médicos reales. Atención real. Y una puerta que siempre está abierta. Comience en su idioma, a cualquier hora, desde donde esté.',
     },
   };
 
   return (
     <section className="min-h-[80vh] flex items-center bg-linen overflow-hidden">
       <div className="w-full max-w-[1600px] mx-auto px-[clamp(1.5rem,6vw,6rem)] flex flex-col sm:flex-row justify-between items-end gap-8">
-        <div className="font-heading text-[clamp(8rem,25vw,22rem)] font-light text-teal-500 leading-[0.8] tracking-[-0.05em] opacity-90">
+        <div className="font-heading text-[clamp(8rem,25vw,22rem)] font-medium text-teal-500 leading-[0.8] tracking-[-0.05em] opacity-90">
           24/7
         </div>
         <div className="max-w-[320px] pb-[clamp(1rem,2vw,2rem)] text-right">

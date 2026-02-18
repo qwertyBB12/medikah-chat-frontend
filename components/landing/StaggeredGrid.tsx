@@ -7,38 +7,38 @@ const CARDS = [
   {
     initial: 'P',
     imgClass: 'bg-gradient-to-br from-teal-200 to-linen-warm',
-    meta: { en: 'Patient Portal', es: 'Portal de Pacientes' },
-    title: { en: 'Connect\nAcross Borders', es: 'Con\u00e9ctese\nTransfronterizamente' },
+    meta: { en: 'Patient Portal', es: 'Portal de pacientes' },
+    title: { en: 'Find your\ndoctor', es: 'Encuentre a\nsu médico' },
     body: {
-      en: 'Bilingual intake in your language, cross-border consent, appointment scheduling with timezone support, and secure video conferencing.',
-      es: 'Admisi\u00f3n biling\u00fce en su idioma, consentimiento transfronterizo, citas con soporte de zona horaria, y videoconferencia segura.',
+      en: 'Tell us what you need in your language. We handle consent, scheduling, and timezone logistics so you can focus on your health.',
+      es: 'Cuéntenos lo que necesita en su idioma. Nosotros gestionamos consentimiento, agenda y zona horaria para que se enfoque en su salud.',
     },
-    badge: { en: 'EN/ES Bilingual', es: 'Biling\u00fce EN/ES' },
-    link: { label: { en: 'Start Consultation', es: 'Iniciar Consulta' }, href: '/chat?role=patient' },
+    badge: { en: 'English & Spanish', es: 'Inglés y español' },
+    link: { label: { en: 'Find a doctor', es: 'Encontrar un médico' }, href: '/chat?role=patient' },
   },
   {
     initial: 'MD',
     imgClass: 'bg-gradient-to-br from-linen-warm to-teal-200',
-    meta: { en: 'Physician Portal', es: 'Portal de M\u00e9dicos' },
-    title: { en: 'Expand Your\nPractice', es: 'Expanda Su\nPr\u00e1ctica' },
+    meta: { en: 'Physician Portal', es: 'Portal de médicos' },
+    title: { en: 'Reach more\npatients', es: 'Llegue a más\npacientes' },
     body: {
-      en: 'Onboard in minutes with LinkedIn import, manage patient inquiries, use AI diagnostic tools, and set your own availability.',
-      es: 'Reg\u00edstrese en minutos con LinkedIn, gestione consultas de pacientes, use herramientas de diagn\u00f3stico con IA, y configure su disponibilidad.',
+      en: 'Join a network of verified physicians. Onboard in minutes, manage your patients, and extend your care across borders.',
+      es: 'Únase a una red de médicos verificados. Regístrese en minutos, gestione sus pacientes y extienda su práctica más allá de la frontera.',
     },
-    badge: { en: '3-Tier Verification', es: 'Verificaci\u00f3n de 3 Niveles' },
-    link: { label: { en: 'Join As Physician', es: 'Unirse como M\u00e9dico' }, href: '/chat?role=physician' },
+    badge: { en: '3-Tier Verification', es: 'Verificación de 3 niveles' },
+    link: { label: { en: 'Join the network', es: 'Unirse a la red' }, href: '/chat?role=physician' },
   },
   {
     initial: 'AI',
     imgClass: 'bg-gradient-to-br from-teal-200 to-linen-warm',
-    meta: { en: 'Clinical Decision Support', es: 'Apoyo a Decisiones Cl\u00ednicas' },
-    title: { en: 'AI-Powered\nDiagnosis', es: 'Diagn\u00f3stico\nCon IA' },
+    meta: { en: 'For physicians', es: 'Para médicos' },
+    title: { en: 'Clinical decision\nsupport', es: 'Apoyo a decisiones\nclínicas' },
     body: {
-      en: 'GPT-4o differential diagnosis tool for physicians. Input symptoms, review AI assessment, make informed clinical decisions.',
-      es: 'Herramienta de diagn\u00f3stico diferencial GPT-4o para m\u00e9dicos. Ingrese s\u00edntomas, revise la evaluaci\u00f3n de IA, tome decisiones cl\u00ednicas informadas.',
+      en: 'A diagnostic support tool that helps physicians organize symptoms and consider differentials \u2014 so they can make better-informed decisions for their patients.',
+      es: 'Herramienta de apoyo diagnóstico que ayuda a los médicos a organizar síntomas y considerar diferenciales \u2014 para tomar decisiones más informadas por sus pacientes.',
     },
-    badge: { en: 'HIPAA Compliant', es: 'Compatible con HIPAA' },
-    link: { label: { en: 'Learn More', es: 'Saber M\u00e1s' }, href: '#chat-section' },
+    badge: { en: 'For licensed physicians', es: 'Para médicos licenciados' },
+    link: { label: { en: 'Learn more', es: 'Conocer más' }, href: '#chat-section' },
   },
 ];
 
@@ -49,8 +49,8 @@ export default function StaggeredGrid() {
   const locale = (router.locale || 'en') as Locale;
 
   const t = {
-    eyebrow: { en: 'For Patients & Physicians', es: 'Para Pacientes y M\u00e9dicos' },
-    heading: { en: 'Two Portals.\nOne Platform.', es: 'Dos Portales.\nUna Plataforma.' },
+    eyebrow: { en: 'For Patients & Physicians', es: 'Para pacientes y médicos' },
+    heading: { en: 'Two Portals.\nOne Platform.', es: 'Dos portales.\nUna plataforma.' },
   };
 
   return (

@@ -17,12 +17,12 @@ export default function RegulatoryDisclosure() {
             </div>
             <div>
               <h3 className="font-heading text-xl uppercase text-deep-charcoal mb-4">
-                {isEs ? 'Informaci\u00f3n Importante Sobre Medikah' : 'Important Information About Medikah'}
+                {isEs ? 'Informaci\u00f3n importante sobre Medikah' : 'Important Information About Medikah'}
               </h3>
               <div className="space-y-4 font-body text-text-secondary text-base leading-[1.7]">
                 <p>
                   {isEs
-                    ? 'Medikah es una plataforma tecnol\u00f3gica compatible con HIPAA.'
+                    ? 'Medikah es una plataforma tecnol\u00f3gica que cumple con HIPAA.'
                     : 'Medikah is a HIPAA-compliant technology platform.'}
                 </p>
                 <p>
@@ -32,17 +32,17 @@ export default function RegulatoryDisclosure() {
                       : 'We are not healthcare providers.'}
                   </strong>{' '}
                   {isEs
-                    ? 'No empleamos ni supervisamos m\u00e9dicos. No proporcionamos atenci\u00f3n m\u00e9dica, diagn\u00f3stico ni tratamiento.'
+                    ? 'No empleamos ni supervisamos m\u00e9dicos. No brindamos atenci\u00f3n m\u00e9dica, diagn\u00f3stico ni tratamiento.'
                     : 'We do not employ or supervise physicians. We do not provide medical care, diagnosis, or treatment.'}
                 </p>
                 <p>
                   {isEs
-                    ? 'El diagn\u00f3stico y tratamiento m\u00e9dico son proporcionados por m\u00e9dicos independientes y licenciados en sus jurisdicciones.'
+                    ? 'El diagn\u00f3stico y tratamiento m\u00e9dico los realizan m\u00e9dicos independientes, licenciados en sus respectivas jurisdicciones. Cada profesional mantiene su propia licencia, seguro de responsabilidad y cumplimiento regulatorio.'
                     : 'Medical diagnosis and treatment are provided by independent, licensed physicians in their jurisdictions. All providers using Medikah maintain their own medical licenses, malpractice insurance, and regulatory compliance.'}
                 </p>
                 <p>
                   {isEs
-                    ? 'Las videoconsultas transfronterizas son con fines informativos y de planificaci\u00f3n. El diagn\u00f3stico y tratamiento final ocurren en persona.'
+                    ? 'Las videoconsultas entre pa\u00edses son con fines informativos y de planeaci\u00f3n. El diagn\u00f3stico y tratamiento final se realizan en persona, en el pa\u00eds donde el m\u00e9dico est\u00e1 licenciado.'
                     : 'Cross-border video consultations are for informational and planning purposes. Final diagnosis and treatment occur in-person, in the country where the provider is licensed, in accordance with that country\u2019s medical regulations.'}
                 </p>
                 <p className="text-sm text-text-muted">

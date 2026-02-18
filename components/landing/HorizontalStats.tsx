@@ -6,26 +6,26 @@ type Locale = 'en' | 'es';
 const SLIDES = [
   {
     stat: '2',
-    label: { en: 'Countries', es: 'Pa\u00edses' },
+    label: { en: 'Countries & growing', es: 'Pa\u00edses y creciendo' },
     context: {
-      en: 'Cross-border healthcare coordination between the United States and Mexico, with more regions planned.',
-      es: 'Coordinaci\u00f3n de salud transfronteriza entre Estados Unidos y M\u00e9xico, con m\u00e1s regiones planeadas.',
+      en: 'Live today in the US and Mexico. Built for the entire hemisphere. Patients and doctors across the Americas, connected.',
+      es: 'Activo hoy en EE. UU. y M\u00e9xico. Construido para todo el hemisferio. Pacientes y m\u00e9dicos en las Am\u00e9ricas, conectados.',
     },
   },
   {
     stat: '100%',
     label: { en: 'Bilingual', es: 'Biling\u00fce' },
     context: {
-      en: 'Every conversation, every form, every consultation available in both English and Spanish. Your language, your care.',
-      es: 'Cada conversaci\u00f3n, cada formulario, cada consulta disponible en ingl\u00e9s y espa\u00f1ol. Su idioma, su atenci\u00f3n.',
+      en: 'Every step of the way \u2014 in your language. Because understanding your doctor shouldn\u2019t depend on geography.',
+      es: 'Cada paso del camino \u2014 en su idioma. Porque entender a su m\u00e9dico no deber\u00eda depender de la geograf\u00eda.',
     },
   },
   {
     stat: '24/7',
-    label: { en: 'Intake', es: 'Admisi\u00f3n' },
+    label: { en: 'Always open', es: 'Siempre abierto' },
     context: {
-      en: 'Our coordination technology is always available. Describe your health concerns any time, share your information, and connect with a physician.',
-      es: 'Nuestra tecnolog\u00eda de coordinaci\u00f3n siempre est\u00e1 disponible. Describa sus inquietudes de salud en cualquier momento, comparta su informaci\u00f3n, y con\u00e9ctese con un m\u00e9dico.',
+      en: 'Start whenever you\u2019re ready. Our platform is always open so you can take the first step toward real care on your own schedule.',
+      es: 'Empiece cuando est\u00e9 listo. Nuestra plataforma est\u00e1 siempre abierta para que d\u00e9 el primer paso hacia atenci\u00f3n real, a su propio ritmo.',
     },
   },
 ];

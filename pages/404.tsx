@@ -1,6 +1,7 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import Image from 'next/image';
+import { LOGO_APP_ICON_SVG } from '../lib/assets';
 
 export default function Custom404() {
   return (
@@ -11,7 +12,7 @@ export default function Custom404() {
       </Head>
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#FAFAFB] text-deep-charcoal px-6">
         <Image
-          src="/logo-app-icon.png"
+          src={LOGO_APP_ICON_SVG}
           alt="Medikah"
           width={64}
           height={64}
