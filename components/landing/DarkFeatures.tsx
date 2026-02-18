@@ -8,7 +8,7 @@ const FEATURES = [
     eyebrow: { en: 'Listening', es: 'Escuchar' },
     title: { en: 'We listen in\nboth languages', es: 'Escuchamos en\nambos idiomas' },
     body: {
-      en: 'Tell us what you need in English or Spanish. We organize your information and navigate the cross-border requirements \u2014 so your doctor gets a complete picture before you even meet.',
+      en: 'Tell us what you need in English or Spanish. We organize your information and navigate the international requirements \u2014 so your doctor gets a complete picture before you even meet.',
       es: 'Cuéntenos lo que necesita en inglés o español. Organizamos su información y gestionamos los requisitos entre países \u2014 para que su médico tenga el panorama completo antes de conocerse.',
     },
     tags: ['Bilingual', 'Automated', '24/7'],
@@ -21,7 +21,7 @@ const FEATURES = [
       en: 'Three levels of verification \u2014 automated license checks through COFEPRIS and US medical boards, professional profile matching, and manual review. Because trust isn\u2019t optional.',
       es: 'Tres niveles de verificación \u2014 validación automática de licencias vía COFEPRIS y juntas médicas de EE.\u202fUU., cotejo de perfil profesional y revisión manual. Porque la confianza no es opcional.',
     },
-    tags: ['3-Tier Verify', 'Cross-Border'],
+    tags: ['3-Tier Verify', 'Multi-Country'],
   },
   {
     roman: 'III',

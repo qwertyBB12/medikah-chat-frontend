@@ -7,7 +7,7 @@ const STEPS = [
     number: '01',
     title: { en: 'Tell us', es: 'Cuéntenos' },
     body: {
-      en: 'Describe what\u2019s going on \u2014 in English or Spanish. We organize your information and handle the cross-border details.',
+      en: 'Describe what\u2019s going on \u2014 in English or Spanish. We organize your information and handle the details between countries.',
       es: 'Describa lo que le pasa \u2014 en inglés o español. Nosotros organizamos su información y gestionamos los detalles entre países.',
     },
     tag: { en: 'English & Spanish', es: 'Inglés y español' },

@@ -6,20 +6,20 @@ export default function Hero() {
   const locale = (router.locale || 'en') as 'en' | 'es';
 
   const t = {
-    eyebrow: { en: 'Human Care, No Borders', es: 'Atención humana, sin fronteras' },
-    line1: { en: 'Connect With Physicians', es: 'Conéctese con médicos' },
-    line2: { en: 'Across Borders', es: 'más allá de la frontera' },
+    eyebrow: { en: 'Care Without Distance', es: 'Cuidado sin distancia' },
+    line1: { en: 'Connect With Your Doctor', es: 'Conéctese con su médico' },
+    line2: { en: 'Wherever You Are', es: 'donde usted esté' },
     subtitle: {
       en: 'Care from real doctors. In your language. Wherever you are.',
       es: 'Médicos reales. En su idioma. Donde usted esté.',
     },
     body1: {
-      en: 'Families cross borders every day \u2014 but healthcare stops at the line. Patients lose access. Doctors lose reach. Care gets interrupted.',
-      es: 'Las familias cruzan fronteras a diario \u2014 pero la salud se queda del otro lado. Los pacientes pierden acceso. Los médicos pierden alcance. La atención se interrumpe.',
+      en: 'Families move between countries every day \u2014 but healthcare doesn\u2019t move with them. Patients lose access. Doctors lose reach. Care gets interrupted.',
+      es: 'Las familias se mueven entre pa\u00edses a diario \u2014 pero la salud no se mueve con ellas. Los pacientes pierden acceso. Los m\u00e9dicos pierden alcance. La atenci\u00f3n se interrumpe.',
     },
     body2: {
-      en: 'Medikah removes those barriers so patients and doctors can focus on what matters \u2014 the consultation, the relationship, the care.',
-      es: 'Medikah elimina esas barreras para que pacientes y médicos se concentren en lo que importa \u2014 la consulta, la relación, el cuidado.',
+      en: 'Medikah closes that gap so patients and doctors can focus on what matters \u2014 the consultation, the relationship, the care.',
+      es: 'Medikah cierra esa brecha para que pacientes y m\u00e9dicos se concentren en lo que importa \u2014 la consulta, la relaci\u00f3n, el cuidado.',
     },
     ctaPrimary: { en: 'Find a doctor', es: 'Encontrar un médico' },
     ctaSecondary: { en: 'For institutions', es: 'Para instituciones' },
@@ -71,7 +71,7 @@ export default function Hero() {
         </div>
 
         {/* Headline */}
-        <h1 className="font-heading font-medium uppercase leading-[0.9] tracking-[-0.02em]">
+        <h1 className="font-heading font-medium uppercase leading-[1.0] tracking-[-0.02em]">
           <span className="block text-white text-[clamp(2.5rem,8vw,6rem)]">
             {t.line1[locale]}
           </span>

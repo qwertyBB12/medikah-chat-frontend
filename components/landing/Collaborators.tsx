@@ -1,4 +1,4 @@
-const ITEMS = ['HIPAA Compliant', 'Encrypted Video', 'Verified Credentials', 'Bilingual EN/ES', 'Digital Consent', 'Timezone Aware', 'Cross-Border Consent', 'Independent Physicians'];
+const ITEMS = ['HIPAA Compliant', 'Encrypted Video', 'Verified Credentials', 'Bilingual EN/ES', 'Digital Consent', 'Timezone Aware', 'International Consent', 'Independent Physicians'];
 
 export default function Collaborators() {
   return (

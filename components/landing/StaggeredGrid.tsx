@@ -22,8 +22,8 @@ const CARDS = [
     meta: { en: 'Physician Portal', es: 'Portal de médicos' },
     title: { en: 'Reach more\npatients', es: 'Llegue a más\npacientes' },
     body: {
-      en: 'Join a network of verified physicians. Onboard in minutes, manage your patients, and extend your care across borders.',
-      es: 'Únase a una red de médicos verificados. Regístrese en minutos, gestione sus pacientes y extienda su práctica más allá de la frontera.',
+      en: 'Join a network of verified physicians. Onboard in minutes, manage your patients, and extend your reach across countries.',
+      es: '\u00danase a una red de m\u00e9dicos verificados. Reg\u00edstrese en minutos, gestione sus pacientes y ampl\u00ede su alcance entre pa\u00edses.',
     },
     badge: { en: '3-Tier Verification', es: 'Verificación de 3 niveles' },
     link: { label: { en: 'Join the network', es: 'Unirse a la red' }, href: '/chat?role=physician' },
