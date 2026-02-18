@@ -36,13 +36,13 @@ export default function CTAMonument() {
       <div className="flex gap-6 mt-[clamp(2rem,4vh,4rem)] flex-col sm:flex-row items-center">
         <Link
           href="/chat"
-          className="inline-flex items-center gap-2 font-body text-[0.8125rem] font-medium uppercase tracking-[0.04em] px-9 py-3.5 bg-teal-500 text-white border-2 border-teal-500 rounded-sm hover:bg-teal-600 hover:border-teal-600 hover:-translate-y-[3px] hover:shadow-[0_12px_32px_rgba(44,122,140,0.3)] transition-all duration-300"
+          className="inline-flex items-center gap-2 font-body text-[0.8125rem] font-medium uppercase tracking-[0.04em] px-9 py-3.5 bg-teal-500 text-white border-2 border-teal-500 rounded-lg hover:bg-teal-600 hover:border-teal-600 hover:-translate-y-[3px] hover:shadow-[0_12px_32px_rgba(44,122,140,0.3)] transition-all duration-300"
         >
           {t.ctaPrimary[locale]} &rarr;
         </Link>
         <a
           href="mailto:partnerships@medikah.health"
-          className="inline-flex items-center gap-2 font-body text-[0.8125rem] font-medium uppercase tracking-[0.04em] px-9 py-3.5 bg-transparent text-warm-gray-800 border-2 border-warm-gray-800 rounded-sm hover:bg-warm-gray-800 hover:text-white hover:-translate-y-[3px] transition-all duration-300"
+          className="inline-flex items-center gap-2 font-body text-[0.8125rem] font-medium uppercase tracking-[0.04em] px-9 py-3.5 bg-transparent text-warm-gray-800 border-2 border-warm-gray-800 rounded-lg hover:bg-warm-gray-800 hover:text-white hover:-translate-y-[3px] transition-all duration-300"
         >
           {t.ctaSecondary[locale]} &rarr;
         </a>

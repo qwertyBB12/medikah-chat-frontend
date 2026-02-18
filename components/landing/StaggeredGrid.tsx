@@ -73,7 +73,7 @@ export default function StaggeredGrid() {
         {CARDS.map((card, i) => (
           <div
             key={card.initial}
-            className={`bg-linen-white border border-warm-gray-800/[0.06] rounded-sm overflow-hidden transition-all duration-400 hover:-translate-y-1.5 hover:shadow-[0_20px_48px_rgba(27,42,65,0.1)] ${
+            className={`bg-linen-white border border-warm-gray-800/[0.06] rounded-lg overflow-hidden transition-all duration-400 hover:-translate-y-1.5 hover:shadow-[0_20px_48px_rgba(27,42,65,0.1)] ${
               STAGGER_OFFSETS[i] || ''
             } md:nth-child-2:mt-0 lg:nth-child-2:mt-[clamp(3rem,6vh,6rem)]`}
             style={i === 1 ? {} : {}}
@@ -97,7 +97,7 @@ export default function StaggeredGrid() {
               <p className="text-sm text-text-muted leading-[1.7]">
                 {card.body[locale]}
               </p>
-              <span className="inline-block mt-3 text-[0.6875rem] font-medium uppercase tracking-[0.04em] text-teal-700 bg-teal-500/[0.08] px-3.5 py-1.5 rounded-sm">
+              <span className="inline-block mt-3 text-[0.6875rem] font-medium uppercase tracking-[0.04em] text-teal-700 bg-teal-500/[0.08] px-3.5 py-1.5 rounded-lg">
                 {card.badge[locale]}
               </span>
               <Link

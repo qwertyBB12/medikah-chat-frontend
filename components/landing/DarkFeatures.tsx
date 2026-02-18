@@ -76,8 +76,8 @@ export default function DarkFeatures() {
           {FEATURES.map((feature) => (
             <div
               key={feature.roman}
-              className="relative bg-[rgba(27,42,65,0.4)] backdrop-blur-[8px] border border-white/[0.06] border-t-[3px] border-t-teal-500 rounded-sm overflow-hidden transition-all duration-400 hover:border-white/[0.1] hover:border-t-teal-400 hover:-translate-y-1 hover:shadow-[0_24px_64px_rgba(0,0,0,0.3)] max-w-[600px] mx-auto lg:max-w-none"
-              style={{ WebkitBackdropFilter: 'blur(24px)' }}
+              className="relative bg-[rgba(27,42,65,0.4)] backdrop-blur-[8px] border border-white/[0.06] border-t-[3px] border-t-teal-500 rounded-lg overflow-hidden transition-all duration-400 hover:border-white/[0.1] hover:border-t-teal-400 hover:-translate-y-1 hover:shadow-[0_24px_64px_rgba(0,0,0,0.3)] max-w-[600px] mx-auto lg:max-w-none"
+              style={{ WebkitBackdropFilter: 'blur(8px)' }}
             >
               <div className="p-[clamp(2rem,3vw,3rem)]">
                 <div className="font-heading text-[clamp(1.5rem,2.5vw,2rem)] font-medium text-teal-400 leading-none mb-6">
@@ -96,7 +96,7 @@ export default function DarkFeatures() {
                   {feature.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="text-[0.625rem] font-medium uppercase tracking-[0.1em] text-cream-500 px-4 py-1.5 border border-white/[0.08] rounded-sm"
+                      className="text-[0.625rem] font-medium uppercase tracking-[0.1em] text-cream-500 px-4 py-1.5 border border-white/[0.08] rounded-lg"
                     >
                       {tag}
                     </span>

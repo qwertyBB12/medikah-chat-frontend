@@ -85,13 +85,13 @@ export default function HorizontalStats() {
 
         {/* Side labels */}
         <div
-          className="absolute top-1/2 left-[clamp(1rem,2vw,2rem)] -translate-y-1/2 font-body text-[0.625rem] font-medium uppercase tracking-[0.3em] text-white/[0.12] z-[2]"
+          className="absolute top-1/2 left-[clamp(1rem,2vw,2rem)] -translate-y-1/2 font-body text-[0.625rem] font-medium uppercase tracking-[0.3em] text-white/10 z-[2]"
           style={{ writingMode: 'vertical-rl' }}
         >
           Impact
         </div>
         <div
-          className="absolute top-1/2 right-[clamp(1rem,2vw,2rem)] -translate-y-1/2 font-body text-[0.625rem] font-medium uppercase tracking-[0.3em] text-white/[0.12] z-[2]"
+          className="absolute top-1/2 right-[clamp(1rem,2vw,2rem)] -translate-y-1/2 font-body text-[0.625rem] font-medium uppercase tracking-[0.3em] text-white/10 z-[2]"
           style={{ writingMode: 'vertical-rl' }}
         >
           Medikah Health
@@ -114,7 +114,7 @@ export default function HorizontalStats() {
               <div className="font-body text-[clamp(0.75rem,1.2vw,1rem)] font-medium uppercase tracking-[0.2em] text-cream-500 mt-[clamp(1rem,2vh,2rem)]">
                 {slide.label[locale]}
               </div>
-              <p className="font-body text-base text-cream-400 max-w-[400px] text-center mt-6 leading-[1.7]">
+              <p className="font-body text-base text-white/40 max-w-[400px] text-center mt-6 leading-[1.7]">
                 {slide.context[locale]}
               </p>
             </div>
@@ -128,7 +128,7 @@ export default function HorizontalStats() {
               key={i}
               className={`w-2 h-2 rounded-full transition-all duration-300 ${
                 i === activeSlide
-                  ? 'bg-teal-400 scale-150'
+                  ? 'bg-teal-400 scale-[1.4]'
                   : 'bg-white/20'
               }`}
             />

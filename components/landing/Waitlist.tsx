@@ -67,7 +67,7 @@ export default function Waitlist() {
           </p>
           <Link
             href="/chat"
-            className="inline-block mt-4 px-7 py-3.5 bg-teal-500 text-white font-body font-medium tracking-wide text-sm hover:bg-teal-600 transition-all duration-200 rounded-sm"
+            className="inline-block mt-4 px-7 py-3.5 bg-teal-500 text-white font-body font-medium tracking-wide text-sm hover:bg-teal-600 transition-all duration-200 rounded-lg"
           >
             {t.orGetStarted[locale]}
           </Link>
@@ -102,7 +102,7 @@ export default function Waitlist() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="font-body bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-teal-400/60 rounded-sm"
+              className="font-body bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-teal-400/60 rounded-lg"
               required
             />
           </div>
@@ -116,7 +116,7 @@ export default function Waitlist() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="font-body bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-teal-400/60 rounded-sm"
+              className="font-body bg-white/5 border border-white/15 px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-teal-400/60 rounded-lg"
               required
             />
           </div>
@@ -129,7 +129,7 @@ export default function Waitlist() {
               id="wl-role"
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="font-body bg-white/5 border border-white/15 px-4 py-3 text-white focus:outline-none focus:border-teal-400/60 rounded-sm appearance-none"
+              className="font-body bg-white/5 border border-white/15 px-4 py-3 text-white focus:outline-none focus:border-teal-400/60 rounded-lg appearance-none"
               required
             >
               <option value="" disabled className="text-deep-charcoal">{t.selectPlaceholder[locale]}</option>
@@ -155,7 +155,7 @@ export default function Waitlist() {
           <button
             type="submit"
             disabled={status === 'sending'}
-            className="w-full px-4 py-3.5 bg-warm-gray-700 text-white font-body font-medium tracking-wide text-sm border border-white/20 hover:bg-teal-500 hover:border-teal-500 transition rounded-sm disabled:opacity-50"
+            className="w-full px-4 py-3.5 bg-warm-gray-700 text-white font-body font-medium tracking-wide text-sm border border-white/20 hover:bg-teal-500 hover:border-teal-500 transition rounded-lg disabled:opacity-50"
           >
             {status === 'sending' ? t.sending[locale] : t.submit[locale]}
           </button>

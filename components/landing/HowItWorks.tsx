@@ -72,11 +72,8 @@ export default function HowItWorks() {
         {STEPS.map((step) => (
           <div
             key={step.number}
-            className="relative min-h-[50vh] flex flex-col justify-center px-[clamp(2.5rem,5vw,5rem)] py-[clamp(3rem,6vh,6rem)] border-b border-teal-500/[0.08] last:border-b-0"
+            className="relative min-h-[50vh] flex flex-col justify-center px-[clamp(2rem,4vw,4rem)] py-[clamp(3rem,6vh,6rem)] border-b border-teal-500/[0.08] last:border-b-0 border-l-[3px] border-l-teal-500"
           >
-            {/* Teal left-border accent */}
-            <div className="absolute left-0 top-[20%] bottom-[20%] w-[3px] rounded-sm bg-gradient-to-b from-teal-500 to-teal-300" />
-
             <div className="font-heading text-[clamp(3.5rem,7vw,6rem)] font-medium text-teal-500/[0.12] leading-none mb-4">
               {step.number}
             </div>
@@ -86,7 +83,7 @@ export default function HowItWorks() {
             <p className="text-base leading-[1.7] text-text-secondary max-w-[480px]">
               {step.body[locale]}
             </p>
-            <span className="inline-block mt-6 text-[0.6875rem] font-medium uppercase tracking-[0.04em] text-teal-700 bg-teal-500/[0.08] px-3.5 py-1.5 rounded-sm w-fit">
+            <span className="inline-block mt-6 text-[0.6875rem] font-medium uppercase tracking-[0.04em] text-teal-700 bg-teal-500/[0.08] px-3.5 py-1.5 rounded-lg w-fit">
               {step.tag[locale]}
             </span>
           </div>

@@ -68,13 +68,13 @@ export default function LandingPage() {
         <Hero />
 
         {/* Curve: dark to linen */}
-        <CurveDivider from="#1B2A41" bg="#F0EAE0" />
+        <CurveDivider from="#0D1520" bg="#F0EAE0" />
 
         {/* 2. How It Works — split pinned/scrolling */}
         <HowItWorks />
 
         {/* Curve: linen-warm to dark */}
-        <CurveDivider from="#E8E0D5" bg="#0D1520" flip />
+        <CurveDivider from="#E8E0D5" bg="#1B2A41" flip />
 
         {/* 3. Horizontal Stats — scroll-jacked */}
         <HorizontalStats />
@@ -92,7 +92,7 @@ export default function LandingPage() {
         <ChatShowcase />
 
         {/* Curve: linen-warm to dark */}
-        <CurveDivider from="#E8E0D5" bg="#0D1520" flip />
+        <CurveDivider from="#E8E0D5" bg="#1B2A41" flip />
 
         {/* 7. Dark Features — The Platform */}
         <DarkFeatures />
