@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/router';
 
 const LINKS = [
@@ -36,14 +37,23 @@ export default function Nav() {
       style={{ WebkitBackdropFilter: scrolled ? 'blur(16px)' : 'none' }}
     >
       <div className="max-w-[1600px] mx-auto px-[clamp(1.5rem,4vw,4rem)] h-full flex items-center justify-between">
-        {/* Logo — text wordmark */}
+        {/* Logo — mark + text wordmark */}
         <Link
           href="/"
-          className={`font-body text-[1.25rem] font-medium tracking-[0.04em] lowercase transition-colors duration-400 ${
-            scrolled ? 'text-inst-blue' : 'text-white'
-          }`}
+          className="flex items-center gap-2"
         >
-          medikah
+          <Image
+            src={scrolled ? '/logo-BLU.png' : '/logo.png'}
+            alt=""
+            width={24}
+            height={24}
+            className="transition-opacity duration-400 opacity-70"
+          />
+          <span className={`font-body text-[1.25rem] font-medium tracking-[0.04em] lowercase transition-colors duration-400 ${
+            scrolled ? 'text-inst-blue' : 'text-white'
+          }`}>
+            medikah
+          </span>
         </Link>
 
         {/* Desktop nav */}

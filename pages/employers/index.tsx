@@ -49,14 +49,19 @@ export default function EmployerPortal() {
 
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-inst-blue to-[#243447] px-6 py-16">
         <div className="max-w-md text-center">
-          <Image
-            src={LOGO_SRC}
-            alt="Medikah"
-            width={80}
-            height={80}
-            priority
-            className="w-20 h-auto mx-auto mb-8 opacity-80"
-          />
+          <div className="flex flex-col items-center gap-3 mb-8">
+            <Image
+              src={LOGO_SRC}
+              alt=""
+              width={320}
+              height={320}
+              priority
+              className="w-14 h-auto opacity-80"
+            />
+            <span className="font-body text-[1.5rem] font-medium tracking-[0.04em] lowercase text-white">
+              medikah
+            </span>
+          </div>
 
           <h1 className="font-dm-serif text-3xl text-white mb-4">
             {lang === 'en' ? 'Employer Portal' : 'Portal de Empleadores'}
@@ -68,8 +73,8 @@ export default function EmployerPortal() {
 
           <p className="font-dm-sans text-white/50 text-sm leading-relaxed mb-8">
             {lang === 'en'
-              ? 'We are building tools for employers to support employee health across borders. Stay tuned for updates.'
-              : 'Estamos construyendo herramientas para que los empleadores apoyen la salud de sus empleados a través de las fronteras. Manténgase atento a las actualizaciones.'}
+              ? 'We are building tools for employers to support employee health internationally. Stay tuned for updates.'
+              : 'Estamos construyendo herramientas para que los empleadores apoyen la salud de sus empleados internacionalmente. Manténgase atento a las actualizaciones.'}
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

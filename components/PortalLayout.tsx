@@ -8,7 +8,7 @@
 import { ReactNode, RefObject, KeyboardEvent } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { LOGO_SRC, WORDMARK_SRC } from '../lib/assets';
+import { LOGO_SRC } from '../lib/assets';
 import ChatInput from './ChatInput';
 import Footer from './Footer';
 
@@ -70,11 +70,11 @@ const portalLabels: Record<PortalType, { title: string; subtitle: string }> = {
   },
   insurer: {
     title: 'Insurance Portal',
-    subtitle: 'Managing cross-border healthcare benefits.',
+    subtitle: 'Managing international healthcare benefits.',
   },
   employer: {
     title: 'Employer Portal',
-    subtitle: 'Supporting employee health across borders.',
+    subtitle: 'Supporting employee health internationally.',
   },
 };
 
@@ -95,23 +95,19 @@ export default function PortalLayout({
     <div className="min-h-screen md:h-screen md:overflow-hidden flex flex-col md:flex-row bg-[#FAFAFB] text-deep-charcoal">
       {/* Sidebar - Desktop */}
       <aside className={`hidden md:flex md:flex-col md:w-72 lg:w-80 bg-gradient-to-b ${colors.sidebarGradient} text-white md:sticky md:top-0 md:h-screen md:max-h-screen`}>
-        <div className="flex flex-col items-center justify-center py-10 px-6">
+        <div className="flex flex-col items-center justify-center py-10 px-6 gap-3">
           <Image
             src={LOGO_SRC}
-            alt="Medikah"
+            alt=""
             width={320}
             height={320}
             priority
-            className="w-16 h-auto mb-4"
+            className="w-14 h-auto opacity-80"
           />
-          <Image
-            src={WORDMARK_SRC}
-            alt="Medikah"
-            width={480}
-            height={180}
-            className="w-32 h-auto mb-2"
-          />
-          <p className="font-dm-sans text-xs text-white/50 text-center">
+          <span className="font-body text-[1.5rem] font-medium tracking-[0.04em] lowercase text-white">
+            medikah
+          </span>
+          <p className="font-dm-sans text-xs text-white/50 text-center mt-1">
             {labels.subtitle}
           </p>
         </div>
@@ -156,17 +152,15 @@ export default function PortalLayout({
             <Link href="/" className="flex items-center gap-2">
               <Image
                 src={LOGO_SRC}
-                alt="Medikah"
+                alt=""
                 width={96}
                 height={96}
                 priority
-                className="w-10 h-auto"
+                className="w-8 h-auto opacity-80"
               />
-              {headerTitle && (
-                <span className="font-dm-sans text-sm font-medium text-white/80">
-                  {headerTitle}
-                </span>
-              )}
+              <span className="font-body text-[1.125rem] font-medium tracking-[0.04em] lowercase text-white">
+                medikah
+              </span>
             </Link>
             <div className="flex items-center gap-3">
               {onNewChat && (

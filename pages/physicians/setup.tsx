@@ -7,10 +7,12 @@
 
 import Head from 'next/head';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { supabase } from '../../lib/supabase';
+import { LOGO_DARK_SRC } from '../../lib/assets';
 
 export default function PhysicianSetup() {
   const router = useRouter();
@@ -138,9 +140,19 @@ export default function PhysicianSetup() {
       <div className="min-h-screen flex items-center justify-center bg-[#FAFAFB] px-4">
         <div className="w-full max-w-md">
           {/* Logo */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-extrabold text-inst-blue tracking-tight">medikah</h1>
-            <p className="text-sm text-clinical-teal font-semibold uppercase tracking-wider mt-1">
+          <div className="flex flex-col items-center gap-3 mb-8">
+            <Image
+              src={LOGO_DARK_SRC}
+              alt=""
+              width={320}
+              height={320}
+              priority
+              className="w-12 h-auto opacity-70"
+            />
+            <span className="font-body text-[1.5rem] font-medium tracking-[0.04em] lowercase text-inst-blue">
+              medikah
+            </span>
+            <p className="text-sm text-clinical-teal font-semibold uppercase tracking-wider">
               Physician Network
             </p>
           </div>

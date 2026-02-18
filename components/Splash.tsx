@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { ReactNode } from 'react';
-import { LOGO_SRC, WORDMARK_SRC } from '../lib/assets';
+import { LOGO_SRC } from '../lib/assets';
 
 interface SplashProps {
   onDoctorLogin?: () => void;
@@ -27,22 +27,18 @@ export default function Splash({
       }}
     >
       <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-12 text-center">
-        <div className="flex flex-col items-center gap-5">
+        <div className="flex flex-col items-center gap-3">
           <Image
             src={LOGO_SRC}
-            alt="Medikah"
+            alt=""
             width={320}
             height={320}
             priority
-            className="w-16 h-auto sm:w-20"
+            className="w-14 h-auto sm:w-16 opacity-80"
           />
-          <Image
-            src={WORDMARK_SRC}
-            alt="Medikah"
-            width={480}
-            height={180}
-            className="w-36 h-auto sm:w-44"
-          />
+          <span className="font-body text-[1.5rem] sm:text-[1.75rem] font-medium tracking-[0.04em] lowercase text-white">
+            medikah
+          </span>
           <p className="font-body text-sm text-cream-400/60 leading-relaxed max-w-xs">
             Credentialed access only. Sign in with your authorized account.
           </p>
