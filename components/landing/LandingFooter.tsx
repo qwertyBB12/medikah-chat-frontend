@@ -38,11 +38,11 @@ export default function LandingFooter() {
               {isEs ? 'Tecnolog\u00eda de Salud Que Cruza Fronteras.' : 'Healthcare Technology That Crosses Borders.'}
             </div>
             {/* Trust badges */}
-            <div className="flex gap-4 mt-5 flex-wrap">
+            <div className="flex gap-3 mt-5 flex-wrap">
               {['HIPAA', 'Bilingual', 'Encrypted'].map((badge) => (
                 <span
                   key={badge}
-                  className="text-[0.625rem] font-medium uppercase tracking-[0.1em] text-cream-500 px-3 py-1 border border-white/[0.08] rounded-sm"
+                  className="inline-flex items-center text-[0.6875rem] font-medium uppercase tracking-[0.04em] text-teal-300 bg-[rgba(44,122,140,0.15)] px-3.5 py-[5px] rounded-lg"
                 >
                   {badge}
                 </span>
@@ -65,7 +65,7 @@ export default function LandingFooter() {
                 <li key={link.label.en}>
                   <Link
                     href={link.href}
-                    className="text-cream-400 text-[0.9375rem] hover:text-white transition-colors duration-200"
+                    className="text-white/50 text-[0.9375rem] hover:text-white transition-colors duration-200"
                   >
                     {isEs ? link.label.es : link.label.en}
                   </Link>
@@ -91,7 +91,7 @@ export default function LandingFooter() {
                 <li key={link.label.en}>
                   <Link
                     href={link.href}
-                    className="text-cream-400 text-[0.9375rem] hover:text-white transition-colors duration-200"
+                    className="text-white/50 text-[0.9375rem] hover:text-white transition-colors duration-200"
                   >
                     {isEs ? link.label.es : link.label.en}
                   </Link>

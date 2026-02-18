@@ -8,7 +8,7 @@ export default function RegulatoryDisclosure() {
   return (
     <section className="bg-linen-light px-6 py-16">
       <div className="max-w-4xl mx-auto">
-        <div className="bg-linen-white border border-teal-500/20 rounded-sm p-8 sm:p-10">
+        <div className="bg-linen-white border border-teal-500/20 rounded-lg p-8 sm:p-10">
           <div className="flex items-start gap-4">
             <div className="shrink-0 w-8 h-8 rounded-full bg-teal-500/10 flex items-center justify-center">
               <svg className="w-5 h-5 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

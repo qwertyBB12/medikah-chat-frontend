@@ -1,10 +1,12 @@
 import { Html, Head, Main, NextScript } from 'next/document';
-import { mulish, ibmPlexMono, fraunces, instrumentSerif, inter, playfairDisplay, sourceSans3, dmSerifDisplay, dmSans, oswald } from '../lib/fonts';
 
 export default function Document() {
   return (
     <Html lang="en">
       <Head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500&display=swap" rel="stylesheet" />
         <link rel="icon" href="/favicon.ico" sizes="48x48" />
         <link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32" />
         <link rel="icon" href="/favicon-16x16.png" type="image/png" sizes="16x16" />
@@ -13,7 +15,7 @@ export default function Document() {
         <link rel="manifest" href="/site.webmanifest" />
         <meta name="theme-color" content="#1B2A41" />
       </Head>
-      <body className={`${mulish.variable} ${ibmPlexMono.variable} ${fraunces.variable} ${instrumentSerif.variable} ${inter.variable} ${playfairDisplay.variable} ${sourceSans3.variable} ${dmSerifDisplay.variable} ${dmSans.variable} ${oswald.variable} font-body`}>
+      <body>
         <Main />
         <NextScript />
       </body>

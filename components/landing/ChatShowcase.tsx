@@ -157,7 +157,7 @@ export default function ChatShowcase() {
       </div>
 
       {/* Chat container */}
-      <div className="max-w-[500px] mx-auto border border-warm-gray-800/[0.12] rounded-sm overflow-hidden bg-linen-white shadow-[0_16px_64px_rgba(45,43,41,0.12),0_2px_8px_rgba(45,43,41,0.06)] mx-4 sm:mx-auto">
+      <div className="max-w-[500px] mx-auto border border-warm-gray-800/[0.12] rounded-lg overflow-hidden bg-linen-white shadow-[0_16px_64px_rgba(45,43,41,0.12),0_2px_8px_rgba(45,43,41,0.06)] mx-4 sm:mx-auto">
         {/* Chat Header */}
         <div className="bg-warm-gray-800 px-5 py-4 flex items-center justify-between rounded-b-sm">
           <span className="font-body text-base font-normal text-white lowercase tracking-[0.02em]">

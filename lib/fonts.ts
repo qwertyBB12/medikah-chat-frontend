@@ -1,8 +1,8 @@
-import { Mulish, IBM_Plex_Mono, Fraunces, Instrument_Serif, Inter, Playfair_Display, Source_Sans_3, DM_Serif_Display, DM_Sans, Oswald } from 'next/font/google';
+import { Mulish, IBM_Plex_Mono, Fraunces, Instrument_Serif, Inter, Playfair_Display, Source_Sans_3, DM_Serif_Display, DM_Sans } from 'next/font/google';
 
 export const mulish = Mulish({
   subsets: ['latin'],
-  weight: ['300', '400', '600', '700', '800', '900'],
+  weight: ['300', '400', '500', '600', '700', '800', '900'],
   variable: '--font-mulish',
   display: 'swap',
 });
@@ -56,13 +56,6 @@ export const dmSans = DM_Sans({
   subsets: ['latin'],
   weight: ['300', '400', '500', '600', '700'],
   variable: '--font-dm-sans',
-  display: 'swap',
-});
-
-export const oswald = Oswald({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
-  variable: '--font-oswald',
   display: 'swap',
 });
 
