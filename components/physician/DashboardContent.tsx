@@ -8,6 +8,7 @@
 
 import { useEffect, useState } from 'react';
 import { SupportedLang } from '../../lib/i18n';
+import { useSupabaseToken } from '../../lib/useSupabaseToken';
 import VerificationBadge from './VerificationBadge';
 import ProfileOverview from './ProfileOverview';
 import AIDiagnosisTool from './AIDiagnosisTool';
@@ -76,6 +77,7 @@ export default function DashboardContent({
 }: DashboardContentProps) {
   const t = content[lang];
   const normalizedStatus = verificationStatus?.toLowerCase() || 'pending';
+  const accessToken = useSupabaseToken();
 
   const [dashboardData, setDashboardData] = useState<DashboardData>({
     inquiryCount: 0,
@@ -84,10 +86,15 @@ export default function DashboardContent({
 
   // Fetch dashboard data from backend
   useEffect(() => {
-    if (!physicianId) return;
+    if (!physicianId || !accessToken) return;
     (async () => {
       try {
-        const res = await fetch(`${API_URL}/physicians/${physicianId}/dashboard`);
+        const res = await fetch(`${API_URL}/physicians/${physicianId}/dashboard`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        });
         if (res.ok) {
           const data = await res.json();
           setDashboardData({
@@ -102,7 +109,7 @@ export default function DashboardContent({
         // Use defaults
       }
     })();
-  }, [physicianId]);
+  }, [physicianId, accessToken]);
 
   // Get status description
   const getStatusDescription = () => {
@@ -180,13 +187,13 @@ export default function DashboardContent({
       </div>
 
       {/* Row 2: AI Diagnosis Tool - Full width */}
-      <AIDiagnosisTool lang={lang} />
+      <AIDiagnosisTool lang={lang} accessToken={accessToken} />
 
       {/* Row 3: Inquiry List - Full width */}
-      {physicianId && <InquiryList physicianId={physicianId} lang={lang} />}
+      {physicianId && <InquiryList physicianId={physicianId} lang={lang} accessToken={accessToken} />}
 
       {/* Row 4: Availability Editor - Full width */}
-      {physicianId && <AvailabilityEditor physicianId={physicianId} lang={lang} />}
+      {physicianId && <AvailabilityEditor physicianId={physicianId} lang={lang} accessToken={accessToken} />}
 
       {/* Network Card - Full width */}
       <div className="bg-gradient-to-br from-inst-blue to-[#243447] rounded-[12px] p-6 text-white shadow-lg">

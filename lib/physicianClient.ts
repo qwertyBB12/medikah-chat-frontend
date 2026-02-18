@@ -362,31 +362,30 @@ export interface PhysicianConsentRecord {
 }
 
 /**
- * Save physician consent record
+ * Save physician consent record via server-side API route
  */
 export async function savePhysicianConsent(
   consent: PhysicianConsentRecord
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    if (!supabase) {
-      console.warn('Supabase not configured — consent record not persisted.');
-      return { success: true };
-    }
-
-    const { error } = await supabase.from('physician_consent_records').insert({
-      physician_id: consent.physicianId,
-      form_type: 'network_agreement',
-      form_version: consent.formVersion,
-      language: consent.language,
-      sections: consent.sections,
-      recording_consent: consent.recordingConsent,
-      signed_at: consent.signedAt,
-      user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+    const response = await fetch('/api/consent/physician-save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        physicianId: consent.physicianId,
+        formType: 'network_agreement',
+        formVersion: consent.formVersion,
+        language: consent.language,
+        sections: consent.sections,
+        recordingConsent: consent.recordingConsent,
+      }),
     });
 
-    if (error) {
-      console.error('Failed to save physician consent:', error);
-      return { success: false, error: error.message };
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error('Failed to save physician consent:', result.error);
+      return { success: false, error: result.error };
     }
 
     return { success: true };

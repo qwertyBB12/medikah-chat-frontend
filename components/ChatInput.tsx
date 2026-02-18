@@ -48,7 +48,10 @@ export default function ChatInput({
           type="submit"
           disabled={isSending}
           aria-disabled={isSending}
-          className="font-body absolute right-3 bottom-3 px-7 py-3 font-medium tracking-[0.02em] text-[15px] bg-teal-500 text-white rounded-sm shadow-[0_2px_8px_rgba(44,122,140,0.3)] transition-all duration-200 hover:bg-teal-600 hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(44,122,140,0.4)] active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          className="font-body absolute right-3 bottom-3 px-7 py-3 font-medium tracking-[0.02em] text-[15px] text-white rounded-sm shadow-[0_2px_8px_rgba(44,122,140,0.3)] transition-all duration-200 hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(44,122,140,0.4)] active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          style={{
+            backgroundColor: accentColor === 'blue' ? '#1B2A41' : '#2C7A8C',
+          }}
         >
           Send
         </button>

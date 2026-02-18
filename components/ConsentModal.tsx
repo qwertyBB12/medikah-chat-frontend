@@ -7,6 +7,11 @@ import {
 } from '../lib/consentContent';
 import { saveConsentRecord, ConsentFormData } from '../lib/consent';
 
+const saveErrorText = {
+  en: 'Failed to save your consent. Please try again.',
+  es: 'No se pudo guardar su consentimiento. Por favor intente de nuevo.',
+} as const;
+
 interface ConsentModalProps {
   userId: string;
   lang: SupportedLang;
@@ -19,6 +24,7 @@ export default function ConsentModal({ userId, lang: initialLang, onComplete }: 
   const [agreed, setAgreed] = useState(false);
   const [recordingConsent, setRecordingConsent] = useState<boolean | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const sections = consentSections[lang];
@@ -41,6 +47,7 @@ export default function ConsentModal({ userId, lang: initialLang, onComplete }: 
   const handleSubmit = async () => {
     if (!canSubmit) return;
     setSubmitting(true);
+    setSaveError(null);
 
     const checkboxes: Record<string, boolean> = {};
     sections.forEach((s) => { checkboxes[s.checkboxId] = true; });
@@ -52,10 +59,13 @@ export default function ConsentModal({ userId, lang: initialLang, onComplete }: 
       recordingConsent,
     };
 
-    // Fire-and-forget — don't block the UI on Supabase
-    saveConsentRecord(formData).catch(() => {
-      console.warn('Consent record could not be persisted.');
-    });
+    const result = await saveConsentRecord(formData);
+
+    if (!result.success) {
+      setSaveError(saveErrorText[lang]);
+      setSubmitting(false);
+      return;
+    }
 
     onComplete();
   };
@@ -156,6 +166,12 @@ export default function ConsentModal({ userId, lang: initialLang, onComplete }: 
                 : 'He leído, comprendido y acepto las 15 secciones de este formulario de reconocimiento'}
             </span>
           </label>
+
+          {saveError && (
+            <p className="font-dm-sans text-sm text-alert-garnet text-center">
+              {saveError}
+            </p>
+          )}
 
           <button
             type="button"

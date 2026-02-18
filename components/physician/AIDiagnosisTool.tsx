@@ -33,6 +33,7 @@ interface HistoryEntry {
 
 interface AIDiagnosisToolProps {
   lang: SupportedLang;
+  accessToken?: string | null;
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
@@ -88,7 +89,7 @@ const confidenceColors: Record<string, { bg: string; text: string }> = {
   LOW: { bg: 'bg-red-50', text: 'text-red-700' },
 };
 
-export default function AIDiagnosisTool({ lang }: AIDiagnosisToolProps) {
+export default function AIDiagnosisTool({ lang, accessToken }: AIDiagnosisToolProps) {
   const t = content[lang];
 
   const [symptoms, setSymptoms] = useState('');
@@ -106,9 +107,12 @@ export default function AIDiagnosisTool({ lang }: AIDiagnosisToolProps) {
     setError(false);
 
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+
       const res = await fetch(`${API_URL}/ai/diagnosis`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           symptoms: symptoms.trim(),
           age_range: ageRange.trim() || null,
