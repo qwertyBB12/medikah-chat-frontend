@@ -115,12 +115,17 @@ export default function PhysicianOnboardingPage() {
       return;
     }
 
-    // Check if already onboarded - redirect to dashboard
+    // Check if already onboarded - redirect to dashboard or show consent
     const email = session.user?.email;
     if (email) {
       getPhysicianOnboardingStatus(email).then((status) => {
         if (status.isOnboarded && status.hasConsent) {
           router.replace('/physicians/dashboard');
+        } else if (status.isOnboarded && !status.hasConsent && status.physicianId) {
+          // Already onboarded but missing consent — skip to consent modal
+          setPendingPhysicianId(status.physicianId);
+          setPendingPhysicianName(session.user?.name || '');
+          setShowConsentModal(true);
         }
       });
     }
