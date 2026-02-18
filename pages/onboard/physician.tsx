@@ -13,7 +13,7 @@ import PublicationSelector, { ManualPublicationForm } from '../../components/Pub
 import PhysicianConsentModal, { PhysicianConsentData } from '../../components/PhysicianConsentModal';
 import { Publication, PublicationSource } from '../../lib/publications';
 import { savePhysicianConsent } from '../../lib/physicianClient';
-import { LOGO_SRC } from '../../lib/assets';
+import { LOGO_DARK_SRC } from '../../lib/assets';
 import { SupportedLang } from '../../lib/i18n';
 
 type Message = {
@@ -283,16 +283,20 @@ export default function PhysicianOnboardingPage() {
         {/* Header */}
         <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-border-line/50 px-6 py-4">
           <div className="max-w-4xl mx-auto flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-3">
+            <Link href="/" className="flex items-center gap-2">
               <Image
-                src={LOGO_SRC}
-                alt="Medikah"
-                width={40}
-                height={40}
+                src={LOGO_DARK_SRC}
+                alt=""
+                width={320}
+                height={320}
                 priority
-                className="w-10 h-10"
+                className="w-8 h-auto opacity-70"
               />
-              <span className="font-dm-serif text-xl text-inst-blue">
+              <span className="font-body text-[1.125rem] font-medium tracking-[0.04em] lowercase text-inst-blue">
+                medikah
+              </span>
+              <span className="text-body-slate/40 mx-1">|</span>
+              <span className="font-dm-sans text-sm font-medium text-clinical-teal">
                 {lang === 'en' ? 'Physician Network' : 'Red de Médicos'}
               </span>
             </Link>

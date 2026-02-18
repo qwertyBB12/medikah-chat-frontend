@@ -32,7 +32,7 @@ export default function WelcomeRotator() {
           {MESSAGES[index]}
         </p>
         <p className="font-dm-sans text-xl font-normal text-body-slate leading-relaxed mt-4 max-w-[480px] mx-auto animate-welcomeFadeDelay">
-          Coordinating your care across borders.
+          Care without distance.
         </p>
       </div>
     </div>

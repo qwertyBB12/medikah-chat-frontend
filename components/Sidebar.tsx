@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { LOGO_SRC, WORDMARK_SRC } from '../lib/assets';
+import { LOGO_SRC } from '../lib/assets';
 
 interface SidebarProps {
   onSignOut: () => void;
@@ -9,22 +9,18 @@ interface SidebarProps {
 export default function Sidebar({ onSignOut, onNewChat }: SidebarProps) {
   return (
     <aside className="hidden md:flex md:w-72 lg:w-80 flex-col md:sticky md:top-0 md:h-screen md:max-h-screen md:flex-shrink-0 md:overflow-hidden bg-gradient-to-b from-inst-blue to-[#243447] text-white shadow-[2px_0_12px_rgba(27,42,65,0.12)]">
-      <div className="px-6 py-10 flex flex-col items-center gap-5">
+      <div className="px-6 py-10 flex flex-col items-center gap-3">
         <Image
           src={LOGO_SRC}
-          alt="Medikah"
-          width={1024}
-          height={1024}
+          alt=""
+          width={320}
+          height={320}
           priority
-          className="w-20 h-auto mx-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
+          className="w-14 h-auto mx-auto opacity-80"
         />
-        <Image
-          src={WORDMARK_SRC}
-          alt="Medikah"
-          width={600}
-          height={200}
-          className="w-36 h-auto mx-auto"
-        />
+        <span className="font-body text-[1.5rem] font-medium tracking-[0.04em] lowercase text-white">
+          medikah
+        </span>
       </div>
 
       <div className="px-6 pb-4">

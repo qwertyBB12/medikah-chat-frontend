@@ -10,23 +10,26 @@ export default function TermsOfService() {
     <>
       <Head>
         <title>Terms of Service — Medikah</title>
-        <meta name="description" content="Medikah Terms of Service. HIPAA-compliant technology platform for cross-border healthcare coordination." />
+        <meta name="description" content="Medikah Terms of Service. HIPAA-compliant healthcare coordination platform." />
         <link rel="canonical" href="https://medikah.health/terms" />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://medikah.health/terms" />
         <meta property="og:title" content="Terms of Service — Medikah" />
-        <meta property="og:description" content="Medikah Terms of Service. HIPAA-compliant technology platform for cross-border healthcare coordination." />
+        <meta property="og:description" content="Medikah Terms of Service. HIPAA-compliant healthcare coordination platform." />
         <meta property="og:image" content="https://medikah.health/og-image.png" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Terms of Service — Medikah" />
-        <meta name="twitter:description" content="Medikah Terms of Service. HIPAA-compliant technology platform for cross-border healthcare coordination." />
+        <meta name="twitter:description" content="Medikah Terms of Service. HIPAA-compliant healthcare coordination platform." />
         <meta name="twitter:image" content="https://medikah.health/og-image.png" />
       </Head>
 
       <nav className="sticky top-0 bg-white/95 backdrop-blur-[12px] backdrop-saturate-[180%] border-b border-border-line/30 shadow-[0_1px_3px_rgba(27,42,65,0.04)] z-[1000] h-20">
         <div className="max-w-[1400px] mx-auto px-6 h-full flex items-center justify-between">
-          <Link href="/">
-            <Image src={LOGO_DARK} alt="Medikah" width={48} height={48} priority className="h-12 w-auto" />
+          <Link href="/" className="flex items-center gap-2">
+            <Image src={LOGO_DARK} alt="" width={320} height={320} priority className="w-7 h-auto opacity-70" />
+            <span className="font-body text-[1.125rem] font-medium tracking-[0.04em] lowercase text-inst-blue">
+              medikah
+            </span>
           </Link>
           <Link
             href="/"
