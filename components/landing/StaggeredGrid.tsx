@@ -59,11 +59,11 @@ export default function StaggeredGrid() {
       <div className="max-w-[1400px] mx-auto px-[clamp(1.5rem,6vw,6rem)] mb-[clamp(3rem,6vh,6rem)]">
         <div className="flex items-center gap-4 mb-6">
           <span className="w-12 h-px bg-teal-500" />
-          <span className="font-body text-[0.6875rem] font-medium uppercase tracking-[0.3em] text-teal-500">
+          <span className="font-body text-[0.6875rem] font-medium uppercase tracking-[0.25em] text-teal-500">
             {t.eyebrow[locale]}
           </span>
         </div>
-        <h2 className="font-heading text-[clamp(2rem,4vw,3.5rem)] font-normal uppercase leading-[0.95] text-deep-charcoal whitespace-pre-line">
+        <h2 className="font-heading text-[clamp(2rem,4vw,3.5rem)] font-medium uppercase leading-[0.95] text-deep-charcoal whitespace-pre-line">
           {t.heading[locale]}
         </h2>
       </div>
@@ -73,14 +73,14 @@ export default function StaggeredGrid() {
         {CARDS.map((card, i) => (
           <div
             key={card.initial}
-            className={`bg-white border border-warm-gray-800/[0.06] rounded-sm overflow-hidden transition-all duration-400 hover:-translate-y-2 hover:shadow-[0_24px_64px_rgba(45,43,41,0.1)] ${
+            className={`bg-linen-white border border-warm-gray-800/[0.06] rounded-sm overflow-hidden transition-all duration-400 hover:-translate-y-1.5 hover:shadow-[0_20px_48px_rgba(27,42,65,0.1)] ${
               STAGGER_OFFSETS[i] || ''
             } md:nth-child-2:mt-0 lg:nth-child-2:mt-[clamp(3rem,6vh,6rem)]`}
             style={i === 1 ? {} : {}}
           >
             {/* Card image area */}
-            <div className={`h-[clamp(180px,20vw,260px)] flex items-center justify-center relative overflow-hidden ${card.imgClass}`}>
-              <span className="font-heading text-[clamp(3rem,5vw,5rem)] font-light text-teal-500 opacity-40">
+            <div className={`h-[clamp(120px,14vw,160px)] flex items-center justify-center relative overflow-hidden ${card.imgClass}`}>
+              <span className="font-heading text-[clamp(2.5rem,4vw,3.5rem)] font-medium text-teal-300 opacity-60">
                 {card.initial}
               </span>
               <div className="absolute bottom-0 left-0 right-0 h-[40%] bg-gradient-to-t from-white/50 to-transparent" />
@@ -88,7 +88,7 @@ export default function StaggeredGrid() {
 
             {/* Card body */}
             <div className="p-[clamp(1.25rem,2vw,2rem)]">
-              <div className="text-[0.625rem] font-medium uppercase tracking-[0.15em] text-teal-500 mb-2">
+              <div className="text-[0.625rem] font-medium uppercase tracking-[0.15em] text-teal-600 mb-2">
                 {card.meta[locale]}
               </div>
               <h3 className="font-heading text-[1.25rem] font-medium uppercase tracking-[0.02em] text-deep-charcoal mb-2 whitespace-pre-line">
@@ -97,7 +97,7 @@ export default function StaggeredGrid() {
               <p className="text-sm text-text-muted leading-[1.7]">
                 {card.body[locale]}
               </p>
-              <span className="inline-block mt-3 text-[0.625rem] font-medium uppercase tracking-[0.1em] text-teal-600 bg-teal-200 px-3 py-1 rounded-sm">
+              <span className="inline-block mt-3 text-[0.6875rem] font-medium uppercase tracking-[0.04em] text-teal-700 bg-teal-500/[0.08] px-3.5 py-1.5 rounded-sm">
                 {card.badge[locale]}
               </span>
               <Link

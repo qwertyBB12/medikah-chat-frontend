@@ -48,7 +48,7 @@ export default function DarkFeatures() {
     <section
       className="relative"
       style={{
-        background: 'linear-gradient(180deg, #0D1520 0%, #1B2A41 100%)',
+        background: 'linear-gradient(180deg, #1B2A41 0%, #0D1520 100%)',
       }}
       id="physicians"
     >
@@ -63,10 +63,10 @@ export default function DarkFeatures() {
       <div className="max-w-[1400px] mx-auto py-[clamp(4rem,8vh,8rem)] px-[clamp(1.5rem,6vw,6rem)] relative z-[1]">
         {/* Header */}
         <div className="text-center mb-[clamp(3rem,6vh,6rem)]">
-          <div className="text-[0.625rem] font-medium uppercase tracking-[0.3em] text-teal-400 mb-6">
+          <div className="text-[0.6875rem] font-medium uppercase tracking-[0.25em] text-teal-400 mb-6">
             {t.eyebrow[locale]}
           </div>
-          <h2 className="font-heading text-[clamp(2rem,4vw,3.5rem)] font-normal uppercase leading-[0.95] text-white">
+          <h2 className="font-heading text-[clamp(2rem,4vw,3.5rem)] font-medium uppercase leading-[0.95] text-white">
             {t.heading[locale]}
           </h2>
         </div>
@@ -76,33 +76,27 @@ export default function DarkFeatures() {
           {FEATURES.map((feature) => (
             <div
               key={feature.roman}
-              className="relative bg-white/[0.04] backdrop-blur-[24px] border border-white/[0.06] rounded-sm overflow-hidden transition-all duration-400 hover:bg-white/[0.07] hover:-translate-y-1.5 hover:shadow-[0_24px_64px_rgba(0,0,0,0.3)] max-w-[600px] mx-auto lg:max-w-none"
+              className="relative bg-[rgba(27,42,65,0.4)] backdrop-blur-[8px] border border-white/[0.06] border-t-[3px] border-t-teal-500 rounded-sm overflow-hidden transition-all duration-400 hover:border-white/[0.1] hover:border-t-teal-400 hover:-translate-y-1 hover:shadow-[0_24px_64px_rgba(0,0,0,0.3)] max-w-[600px] mx-auto lg:max-w-none"
               style={{ WebkitBackdropFilter: 'blur(24px)' }}
             >
-              {/* Teal top accent */}
-              <div
-                className="absolute top-0 left-0 right-0 h-[3px]"
-                style={{ background: 'linear-gradient(90deg, #2C7A8C, #7BBFCC)' }}
-              />
-
               <div className="p-[clamp(2rem,3vw,3rem)]">
-                <div className="font-heading text-[clamp(3rem,5vw,4.5rem)] font-light text-teal-400 leading-none mb-6 opacity-80">
+                <div className="font-heading text-[clamp(1.5rem,2.5vw,2rem)] font-medium text-teal-400 leading-none mb-6">
                   {feature.roman}
                 </div>
                 <div className="text-[0.625rem] font-medium uppercase tracking-[0.2em] text-teal-300 mb-4">
                   {feature.eyebrow[locale]}
                 </div>
-                <h3 className="font-heading text-[clamp(1.25rem,2vw,1.75rem)] font-normal uppercase leading-none text-white mb-4 whitespace-pre-line">
+                <h3 className="font-heading text-[clamp(1.25rem,2vw,1.75rem)] font-medium uppercase leading-[1.05] text-white mb-4 whitespace-pre-line">
                   {feature.title[locale]}
                 </h3>
-                <p className="text-[0.9375rem] leading-[1.8] text-cream-400">
+                <p className="text-[0.9375rem] leading-[1.8] text-white/50">
                   {feature.body[locale]}
                 </p>
                 <div className="flex gap-3 mt-6 flex-wrap">
                   {feature.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="text-[0.625rem] font-medium uppercase tracking-[0.1em] text-cream-500 px-4 py-1.5 border border-white/10 rounded-sm"
+                      className="text-[0.625rem] font-medium uppercase tracking-[0.1em] text-cream-500 px-4 py-1.5 border border-white/[0.08] rounded-sm"
                     >
                       {tag}
                     </span>

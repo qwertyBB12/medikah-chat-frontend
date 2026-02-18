@@ -72,7 +72,7 @@ export default function HorizontalStats() {
       <div
         className="sticky top-0 h-screen overflow-hidden flex items-center relative"
         style={{
-          background: 'linear-gradient(135deg, #0D1520 0%, #1B2A41 100%)',
+          background: 'linear-gradient(135deg, #1B2A41 0%, #0D1520 100%)',
         }}
       >
         {/* Grain */}
@@ -108,7 +108,7 @@ export default function HorizontalStats() {
               key={slide.stat}
               className="min-w-[100vw] h-screen flex flex-col items-center justify-center px-[clamp(2rem,6vw,8rem)]"
             >
-              <div className="font-heading text-[clamp(6rem,20vw,18rem)] font-light text-teal-400 leading-[0.85] tracking-[-0.04em]">
+              <div className="font-heading text-[clamp(6rem,20vw,18rem)] font-medium text-teal-400 leading-[0.85] tracking-[-0.04em]">
                 {slide.stat}
               </div>
               <div className="font-body text-[clamp(0.75rem,1.2vw,1rem)] font-medium uppercase tracking-[0.2em] text-cream-500 mt-[clamp(1rem,2vh,2rem)]">
@@ -126,7 +126,7 @@ export default function HorizontalStats() {
           {SLIDES.map((_, i) => (
             <div
               key={i}
-              className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+              className={`w-2 h-2 rounded-full transition-all duration-300 ${
                 i === activeSlide
                   ? 'bg-teal-400 scale-150'
                   : 'bg-white/20'

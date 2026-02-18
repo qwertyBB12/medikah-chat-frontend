@@ -26,15 +26,15 @@ export default function LandingFooter() {
         <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr] gap-[clamp(2rem,4vw,6rem)] pb-12">
           {/* Brand column */}
           <div>
-            <span className="font-body text-2xl font-normal text-white lowercase tracking-[0.02em]">
+            <span className="font-body text-2xl font-medium text-white lowercase tracking-[0.04em]">
               medikah
             </span>
-            <p className="text-cream-400 text-[0.9375rem] mt-5 max-w-[320px] leading-[1.7]">
+            <p className="text-white/50 text-[0.9375rem] mt-5 max-w-[320px] leading-[1.7]">
               {isEs
                 ? 'Plataforma tecnol\u00f3gica compatible con HIPAA para coordinaci\u00f3n de salud transfronteriza. M\u00e9dicos verificados, videoconferencia segura, y programaci\u00f3n \u2014 en su idioma, en sus t\u00e9rminos.'
                 : 'HIPAA-compliant technology platform for cross-border healthcare coordination. Verified physicians, secure video conferencing, and scheduling \u2014 in your language, on your terms.'}
             </p>
-            <div className="font-body text-xs font-medium uppercase tracking-[0.08em] text-teal-400 mt-8">
+            <div className="font-body text-[0.8125rem] font-medium tracking-[0.04em] text-teal-400 mt-8">
               {isEs ? 'Tecnolog\u00eda de Salud Que Cruza Fronteras.' : 'Healthcare Technology That Crosses Borders.'}
             </div>
             {/* Trust badges */}
