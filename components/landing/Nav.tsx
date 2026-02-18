@@ -35,8 +35,8 @@ export default function Nav() {
         {/* Logo — text wordmark */}
         <Link
           href="/"
-          className={`font-body text-[1.375rem] font-normal tracking-[0.02em] lowercase transition-colors duration-400 ${
-            scrolled ? 'text-deep-charcoal' : 'text-white'
+          className={`font-body text-[1.25rem] font-medium tracking-[0.04em] lowercase transition-colors duration-400 ${
+            scrolled ? 'text-inst-blue' : 'text-white'
           }`}
         >
           medikah
@@ -48,7 +48,7 @@ export default function Nav() {
             <Link
               key={link.label.en}
               href={link.href}
-              className={`font-body text-xs font-medium uppercase tracking-[0.12em] transition-colors duration-400 ${
+              className={`font-body text-[0.75rem] font-medium uppercase tracking-[0.1em] transition-colors duration-400 ${
                 scrolled
                   ? 'text-text-muted hover:text-deep-charcoal'
                   : 'text-white/60 hover:text-white'

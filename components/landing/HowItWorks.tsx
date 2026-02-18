@@ -53,16 +53,16 @@ export default function HowItWorks() {
       <div className="lg:sticky lg:top-0 lg:h-screen flex flex-col justify-center px-[clamp(2rem,5vw,6rem)] py-16 bg-linen min-h-[60vh]">
         <div className="flex items-center gap-4 mb-8">
           <span className="w-12 h-px bg-teal-500" />
-          <span className="font-body text-[0.6875rem] font-medium uppercase tracking-[0.3em] text-teal-500">
+          <span className="font-body text-[0.6875rem] font-medium uppercase tracking-[0.25em] text-teal-500">
             {t.eyebrow[locale]}
           </span>
         </div>
-        <h2 className="font-heading text-[clamp(2.5rem,5vw,4.5rem)] font-normal uppercase leading-[0.95] tracking-[-0.02em] text-deep-charcoal">
+        <h2 className="font-heading text-[clamp(2.5rem,5vw,4.5rem)] font-medium uppercase leading-[0.95] tracking-[-0.02em] text-deep-charcoal">
           {t.heading1[locale]}<br />
           {t.heading2[locale]}<br />
           <span className="text-teal-500">{t.headingAccent[locale]}</span>
         </h2>
-        <p className="text-[clamp(1rem,1.5vw,1.25rem)] leading-[1.7] text-text-secondary max-w-[480px] mt-8">
+        <p className="text-[clamp(1rem,1.5vw,1.125rem)] leading-[1.7] text-text-secondary max-w-[480px] mt-8">
           {t.lead[locale]}
         </p>
       </div>
@@ -77,16 +77,16 @@ export default function HowItWorks() {
             {/* Teal left-border accent */}
             <div className="absolute left-0 top-[20%] bottom-[20%] w-[3px] rounded-sm bg-gradient-to-b from-teal-500 to-teal-300" />
 
-            <div className="font-heading text-[clamp(4rem,8vw,7rem)] font-light text-teal-200 leading-none mb-4">
+            <div className="font-heading text-[clamp(3.5rem,7vw,6rem)] font-medium text-teal-500/[0.12] leading-none mb-4">
               {step.number}
             </div>
             <h3 className="font-heading text-[clamp(1.25rem,2vw,1.75rem)] font-medium uppercase tracking-[0.02em] text-deep-charcoal mb-4">
               {step.title[locale]}
             </h3>
-            <p className="text-base leading-[1.8] text-text-secondary max-w-[480px]">
+            <p className="text-base leading-[1.7] text-text-secondary max-w-[480px]">
               {step.body[locale]}
             </p>
-            <span className="inline-block mt-6 text-[0.6875rem] font-medium uppercase tracking-[0.12em] text-teal-600 bg-teal-200 px-4 py-1.5 rounded-sm w-fit">
+            <span className="inline-block mt-6 text-[0.6875rem] font-medium uppercase tracking-[0.04em] text-teal-700 bg-teal-500/[0.08] px-3.5 py-1.5 rounded-sm w-fit">
               {step.tag[locale]}
             </span>
           </div>
