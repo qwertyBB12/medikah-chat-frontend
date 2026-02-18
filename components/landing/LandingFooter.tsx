@@ -31,11 +31,11 @@ export default function LandingFooter() {
             </span>
             <p className="text-white/50 text-[0.9375rem] mt-5 max-w-[320px] leading-[1.7]">
               {isEs
-                ? 'Plataforma tecnológica que cumple con HIPAA para coordinación de salud entre países. Médicos verificados, videoconferencia segura y agenda \u2014 en su idioma, en sus condiciones.'
-                : 'HIPAA-compliant technology platform for cross-border healthcare coordination. Verified physicians, secure video conferencing, and scheduling \u2014 in your language, on your terms.'}
+                ? 'Plataforma tecnol\u00f3gica que cumple con HIPAA para coordinaci\u00f3n de salud entre pa\u00edses. M\u00e9dicos verificados, videoconferencia segura y agenda \u2014 en su idioma, en sus condiciones.'
+                : 'HIPAA-compliant technology platform for international healthcare coordination. Verified physicians, secure video conferencing, and scheduling \u2014 in your language, on your terms.'}
             </p>
             <div className="font-body text-[0.8125rem] font-medium tracking-[0.04em] text-teal-400 mt-8">
-              {isEs ? 'Cuidado humano que cruza fronteras.' : 'Human care that crosses borders.'}
+              {isEs ? 'Cuidado humano sin distancia.' : 'Human care without distance.'}
             </div>
             {/* Trust badges */}
             <div className="flex gap-3 mt-5 flex-wrap">
