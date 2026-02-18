@@ -6,12 +6,12 @@ const FEATURES = [
   {
     roman: 'I',
     eyebrow: { en: 'Intelligence', es: 'Inteligencia' },
-    title: { en: 'Cross-Border\nTriage', es: 'Triaje\nTransfronterizo' },
+    title: { en: 'Cross-Border\nCoordination', es: 'Coordinaci\u00f3n\nTransfronteriza' },
     body: {
-      en: 'AI-powered conversational intake that understands symptoms in both languages, assesses urgency, and navigates cross-border regulatory requirements automatically.',
-      es: 'Admisi\u00f3n conversacional con IA que entiende s\u00edntomas en ambos idiomas, eval\u00faa urgencia, y navega requisitos regulatorios transfronterizos autom\u00e1ticamente.',
+      en: 'Conversational intake technology that captures health concerns in both languages, organizes information for physician review, and navigates cross-border regulatory requirements automatically.',
+      es: 'Tecnolog\u00eda de admisi\u00f3n conversacional que captura inquietudes de salud en ambos idiomas, organiza informaci\u00f3n para revisi\u00f3n m\u00e9dica, y navega requisitos regulatorios transfronterizos autom\u00e1ticamente.',
     },
-    tags: ['GPT-4o', 'Bilingual', '24/7'],
+    tags: ['Bilingual', 'Automated', '24/7'],
   },
   {
     roman: 'II',
@@ -26,10 +26,10 @@ const FEATURES = [
   {
     roman: 'III',
     eyebrow: { en: 'Connection', es: 'Conexi\u00f3n' },
-    title: { en: 'Secure\nTelemedicine', es: 'Telemedicina\nSegura' },
+    title: { en: 'Secure\nTechnology', es: 'Tecnolog\u00eda\nSegura' },
     body: {
-      en: 'HIPAA-compliant video consultations via Doxy.me, appointment scheduling with timezone intelligence, digital consent, and encrypted communication.',
-      es: 'Videoconsultas compatibles con HIPAA v\u00eda Doxy.me, programaci\u00f3n de citas con inteligencia de zona horaria, consentimiento digital y comunicaci\u00f3n encriptada.',
+      en: 'HIPAA-compliant video conferencing via Doxy.me, appointment scheduling with timezone intelligence, digital consent, and encrypted communication.',
+      es: 'Videoconferencias compatibles con HIPAA v\u00eda Doxy.me, programaci\u00f3n de citas con inteligencia de zona horaria, consentimiento digital y comunicaci\u00f3n encriptada.',
     },
     tags: ['Doxy.me', 'HIPAA', 'Encrypted'],
   },

@@ -6,6 +6,7 @@ const LINKS = [
   { label: { en: 'Patients', es: 'Pacientes' }, href: '#patients' },
   { label: { en: 'Physicians', es: 'Médicos' }, href: '#physicians' },
   { label: { en: 'About', es: 'Acerca' }, href: '#about' },
+  { label: { en: 'Contact', es: 'Contacto' }, href: 'mailto:partnerships@medikah.health' },
   { label: { en: 'Get Started', es: 'Comenzar' }, href: '/chat' },
 ];
 

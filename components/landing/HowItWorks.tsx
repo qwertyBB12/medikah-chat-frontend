@@ -5,30 +5,30 @@ type Locale = 'en' | 'es';
 const STEPS = [
   {
     number: '01',
-    title: { en: 'Triage', es: 'Triaje' },
+    title: { en: 'Intake', es: 'Admisi\u00f3n' },
     body: {
-      en: 'Describe your symptoms to our AI health assistant in English or Spanish. The conversational triage understands context, urgency, and cross-border care needs.',
-      es: 'Describa sus s\u00edntomas a nuestro asistente de salud con IA en ingl\u00e9s o espa\u00f1ol. El triaje conversacional entiende contexto, urgencia y necesidades transfronterizas.',
+      en: 'Describe your health concerns in English or Spanish. Our coordination technology captures your information, organizes it for physician review, and navigates cross-border requirements.',
+      es: 'Describa sus inquietudes de salud en ingl\u00e9s o espa\u00f1ol. Nuestra tecnolog\u00eda de coordinaci\u00f3n captura su informaci\u00f3n, la organiza para revisi\u00f3n m\u00e9dica, y navega requisitos transfronterizos.',
     },
-    tag: { en: 'AI-Powered', es: 'Con IA' },
+    tag: { en: 'Bilingual', es: 'Biling\u00fce' },
   },
   {
     number: '02',
     title: { en: 'Match', es: 'Conexi\u00f3n' },
     body: {
-      en: 'Based on your symptoms, location, and language, Medikah identifies verified physicians licensed to practice across borders. Every credential is verified through our three-tier system.',
-      es: 'Seg\u00fan sus s\u00edntomas, ubicaci\u00f3n e idioma, Medikah identifica m\u00e9dicos verificados con licencia para ejercer transfronterizamente. Cada credencial se verifica a trav\u00e9s de nuestro sistema de tres niveles.',
+      en: 'Based on your health concerns, location, and language, Medikah identifies verified physicians licensed to practice across borders. Every credential is verified through our three-tier system.',
+      es: 'Seg\u00fan sus inquietudes de salud, ubicaci\u00f3n e idioma, Medikah identifica m\u00e9dicos verificados con licencia para ejercer transfronterizamente. Cada credencial se verifica a trav\u00e9s de nuestro sistema de tres niveles.',
     },
     tag: { en: 'Verified Physicians', es: 'M\u00e9dicos Verificados' },
   },
   {
     number: '03',
-    title: { en: 'Care', es: 'Atenci\u00f3n' },
+    title: { en: 'Connect', es: 'Conexi\u00f3n' },
     body: {
-      en: 'Connect with your physician via secure telemedicine. Appointments scheduled in your timezone, consent handled digitally, and follow-up coordinated across borders.',
-      es: 'Con\u00e9ctese con su m\u00e9dico v\u00eda telemedicina segura. Citas programadas en su zona horaria, consentimiento digital, y seguimiento coordinado transfronterizamente.',
+      en: 'Connect with your physician via secure video conferencing. Appointments scheduled in your timezone, consent handled digitally, and follow-up coordinated across borders.',
+      es: 'Con\u00e9ctese con su m\u00e9dico v\u00eda videoconferencia segura. Citas programadas en su zona horaria, consentimiento digital, y seguimiento coordinado transfronterizamente.',
     },
-    tag: { en: 'Secure Telemedicine', es: 'Telemedicina Segura' },
+    tag: { en: 'Encrypted', es: 'Encriptado' },
   },
 ];
 
@@ -42,8 +42,8 @@ export default function HowItWorks() {
     heading2: { en: 'Coordination That', es: 'de Salud Que' },
     headingAccent: { en: 'Crosses Borders', es: 'Cruza Fronteras' },
     lead: {
-      en: 'AI-powered triage connects you with the right physician, in your language, across any border. From first symptom to scheduled consultation.',
-      es: 'El triaje con IA lo conecta con el m\u00e9dico adecuado, en su idioma, sin importar fronteras. Desde el primer s\u00edntoma hasta la consulta programada.',
+      en: 'Our coordination technology connects you with the right physician, in your language, across any border. From first conversation to scheduled consultation.',
+      es: 'Nuestra tecnolog\u00eda de coordinaci\u00f3n lo conecta con el m\u00e9dico adecuado, en su idioma, sin importar fronteras. Desde la primera conversaci\u00f3n hasta la consulta programada.',
     },
   };
 

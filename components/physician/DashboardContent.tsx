@@ -51,19 +51,19 @@ const content = {
   },
   es: {
     welcome: 'Bienvenido de nuevo',
-    dashboardTitle: 'Panel del Medico',
+    dashboardTitle: 'Panel del M\u00e9dico',
     statusCard: {
-      title: 'Estado de Verificacion',
-      pendingDesc: 'Sus credenciales estan siendo revisadas. Esto generalmente toma 2-5 dias habiles.',
-      underReviewDesc: 'Un especialista en verificacion esta revisando sus documentos.',
+      title: 'Estado de Verificaci\u00f3n',
+      pendingDesc: 'Sus credenciales est\u00e1n siendo revisadas. Esto generalmente toma 2-5 d\u00edas h\u00e1biles.',
+      underReviewDesc: 'Un especialista en verificaci\u00f3n est\u00e1 revisando sus documentos.',
       verifiedDesc: 'Sus credenciales han sido verificadas. Ya puede recibir consultas.',
-      rejectedDesc: 'Se necesita informacion adicional. Por favor revise su correo electronico para mas detalles.',
+      rejectedDesc: 'Se necesita informaci\u00f3n adicional. Por favor revise su correo electr\u00f3nico para m\u00e1s detalles.',
     },
     networkCard: {
       title: 'Red Medikah',
-      description: 'Usted es parte de una red de medicos acreditados en las Americas, conectando pacientes con atencion medica de calidad.',
-      membersActive: 'medicos activos',
-      countriesServed: 'paises atendidos',
+      description: 'Usted es parte de una red de m\u00e9dicos acreditados en las Am\u00e9ricas, conectando pacientes con atenci\u00f3n m\u00e9dica de calidad.',
+      membersActive: 'm\u00e9dicos activos',
+      countriesServed: 'pa\u00edses atendidos',
     },
   },
 };

@@ -22,10 +22,10 @@ const SLIDES = [
   },
   {
     stat: '24/7',
-    label: { en: 'AI Triage', es: 'Triaje IA' },
+    label: { en: 'Intake', es: 'Admisi\u00f3n' },
     context: {
-      en: 'Our AI health assistant is always available. Describe your symptoms any time, get triaged, and connect with a physician.',
-      es: 'Nuestro asistente de salud con IA siempre est\u00e1 disponible. Describa sus s\u00edntomas en cualquier momento.',
+      en: 'Our coordination technology is always available. Describe your health concerns any time, share your information, and connect with a physician.',
+      es: 'Nuestra tecnolog\u00eda de coordinaci\u00f3n siempre est\u00e1 disponible. Describa sus inquietudes de salud en cualquier momento, comparta su informaci\u00f3n, y con\u00e9ctese con un m\u00e9dico.',
     },
   },
 ];

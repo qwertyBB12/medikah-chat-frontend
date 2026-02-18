@@ -31,11 +31,11 @@ export default function LandingFooter() {
             </span>
             <p className="text-cream-400 text-[0.9375rem] mt-5 max-w-[320px] leading-[1.7]">
               {isEs
-                ? 'Coordinaci\u00f3n de salud que cruza fronteras. Triaje con IA, m\u00e9dicos verificados, telemedicina segura \u2014 en su idioma, en sus t\u00e9rminos.'
-                : 'Healthcare coordination that crosses borders. AI-powered triage, verified physicians, secure telemedicine \u2014 in your language, on your terms.'}
+                ? 'Plataforma tecnol\u00f3gica compatible con HIPAA para coordinaci\u00f3n de salud transfronteriza. M\u00e9dicos verificados, videoconferencia segura, y programaci\u00f3n \u2014 en su idioma, en sus t\u00e9rminos.'
+                : 'HIPAA-compliant technology platform for cross-border healthcare coordination. Verified physicians, secure video conferencing, and scheduling \u2014 in your language, on your terms.'}
             </p>
             <div className="font-body text-xs font-medium uppercase tracking-[0.08em] text-teal-400 mt-8">
-              {isEs ? 'Atenci\u00f3n que cruza fronteras.' : 'Care that crosses borders.'}
+              {isEs ? 'Tecnolog\u00eda de Salud Que Cruza Fronteras.' : 'Healthcare Technology That Crosses Borders.'}
             </div>
             {/* Trust badges */}
             <div className="flex gap-4 mt-5 flex-wrap">
@@ -59,7 +59,7 @@ export default function LandingFooter() {
               {[
                 { label: { en: 'For Patients', es: 'Para Pacientes' }, href: '/chat?role=patient' },
                 { label: { en: 'For Physicians', es: 'Para M\u00e9dicos' }, href: '/chat?role=physician' },
-                { label: { en: 'AI Triage', es: 'Triaje IA' }, href: '#chat-section' },
+                { label: { en: 'Coordination', es: 'Coordinaci\u00f3n' }, href: '#chat-section' },
                 { label: { en: 'About', es: 'Acerca' }, href: '#about' },
               ].map((link) => (
                 <li key={link.label.en}>
@@ -85,6 +85,8 @@ export default function LandingFooter() {
                 { label: { en: 'Terms of Service', es: 'T\u00e9rminos de Servicio' }, href: '/terms' },
                 { label: { en: 'HIPAA Notice', es: 'Aviso HIPAA' }, href: '/privacy#hipaa' },
                 { label: { en: 'Contact', es: 'Contacto' }, href: 'mailto:support@medikah.health' },
+                { label: { en: 'Partnerships', es: 'Alianzas' }, href: 'mailto:partnerships@medikah.health' },
+                { label: { en: 'Legal', es: 'Legal' }, href: 'mailto:legal@medikah.health' },
               ].map((link) => (
                 <li key={link.label.en}>
                   <Link
@@ -102,7 +104,7 @@ export default function LandingFooter() {
         {/* Bottom bar */}
         <div className="border-t border-white/[0.06] pt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-cream-500 text-xs">
-            &copy; {new Date().getFullYear()} Medikah Health. {isEs ? 'Todos los derechos reservados.' : 'All rights reserved.'}
+            &copy; {new Date().getFullYear()} Medikah Corporation. {isEs ? 'Todos los derechos reservados.' : 'All rights reserved.'}
           </p>
           <div className="flex gap-[clamp(1rem,2vw,2rem)] flex-wrap justify-center">
             {[

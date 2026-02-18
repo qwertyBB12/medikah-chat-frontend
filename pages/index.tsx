@@ -18,20 +18,20 @@ export default function LandingPage() {
   return (
     <>
       <Head>
-        <title>Medikah — Care That Crosses Borders</title>
-        <meta name="description" content="Medikah coordinates healthcare across the Americas. AI-powered triage, verified physicians, secure telemedicine — in your language, on your terms." />
+        <title>Medikah — Connect With Physicians Across Borders</title>
+        <meta name="description" content="Medikah coordinates healthcare across the Americas with continuity, compliance, and institutional rigor." />
         <link rel="canonical" href="https://medikah.health/" />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://medikah.health/" />
-        <meta property="og:title" content="Medikah — Care That Crosses Borders" />
-        <meta property="og:description" content="AI-powered triage, verified physicians, secure telemedicine — in your language, on your terms." />
+        <meta property="og:title" content="Medikah — Connect With Physicians Across Borders" />
+        <meta property="og:description" content="Medikah coordinates healthcare across the Americas with continuity, compliance, and institutional rigor." />
         <meta property="og:image" content="https://medikah.health/og-image.png" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta property="og:site_name" content="Medikah" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Medikah — Care That Crosses Borders" />
-        <meta name="twitter:description" content="AI-powered triage, verified physicians, secure telemedicine — in your language, on your terms." />
+        <meta name="twitter:title" content="Medikah — Connect With Physicians Across Borders" />
+        <meta name="twitter:description" content="Medikah coordinates healthcare across the Americas with continuity, compliance, and institutional rigor." />
         <meta name="twitter:image" content="https://medikah.health/og-image.png" />
         <script
           type="application/ld+json"
