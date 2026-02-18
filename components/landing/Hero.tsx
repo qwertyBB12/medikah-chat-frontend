@@ -71,7 +71,7 @@ export default function Hero() {
         </div>
 
         {/* Headline */}
-        <h1 className="font-heading font-medium uppercase leading-[1.0] tracking-[-0.02em]">
+        <h1 className={`font-heading font-medium uppercase tracking-[-0.02em] ${locale === 'es' ? 'leading-[1.15]' : 'leading-[0.9]'}`}>
           <span className="block text-white text-[clamp(2.5rem,8vw,6rem)]">
             {t.line1[locale]}
           </span>
