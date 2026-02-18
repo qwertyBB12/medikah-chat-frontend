@@ -8,10 +8,10 @@ const CARDS = [
     initial: 'P',
     imgClass: 'bg-gradient-to-br from-teal-200 to-linen-warm',
     meta: { en: 'Patient Portal', es: 'Portal de Pacientes' },
-    title: { en: 'Get Care\nAcross Borders', es: 'Reciba Atenci\u00f3n\nTransfronteriza' },
+    title: { en: 'Connect\nAcross Borders', es: 'Con\u00e9ctese\nTransfronterizamente' },
     body: {
-      en: 'AI triage in your language, cross-border consent, appointment scheduling with timezone support, and secure telemedicine.',
-      es: 'Triaje con IA en su idioma, consentimiento transfronterizo, citas con soporte de zona horaria, y telemedicina segura.',
+      en: 'Bilingual intake in your language, cross-border consent, appointment scheduling with timezone support, and secure video conferencing.',
+      es: 'Admisi\u00f3n biling\u00fce en su idioma, consentimiento transfronterizo, citas con soporte de zona horaria, y videoconferencia segura.',
     },
     badge: { en: 'EN/ES Bilingual', es: 'Biling\u00fce EN/ES' },
     link: { label: { en: 'Start Consultation', es: 'Iniciar Consulta' }, href: '/chat?role=patient' },

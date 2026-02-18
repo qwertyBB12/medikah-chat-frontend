@@ -39,7 +39,7 @@ const i18n = {
     popupBlocked:
       'Por favor permita ventanas emergentes para conectar con LinkedIn.',
     unavailable:
-      'La importacion de LinkedIn se esta configurando. Puede pegar la URL de su perfil de LinkedIn abajo.',
+      'La importaci\u00f3n de LinkedIn se est\u00e1 configurando. Puede pegar la URL de su perfil de LinkedIn abajo.',
     errorGeneric:
       'No se pudo conectar con LinkedIn en este momento. Puede pegar la URL de su perfil de LinkedIn abajo.',
   },
@@ -226,7 +226,7 @@ export function LinkedInProfilePreview({
         name: 'Nombre',
         email: 'Correo',
         school: 'Escuela de Medicina',
-        gradYear: 'Ano de Graduacion',
+        gradYear: 'A\u00f1o de Graduaci\u00f3n',
         institutions: 'Instituciones Actuales',
         confirm: 'Confirmar Datos',
         edit: 'Editar',

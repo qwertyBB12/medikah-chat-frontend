@@ -6,15 +6,23 @@ export default function Hero() {
   const locale = (router.locale || 'en') as 'en' | 'es';
 
   const t = {
-    eyebrow: { en: 'Pan-American Telehealth', es: 'Telesalud Panamericana' },
-    line1: { en: 'Care That', es: 'Cuidado Que' },
-    line2: { en: 'Crosses Borders', es: 'Cruza Fronteras' },
-    bilingual: {
-      en: 'Atenci\u00f3n que cruza fronteras.',
-      es: 'Care that crosses borders.',
+    eyebrow: { en: 'Cross-Border Coordination', es: 'Coordinaci\u00f3n Transfronteriza' },
+    line1: { en: 'Connect With Physicians', es: 'Con\u00e9ctese Con M\u00e9dicos' },
+    line2: { en: 'Across Borders', es: 'A Trav\u00e9s De Fronteras' },
+    subtitle: {
+      en: 'Receive Care Where They\u2019re Licensed.',
+      es: 'Reciba Atenci\u00f3n Donde Est\u00e1n Autorizados.',
     },
-    ctaPrimary: { en: 'Get Started', es: 'Comenzar' },
-    ctaSecondary: { en: 'For Physicians', es: 'Para M\u00e9dicos' },
+    body1: {
+      en: 'The Americas function as one medical theater \u2014 but systems remain divided by borders that families and physicians routinely cross.',
+      es: 'Las Am\u00e9ricas funcionan como un solo teatro m\u00e9dico \u2014 pero los sistemas permanecen divididos por fronteras que familias y m\u00e9dicos cruzan rutinariamente.',
+    },
+    body2: {
+      en: 'Medikah provides the coordination infrastructure these realities require. Not as innovation. As institutional necessity.',
+      es: 'Medikah provee la infraestructura de coordinaci\u00f3n que estas realidades requieren. No como innovaci\u00f3n. Como necesidad institucional.',
+    },
+    ctaPrimary: { en: 'Begin Coordination', es: 'Iniciar Coordinaci\u00f3n' },
+    ctaSecondary: { en: 'Institutional Partnerships', es: 'Alianzas Institucionales' },
     scroll: { en: 'Scroll', es: 'Desplazar' },
   };
 
@@ -66,10 +74,20 @@ export default function Hero() {
           </span>
         </h1>
 
-        {/* Bilingual subtitle */}
-        <p className="font-body text-[clamp(0.9375rem,1.5vw,1.125rem)] font-light italic text-cream-500 opacity-50 mt-[clamp(1rem,2vh,2rem)]">
-          {t.bilingual[locale]}
+        {/* Subtitle */}
+        <p className="font-body text-[clamp(1.125rem,2vw,1.5rem)] font-light italic text-cream-300 mt-[clamp(1rem,2vh,2rem)]">
+          {t.subtitle[locale]}
         </p>
+
+        {/* Body */}
+        <div className="max-w-[640px] mx-auto mt-[clamp(1.5rem,3vh,2.5rem)] space-y-4">
+          <p className="font-body text-[clamp(0.875rem,1.2vw,1rem)] text-cream-400 leading-[1.7]">
+            {t.body1[locale]}
+          </p>
+          <p className="font-body text-[clamp(0.875rem,1.2vw,1rem)] text-cream-400 leading-[1.7]">
+            {t.body2[locale]}
+          </p>
+        </div>
 
         {/* CTAs */}
         <div className="flex gap-5 justify-center mt-[clamp(2rem,4vh,3.5rem)] flex-col sm:flex-row items-center">
@@ -79,12 +97,12 @@ export default function Hero() {
           >
             {t.ctaPrimary[locale]} &rarr;
           </Link>
-          <Link
-            href="/chat?role=physician"
+          <a
+            href="mailto:partnerships@medikah.health"
             className="inline-flex items-center gap-2 font-body text-xs font-medium uppercase tracking-[0.1em] px-10 py-4 bg-transparent text-white border-2 border-white/30 rounded-sm hover:bg-white/10 hover:border-white/50 hover:-translate-y-[3px] transition-all duration-300"
           >
             {t.ctaSecondary[locale]} &rarr;
-          </Link>
+          </a>
         </div>
 
         {/* Trust badges */}

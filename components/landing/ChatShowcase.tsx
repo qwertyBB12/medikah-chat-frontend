@@ -4,8 +4,8 @@ import { useRouter } from 'next/router';
 type Locale = 'en' | 'es';
 
 const AI_MESSAGE: Record<Locale, string> = {
-  en: "Hello! I'm your Medikah health assistant. I can help you describe your symptoms, find a physician, and schedule a consultation \u2014 in English or Spanish. How can I help you today?",
-  es: "\u00a1Hola! Soy su asistente de salud de Medikah. Puedo ayudarle a describir sus s\u00edntomas, encontrar un m\u00e9dico y programar una consulta \u2014 en ingl\u00e9s o espa\u00f1ol. \u00bfC\u00f3mo puedo ayudarle hoy?",
+  en: "Hello! I'm your Medikah coordination assistant. I can help you describe your health concerns, find a physician, and schedule a consultation \u2014 in English or Spanish. How can I help you today?",
+  es: "\u00a1Hola! Soy su asistente de coordinaci\u00f3n de Medikah. Puedo ayudarle a describir sus inquietudes de salud, encontrar un m\u00e9dico y programar una consulta \u2014 en ingl\u00e9s o espa\u00f1ol. \u00bfC\u00f3mo puedo ayudarle hoy?",
 };
 
 const PATIENT_MESSAGE: Record<Locale, string> = {
@@ -111,8 +111,8 @@ export default function ChatShowcase() {
     headingAccent: { en: 'Medikah', es: 'Medikah' },
     heading2: { en: '\nExperience', es: '' },
     lead: {
-      en: 'Our AI health assistant guides you through symptom assessment, cross-border consent, and physician matching \u2014 all in a single conversation.',
-      es: 'Nuestro asistente de salud con IA lo gu\u00eda a trav\u00e9s de la evaluaci\u00f3n de s\u00edntomas, consentimiento transfronterizo y emparejamiento con m\u00e9dicos \u2014 todo en una sola conversaci\u00f3n.',
+      en: 'Our coordination technology guides you through intake, cross-border consent, and physician matching \u2014 all in a single conversation.',
+      es: 'Nuestra tecnolog\u00eda de coordinaci\u00f3n lo gu\u00eda a trav\u00e9s de la admisi\u00f3n, consentimiento transfronterizo y emparejamiento con m\u00e9dicos \u2014 todo en una sola conversaci\u00f3n.',
     },
     placeholder: {
       en: 'Type your message... / Escribe tu mensaje...',
@@ -127,12 +127,12 @@ export default function ChatShowcase() {
       {
         num: '02',
         title: { en: 'Assess', es: 'Eval\u00fae' },
-        desc: { en: 'AI triage evaluates urgency and cross-border care needs', es: 'El triaje con IA eval\u00faa urgencia y necesidades transfronterizas' },
+        desc: { en: 'Information organized for physician review and cross-border coordination', es: 'Informaci\u00f3n organizada para revisi\u00f3n m\u00e9dica y coordinaci\u00f3n transfronteriza' },
       },
       {
         num: '03',
         title: { en: 'Connect', es: 'Conecte' },
-        desc: { en: 'Matched with a verified physician for telemedicine', es: 'Emparejado con un m\u00e9dico verificado para telemedicina' },
+        desc: { en: 'Matched with a verified physician for consultation', es: 'Emparejado con un m\u00e9dico verificado para consulta' },
       },
     ],
     trustNote: {

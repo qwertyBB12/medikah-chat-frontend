@@ -7,8 +7,8 @@ export default function CTAMonument() {
 
   const t = {
     thin: {
-      en: 'Care that crosses borders. In your language. On your terms.',
-      es: 'Atenci\u00f3n que cruza fronteras. En su idioma. En sus t\u00e9rminos.',
+      en: 'Healthcare technology that crosses borders. In your language. On your terms.',
+      es: 'Tecnolog\u00eda de salud que cruza fronteras. En su idioma. En sus t\u00e9rminos.',
     },
     big1: { en: 'Begin Your ', es: 'Comience Su ' },
     bigAccent: { en: 'Consultation', es: 'Consulta' },
@@ -16,8 +16,8 @@ export default function CTAMonument() {
       en: 'Comience su consulta hoy.',
       es: 'Begin your consultation today.',
     },
-    ctaPrimary: { en: 'Get Started', es: 'Comenzar' },
-    ctaSecondary: { en: 'For Physicians', es: 'Para M\u00e9dicos' },
+    ctaPrimary: { en: 'Begin Coordination', es: 'Iniciar Coordinaci\u00f3n' },
+    ctaSecondary: { en: 'Institutional Partnerships', es: 'Alianzas Institucionales' },
   };
 
   return (
@@ -40,12 +40,12 @@ export default function CTAMonument() {
         >
           {t.ctaPrimary[locale]} &rarr;
         </Link>
-        <Link
-          href="/chat?role=physician"
+        <a
+          href="mailto:partnerships@medikah.health"
           className="inline-flex items-center gap-2 font-body text-xs font-medium uppercase tracking-[0.1em] px-10 py-4 bg-transparent text-warm-gray-700 border-2 border-warm-gray-700 rounded-sm hover:bg-warm-gray-700 hover:text-white hover:-translate-y-[3px] transition-all duration-300"
         >
           {t.ctaSecondary[locale]} &rarr;
-        </Link>
+        </a>
       </div>
     </section>
   );

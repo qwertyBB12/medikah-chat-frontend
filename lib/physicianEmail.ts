@@ -126,7 +126,7 @@ export async function sendPhysicianWelcomeEmail(
             'Una vez verificado, los pacientes podrán encontrarlo en la red de Medikah.',
           step3: 'Comience a recibir pacientes',
           step3Detail:
-            'Los pacientes podrán agendar consultas de telemedicina directamente con usted.',
+            'Los pacientes podrán agendar consultas por video directamente con usted.',
           profileNote:
             'Su perfil de Medikah está siendo preparado. Le notificaremos cuando esté disponible públicamente.',
           questions: '¿Preguntas? Responda a este correo o escríbanos a',
@@ -156,7 +156,7 @@ export async function sendPhysicianWelcomeEmail(
             'Once verified, patients will be able to find you on the Medikah network.',
           step3: 'Start seeing patients',
           step3Detail:
-            'Patients will be able to book telemedicine consultations directly with you.',
+            'Patients will be able to book video consultations directly with you.',
           profileNote:
             "Your Medikah profile is being prepared. We'll notify you when it's publicly available.",
           questions: 'Questions? Reply to this email or reach us at',
