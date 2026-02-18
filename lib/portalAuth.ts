@@ -204,5 +204,5 @@ export async function ensureSupabaseUser(
     throw new Error(`User with email ${email} exists but could not be found`);
   }
 
-  throw new Error(`Failed to create user: ${createError.message}`);
+  throw new Error(`Failed to create user: ${createError?.message ?? 'Unknown error'}`);
 }
