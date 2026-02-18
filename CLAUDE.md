@@ -29,7 +29,7 @@ Uses custom radii in `tailwind.config.js`: `rounded-sm` (8px), `rounded-md` (16p
 
 ## Project Overview
 
-**Medikah** is a Pan-American telehealth platform connecting patients with physicians across borders. The platform handles patient intake, physician onboarding, credential verification, appointment scheduling, and cross-border healthcare coordination.
+**Medikah** is a Pan-American health coordination platform connecting patients with physicians across borders. The platform handles patient intake, physician onboarding, credential verification, appointment scheduling, and cross-border healthcare coordination.
 
 **Repository:** `medikah-chat-frontend`
 **Type:** Next.js web application
