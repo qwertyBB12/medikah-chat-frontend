@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!--
+    Medikah logomark — SVG recreation
+    Central caduceus staff + circuit wings + concentric hub
+    Colors: Institutional Navy #1B2A41, Clinical Teal #2C7A8C
+  -->
+  <defs>
+    <clipPath id="cross-clip">
+      <!-- Cross/plus silhouette with soft edges matching the original shape -->
+      <path d="
+        M176 16 Q176 0 192 0 L320 0 Q336 0 336 16
+        L336 128
+        Q336 128 368 112 L464 80 Q480 76 488 90
+        L496 128 Q504 142 492 150
+        L400 200 Q368 216 368 248
+        L368 264 Q368 296 400 312
+        L492 362 Q504 370 496 384
+        L488 422 Q480 436 464 432
+        L368 400 Q336 384 336 384
+        L336 496 Q336 512 320 512 L192 512 Q176 512 176 496
+        L176 384
+        Q176 384 144 400 L48 432 Q32 436 24 422
+        L16 384 Q8 370 20 362
+        L112 312 Q144 296 144 264
+        L144 248 Q144 216 112 200
+        L20 150 Q8 142 16 128
+        L24 90 Q32 76 48 80
+        L144 112 Q176 128 176 128
+        Z
+      "/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#cross-clip)">
+    <!-- Background fill -->
+    <rect width="512" height="512" fill="#1B2A41"/>
+
+    <!-- Central vertical staff -->
+    <rect x="240" y="32" width="6" height="448" rx="3" fill="#F0EAE0" opacity="0.9"/>
+    <rect x="266" y="32" width="6" height="448" rx="3" fill="#F0EAE0" opacity="0.9"/>
+    <rect x="253" y="48" width="6" height="416" rx="3" fill="#F0EAE0" opacity="0.6"/>
+
+    <!-- Upper concentric circles (hub/node) -->
+    <circle cx="256" cy="120" r="40" stroke="#F0EAE0" stroke-width="5" fill="none" opacity="0.9"/>
+    <circle cx="256" cy="120" r="24" stroke="#F0EAE0" stroke-width="4" fill="none" opacity="0.8"/>
+    <circle cx="256" cy="120" r="10" fill="#F0EAE0" opacity="0.9"/>
+
+    <!-- Lower concentric circle -->
+    <circle cx="256" cy="240" r="28" stroke="#F0EAE0" stroke-width="4" fill="none" opacity="0.8"/>
+    <circle cx="256" cy="240" r="12" fill="#F0EAE0" opacity="0.9"/>
+
+    <!-- Caduceus ribbons — left -->
+    <path d="M248 160 Q220 180 210 220 Q200 260 230 290 Q250 310 248 340" stroke="#F0EAE0" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.85"/>
+    <path d="M242 170 Q218 195 208 240 Q198 285 220 310" stroke="#F0EAE0" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.5"/>
+
+    <!-- Caduceus ribbons — right -->
+    <path d="M264 160 Q292 180 302 220 Q312 260 282 290 Q264 310 264 340" stroke="#F0EAE0" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.85"/>
+    <path d="M270 170 Q294 195 304 240 Q314 285 292 310" stroke="#F0EAE0" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.5"/>
+
+    <!-- Flowing fill between ribbons -->
+    <path d="M248 180 Q230 210 225 250 Q220 290 240 320 L256 340 L272 320 Q292 290 287 250 Q282 210 264 180 Z" fill="#2C7A8C" opacity="0.25"/>
+
+    <!-- Small dots along staff -->
+    <circle cx="256" cy="72" r="5" fill="#F0EAE0" opacity="0.8"/>
+    <circle cx="248" cy="56" r="3.5" fill="#F0EAE0" opacity="0.6"/>
+    <circle cx="264" cy="56" r="3.5" fill="#F0EAE0" opacity="0.6"/>
+    <circle cx="256" cy="380" r="4" fill="#F0EAE0" opacity="0.6"/>
+    <circle cx="256" cy="420" r="3" fill="#F0EAE0" opacity="0.5"/>
+
+    <!-- Left wing — circuit patterns -->
+    <g opacity="0.8">
+      <!-- Horizontal circuit lines -->
+      <rect x="48" y="200" width="80" height="4" rx="2" fill="#F0EAE0" opacity="0.7"/>
+      <rect x="60" y="220" width="60" height="3" rx="1.5" fill="#F0EAE0" opacity="0.5"/>
+      <rect x="48" y="248" width="80" height="4" rx="2" fill="#F0EAE0" opacity="0.7"/>
+      <rect x="56" y="268" width="64" height="3" rx="1.5" fill="#F0EAE0" opacity="0.5"/>
+      <rect x="48" y="290" width="80" height="4" rx="2" fill="#F0EAE0" opacity="0.7"/>
+      <rect x="64" y="308" width="52" height="3" rx="1.5" fill="#F0EAE0" opacity="0.5"/>
+
+      <!-- Diagonal lines (top-left) -->
+      <line x1="100" y1="128" x2="160" y2="168" stroke="#F0EAE0" stroke-width="3.5" stroke-linecap="round" opacity="0.6"/>
+      <line x1="80" y1="140" x2="148" y2="184" stroke="#F0EAE0" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+      <line x1="68" y1="160" x2="140" y2="200" stroke="#F0EAE0" stroke-width="2.5" stroke-linecap="round" opacity="0.4"/>
+
+      <!-- Diagonal lines (bottom-left) -->
+      <line x1="100" y1="384" x2="160" y2="344" stroke="#F0EAE0" stroke-width="3.5" stroke-linecap="round" opacity="0.6"/>
+      <line x1="80" y1="372" x2="148" y2="328" stroke="#F0EAE0" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+
+      <!-- Corner nodes -->
+      <rect x="52" y="172" width="12" height="12" rx="2" fill="none" stroke="#F0EAE0" stroke-width="2.5" opacity="0.6"/>
+      <rect x="56" y="324" width="12" height="12" rx="2" fill="none" stroke="#F0EAE0" stroke-width="2.5" opacity="0.6"/>
+
+      <!-- Grid squares -->
+      <rect x="68" y="340" width="8" height="8" rx="1" fill="#F0EAE0" opacity="0.4"/>
+      <rect x="82" y="340" width="8" height="8" rx="1" fill="#F0EAE0" opacity="0.4"/>
+      <rect x="68" y="354" width="8" height="8" rx="1" fill="#F0EAE0" opacity="0.4"/>
+      <rect x="82" y="354" width="8" height="8" rx="1" fill="#F0EAE0" opacity="0.4"/>
+
+      <!-- Maze/chevron patterns -->
+      <path d="M72 144 L88 144 L88 160 L104 160" stroke="#F0EAE0" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.5"/>
+      <path d="M60 188 L76 188 L76 204" stroke="#F0EAE0" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.4"/>
+    </g>
+
+    <!-- Right wing — circuit patterns (mirrored) -->
+    <g opacity="0.8">
+      <!-- Horizontal circuit lines -->
+      <rect x="384" y="200" width="80" height="4" rx="2" fill="#F0EAE0" opacity="0.7"/>
+      <rect x="392" y="220" width="60" height="3" rx="1.5" fill="#F0EAE0" opacity="0.5"/>
+      <rect x="384" y="248" width="80" height="4" rx="2" fill="#F0EAE0" opacity="0.7"/>
+      <rect x="392" y="268" width="64" height="3" rx="1.5" fill="#F0EAE0" opacity="0.5"/>
+      <rect x="384" y="290" width="80" height="4" rx="2" fill="#F0EAE0" opacity="0.7"/>
+      <rect x="396" y="308" width="52" height="3" rx="1.5" fill="#F0EAE0" opacity="0.5"/>
+
+      <!-- Diagonal lines (top-right) -->
+      <line x1="412" y1="128" x2="352" y2="168" stroke="#F0EAE0" stroke-width="3.5" stroke-linecap="round" opacity="0.6"/>
+      <line x1="432" y1="140" x2="364" y2="184" stroke="#F0EAE0" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+      <line x1="444" y1="160" x2="372" y2="200" stroke="#F0EAE0" stroke-width="2.5" stroke-linecap="round" opacity="0.4"/>
+
+      <!-- Diagonal lines (bottom-right) -->
+      <line x1="412" y1="384" x2="352" y2="344" stroke="#F0EAE0" stroke-width="3.5" stroke-linecap="round" opacity="0.6"/>
+      <line x1="432" y1="372" x2="364" y2="328" stroke="#F0EAE0" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+
+      <!-- Corner nodes -->
+      <rect x="448" y="172" width="12" height="12" rx="2" fill="none" stroke="#F0EAE0" stroke-width="2.5" opacity="0.6"/>
+      <rect x="444" y="324" width="12" height="12" rx="2" fill="none" stroke="#F0EAE0" stroke-width="2.5" opacity="0.6"/>
+
+      <!-- Grid squares -->
+      <rect x="436" y="340" width="8" height="8" rx="1" fill="#F0EAE0" opacity="0.4"/>
+      <rect x="422" y="340" width="8" height="8" rx="1" fill="#F0EAE0" opacity="0.4"/>
+      <rect x="436" y="354" width="8" height="8" rx="1" fill="#F0EAE0" opacity="0.4"/>
+      <rect x="422" y="354" width="8" height="8" rx="1" fill="#F0EAE0" opacity="0.4"/>
+
+      <!-- Maze/chevron patterns -->
+      <path d="M440 144 L424 144 L424 160 L408 160" stroke="#F0EAE0" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.5"/>
+      <path d="M452 188 L436 188 L436 204" stroke="#F0EAE0" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.4"/>
+
+      <!-- Curved accents -->
+      <path d="M380 220 Q400 240 380 260" stroke="#F0EAE0" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.5"/>
+    </g>
+
+    <!-- Subtle teal accent glow on central hub -->
+    <circle cx="256" cy="120" r="48" fill="#2C7A8C" opacity="0.08"/>
+    <circle cx="256" cy="240" r="36" fill="#2C7A8C" opacity="0.06"/>
+  </g>
+</svg>

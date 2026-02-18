@@ -2,7 +2,8 @@ import Head from 'next/head';
 import Link from 'next/link';
 import Image from 'next/image';
 
-const LOGO_DARK = '/logo-BLU.png';
+import { LOGO_DARK_SRC } from '../lib/assets';
+const LOGO_DARK = LOGO_DARK_SRC;
 
 export default function TermsOfService() {
   return (

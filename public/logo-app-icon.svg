@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!--
+    Medikah app icon — mark on navy rounded-rect
+    8px radius matching design system
+  -->
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="80" fill="#1B2A41"/>
+
+  <!-- Subtle grain texture hint -->
+  <rect width="512" height="512" rx="80" fill="url(#grain)" opacity="0.02"/>
+
+  <defs>
+    <pattern id="grain" width="4" height="4" patternUnits="userSpaceOnUse">
+      <rect width="1" height="1" fill="white" opacity="0.3"/>
+      <rect x="2" y="2" width="1" height="1" fill="white" opacity="0.2"/>
+    </pattern>
+  </defs>
+
+  <g transform="translate(256,256) scale(0.65) translate(-256,-256)">
+    <!-- Central staff -->
+    <rect x="244" y="64" width="6" height="384" rx="3" fill="#F0EAE0" opacity="0.9"/>
+    <rect x="262" y="64" width="6" height="384" rx="3" fill="#F0EAE0" opacity="0.9"/>
+
+    <!-- Upper hub -->
+    <circle cx="256" cy="140" r="36" stroke="#F0EAE0" stroke-width="5" fill="none" opacity="0.9"/>
+    <circle cx="256" cy="140" r="20" stroke="#F0EAE0" stroke-width="4" fill="none" opacity="0.7"/>
+    <circle cx="256" cy="140" r="9" fill="#F0EAE0" opacity="0.9"/>
+
+    <!-- Lower hub -->
+    <circle cx="256" cy="256" r="24" stroke="#F0EAE0" stroke-width="4" fill="none" opacity="0.8"/>
+    <circle cx="256" cy="256" r="10" fill="#2C7A8C" opacity="0.8"/>
+
+    <!-- Top dots -->
+    <circle cx="256" cy="88" r="5" fill="#F0EAE0" opacity="0.8"/>
+    <circle cx="244" cy="74" r="3.5" fill="#F0EAE0" opacity="0.6"/>
+    <circle cx="268" cy="74" r="3.5" fill="#F0EAE0" opacity="0.6"/>
+
+    <!-- Caduceus ribbons — left -->
+    <path d="M248 180 Q216 210 210 260 Q204 310 236 340" stroke="#F0EAE0" stroke-width="7" fill="none" stroke-linecap="round" opacity="0.85"/>
+    <path d="M240 190 Q214 225 208 270 Q202 315 224 340" stroke="#F0EAE0" stroke-width="4.5" fill="none" stroke-linecap="round" opacity="0.45"/>
+
+    <!-- Caduceus ribbons — right -->
+    <path d="M264 180 Q296 210 302 260 Q308 310 276 340" stroke="#F0EAE0" stroke-width="7" fill="none" stroke-linecap="round" opacity="0.85"/>
+    <path d="M272 190 Q298 225 304 270 Q310 315 288 340" stroke="#F0EAE0" stroke-width="4.5" fill="none" stroke-linecap="round" opacity="0.45"/>
+
+    <!-- Teal accent between ribbons -->
+    <path d="M248 200 Q228 240 226 280 Q224 320 244 350 L256 370 L268 350 Q288 320 286 280 Q284 240 264 200 Z" fill="#2C7A8C" opacity="0.15"/>
+
+    <!-- Left wing circuits -->
+    <g opacity="0.7">
+      <rect x="72" y="216" width="72" height="4" rx="2" fill="#F0EAE0"/>
+      <rect x="80" y="240" width="56" height="3" rx="1.5" fill="#F0EAE0" opacity="0.6"/>
+      <rect x="72" y="260" width="72" height="4" rx="2" fill="#F0EAE0"/>
+      <rect x="80" y="280" width="56" height="3" rx="1.5" fill="#F0EAE0" opacity="0.6"/>
+      <rect x="72" y="300" width="72" height="4" rx="2" fill="#F0EAE0"/>
+
+      <line x1="120" y1="148" x2="172" y2="188" stroke="#F0EAE0" stroke-width="3.5" stroke-linecap="round" opacity="0.5"/>
+      <line x1="104" y1="164" x2="160" y2="200" stroke="#F0EAE0" stroke-width="3" stroke-linecap="round" opacity="0.4"/>
+      <line x1="120" y1="368" x2="172" y2="328" stroke="#F0EAE0" stroke-width="3.5" stroke-linecap="round" opacity="0.5"/>
+
+      <rect x="76" y="184" width="10" height="10" rx="2" stroke="#F0EAE0" stroke-width="2" fill="none" opacity="0.5"/>
+      <rect x="88" y="344" width="8" height="8" rx="1" fill="#F0EAE0" opacity="0.35"/>
+      <rect x="100" y="344" width="8" height="8" rx="1" fill="#F0EAE0" opacity="0.35"/>
+      <rect x="88" y="356" width="8" height="8" rx="1" fill="#F0EAE0" opacity="0.35"/>
+      <rect x="100" y="356" width="8" height="8" rx="1" fill="#F0EAE0" opacity="0.35"/>
+    </g>
+
+    <!-- Right wing circuits (mirrored) -->
+    <g opacity="0.7">
+      <rect x="368" y="216" width="72" height="4" rx="2" fill="#F0EAE0"/>
+      <rect x="376" y="240" width="56" height="3" rx="1.5" fill="#F0EAE0" opacity="0.6"/>
+      <rect x="368" y="260" width="72" height="4" rx="2" fill="#F0EAE0"/>
+      <rect x="376" y="280" width="56" height="3" rx="1.5" fill="#F0EAE0" opacity="0.6"/>
+      <rect x="368" y="300" width="72" height="4" rx="2" fill="#F0EAE0"/>
+
+      <line x1="392" y1="148" x2="340" y2="188" stroke="#F0EAE0" stroke-width="3.5" stroke-linecap="round" opacity="0.5"/>
+      <line x1="408" y1="164" x2="352" y2="200" stroke="#F0EAE0" stroke-width="3" stroke-linecap="round" opacity="0.4"/>
+      <line x1="392" y1="368" x2="340" y2="328" stroke="#F0EAE0" stroke-width="3.5" stroke-linecap="round" opacity="0.5"/>
+
+      <rect x="426" y="184" width="10" height="10" rx="2" stroke="#F0EAE0" stroke-width="2" fill="none" opacity="0.5"/>
+      <rect x="404" y="344" width="8" height="8" rx="1" fill="#F0EAE0" opacity="0.35"/>
+      <rect x="416" y="344" width="8" height="8" rx="1" fill="#F0EAE0" opacity="0.35"/>
+      <rect x="404" y="356" width="8" height="8" rx="1" fill="#F0EAE0" opacity="0.35"/>
+      <rect x="416" y="356" width="8" height="8" rx="1" fill="#F0EAE0" opacity="0.35"/>
+    </g>
+
+    <!-- Bottom of staff -->
+    <circle cx="256" cy="400" r="4" fill="#F0EAE0" opacity="0.6"/>
+    <circle cx="256" cy="430" r="3" fill="#F0EAE0" opacity="0.4"/>
+  </g>
+</svg>

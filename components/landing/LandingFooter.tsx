@@ -31,11 +31,11 @@ export default function LandingFooter() {
             </span>
             <p className="text-white/50 text-[0.9375rem] mt-5 max-w-[320px] leading-[1.7]">
               {isEs
-                ? 'Plataforma tecnol\u00f3gica compatible con HIPAA para coordinaci\u00f3n de salud transfronteriza. M\u00e9dicos verificados, videoconferencia segura, y programaci\u00f3n \u2014 en su idioma, en sus t\u00e9rminos.'
+                ? 'Plataforma tecnológica que cumple con HIPAA para coordinación de salud entre países. Médicos verificados, videoconferencia segura y agenda \u2014 en su idioma, en sus condiciones.'
                 : 'HIPAA-compliant technology platform for cross-border healthcare coordination. Verified physicians, secure video conferencing, and scheduling \u2014 in your language, on your terms.'}
             </p>
             <div className="font-body text-[0.8125rem] font-medium tracking-[0.04em] text-teal-400 mt-8">
-              {isEs ? 'Tecnolog\u00eda de Salud Que Cruza Fronteras.' : 'Healthcare Technology That Crosses Borders.'}
+              {isEs ? 'Cuidado humano que cruza fronteras.' : 'Human care that crosses borders.'}
             </div>
             {/* Trust badges */}
             <div className="flex gap-3 mt-5 flex-wrap">
@@ -53,13 +53,13 @@ export default function LandingFooter() {
           {/* Platform nav */}
           <div>
             <h4 className="text-[0.625rem] font-medium uppercase tracking-[0.2em] text-teal-400 mb-6">
-              {isEs ? 'Plataforma' : 'Platform'}
+              {isEs ? 'plataforma' : 'Platform'}
             </h4>
             <ul className="space-y-3">
               {[
-                { label: { en: 'For Patients', es: 'Para Pacientes' }, href: '/chat?role=patient' },
-                { label: { en: 'For Physicians', es: 'Para M\u00e9dicos' }, href: '/chat?role=physician' },
-                { label: { en: 'Coordination', es: 'Coordinaci\u00f3n' }, href: '#chat-section' },
+                { label: { en: 'For Patients', es: 'Para pacientes' }, href: '/chat?role=patient' },
+                { label: { en: 'For Physicians', es: 'Para médicos' }, href: '/chat?role=physician' },
+                { label: { en: 'Coordination', es: 'Coordinación' }, href: '#chat-section' },
                 { label: { en: 'About', es: 'Acerca' }, href: '#about' },
               ].map((link) => (
                 <li key={link.label.en}>
@@ -81,8 +81,8 @@ export default function LandingFooter() {
             </h4>
             <ul className="space-y-3">
               {[
-                { label: { en: 'Privacy Policy', es: 'Pol\u00edtica de Privacidad' }, href: '/privacy' },
-                { label: { en: 'Terms of Service', es: 'T\u00e9rminos de Servicio' }, href: '/terms' },
+                { label: { en: 'Privacy Policy', es: 'Política de privacidad' }, href: '/privacy' },
+                { label: { en: 'Terms of Service', es: 'Términos de servicio' }, href: '/terms' },
                 { label: { en: 'HIPAA Notice', es: 'Aviso HIPAA' }, href: '/privacy#hipaa' },
                 { label: { en: 'Contact', es: 'Contacto' }, href: 'mailto:support@medikah.health' },
                 { label: { en: 'Partnerships', es: 'Alianzas' }, href: 'mailto:partnerships@medikah.health' },
@@ -111,7 +111,7 @@ export default function LandingFooter() {
               { label: 'BeNeXT Global', href: 'https://benext.global' },
               { label: 'Futuro', href: 'https://futuro.ngo' },
               { label: 'NeXT', href: 'https://next.ngo' },
-              { label: 'H\u00e9ctor H. L\u00f3pez', href: 'https://hectorhlopez.com' },
+              { label: 'Héctor H. López', href: 'https://hectorhlopez.com' },
               { label: 'Medikah', href: '/', current: true },
             ].map((link) => (
               <a

@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!--
+    Medikah minimal mark — distilled to core motif
+    Caduceus staff + hub node + flowing ribbons
+    For nav, favicon, small contexts
+  -->
+
+  <!-- Central staff -->
+  <rect x="30" y="6" width="4" height="52" rx="2" fill="#1B2A41"/>
+
+  <!-- Upper hub — concentric circles -->
+  <circle cx="32" cy="18" r="8" stroke="#1B2A41" stroke-width="2.5" fill="none"/>
+  <circle cx="32" cy="18" r="3.5" fill="#1B2A41"/>
+
+  <!-- Lower node -->
+  <circle cx="32" cy="36" r="5" stroke="#1B2A41" stroke-width="2" fill="none"/>
+  <circle cx="32" cy="36" r="2" fill="#2C7A8C"/>
+
+  <!-- Top dots -->
+  <circle cx="28" cy="8" r="2" fill="#1B2A41" opacity="0.7"/>
+  <circle cx="36" cy="8" r="2" fill="#1B2A41" opacity="0.7"/>
+
+  <!-- Caduceus ribbons — left -->
+  <path d="M29 24 Q22 30 20 38 Q18 44 24 48" stroke="#2C7A8C" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Caduceus ribbons — right -->
+  <path d="M35 24 Q42 30 44 38 Q46 44 40 48" stroke="#2C7A8C" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Wing hints — left -->
+  <line x1="8" y1="28" x2="22" y2="28" stroke="#1B2A41" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+  <line x1="10" y1="34" x2="20" y2="34" stroke="#1B2A41" stroke-width="1.5" stroke-linecap="round" opacity="0.35"/>
+  <line x1="8" y1="40" x2="22" y2="40" stroke="#1B2A41" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+
+  <!-- Wing hints — right -->
+  <line x1="42" y1="28" x2="56" y2="28" stroke="#1B2A41" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+  <line x1="44" y1="34" x2="54" y2="34" stroke="#1B2A41" stroke-width="1.5" stroke-linecap="round" opacity="0.35"/>
+  <line x1="42" y1="40" x2="56" y2="40" stroke="#1B2A41" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+</svg>

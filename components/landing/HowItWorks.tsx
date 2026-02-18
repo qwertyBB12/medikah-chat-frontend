@@ -5,30 +5,30 @@ type Locale = 'en' | 'es';
 const STEPS = [
   {
     number: '01',
-    title: { en: 'Intake', es: 'Admisi\u00f3n' },
+    title: { en: 'Tell us', es: 'Cuéntenos' },
     body: {
-      en: 'Describe your health concerns in English or Spanish. Our coordination technology captures your information, organizes it for physician review, and navigates cross-border requirements.',
-      es: 'Describa sus inquietudes de salud en ingl\u00e9s o espa\u00f1ol. Nuestra tecnolog\u00eda de coordinaci\u00f3n captura su informaci\u00f3n, la organiza para revisi\u00f3n m\u00e9dica, y navega requisitos transfronterizos.',
+      en: 'Describe what\u2019s going on \u2014 in English or Spanish. We organize your information and handle the cross-border details.',
+      es: 'Describa lo que le pasa \u2014 en inglés o español. Nosotros organizamos su información y gestionamos los detalles entre países.',
     },
-    tag: { en: 'Bilingual', es: 'Biling\u00fce' },
+    tag: { en: 'English & Spanish', es: 'Inglés y español' },
   },
   {
     number: '02',
-    title: { en: 'Match', es: 'Conexi\u00f3n' },
+    title: { en: 'We find', es: 'Buscamos' },
     body: {
-      en: 'Based on your health concerns, location, and language, Medikah identifies verified physicians licensed to practice across borders. Every credential is verified through our three-tier system.',
-      es: 'Seg\u00fan sus inquietudes de salud, ubicaci\u00f3n e idioma, Medikah identifica m\u00e9dicos verificados con licencia para ejercer transfronterizamente. Cada credencial se verifica a trav\u00e9s de nuestro sistema de tres niveles.',
+      en: 'We identify a verified, licensed physician who fits your needs, your language, and your location. Every doctor on Medikah is credentialed and confirmed.',
+      es: 'Identificamos un médico verificado y licenciado que se ajuste a lo que necesita, su idioma y su ubicación. Cada médico en Medikah está acreditado y confirmado.',
     },
-    tag: { en: 'Verified Physicians', es: 'M\u00e9dicos Verificados' },
+    tag: { en: 'Verified doctors', es: 'Médicos verificados' },
   },
   {
     number: '03',
-    title: { en: 'Connect', es: 'Conexi\u00f3n' },
+    title: { en: 'You meet', es: 'Se conocen' },
     body: {
-      en: 'Connect with your physician via secure video conferencing. Appointments scheduled in your timezone, consent handled digitally, and follow-up coordinated across borders.',
-      es: 'Con\u00e9ctese con su m\u00e9dico v\u00eda videoconferencia segura. Citas programadas en su zona horaria, consentimiento digital, y seguimiento coordinado transfronterizamente.',
+      en: 'Meet your doctor face to face by secure video. Appointments set in your timezone, consent handled, follow-up coordinated.',
+      es: 'Conozca a su médico cara a cara por video seguro. Citas en su zona horaria, consentimiento resuelto, seguimiento coordinado.',
     },
-    tag: { en: 'Encrypted', es: 'Encriptado' },
+    tag: { en: 'Secure & private', es: 'Seguro y privado' },
   },
 ];
 
@@ -37,13 +37,13 @@ export default function HowItWorks() {
   const locale = (router.locale || 'en') as Locale;
 
   const t = {
-    eyebrow: { en: 'How Medikah Works', es: 'C\u00f3mo Funciona Medikah' },
-    heading1: { en: 'Healthcare', es: 'Coordinaci\u00f3n' },
-    heading2: { en: 'Coordination That', es: 'de Salud Que' },
-    headingAccent: { en: 'Crosses Borders', es: 'Cruza Fronteras' },
+    eyebrow: { en: 'How it works', es: 'Cómo funciona' },
+    heading1: { en: 'Your Doctor Is', es: 'Su médico está' },
+    heading2: { en: 'Closer Than', es: 'más cerca de' },
+    headingAccent: { en: 'You Think', es: 'lo que cree' },
     lead: {
-      en: 'Our coordination technology connects you with the right physician, in your language, across any border. From first conversation to scheduled consultation.',
-      es: 'Nuestra tecnolog\u00eda de coordinaci\u00f3n lo conecta con el m\u00e9dico adecuado, en su idioma, sin importar fronteras. Desde la primera conversaci\u00f3n hasta la consulta programada.',
+      en: 'Tell us what you need. We handle the rest \u2014 so you can sit down with a real doctor, in your language, ready to listen.',
+      es: 'Cuéntenos lo que necesita. Nosotros nos encargamos del resto \u2014 para que usted se siente con un médico real, en su idioma, listo para escucharlo.',
     },
   };
 

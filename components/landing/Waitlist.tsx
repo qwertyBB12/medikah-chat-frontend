@@ -21,16 +21,16 @@ export default function Waitlist() {
 
   const t = {
     eyebrow: { en: 'Early access', es: 'Acceso anticipado' },
-    heading: { en: 'Request early access', es: 'Solicitar acceso anticipado' },
+    heading: { en: 'Request early access', es: 'Solicite acceso anticipado' },
     nameLabel: { en: 'Name', es: 'Nombre' },
-    emailLabel: { en: 'Email', es: 'Correo electr\u00f3nico' },
-    roleLabel: { en: 'I am a', es: 'Soy un/a' },
+    emailLabel: { en: 'Email', es: 'Correo' },
+    roleLabel: { en: 'I am a', es: 'Soy' },
     selectPlaceholder: { en: 'Select', es: 'Seleccionar' },
     submit: { en: 'Submit', es: 'Enviar' },
     sending: { en: 'Sending\u2026', es: 'Enviando\u2026' },
     duplicate: { en: 'This email is already registered.', es: 'Este correo ya est\u00e1 registrado.' },
-    errorMsg: { en: 'Something went wrong. Please try again.', es: 'Algo sali\u00f3 mal. Int\u00e9ntelo de nuevo.' },
-    thankYou: { en: 'Thank you. We will be in touch.', es: 'Gracias. Estaremos en contacto.' },
+    errorMsg: { en: 'Something went wrong. Please try again.', es: 'Ocurri\u00f3 un error. Int\u00e9ntelo de nuevo.' },
+    thankYou: { en: 'Thank you. We will be in touch.', es: 'Gracias. Nos pondremos en contacto.' },
     orGetStarted: { en: 'Or get started now', es: 'O comience ahora' },
   };
 
@@ -60,8 +60,8 @@ export default function Waitlist() {
 
   if (status === 'success') {
     return (
-      <section id="early-access" className="bg-warm-gray-800 px-6 py-24 sm:py-32">
-        <div className="max-w-md mx-auto text-center space-y-4">
+      <section id="early-access" className="bg-linen px-6 py-24 sm:py-32">
+        <div className="max-w-md mx-auto bg-warm-gray-800 rounded-lg p-10 text-center space-y-4">
           <p className="font-body text-lg text-white">
             {t.thankYou[locale]}
           </p>
@@ -77,8 +77,8 @@ export default function Waitlist() {
   }
 
   return (
-    <section id="early-access" className="bg-warm-gray-800 px-6 py-24 sm:py-32">
-      <div className="max-w-sm mx-auto">
+    <section id="early-access" className="bg-linen px-6 py-24 sm:py-32">
+      <div className="max-w-sm mx-auto bg-warm-gray-800 rounded-lg p-8 sm:p-10">
         {/* Eyebrow */}
         <div className="flex items-center justify-center gap-3 mb-6">
           <div className="w-10 h-[2px] bg-teal-500/60" />

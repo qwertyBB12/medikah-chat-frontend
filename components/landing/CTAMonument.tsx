@@ -7,17 +7,17 @@ export default function CTAMonument() {
 
   const t = {
     thin: {
-      en: 'Healthcare technology that crosses borders. In your language. On your terms.',
-      es: 'Tecnolog\u00eda de salud que cruza fronteras. En su idioma. En sus t\u00e9rminos.',
+      en: 'The right doctor is waiting. In your language. On your terms.',
+      es: 'El médico indicado lo espera. En su idioma. En sus condiciones.',
     },
-    big1: { en: 'Begin Your ', es: 'Comience Su ' },
-    bigAccent: { en: 'Consultation', es: 'Consulta' },
+    big1: { en: 'Begin Your ', es: 'Inicie su ' },
+    bigAccent: { en: 'Consultation', es: 'consulta' },
     bilingual: {
       en: 'Comience su consulta hoy.',
       es: 'Begin your consultation today.',
     },
-    ctaPrimary: { en: 'Begin Coordination', es: 'Iniciar Coordinaci\u00f3n' },
-    ctaSecondary: { en: 'Institutional Partnerships', es: 'Alianzas Institucionales' },
+    ctaPrimary: { en: 'Find a doctor', es: 'Encontrar un médico' },
+    ctaSecondary: { en: 'For institutions', es: 'Para instituciones' },
   };
 
   return (

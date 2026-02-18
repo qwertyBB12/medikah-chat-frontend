@@ -5,17 +5,17 @@ type Locale = 'en' | 'es';
 
 const AI_MESSAGE: Record<Locale, string> = {
   en: "Hello! I'm your Medikah coordination assistant. I can help you describe your health concerns, find a physician, and schedule a consultation \u2014 in English or Spanish. How can I help you today?",
-  es: "\u00a1Hola! Soy su asistente de coordinaci\u00f3n de Medikah. Puedo ayudarle a describir sus inquietudes de salud, encontrar un m\u00e9dico y programar una consulta \u2014 en ingl\u00e9s o espa\u00f1ol. \u00bfC\u00f3mo puedo ayudarle hoy?",
+  es: "\u00a1Hola! Soy su asistente de coordinación Medikah. Puedo ayudarle a describir lo que necesita, encontrar un médico y agendar una consulta \u2014 en inglés o español. \u00bfEn qué puedo ayudarle?",
 };
 
 const PATIENT_MESSAGE: Record<Locale, string> = {
   en: "I've been having headaches for three days and some dizziness when I stand up.",
-  es: "He tenido dolores de cabeza por tres d\u00edas y algo de mareo cuando me pongo de pie.",
+  es: "He tenido dolores de cabeza por tres días y algo de mareo cuando me pongo de pie.",
 };
 
 const ASSESSMENT_TITLE: Record<Locale, string> = {
   en: 'Symptom Assessment',
-  es: 'Evaluaci\u00f3n de S\u00edntomas',
+  es: 'Evaluación de Síntomas',
 };
 
 const ASSESSMENT_ITEMS: Record<Locale, string[]> = {
@@ -25,20 +25,20 @@ const ASSESSMENT_ITEMS: Record<Locale, string[]> = {
     'Are you currently taking medications?',
   ],
   es: [
-    '\u00bfC\u00f3mo calificar\u00eda el dolor? (1\u201310)',
-    '\u00bfAlg\u00fan cambio visual o n\u00e1useas?',
-    '\u00bfEst\u00e1 tomando medicamentos actualmente?',
+    '\u00bfCómo calificaría el dolor? (1\u201310)',
+    '\u00bfAlgún cambio visual o náuseas?',
+    '\u00bfEstá tomando medicamentos actualmente?',
   ],
 };
 
 const AI_RESPONSE_2: Record<Locale, string> = {
   en: "Thank you for sharing that. I'd like to understand your symptoms better so I can connect you with the right physician.",
-  es: "Gracias por compartir eso. Me gustar\u00eda entender mejor sus s\u00edntomas para conectarle con el m\u00e9dico adecuado.",
+  es: "Gracias por compartirlo. Me gustaría entender mejor sus síntomas para conectarle con el médico indicado.",
 };
 
 const CHIPS: Record<Locale, string[]> = {
-  en: ['Mild (1\u20133)', 'Moderate (4\u20136)', 'Severe (7\u201310)', 'S\u00ed', 'No', 'Cu\u00e9ntame m\u00e1s'],
-  es: ['Leve (1\u20133)', 'Moderado (4\u20136)', 'Severo (7\u201310)', 'S\u00ed', 'No', 'Cu\u00e9ntame m\u00e1s'],
+  en: ['Mild (1\u20133)', 'Moderate (4\u20136)', 'Severe (7\u201310)', 'Sí', 'No', 'Cuéntame más'],
+  es: ['Leve (1\u20133)', 'Moderado (4\u20136)', 'Severo (7\u201310)', 'Sí', 'No', 'Cuéntame más'],
 };
 
 export default function ChatShowcase() {
@@ -106,13 +106,13 @@ export default function ChatShowcase() {
   }, [startTyping]);
 
   const t = {
-    eyebrow: { en: 'The Core Experience', es: 'La Experiencia Central' },
-    heading1: { en: 'The ', es: 'La Experiencia ' },
-    headingAccent: { en: 'Medikah', es: 'Medikah' },
-    heading2: { en: '\nExperience', es: '' },
+    eyebrow: { en: 'See how it works', es: 'Vea cómo funciona' },
+    heading1: { en: 'A ', es: 'Una ' },
+    headingAccent: { en: 'conversation', es: 'conversación' },
+    heading2: { en: ', not a form', es: ', no un formulario' },
     lead: {
-      en: 'Our coordination technology guides you through intake, cross-border consent, and physician matching \u2014 all in a single conversation.',
-      es: 'Nuestra tecnolog\u00eda de coordinaci\u00f3n lo gu\u00eda a trav\u00e9s de la admisi\u00f3n, consentimiento transfronterizo y emparejamiento con m\u00e9dicos \u2014 todo en una sola conversaci\u00f3n.',
+      en: 'Just tell us what\u2019s going on. We listen, organize, and connect you with a doctor \u2014 all through a simple conversation.',
+      es: 'Solo cuéntenos lo que pasa. Escuchamos, organizamos y lo conectamos con un médico \u2014 todo a través de una conversación.',
     },
     placeholder: {
       en: 'Type your message... / Escribe tu mensaje...',
@@ -122,22 +122,22 @@ export default function ChatShowcase() {
       {
         num: '01',
         title: { en: 'Describe', es: 'Describa' },
-        desc: { en: 'Tell our AI about your symptoms in English or Spanish', es: 'Cu\u00e9ntele a nuestra IA sobre sus s\u00edntomas' },
+        desc: { en: 'Describe what\u2019s going on, in your language', es: 'Describa lo que le pasa, en su idioma' },
       },
       {
         num: '02',
-        title: { en: 'Assess', es: 'Eval\u00fae' },
-        desc: { en: 'Information organized for physician review and cross-border coordination', es: 'Informaci\u00f3n organizada para revisi\u00f3n m\u00e9dica y coordinaci\u00f3n transfronteriza' },
+        title: { en: 'Assess', es: 'Evalúe' },
+        desc: { en: 'Your information is organized for the doctor', es: 'Su información se organiza para el médico' },
       },
       {
         num: '03',
         title: { en: 'Connect', es: 'Conecte' },
-        desc: { en: 'Matched with a verified physician for consultation', es: 'Emparejado con un m\u00e9dico verificado para consulta' },
+        desc: { en: 'You\u2019re connected with a verified doctor', es: 'Queda conectado con un médico verificado' },
       },
     ],
     trustNote: {
-      en: 'All conversations are encrypted and HIPAA-compliant',
-      es: 'Todas las conversaciones son encriptadas y cumplen con HIPAA',
+      en: 'Your information stays private and HIPAA-compliant',
+      es: 'Su información es privada y cumple con HIPAA',
     },
   };
 
