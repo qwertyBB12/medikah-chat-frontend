@@ -90,13 +90,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (error || !result) {
-      console.error('Error creating physician profile:', error);
-
-      // Check for duplicate email
+      // Handle duplicate email - return existing physician for re-onboarding
       if (error?.code === '23505') {
-        return res.status(409).json({ error: 'Email already registered' });
+        const { data: existing } = await supabaseAdmin
+          .from('physicians')
+          .select('id')
+          .eq('email', email)
+          .single();
+
+        if (existing) {
+          return res.status(200).json({
+            success: true,
+            physicianId: existing.id,
+            alreadyExists: true,
+          });
+        }
       }
 
+      console.error('Error creating physician profile:', error);
       return res.status(500).json({ error: error?.message || 'Failed to create profile' });
     }
 

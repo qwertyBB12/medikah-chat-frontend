@@ -22,6 +22,7 @@ interface DaySchedule {
 interface AvailabilityEditorProps {
   physicianId: string;
   lang: SupportedLang;
+  accessToken?: string | null;
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
@@ -109,7 +110,7 @@ const DEFAULT_SCHEDULE: DaySchedule[] = DAYS.map((day) => ({
     : [],
 }));
 
-export default function AvailabilityEditor({ physicianId, lang }: AvailabilityEditorProps) {
+export default function AvailabilityEditor({ physicianId, lang, accessToken }: AvailabilityEditorProps) {
   const t = content[lang];
 
   const [schedule, setSchedule] = useState<DaySchedule[]>(DEFAULT_SCHEDULE);
@@ -119,11 +120,17 @@ export default function AvailabilityEditor({ physicianId, lang }: AvailabilityEd
 
   // Load existing availability
   useEffect(() => {
-    if (!physicianId) return;
+    if (!physicianId || !accessToken) return;
     (async () => {
       try {
         const res = await fetch(
           `${API_URL}/physicians/${physicianId}/availability`,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${accessToken}`,
+            },
+          },
         );
         if (res.ok) {
           const data = await res.json();
@@ -144,7 +151,7 @@ export default function AvailabilityEditor({ physicianId, lang }: AvailabilityEd
         setLoading(false);
       }
     })();
-  }, [physicianId]);
+  }, [physicianId, accessToken]);
 
   const handleToggleDay = (dayIndex: number) => {
     setSchedule((prev) => {
@@ -206,11 +213,14 @@ export default function AvailabilityEditor({ physicianId, lang }: AvailabilityEd
   const handleSave = useCallback(async () => {
     setSaveState('saving');
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+
       const res = await fetch(
         `${API_URL}/physicians/${physicianId}/availability`,
         {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({
             timezone,
             schedule: schedule.map((day) => ({
@@ -230,7 +240,7 @@ export default function AvailabilityEditor({ physicianId, lang }: AvailabilityEd
     } catch {
       setSaveState('error');
     }
-  }, [physicianId, timezone, schedule]);
+  }, [physicianId, timezone, schedule, accessToken]);
 
   if (loading) {
     return (

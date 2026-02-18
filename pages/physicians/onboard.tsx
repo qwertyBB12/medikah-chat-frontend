@@ -308,7 +308,7 @@ export default function PhysicianOnboardingPage() {
 
   // Handle consent completion
   const handleConsentComplete = useCallback(async (consentData: PhysicianConsentData) => {
-    await savePhysicianConsent({
+    const result = await savePhysicianConsent({
       physicianId: consentData.physicianId,
       language: consentData.language,
       sections: consentData.sections,
@@ -316,6 +316,16 @@ export default function PhysicianOnboardingPage() {
       signedAt: consentData.signedAt,
       formVersion: consentData.formVersion,
     });
+
+    if (!result.success) {
+      messageQueueRef.current.push({
+        text: lang === 'en'
+          ? 'There was an error saving your consent. Please try again.'
+          : 'Hubo un error al guardar su consentimiento. Por favor intente de nuevo.',
+      });
+      triggerQueueProcessing();
+      return;
+    }
 
     setShowConsentModal(false);
     setCompletedPhysicianId(consentData.physicianId);
@@ -339,18 +349,14 @@ export default function PhysicianOnboardingPage() {
 
   // Send user message
   const sendMessage = async (text: string): Promise<void> => {
-    console.log('[SEND] sendMessage called with:', text);
     const trimmed = text.trim();
     const isAwaiting = agentRef.current?.isAwaitingInput();
-    console.log('[SEND] trimmed:', trimmed, 'isAwaitingInput:', isAwaiting);
 
     if (!trimmed || !isAwaiting) {
-      console.log('[SEND] Blocked - empty or not awaiting input');
       setInput('');
       return;
     }
 
-    console.log('[SEND] Adding user message and calling handleUserInput');
     setMessages(prev => [...prev, { sender: 'user', text: trimmed }]);
     setInput('');
     setIsSending(true);
@@ -358,8 +364,7 @@ export default function PhysicianOnboardingPage() {
     try {
       const agent = agentRef.current;
       if (agent) {
-        const result = await agent.handleUserInput(trimmed);
-        console.log('[SEND] handleUserInput returned:', result);
+        await agent.handleUserInput(trimmed);
       }
     } finally {
       setIsSending(false);
@@ -383,11 +388,8 @@ export default function PhysicianOnboardingPage() {
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
-      console.log('[KEY] Enter pressed, isSending:', isSending, 'isTyping:', isTyping, 'input:', input);
       if (!isSending && !isTyping) {
         sendMessage(input);
-      } else {
-        console.log('[KEY] Blocked - isSending or isTyping is true');
       }
     }
   };

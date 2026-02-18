@@ -141,7 +141,7 @@ export async function hasValidPatientConsent(
 
 /**
  * Ensure a Supabase Auth user exists for a social login.
- * Looks up by email first; creates if not found.
+ * Uses create-first approach to avoid full table scan.
  * Returns the Supabase user ID.
  */
 export async function ensureSupabaseUser(
@@ -152,20 +152,7 @@ export async function ensureSupabaseUser(
     throw new Error('Supabase admin client not configured');
   }
 
-  const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers();
-
-  if (listError) {
-    throw new Error(`Failed to list users: ${listError.message}`);
-  }
-
-  const existingUser = listData.users.find(
-    (u) => u.email?.toLowerCase() === email.toLowerCase()
-  );
-
-  if (existingUser) {
-    return existingUser.id;
-  }
-
+  // Try to create the user first (fast path for new users)
   const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
     email,
     email_confirm: true,
@@ -176,9 +163,46 @@ export async function ensureSupabaseUser(
     },
   });
 
-  if (createError) {
-    throw new Error(`Failed to create user: ${createError.message}`);
+  if (!createError && newUser?.user) {
+    return newUser.user.id;
   }
 
-  return newUser.user.id;
+  // If user already exists, look up by email via RPC function
+  if (createError?.message?.includes('already been registered')) {
+    const { data: userId, error: rpcError } = await supabaseAdmin
+      .rpc('get_user_id_by_email', { lookup_email: email.toLowerCase() });
+
+    if (!rpcError && userId) {
+      return userId as string;
+    }
+
+    // Fallback: paginated lookup with filter (in case RPC is not yet deployed)
+    const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers({
+      page: 1,
+      perPage: 1,
+    });
+
+    if (listError) {
+      throw new Error(`Failed to look up user: ${listError.message}`);
+    }
+
+    // The paginated API doesn't support email filter, so use listUsers with a small scan
+    // as a last resort. This should rarely be hit once the RPC function is deployed.
+    const { data: allData, error: allError } = await supabaseAdmin.auth.admin.listUsers();
+    if (allError) {
+      throw new Error(`Failed to list users: ${allError.message}`);
+    }
+
+    const existingUser = allData.users.find(
+      (u) => u.email?.toLowerCase() === email.toLowerCase()
+    );
+
+    if (existingUser) {
+      return existingUser.id;
+    }
+
+    throw new Error(`User with email ${email} exists but could not be found`);
+  }
+
+  throw new Error(`Failed to create user: ${createError.message}`);
 }

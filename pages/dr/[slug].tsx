@@ -1,6 +1,7 @@
 import type { GetServerSideProps } from 'next';
 import { useRouter } from 'next/router';
 import { supabaseAdmin } from '../../lib/supabaseServer';
+import { nameToSlug } from '../../lib/slug';
 import ProfileLayout from '../../components/physician/profile/ProfileLayout';
 import ProfileHero from '../../components/physician/profile/ProfileHero';
 import ProfileAbout from '../../components/physician/profile/ProfileAbout';
@@ -10,19 +11,8 @@ import ProfilePublications from '../../components/physician/profile/ProfilePubli
 import ProfileAvailability from '../../components/physician/profile/ProfileAvailability';
 import ProfileCTA from '../../components/physician/profile/ProfileCTA';
 
-function nameToSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/^(dr\.?\s+|dra\.?\s+)/i, '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
-
 interface PhysicianData {
   full_name: string;
-  email: string;
   photo_url?: string;
   linkedin_url?: string;
   primary_specialty?: string;
@@ -169,7 +159,7 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
   try {
     const { data: physicians, error } = await supabaseAdmin
       .from('physicians')
-      .select('*')
+      .select('full_name, photo_url, linkedin_url, primary_specialty, sub_specialties, board_certifications, medical_school, medical_school_country, graduation_year, honors, residency, fellowships, publications, current_institutions, available_days, available_hours_start, available_hours_end, timezone, languages, licenses, verification_status')
       .eq('verification_status', 'verified');
 
     if (error || !physicians) {
@@ -188,7 +178,6 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
       props: {
         physician: {
           full_name: physician.full_name,
-          email: physician.email,
           photo_url: physician.photo_url || null,
           linkedin_url: physician.linkedin_url || null,
           primary_specialty: physician.primary_specialty || null,

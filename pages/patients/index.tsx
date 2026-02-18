@@ -41,7 +41,6 @@ export default function PatientPortal() {
   const [isSending, setIsSending] = useState(false);
   const [consentCompleted, setConsentCompleted] = useState<boolean | null>(null);
   const [showConsentModal, setShowConsentModal] = useState(false);
-  const pendingMessageRef = useRef<string | null>(null);
 
   const base = process.env.NEXT_PUBLIC_API_URL!;
   const lang: SupportedLang = router.locale?.toLowerCase().startsWith('es') ? 'es' : 'en';
@@ -87,6 +86,13 @@ export default function PatientPortal() {
     hasValidConsent(userId).then((valid) => setConsentCompleted(valid));
   }, [session]);
 
+  // Show consent modal immediately when consent check resolves to false
+  useEffect(() => {
+    if (consentCompleted === false) {
+      setShowConsentModal(true);
+    }
+  }, [consentCompleted]);
+
   const consentCompletedRef = useRef(consentCompleted);
   consentCompletedRef.current = consentCompleted;
 
@@ -94,12 +100,6 @@ export default function PatientPortal() {
     setShowConsentModal(false);
     setConsentCompleted(true);
     consentCompletedRef.current = true;
-    // If there was a pending message, send it now
-    const msg = pendingMessageRef.current;
-    if (msg) {
-      pendingMessageRef.current = null;
-      setTimeout(() => sendMessage(msg), 0);
-    }
   };
 
   const sendMessage = async (text: string): Promise<void> => {
@@ -110,12 +110,10 @@ export default function PatientPortal() {
       return;
     }
 
-    // Block on consent if not yet completed
+    // Defense-in-depth: block messages if consent not yet completed
     if (!consentCompletedRef.current) {
-      pendingMessageRef.current = trimmed;
       setInput('');
       requestAnimationFrame(() => adjustTextareaHeight());
-      setShowConsentModal(true);
       return;
     }
 
@@ -128,6 +126,8 @@ export default function PatientPortal() {
       if (sessionIdRef.current) payload.session_id = sessionIdRef.current;
       if (lang) payload.locale = lang;
       try { payload.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { /* ignore */ }
+      payload.patient_name = session?.user?.name || '';
+      payload.patient_email = session?.user?.email || '';
 
       const res = await fetch(`${base}/chat`, {
         method: 'POST',
@@ -188,8 +188,8 @@ export default function PatientPortal() {
     requestAnimationFrame(() => adjustTextareaHeight());
   };
 
-  // Show loading while checking auth
-  if (status === 'loading' || !session) {
+  // Show loading while checking auth or consent status
+  if (status === 'loading' || !session || consentCompleted === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#FAFAFB]">
         <div className="flex items-center gap-2 text-body-slate">

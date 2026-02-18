@@ -22,6 +22,7 @@ interface Inquiry {
 interface InquiryListProps {
   physicianId: string;
   lang: SupportedLang;
+  accessToken?: string | null;
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
@@ -83,7 +84,7 @@ const statusBadge: Record<string, { bg: string; text: string; dot: string }> = {
   declined: { bg: 'bg-red-50', text: 'text-red-700', dot: 'bg-red-500' },
 };
 
-export default function InquiryList({ physicianId, lang }: InquiryListProps) {
+export default function InquiryList({ physicianId, lang, accessToken }: InquiryListProps) {
   const t = content[lang];
 
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
@@ -111,8 +112,12 @@ export default function InquiryList({ physicianId, lang }: InquiryListProps) {
       });
       if (filter) params.set('status', filter);
 
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+
       const res = await fetch(
         `${API_URL}/physicians/${physicianId}/inquiries?${params}`,
+        { headers },
       );
       if (!res.ok) throw new Error('Failed to fetch');
       const data = await res.json();
@@ -123,7 +128,7 @@ export default function InquiryList({ physicianId, lang }: InquiryListProps) {
     } finally {
       setLoading(false);
     }
-  }, [physicianId, page, filter]);
+  }, [physicianId, page, filter, accessToken]);
 
   useEffect(() => {
     if (physicianId) fetchInquiries();
@@ -132,9 +137,12 @@ export default function InquiryList({ physicianId, lang }: InquiryListProps) {
   const handleAccept = async (inquiryId: string) => {
     setActionLoading(inquiryId);
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+
       const res = await fetch(
         `${API_URL}/physicians/${physicianId}/inquiries/${inquiryId}/accept`,
-        { method: 'POST' },
+        { method: 'POST', headers },
       );
       if (res.ok) {
         setInquiries((prev) =>
@@ -156,11 +164,14 @@ export default function InquiryList({ physicianId, lang }: InquiryListProps) {
     if (!declineModalId) return;
     setActionLoading(declineModalId);
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+
       const res = await fetch(
         `${API_URL}/physicians/${physicianId}/inquiries/${declineModalId}/decline`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({ reason: declineReason || null }),
         },
       );
