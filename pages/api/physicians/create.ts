@@ -36,6 +36,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Convert to snake_case for database
     const dbData = toSnakeCase(data);
     dbData.email = email;
+    dbData.verification_status = 'pending';
+    dbData.onboarding_completed_at = new Date().toISOString();
 
     // 1. Create Supabase Auth user for the physician
     const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -90,7 +92,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (error || !result) {
-      // Handle duplicate email - return existing physician for re-onboarding
+      // Handle duplicate email - update existing physician and return ID
       if (error?.code === '23505') {
         const { data: existing } = await supabaseAdmin
           .from('physicians')
@@ -99,6 +101,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           .single();
 
         if (existing) {
+          // Ensure onboarding_completed_at is set for existing physicians
+          await supabaseAdmin
+            .from('physicians')
+            .update({
+              onboarding_completed_at: new Date().toISOString(),
+              verification_status: 'pending',
+            })
+            .eq('id', existing.id)
+            .is('onboarding_completed_at', null);
+
           return res.status(200).json({
             success: true,
             physicianId: existing.id,
