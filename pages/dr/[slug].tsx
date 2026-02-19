@@ -239,7 +239,7 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
   try {
     const { data: physicians, error } = await supabaseAdmin
       .from('physicians')
-      .select('id, full_name, photo_url, linkedin_url, bio, primary_specialty, sub_specialties, board_certifications, medical_school, medical_school_country, graduation_year, honors, residency, fellowships, publications, current_institutions, available_days, available_hours_start, available_hours_end, timezone, languages, licenses, verification_status')
+      .select('id, full_name, photo_url, photo_thumb_url, linkedin_url, bio, primary_specialty, sub_specialties, board_certifications, medical_school, medical_school_country, graduation_year, honors, residency, fellowships, publications, current_institutions, available_days, available_hours_start, available_hours_end, timezone, languages, licenses, verification_status')
       .eq('verification_status', 'verified');
 
     if (error || !physicians) {

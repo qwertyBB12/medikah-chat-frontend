@@ -8,26 +8,30 @@ interface PhotoUploaderProps {
   physicianName: string;
 }
 
+const MIN_DIMENSION = 800;
+
 const content = {
   en: {
     title: 'Profile Photo',
     subtitle: 'Upload a professional headshot.',
     change: 'Change Photo',
     upload: 'Upload Photo',
-    saving: 'Uploading...',
+    saving: 'Optimizing your photo...',
     saved: 'Uploaded',
     error: 'Upload failed',
-    maxSize: 'Max 5MB. JPEG, PNG, or WebP.',
+    maxSize: `Min ${MIN_DIMENSION}×${MIN_DIMENSION}px. Max 5MB. JPEG, PNG, or WebP.`,
+    tooSmall: `Photo must be at least ${MIN_DIMENSION}×${MIN_DIMENSION} pixels.`,
   },
   es: {
     title: 'Foto de Perfil',
     subtitle: 'Suba una foto profesional.',
     change: 'Cambiar Foto',
     upload: 'Subir Foto',
-    saving: 'Subiendo...',
+    saving: 'Optimizando su foto...',
     saved: 'Subida',
     error: 'Error al subir',
-    maxSize: 'Máximo 5MB. JPEG, PNG o WebP.',
+    maxSize: `Mín ${MIN_DIMENSION}×${MIN_DIMENSION}px. Máximo 5MB. JPEG, PNG o WebP.`,
+    tooSmall: `La foto debe tener al menos ${MIN_DIMENSION}×${MIN_DIMENSION} píxeles.`,
   },
 };
 
@@ -42,21 +46,47 @@ export default function PhotoUploader({
   const [photoUrl, setPhotoUrl] = useState(initialPhotoUrl || '');
   const [preview, setPreview] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
 
   const initial = physicianName.charAt(0).toUpperCase();
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const checkImageDimensions = (dataUrl: string): Promise<{ width: number; height: number }> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = dataUrl;
+    });
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setErrorMessage('');
+
     if (file.size > 5 * 1024 * 1024) {
       setSaveState('error');
+      setErrorMessage(t.maxSize);
       return;
     }
 
     const reader = new FileReader();
-    reader.onloadend = () => {
+    reader.onloadend = async () => {
       const dataUrl = reader.result as string;
+
+      // Client-side dimension check
+      try {
+        const dims = await checkImageDimensions(dataUrl);
+        if (dims.width < MIN_DIMENSION || dims.height < MIN_DIMENSION) {
+          setSaveState('error');
+          setErrorMessage(t.tooSmall);
+          return;
+        }
+      } catch {
+        // If we can't check dimensions client-side, let the server handle it
+      }
+
       setPreview(dataUrl);
       uploadPhoto(dataUrl);
     };
@@ -65,23 +95,26 @@ export default function PhotoUploader({
 
   const uploadPhoto = async (dataUrl: string) => {
     setSaveState('saving');
+    setErrorMessage('');
     try {
       const res = await fetch(`/api/physicians/${physicianId}/upload-photo`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ dataUrl }),
       });
+      const data = await res.json();
       if (res.ok) {
-        const data = await res.json();
         setPhotoUrl(data.photoUrl);
         setPreview(null);
         setSaveState('saved');
         setTimeout(() => setSaveState('idle'), 2000);
       } else {
         setSaveState('error');
+        setErrorMessage(data.error || t.error);
       }
     } catch {
       setSaveState('error');
+      setErrorMessage(t.error);
     }
   };
 
@@ -138,6 +171,9 @@ export default function PhotoUploader({
               : t.upload}
           </button>
           <p className="font-dm-sans text-xs text-archival-grey mt-1">{t.maxSize}</p>
+          {errorMessage && (
+            <p className="font-dm-sans text-xs text-alert-garnet mt-1">{errorMessage}</p>
+          )}
         </div>
       </div>
     </div>

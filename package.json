@@ -21,10 +21,12 @@
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "resend": "^6.9.1",
+    "sharp": "^0.34.5",
     "tailwindcss": "^3.4.0",
     "typescript": "^5.9.3"
   },
   "devDependencies": {
+    "@types/sharp": "^0.32.0",
     "eslint": "^9.37.0",
     "eslint-config-next": "^15.5.4"
   }

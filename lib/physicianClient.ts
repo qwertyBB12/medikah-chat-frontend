@@ -49,6 +49,16 @@ export interface Book {
   role: 'author' | 'contributor' | 'editor';
 }
 
+export interface NarrativeResponses {
+  firstConsultExpectation?: string;
+  communicationStyle?: string;
+  specialtyMotivation?: string;
+  careValues?: string;
+  originSentence?: string;
+  personalStatement?: string;
+  personalInterests?: string;
+}
+
 export interface PhysicianProfileData {
   // Identity
   fullName: string;
@@ -95,6 +105,9 @@ export interface PhysicianProfileData {
   availableHoursEnd?: string;
   timezone?: string;
   languages: string[];
+
+  // Narrative questionnaire
+  narrative?: NarrativeResponses;
 
   // Onboarding metadata
   onboardingLanguage: string;
@@ -396,6 +409,35 @@ export async function savePhysicianConsent(
   } catch (err) {
     console.error('Consent save error:', err);
     return { success: false, error: 'Failed to save consent' };
+  }
+}
+
+/**
+ * Save narrative questionnaire responses via API route.
+ * These go to physician_website table (not physicians).
+ */
+export async function saveNarrativeResponses(
+  physicianId: string,
+  responses: NarrativeResponses
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch(`/api/physicians/${physicianId}/narrative`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(responses),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error('Error saving narrative responses:', result.error);
+      return { success: false, error: result.error || 'Failed to save narrative' };
+    }
+
+    return { success: true };
+  } catch (err) {
+    console.error('Exception saving narrative responses:', err);
+    return { success: false, error: 'Failed to save narrative' };
   }
 }
 
