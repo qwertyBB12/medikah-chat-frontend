@@ -11,13 +11,13 @@ export default function WebsiteServices({ services, isEs }: Props) {
   }
 
   return (
-    <section className="bg-linen py-24 md:py-36">
+    <section className="py-24 md:py-36">
       <div className="max-w-5xl mx-auto px-6 md:px-8">
         <FadeInSection>
           <p className="text-[13px] uppercase tracking-[0.15em] text-clinical-teal font-semibold mb-4">
             {isEs ? 'Servicios' : 'Services'}
           </p>
-          <h2 className="text-4xl md:text-5xl font-bold tracking-[-0.025em] text-inst-blue mb-16 max-w-3xl">
+          <h2 className="font-heading text-4xl md:text-5xl font-bold tracking-[-0.025em] text-inst-blue mb-16 max-w-3xl">
             {isEs ? 'Lo que ofrezco' : 'What I offer'}
           </h2>
 

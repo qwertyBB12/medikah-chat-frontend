@@ -22,7 +22,7 @@ export default function WebsitePracticePhilosophy({
           <p className="text-[13px] uppercase tracking-[0.15em] text-clinical-teal font-semibold mb-4">
             {isEs ? 'Filosofía de Práctica' : 'Practice Philosophy'}
           </p>
-          <h2 className="text-4xl md:text-5xl font-bold tracking-[-0.025em] text-inst-blue mb-8 max-w-3xl">
+          <h2 className="font-heading text-4xl md:text-5xl font-bold tracking-[-0.025em] text-inst-blue mb-8 max-w-3xl">
             {isEs ? 'Mi enfoque clínico' : 'My clinical approach'}
           </h2>
 
@@ -37,7 +37,7 @@ export default function WebsitePracticePhilosophy({
               {valuePillars.slice(0, 3).map((pillar, i) => (
                 <article
                   key={i}
-                  className="bg-linen-light rounded-[12px] border-l-4 border-clinical-teal p-8"
+                  className="bg-white rounded-[12px] p-8 shadow-[0_1px_3px_rgba(27,42,65,0.06),0_8px_24px_rgba(27,42,65,0.04)]"
                 >
                   <h3 className="font-dm-sans font-bold text-xl text-deep-charcoal mb-3">
                     {pillar.title}
