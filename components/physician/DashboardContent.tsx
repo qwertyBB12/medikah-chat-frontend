@@ -14,6 +14,8 @@ import ProfileOverview from './ProfileOverview';
 import AIDiagnosisTool from './AIDiagnosisTool';
 import InquiryList from './InquiryList';
 import AvailabilityEditor from './AvailabilityEditor';
+import ProfileEditor from './editor/ProfileEditor';
+import WebsiteEditor from './editor/WebsiteEditor';
 
 interface DashboardContentProps {
   physicianId: string | null;
@@ -194,6 +196,12 @@ export default function DashboardContent({
 
       {/* Row 4: Availability Editor - Full width */}
       {physicianId && <AvailabilityEditor physicianId={physicianId} lang={lang} accessToken={accessToken} />}
+
+      {/* Row 5: Profile Editor - Full width */}
+      {physicianId && <ProfileEditor physicianId={physicianId} lang={lang} accessToken={accessToken} />}
+
+      {/* Row 6: Website Editor - Full width */}
+      {physicianId && <WebsiteEditor physicianId={physicianId} lang={lang} accessToken={accessToken} />}
 
       {/* Network Card - Full width */}
       <div className="bg-gradient-to-br from-inst-blue to-[#243447] rounded-[12px] p-6 text-white shadow-lg">
