@@ -40,6 +40,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
+    // Backfill: if physician exists with consent but missing onboarding timestamp,
+    // set it now (fixes rows created before the bug fix in create.ts)
+    if (!physician.onboarding_completed_at && physician.consent_signed_at) {
+      await supabaseAdmin
+        .from('physicians')
+        .update({ onboarding_completed_at: physician.consent_signed_at })
+        .eq('id', physician.id);
+      physician.onboarding_completed_at = physician.consent_signed_at;
+    }
+
     return res.status(200).json({
       isOnboarded: !!physician.onboarding_completed_at,
       physicianId: physician.id,
