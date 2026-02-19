@@ -36,27 +36,30 @@ export default function ProfileAvailability({
   }
 
   return (
-    <section className="bg-linen py-24 md:py-36">
+    <section className="bg-linen-warm py-24 md:py-36">
       <div className="max-w-5xl mx-auto px-6 md:px-8">
         <FadeInSection>
-          <p className="text-[13px] uppercase tracking-[0.15em] text-clinical-teal font-semibold mb-4">
-            {isEs ? 'Práctica y Disponibilidad' : 'Practice & Availability'}
-          </p>
-          <h2 className="font-heading text-4xl md:text-5xl font-bold tracking-[-0.025em] text-inst-blue mb-16 max-w-3xl">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-12 h-px bg-teal-500" />
+            <p className="font-body text-[0.6875rem] font-medium uppercase tracking-[0.25em] text-teal-500">
+              {isEs ? 'Práctica y Disponibilidad' : 'Practice & Availability'}
+            </p>
+          </div>
+          <h2 className="font-heading text-[clamp(2rem,4vw,3.5rem)] font-medium uppercase leading-[0.95] tracking-[-0.02em] text-deep-charcoal mb-16 max-w-3xl">
             {isEs ? 'Cómo agendar' : 'How to schedule'}
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {hasDays && (
-              <div className="bg-white rounded-[12px] p-8 shadow-[0_1px_3px_rgba(27,42,65,0.06),0_8px_24px_rgba(27,42,65,0.04)]">
-                <h3 className="font-bold text-lg text-inst-blue mb-4">
+              <div className="bg-linen-white border border-warm-gray-800/[0.06] rounded-lg p-8">
+                <h3 className="font-bold text-lg text-deep-charcoal mb-4">
                   {isEs ? 'Días Disponibles' : 'Available Days'}
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {availableDays!.map((day) => (
                     <span
                       key={day}
-                      className="px-4 py-2 bg-clinical-teal/10 text-clinical-teal font-semibold text-sm rounded-full"
+                      className="px-4 py-2 bg-teal-500/[0.08] text-teal-500 font-semibold text-sm rounded-full"
                     >
                       {getDayLabel(day)}
                     </span>
@@ -66,8 +69,8 @@ export default function ProfileAvailability({
             )}
 
             {hasHours && (
-              <div className="bg-white rounded-[12px] p-8 shadow-[0_1px_3px_rgba(27,42,65,0.06),0_8px_24px_rgba(27,42,65,0.04)]">
-                <h3 className="font-bold text-lg text-inst-blue mb-4">
+              <div className="bg-linen-white border border-warm-gray-800/[0.06] rounded-lg p-8">
+                <h3 className="font-bold text-lg text-deep-charcoal mb-4">
                   {isEs ? 'Horario' : 'Hours'}
                 </h3>
                 <p className="text-body-slate text-lg">
@@ -82,8 +85,8 @@ export default function ProfileAvailability({
             )}
 
             {hasLanguages && (
-              <div className="bg-white rounded-[12px] p-8 shadow-[0_1px_3px_rgba(27,42,65,0.06),0_8px_24px_rgba(27,42,65,0.04)]">
-                <h3 className="font-bold text-lg text-inst-blue mb-4">
+              <div className="bg-linen-white border border-warm-gray-800/[0.06] rounded-lg p-8">
+                <h3 className="font-bold text-lg text-deep-charcoal mb-4">
                   {isEs ? 'Idiomas' : 'Languages'}
                 </h3>
                 <p className="text-body-slate text-lg">{languages!.join(', ')}</p>
@@ -91,8 +94,8 @@ export default function ProfileAvailability({
             )}
 
             {hasInstitutions && (
-              <div className="bg-white rounded-[12px] p-8 shadow-[0_1px_3px_rgba(27,42,65,0.06),0_8px_24px_rgba(27,42,65,0.04)]">
-                <h3 className="font-bold text-lg text-inst-blue mb-4">
+              <div className="bg-linen-white border border-warm-gray-800/[0.06] rounded-lg p-8">
+                <h3 className="font-bold text-lg text-deep-charcoal mb-4">
                   {isEs ? 'Afiliaciones' : 'Affiliations'}
                 </h3>
                 <ul className="space-y-2">

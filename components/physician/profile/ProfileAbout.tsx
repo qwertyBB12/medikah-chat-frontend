@@ -27,13 +27,13 @@ export default function ProfileAbout({
     <section className="py-24 md:py-36">
       <div className="max-w-5xl mx-auto px-6 md:px-8">
         <FadeInSection>
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-[2px] bg-[#C4A57B]" />
-            <p className="text-[13px] uppercase tracking-[0.15em] text-clinical-teal font-semibold">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-12 h-px bg-teal-500" />
+            <p className="font-body text-[0.6875rem] font-medium uppercase tracking-[0.25em] text-teal-500">
               {isEs ? 'Sobre' : 'About'}
             </p>
           </div>
-          <h2 className="font-heading text-4xl md:text-5xl font-bold tracking-[-0.025em] text-inst-blue mb-6 max-w-3xl">
+          <h2 className="font-heading text-[clamp(2rem,4vw,3.5rem)] font-medium uppercase leading-[0.95] tracking-[-0.02em] text-deep-charcoal mb-6 max-w-3xl">
             {isEs ? 'Dedicación a la excelencia clínica' : 'Dedicated to clinical excellence'}
           </h2>
           <p className="text-body-slate leading-[1.7] text-lg max-w-[75ch]">

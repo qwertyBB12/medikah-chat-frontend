@@ -23,7 +23,7 @@ export default function ProfileCTA({
 
   return (
     <section className="relative overflow-hidden bg-inst-blue">
-      {/* Grain texture overlay */}
+      {/* Grain texture */}
       <div
         className="absolute inset-0 pointer-events-none z-[1]"
         style={{
@@ -33,17 +33,17 @@ export default function ProfileCTA({
 
       <div className="relative z-[2] max-w-5xl mx-auto px-6 md:px-8 py-24 md:py-36 text-center">
         <FadeInSection>
-          <p className="text-[13px] font-semibold uppercase tracking-[0.15em] text-[#C4A57B] mb-8">
+          <p className="font-body text-[0.6875rem] font-medium uppercase tracking-[0.25em] text-teal-400 mb-8">
             {isEs ? 'Primera Consulta' : 'First Consultation'}
           </p>
 
-          <h2 className="font-heading text-4xl md:text-5xl font-bold tracking-[-0.025em] text-white mb-8 max-w-3xl mx-auto">
+          <h2 className="font-heading text-[clamp(2rem,4vw,3.5rem)] font-medium uppercase leading-[0.95] tracking-[-0.02em] text-white mb-8 max-w-3xl mx-auto">
             {isEs
               ? `Listo para agendar con ${firstName}?`
               : `Ready to schedule with Dr. ${firstName}?`}
           </h2>
 
-          <p className="text-lg text-white/80 leading-[1.7] max-w-[65ch] mx-auto mb-12">
+          <p className="text-[0.9375rem] text-white/50 leading-[1.7] max-w-[65ch] mx-auto mb-12">
             {isEs
               ? 'Atención sin distancia.'
               : 'Care Without Distance.'}
@@ -51,24 +51,24 @@ export default function ProfileCTA({
 
           <button
             onClick={onScheduleClick}
-            className="inline-flex items-center justify-center font-bold text-lg tracking-wide transition-all duration-300 rounded-sm px-8 py-4 bg-white text-inst-blue hover:bg-clinical-teal hover:text-white"
+            className="inline-flex items-center justify-center font-body text-[0.8125rem] font-medium uppercase tracking-[0.04em] px-9 py-3.5 bg-teal-500 text-white border-2 border-teal-500 rounded-lg hover:bg-teal-600 hover:border-teal-600 hover:-translate-y-[3px] hover:shadow-[0_12px_32px_rgba(44,122,140,0.3)] transition-all duration-300"
           >
             {isEs ? 'Agendar Consulta' : 'Schedule Consultation'}
           </button>
 
-          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 mt-16 pt-8 border-t border-white/20 text-[13px] text-white/60">
+          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 mt-16 pt-8 border-t border-white/[0.06] text-[0.8125rem] text-white/40">
             {timezone && (
               <span>{timezone.replace(/_/g, ' ')}</span>
             )}
             {availableHoursStart && availableHoursEnd && (
               <>
-                <span className="hidden sm:inline text-white/30">&middot;</span>
+                <span className="hidden sm:inline text-white/20">&middot;</span>
                 <span>{availableHoursStart} – {availableHoursEnd}</span>
               </>
             )}
             {languages && languages.length > 0 && (
               <>
-                <span className="hidden sm:inline text-white/30">&middot;</span>
+                <span className="hidden sm:inline text-white/20">&middot;</span>
                 <span>{languages.join(' · ')}</span>
               </>
             )}

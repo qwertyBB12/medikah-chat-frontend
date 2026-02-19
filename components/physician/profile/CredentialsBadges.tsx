@@ -71,8 +71,11 @@ export default function CredentialsBadges({
   }
 
   return (
-    <section className="relative overflow-hidden bg-inst-blue">
-      {/* Grain texture overlay */}
+    <section
+      className="relative overflow-hidden"
+      style={{ background: 'linear-gradient(180deg, #1B2A41 0%, #0D1520 100%)' }}
+    >
+      {/* Grain texture */}
       <div
         className="absolute inset-0 pointer-events-none z-[1]"
         style={{
@@ -82,34 +85,39 @@ export default function CredentialsBadges({
 
       <div className="relative z-[2] max-w-5xl mx-auto px-6 md:px-8 py-24 md:py-36">
         <FadeInSection>
-          <p className="text-[13px] uppercase tracking-[0.15em] text-[#C4A57B] font-semibold mb-4">
-            {isEs ? 'Credenciales Clínicas' : 'Clinical Credentials'}
-          </p>
-          <h2 className="font-heading text-4xl md:text-5xl font-bold tracking-[-0.025em] text-white mb-6 max-w-3xl">
+          {/* Eyebrow */}
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-12 h-px bg-teal-500" />
+            <span className="font-body text-[0.6875rem] font-medium uppercase tracking-[0.25em] text-teal-400">
+              {isEs ? 'Credenciales Clínicas' : 'Clinical Credentials'}
+            </span>
+          </div>
+
+          <h2 className="font-heading text-[clamp(2rem,4vw,3.5rem)] font-medium uppercase leading-[0.95] tracking-[-0.02em] text-white mb-6 max-w-3xl">
             {isEs ? 'Formado para la excelencia' : 'Trained for excellence'}
           </h2>
-          <p className="text-lg text-white/80 leading-[1.7] max-w-[75ch] mb-16">
+          <p className="text-[0.9375rem] text-white/50 leading-[1.7] max-w-[75ch] mb-16">
             {isEs
               ? 'Cada credencial representa un compromiso con estándares clínicos que priorizan seguridad, evidencia y resultados.'
               : 'Each credential represents a commitment to clinical standards that prioritize safety, evidence, and outcomes.'}
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-[clamp(1.5rem,3vw,2.5rem)]">
             {columns.map((c) => (
               <div
                 key={c.num}
-                className="bg-white/[0.07] border border-white/[0.12] backdrop-blur-sm rounded-[12px] p-10"
+                className="bg-[rgba(27,42,65,0.4)] backdrop-blur-[8px] border border-white/[0.06] border-t-[3px] border-t-teal-500 rounded-lg p-[clamp(2rem,3vw,3rem)] transition-all duration-400 hover:border-white/[0.1] hover:border-t-teal-400 hover:-translate-y-1"
               >
-                <div className="w-12 h-12 rounded-full bg-[#C4A57B]/20 flex items-center justify-center mb-6">
-                  <span className="text-[#C4A57B] font-bold text-lg">{c.num}</span>
-                </div>
-                <p className="text-[13px] font-semibold uppercase tracking-[0.1em] text-white/50 mb-2">
+                <span className="font-heading text-[clamp(1.5rem,2.5vw,2rem)] font-medium text-teal-400 leading-none mb-6 block">
+                  {c.num}
+                </span>
+                <p className="text-[0.625rem] font-medium uppercase tracking-[0.2em] text-teal-300 mb-4">
                   {c.label}
                 </p>
-                <h3 className="text-xl font-bold text-white mb-3 tracking-[-0.01em]">
+                <h3 className="font-heading text-[clamp(1.25rem,2vw,1.5rem)] font-medium uppercase leading-[1.05] text-white mb-4">
                   {c.title}
                 </h3>
-                <p className="text-[15px] text-white/70 leading-[1.7]">{c.detail}</p>
+                <p className="text-[0.9375rem] leading-[1.8] text-white/50">{c.detail}</p>
               </div>
             ))}
           </div>
