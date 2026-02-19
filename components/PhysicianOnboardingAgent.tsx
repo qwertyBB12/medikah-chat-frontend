@@ -23,6 +23,7 @@ import {
   createPhysicianProfile,
   logOnboardingAudit,
   checkPhysicianEmailExists,
+  saveNarrativeResponses,
 } from '../lib/physicianClient';
 
 // Message types
@@ -55,7 +56,7 @@ export interface OnboardingBotMessage {
   isSummary?: boolean;
   summaryData?: Partial<PhysicianProfileData>;
   // Batched form rendering
-  showBatchedForm?: 'licensing' | 'specialty' | 'education' | 'presence';
+  showBatchedForm?: 'licensing' | 'specialty' | 'education' | 'presence' | 'narrative';
 }
 
 // Phases (simplified with batched forms)
@@ -67,6 +68,7 @@ export type OnboardingPhase =
   | 'education'
   | 'intellectual'
   | 'presence'
+  | 'narrative'
   | 'confirmation'
   | 'completed';
 
@@ -94,6 +96,8 @@ type QuestionKey =
   | 'books'
   // Batched form
   | 'presence_form'
+  // Narrative
+  | 'narrative_form'
   // Confirmation
   | 'confirm_profile'
   | 'edit_choice';
@@ -123,6 +127,12 @@ export interface PhysicianOnboardingAgentHandle {
     researchgateUrl?: string; academiaEduUrl?: string;
     availableDays: string[]; availableHoursStart: string; availableHoursEnd: string;
     timezone: string; languages: string[];
+  }) => void;
+  handleNarrativeSubmit?: (data: {
+    firstConsultExpectation: string; communicationStyle: string;
+    specialtyMotivation: string; careValues: string;
+    originSentence: string; personalStatement: string;
+    personalInterests: string;
   }) => void;
   handleFormCancel?: () => void;
   getCollectedData: () => Partial<PhysicianProfileData>;
@@ -489,6 +499,24 @@ const PhysicianOnboardingAgent = forwardRef<
     });
   }, [lang, stableAppendMessage, updateState]);
 
+  const startNarrativePhase = useCallback(() => {
+    setPhase('narrative');
+    updateState('processing');
+
+    stableAppendMessage({ text: copy.narrativeVision, isVision: true });
+
+    setTimeout(() => {
+      setQuestion('narrative_form');
+      updateState('awaiting_user');
+      stableAppendMessage({
+        text: lang === 'en'
+          ? 'Take your time with these — there are no right or wrong answers.'
+          : 'Tómese su tiempo con estas — no hay respuestas correctas o incorrectas.',
+        showBatchedForm: 'narrative',
+      });
+    }, 1000);
+  }, [copy, lang, stableAppendMessage, updateState]);
+
   const startConfirmationPhase = useCallback(() => {
     setPhase('confirmation');
 
@@ -551,12 +579,19 @@ const PhysicianOnboardingAgent = forwardRef<
       availableHoursEnd: dataRef.current.availableHoursEnd,
       timezone: dataRef.current.timezone,
       languages: dataRef.current.languages || ['es', 'en'],
+      narrative: dataRef.current.narrative,
       onboardingLanguage: lang,
     };
 
     const result = await createPhysicianProfile(profileData);
 
     if (result.success && result.physicianId) {
+      // Save narrative responses to physician_website table
+      if (dataRef.current.narrative) {
+        saveNarrativeResponses(result.physicianId, dataRef.current.narrative)
+          .catch(err => console.warn('Failed to save narrative responses:', err));
+      }
+
       await logOnboardingAudit({
         physicianId: result.physicianId,
         email: profileData.email,
@@ -645,8 +680,30 @@ const PhysicianOnboardingAgent = forwardRef<
     dataRef.current.availableHoursEnd = formData.availableHoursEnd;
     dataRef.current.timezone = formData.timezone;
     dataRef.current.languages = formData.languages;
-    startConfirmationPhase();
-  }, [startConfirmationPhase]);
+    startNarrativePhase();
+  }, [startNarrativePhase]);
+
+  const handleNarrativeSubmit = useCallback((formData: {
+    firstConsultExpectation: string;
+    communicationStyle: string;
+    specialtyMotivation: string;
+    careValues: string;
+    originSentence: string;
+    personalStatement: string;
+    personalInterests: string;
+  }) => {
+    dataRef.current.narrative = {
+      firstConsultExpectation: formData.firstConsultExpectation,
+      communicationStyle: formData.communicationStyle,
+      specialtyMotivation: formData.specialtyMotivation,
+      careValues: formData.careValues,
+      originSentence: formData.originSentence,
+      personalStatement: formData.personalStatement,
+      personalInterests: formData.personalInterests,
+    };
+    stableAppendMessage({ text: copy.narrativeComplete });
+    setTimeout(() => startConfirmationPhase(), 600);
+  }, [copy, stableAppendMessage, startConfirmationPhase]);
 
   const handleFormCancel = useCallback(() => {
     // Go back to previous phase - user can re-approach
@@ -768,7 +825,8 @@ const PhysicianOnboardingAgent = forwardRef<
       case 'licensing_form':
       case 'specialty_form':
       case 'education_form':
-      case 'presence_form': {
+      case 'presence_form':
+      case 'narrative_form': {
         stableAppendMessage({
           text: lang === 'en'
             ? 'Please use the form above to enter your information.'
@@ -1309,6 +1367,7 @@ const PhysicianOnboardingAgent = forwardRef<
     handleSpecialtySubmit,
     handleEducationSubmit,
     handlePresenceSubmit,
+    handleNarrativeSubmit,
     handleFormCancel,
     getCollectedData: () => ({ ...dataRef.current }),
     getLicensedCountryCodes: () =>

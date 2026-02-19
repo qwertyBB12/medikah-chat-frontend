@@ -23,6 +23,7 @@ import BatchedLicensingForm from '../../components/physician/onboarding/BatchedL
 import BatchedSpecialtyForm from '../../components/physician/onboarding/BatchedSpecialtyForm';
 import BatchedEducationForm from '../../components/physician/onboarding/BatchedEducationForm';
 import BatchedPresenceForm from '../../components/physician/onboarding/BatchedPresenceForm';
+import BatchedNarrativeForm from '../../components/physician/onboarding/BatchedNarrativeForm';
 import { Publication, PublicationSource } from '../../lib/publications';
 import { savePhysicianConsent } from '../../lib/physicianClient';
 import { getPhysicianOnboardingStatus } from '../../lib/portalAuth';
@@ -49,7 +50,7 @@ type Message = {
     profileName?: string;
   };
   showManualPublicationForm?: boolean;
-  showBatchedForm?: 'licensing' | 'specialty' | 'education' | 'presence';
+  showBatchedForm?: 'licensing' | 'specialty' | 'education' | 'presence' | 'narrative';
 };
 
 // Generate a unique session ID for LinkedIn OAuth
@@ -671,6 +672,15 @@ export default function PhysicianOnboardingPage() {
                         <BatchedPresenceForm
                           lang={lang}
                           onSubmit={(data) => agentRef.current?.handlePresenceSubmit?.(data)}
+                          onCancel={() => agentRef.current?.handleFormCancel?.()}
+                        />
+                      </div>
+                    )}
+                    {message.showBatchedForm === 'narrative' && (
+                      <div className="mt-4">
+                        <BatchedNarrativeForm
+                          lang={lang}
+                          onSubmit={(data) => agentRef.current?.handleNarrativeSubmit?.(data)}
                           onCancel={() => agentRef.current?.handleFormCancel?.()}
                         />
                       </div>

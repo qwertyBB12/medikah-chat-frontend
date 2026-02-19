@@ -99,6 +99,11 @@ export interface OnboardingCopy {
   continuePrompt: string;
   backPrompt: string;
 
+  // Phase 6.5: Narrative (between presence and confirmation)
+  narrativeTitle: string;
+  narrativeVision: string;
+  narrativeComplete: string;
+
   // Common
   yes: string;
   no: string;
@@ -191,6 +196,11 @@ export const onboardingCopy: Record<SupportedLang, OnboardingCopy> = {
     profileSummaryTitle: 'Your Profile Summary',
     confirmationQuestion: 'Does everything look correct?',
     editPrompt: 'What would you like to change?',
+
+    // Phase 6.5: Narrative
+    narrativeTitle: 'Your Story',
+    narrativeVision: 'Credentials tell what you\'ve done. This next part tells who you are. These questions help us build a profile that connects with patients on a human level — no right or wrong answers.',
+    narrativeComplete: 'Thank you. These answers will help us craft a profile that truly represents you.',
 
     // Completion
     completionTitle: 'Welcome to Medikah',
@@ -303,6 +313,11 @@ export const onboardingCopy: Record<SupportedLang, OnboardingCopy> = {
     profileSummaryTitle: 'Resumen de Su Perfil',
     confirmationQuestion: '¿Todo se ve correcto?',
     editPrompt: '¿Qué le gustaría cambiar?',
+
+    // Phase 6.5: Narrative
+    narrativeTitle: 'Su Historia',
+    narrativeVision: 'Las credenciales cuentan lo que ha hecho. Esta siguiente parte cuenta quién es usted. Estas preguntas nos ayudan a construir un perfil que conecte con los pacientes a nivel humano — no hay respuestas correctas o incorrectas.',
+    narrativeComplete: 'Gracias. Estas respuestas nos ayudarán a crear un perfil que verdaderamente lo represente.',
 
     // Completion
     completionTitle: 'Bienvenido a Medikah',

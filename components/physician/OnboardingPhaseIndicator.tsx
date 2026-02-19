@@ -15,6 +15,7 @@ export type OnboardingPhaseKey =
   | 'education'
   | 'publications'
   | 'availability'
+  | 'your_story'
   | 'confirmation';
 
 interface PhaseDefinition {
@@ -32,6 +33,7 @@ export const ONBOARDING_PHASES: PhaseDefinition[] = [
   { key: 'education', en: 'Education', es: 'Educación', icon: '5' },
   { key: 'publications', en: 'Publications', es: 'Publicaciones', icon: '6' },
   { key: 'availability', en: 'Availability', es: 'Disponibilidad', icon: '7' },
+  { key: 'your_story', en: 'Your Story', es: 'Su Historia', icon: '8' },
   { key: 'confirmation', en: 'Confirmation', es: 'Confirmación', icon: '✓' },
 ];
 
@@ -54,6 +56,8 @@ export function mapAgentPhaseToIndicator(
       return 'publications';
     case 'presence':
       return 'availability';
+    case 'narrative':
+      return 'your_story';
     case 'confirmation':
     case 'completed':
       return 'confirmation';
