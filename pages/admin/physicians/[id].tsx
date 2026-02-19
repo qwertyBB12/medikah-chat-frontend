@@ -185,7 +185,7 @@ export default function PhysicianDetailPage({ admin, physician, verificationResu
                   <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${st.dot}`} />
                   {st.label}
                 </span>
-                {physician.verification_tier && (
+                {!!physician.verification_tier && (
                   <span className="font-dm-sans text-xs text-body-slate">
                     Tier: {physician.verification_tier as string}
                   </span>
