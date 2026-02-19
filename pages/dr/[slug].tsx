@@ -14,6 +14,7 @@ import WebsitePracticePhilosophy from '../../components/physician/profile/Websit
 import WebsiteServices from '../../components/physician/profile/WebsiteServices';
 import WebsiteFAQ from '../../components/physician/profile/WebsiteFAQ';
 import WebsiteLocation from '../../components/physician/profile/WebsiteLocation';
+import CurveDivider from '../../components/landing/CurveDivider';
 
 interface PhysicianData {
   full_name: string;
@@ -130,6 +131,9 @@ export default function PhysicianProfilePage({ physician, website }: PhysicianPr
         onScheduleClick={handleScheduleClick}
       />
 
+      {/* Dark hero → White about */}
+      <CurveDivider from="#1B2A41" bg="#FFFFFF" />
+
       <ProfileAbout
         fullName={p.full_name}
         primarySpecialty={p.primary_specialty}
@@ -152,6 +156,9 @@ export default function PhysicianProfilePage({ physician, website }: PhysicianPr
         isEs={isEs}
       />
 
+      {/* Linen specialties → Dark credentials */}
+      <CurveDivider from="#F0EAE0" bg="#1B2A41" />
+
       <CredentialsBadges
         medicalSchool={p.medical_school}
         medicalSchoolCountry={p.medical_school_country}
@@ -161,6 +168,9 @@ export default function PhysicianProfilePage({ physician, website }: PhysicianPr
         boardCertifications={p.board_certifications}
         isEs={isEs}
       />
+
+      {/* Dark credentials → White services/publications */}
+      <CurveDivider from="#1B2A41" bg="#FFFFFF" />
 
       {w && (
         <WebsiteServices
@@ -202,6 +212,9 @@ export default function PhysicianProfilePage({ physician, website }: PhysicianPr
           isEs={isEs}
         />
       )}
+
+      {/* White/linen → Dark CTA */}
+      <CurveDivider from="#FFFFFF" bg="#1B2A41" />
 
       <ProfileCTA
         fullName={p.full_name}

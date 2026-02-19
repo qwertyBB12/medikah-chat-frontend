@@ -22,13 +22,13 @@ export default function SpecialtiesGrid({
           <p className="text-[13px] uppercase tracking-[0.15em] text-clinical-teal font-semibold mb-4">
             {isEs ? 'Especialidades' : 'Specialties'}
           </p>
-          <h2 className="text-4xl md:text-5xl font-bold tracking-[-0.025em] text-inst-blue mb-16 max-w-3xl">
+          <h2 className="font-heading text-4xl md:text-5xl font-bold tracking-[-0.025em] text-inst-blue mb-16 max-w-3xl">
             {isEs ? 'Areas de experiencia' : 'Areas of expertise'}
           </h2>
 
           {primarySpecialty && (
             <div className="mb-8">
-              <article className="bg-white rounded-[12px] p-10 shadow-[0_2px_8px_rgba(27,42,65,0.08),0_16px_48px_rgba(27,42,65,0.06)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_4px_8px_rgba(27,42,65,0.08),0_20px_40px_rgba(27,42,65,0.08)]">
+              <article className="bg-white rounded-[12px] p-10 border-l-4 border-clinical-teal shadow-[0_2px_8px_rgba(27,42,65,0.08),0_16px_48px_rgba(27,42,65,0.06)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_4px_8px_rgba(27,42,65,0.08),0_20px_40px_rgba(27,42,65,0.08)]">
                 <p className="text-[13px] uppercase tracking-[0.15em] text-clinical-teal font-semibold mb-3">
                   {isEs ? 'Especialidad Principal' : 'Primary Specialty'}
                 </p>
@@ -44,7 +44,7 @@ export default function SpecialtiesGrid({
               {subSpecialties.map((sub, i) => (
                 <article
                   key={i}
-                  className="bg-white rounded-[12px] p-10 shadow-[0_1px_3px_rgba(27,42,65,0.06),0_8px_24px_rgba(27,42,65,0.04)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_4px_8px_rgba(27,42,65,0.08),0_20px_40px_rgba(27,42,65,0.08)]"
+                  className="bg-white rounded-[12px] p-10 border-t-2 border-clinical-teal/30 shadow-[0_1px_3px_rgba(27,42,65,0.06),0_8px_24px_rgba(27,42,65,0.04)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_4px_8px_rgba(27,42,65,0.08),0_20px_40px_rgba(27,42,65,0.08)]"
                 >
                   <h3 className="font-bold text-lg text-inst-blue tracking-[-0.01em]">
                     {sub}

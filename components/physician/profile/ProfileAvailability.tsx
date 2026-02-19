@@ -36,19 +36,19 @@ export default function ProfileAvailability({
   }
 
   return (
-    <section className="py-24 md:py-36">
+    <section className="bg-linen py-24 md:py-36">
       <div className="max-w-5xl mx-auto px-6 md:px-8">
         <FadeInSection>
           <p className="text-[13px] uppercase tracking-[0.15em] text-clinical-teal font-semibold mb-4">
             {isEs ? 'Práctica y Disponibilidad' : 'Practice & Availability'}
           </p>
-          <h2 className="text-4xl md:text-5xl font-bold tracking-[-0.025em] text-inst-blue mb-16 max-w-3xl">
+          <h2 className="font-heading text-4xl md:text-5xl font-bold tracking-[-0.025em] text-inst-blue mb-16 max-w-3xl">
             {isEs ? 'Cómo agendar' : 'How to schedule'}
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {hasDays && (
-              <div>
+              <div className="bg-white rounded-[12px] p-8 shadow-[0_1px_3px_rgba(27,42,65,0.06),0_8px_24px_rgba(27,42,65,0.04)]">
                 <h3 className="font-bold text-lg text-inst-blue mb-4">
                   {isEs ? 'Días Disponibles' : 'Available Days'}
                 </h3>
@@ -66,7 +66,7 @@ export default function ProfileAvailability({
             )}
 
             {hasHours && (
-              <div>
+              <div className="bg-white rounded-[12px] p-8 shadow-[0_1px_3px_rgba(27,42,65,0.06),0_8px_24px_rgba(27,42,65,0.04)]">
                 <h3 className="font-bold text-lg text-inst-blue mb-4">
                   {isEs ? 'Horario' : 'Hours'}
                 </h3>
@@ -82,7 +82,7 @@ export default function ProfileAvailability({
             )}
 
             {hasLanguages && (
-              <div>
+              <div className="bg-white rounded-[12px] p-8 shadow-[0_1px_3px_rgba(27,42,65,0.06),0_8px_24px_rgba(27,42,65,0.04)]">
                 <h3 className="font-bold text-lg text-inst-blue mb-4">
                   {isEs ? 'Idiomas' : 'Languages'}
                 </h3>
@@ -91,7 +91,7 @@ export default function ProfileAvailability({
             )}
 
             {hasInstitutions && (
-              <div>
+              <div className="bg-white rounded-[12px] p-8 shadow-[0_1px_3px_rgba(27,42,65,0.06),0_8px_24px_rgba(27,42,65,0.04)]">
                 <h3 className="font-bold text-lg text-inst-blue mb-4">
                   {isEs ? 'Afiliaciones' : 'Affiliations'}
                 </h3>
