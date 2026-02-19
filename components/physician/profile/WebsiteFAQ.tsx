@@ -21,10 +21,13 @@ export default function WebsiteFAQ({ faqs, isEs }: Props) {
     <section className="py-24 md:py-36">
       <div className="max-w-5xl mx-auto px-6 md:px-8">
         <FadeInSection>
-          <p className="text-[13px] uppercase tracking-[0.15em] text-clinical-teal font-semibold mb-4">
-            {isEs ? 'Preguntas Frecuentes' : 'Frequently Asked Questions'}
-          </p>
-          <h2 className="font-heading text-4xl md:text-5xl font-bold tracking-[-0.025em] text-inst-blue mb-16 max-w-3xl">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-12 h-px bg-teal-500" />
+            <p className="font-body text-[0.6875rem] font-medium uppercase tracking-[0.25em] text-teal-500">
+              {isEs ? 'Preguntas Frecuentes' : 'Frequently Asked Questions'}
+            </p>
+          </div>
+          <h2 className="font-heading text-[clamp(2rem,4vw,3.5rem)] font-medium uppercase leading-[0.95] tracking-[-0.02em] text-deep-charcoal mb-16 max-w-3xl">
             {isEs ? 'Respuestas a sus preguntas' : 'Answers to your questions'}
           </h2>
 
@@ -66,13 +69,13 @@ function FAQItem({
   }, [isOpen]);
 
   return (
-    <div className="bg-white rounded-[12px] border border-border-line shadow-sm overflow-hidden">
+    <div className="bg-linen-white border border-warm-gray-800/[0.06] rounded-lg overflow-hidden">
       <button
         onClick={onToggle}
         className="w-full flex items-center justify-between px-6 py-5 text-left"
       >
         <span className="flex items-center gap-4">
-          <span className="flex-shrink-0 w-8 h-8 rounded-full bg-clinical-teal/10 text-clinical-teal font-dm-sans font-bold text-sm flex items-center justify-center">
+          <span className="flex-shrink-0 w-8 h-8 rounded-full bg-teal-500/[0.08] text-teal-500 font-dm-sans font-bold text-sm flex items-center justify-center">
             {index + 1}
           </span>
           <span className="font-dm-sans font-bold text-deep-charcoal">

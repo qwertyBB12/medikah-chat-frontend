@@ -19,10 +19,13 @@ export default function WebsitePracticePhilosophy({
     <section className="py-24 md:py-36">
       <div className="max-w-5xl mx-auto px-6 md:px-8">
         <FadeInSection>
-          <p className="text-[13px] uppercase tracking-[0.15em] text-clinical-teal font-semibold mb-4">
-            {isEs ? 'Filosofía de Práctica' : 'Practice Philosophy'}
-          </p>
-          <h2 className="font-heading text-4xl md:text-5xl font-bold tracking-[-0.025em] text-inst-blue mb-8 max-w-3xl">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-12 h-px bg-teal-500" />
+            <p className="font-body text-[0.6875rem] font-medium uppercase tracking-[0.25em] text-teal-500">
+              {isEs ? 'Filosofía de Práctica' : 'Practice Philosophy'}
+            </p>
+          </div>
+          <h2 className="font-heading text-[clamp(2rem,4vw,3.5rem)] font-medium uppercase leading-[0.95] tracking-[-0.02em] text-deep-charcoal mb-8 max-w-3xl">
             {isEs ? 'Mi enfoque clínico' : 'My clinical approach'}
           </h2>
 
@@ -37,7 +40,7 @@ export default function WebsitePracticePhilosophy({
               {valuePillars.slice(0, 3).map((pillar, i) => (
                 <article
                   key={i}
-                  className="bg-white rounded-[12px] p-8 shadow-[0_1px_3px_rgba(27,42,65,0.06),0_8px_24px_rgba(27,42,65,0.04)]"
+                  className="bg-linen-white border border-warm-gray-800/[0.06] rounded-lg p-8 transition-all duration-400 hover:-translate-y-1.5 hover:shadow-[0_20px_48px_rgba(27,42,65,0.1)]"
                 >
                   <h3 className="font-dm-sans font-bold text-xl text-deep-charcoal mb-3">
                     {pillar.title}

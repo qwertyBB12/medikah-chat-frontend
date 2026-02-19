@@ -11,13 +11,16 @@ export default function ProfilePublications({ publications, isEs }: ProfilePubli
   }
 
   return (
-    <section className="bg-linen py-24 md:py-36">
+    <section className="bg-linen-warm py-24 md:py-36">
       <div className="max-w-5xl mx-auto px-6 md:px-8">
         <FadeInSection>
-          <p className="text-[13px] uppercase tracking-[0.15em] text-clinical-teal font-semibold mb-4">
-            {isEs ? 'Contribuciones a la Medicina' : 'Contributions to Medicine'}
-          </p>
-          <h2 className="font-heading text-4xl md:text-5xl font-bold tracking-[-0.025em] text-inst-blue mb-16 max-w-3xl">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-12 h-px bg-teal-500" />
+            <p className="font-body text-[0.6875rem] font-medium uppercase tracking-[0.25em] text-teal-500">
+              {isEs ? 'Contribuciones a la Medicina' : 'Contributions to Medicine'}
+            </p>
+          </div>
+          <h2 className="font-heading text-[clamp(2rem,4vw,3.5rem)] font-medium uppercase leading-[0.95] tracking-[-0.02em] text-deep-charcoal mb-16 max-w-3xl">
             {isEs ? 'Publicaciones' : 'Publications'}
           </h2>
 
@@ -25,15 +28,15 @@ export default function ProfilePublications({ publications, isEs }: ProfilePubli
             {publications.map((pub, i) => (
               <div
                 key={i}
-                className="bg-white rounded-[12px] p-8 shadow-[0_1px_3px_rgba(27,42,65,0.06),0_8px_24px_rgba(27,42,65,0.04)]"
+                className="bg-linen-white border border-warm-gray-800/[0.06] rounded-lg p-8"
               >
-                <h3 className="font-bold text-lg text-inst-blue mb-2 tracking-[-0.01em]">
+                <h3 className="font-bold text-lg text-deep-charcoal mb-2 tracking-[-0.01em]">
                   {pub.url ? (
                     <a
                       href={pub.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hover:text-clinical-teal transition-colors"
+                      className="hover:text-teal-500 transition-colors"
                     >
                       {pub.title}
                     </a>

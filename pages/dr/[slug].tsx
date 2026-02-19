@@ -131,8 +131,8 @@ export default function PhysicianProfilePage({ physician, website }: PhysicianPr
         onScheduleClick={handleScheduleClick}
       />
 
-      {/* Dark hero → White about */}
-      <CurveDivider from="#1B2A41" bg="#FFFFFF" />
+      {/* Dark hero → Linen about */}
+      <CurveDivider from="#0D1520" bg="#F0EAE0" />
 
       <ProfileAbout
         fullName={p.full_name}
@@ -156,8 +156,8 @@ export default function PhysicianProfilePage({ physician, website }: PhysicianPr
         isEs={isEs}
       />
 
-      {/* Linen specialties → Dark credentials */}
-      <CurveDivider from="#F0EAE0" bg="#1B2A41" />
+      {/* Linen-warm specialties → Dark credentials */}
+      <CurveDivider from="#E8E0D5" bg="#1B2A41" flip />
 
       <CredentialsBadges
         medicalSchool={p.medical_school}
@@ -169,8 +169,8 @@ export default function PhysicianProfilePage({ physician, website }: PhysicianPr
         isEs={isEs}
       />
 
-      {/* Dark credentials → White services/publications */}
-      <CurveDivider from="#1B2A41" bg="#FFFFFF" />
+      {/* Dark credentials → Linen services/publications */}
+      <CurveDivider from="#1B2A41" bg="#F0EAE0" />
 
       {w && (
         <WebsiteServices
@@ -213,8 +213,8 @@ export default function PhysicianProfilePage({ physician, website }: PhysicianPr
         />
       )}
 
-      {/* White/linen → Dark CTA */}
-      <CurveDivider from="#FFFFFF" bg="#1B2A41" />
+      {/* Linen → Dark CTA */}
+      <CurveDivider from="#F0EAE0" bg="#1B2A41" flip />
 
       <ProfileCTA
         fullName={p.full_name}

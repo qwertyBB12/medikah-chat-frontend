@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/router';
 
 interface ProfileLayoutProps {
@@ -14,13 +15,23 @@ export default function ProfileLayout({ children, title, description, jsonLd }: 
   const router = useRouter();
   const isEs = router.locale === 'es';
   const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 40);
+    const onScroll = () => setScrolled(window.scrollY > 80);
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  function switchLocale(locale: string) {
+    router.push(router.pathname, router.asPath, { locale });
+  }
+
+  const navLinks = [
+    { label: { en: 'Home', es: 'Inicio' }, href: '/' },
+    { label: { en: 'For Physicians', es: 'Para Médicos' }, href: '/physicians' },
+  ];
 
   return (
     <>
@@ -41,59 +52,143 @@ export default function ProfileLayout({ children, title, description, jsonLd }: 
         )}
       </Head>
 
+      {/* ── Nav ─────────────────────────────────────────── */}
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrolled
-            ? 'bg-white/95 backdrop-blur-md shadow-sm'
-            : 'bg-transparent'
+        className={`fixed top-0 left-0 right-0 z-[100] h-20 transition-all duration-400 ${
+          scrolled ? '' : 'bg-transparent'
         }`}
+        style={
+          scrolled
+            ? {
+                backgroundColor: 'rgba(240, 234, 224, 0.92)',
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+              }
+            : {}
+        }
       >
-        <div className="max-w-5xl mx-auto px-6 md:px-8 py-4 flex items-center justify-between">
-          <Link
-            href="/"
-            className={`font-heading font-bold text-xl tracking-tight transition-colors duration-300 ${
-              scrolled ? 'text-inst-blue' : 'text-white'
-            }`}
-          >
-            Medikah
+        <div className="max-w-[1600px] mx-auto px-[clamp(1.5rem,4vw,4rem)] h-full flex items-center justify-between">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2">
+            <Image
+              src={scrolled ? '/logo-BLU.png' : '/logo.png'}
+              alt="Medikah"
+              width={24}
+              height={24}
+              className="transition-opacity duration-300"
+            />
+            <span
+              className={`font-body text-[1.25rem] font-medium tracking-[0.04em] lowercase transition-colors duration-300 ${
+                scrolled ? 'text-inst-blue' : 'text-white'
+              }`}
+            >
+              medikah
+            </span>
           </Link>
-          <nav className="flex items-center gap-6 text-sm font-medium">
-            <Link
-              href="/"
-              className={`transition-colors duration-300 ${
-                scrolled
-                  ? 'text-body-slate hover:text-clinical-teal'
-                  : 'text-white/70 hover:text-white'
+
+          {/* Desktop nav */}
+          <nav className="hidden md:flex items-center gap-[clamp(1.5rem,3vw,3rem)]">
+            {navLinks.map((link) => (
+              <Link
+                key={link.label.en}
+                href={link.href}
+                className={`font-body text-[0.75rem] font-medium uppercase tracking-[0.1em] transition-colors duration-300 ${
+                  scrolled
+                    ? 'text-text-muted hover:text-deep-charcoal'
+                    : 'text-white/60 hover:text-white'
+                }`}
+              >
+                {isEs ? link.label.es : link.label.en}
+              </Link>
+            ))}
+
+            {/* EN / ES toggle */}
+            <div
+              className={`flex rounded-sm overflow-hidden border transition-colors duration-300 ${
+                scrolled ? 'border-warm-gray-800/15' : 'border-white/15'
               }`}
             >
-              {isEs ? 'Inicio' : 'Home'}
-            </Link>
-            <Link
-              href="/physicians"
-              className={`transition-colors duration-300 ${
-                scrolled
-                  ? 'text-body-slate hover:text-clinical-teal'
-                  : 'text-white/70 hover:text-white'
-              }`}
-            >
-              {isEs ? 'Para Médicos' : 'For Physicians'}
-            </Link>
-            <button
-              onClick={() => router.push('/chat')}
-              className={`hidden sm:inline-flex px-4 py-2 text-sm font-semibold rounded-sm transition-all duration-300 ${
-                scrolled
-                  ? 'bg-inst-blue text-white hover:bg-clinical-teal opacity-100 translate-y-0'
-                  : 'bg-white/10 text-white/0 border border-white/0 opacity-0 -translate-y-1 pointer-events-none'
-              }`}
-            >
-              {isEs ? 'Agendar Consulta' : 'Schedule Consultation'}
-            </button>
+              {['en', 'es'].map((loc) => (
+                <button
+                  key={loc}
+                  onClick={() => switchLocale(loc)}
+                  className={`font-body text-[0.6875rem] font-medium tracking-[0.06em] px-2.5 py-1 transition-all duration-200 ${
+                    router.locale === loc
+                      ? 'bg-teal-500 text-white'
+                      : scrolled
+                        ? 'bg-transparent text-text-muted hover:text-deep-charcoal'
+                        : 'bg-transparent text-white/50 hover:text-white/80'
+                  }`}
+                >
+                  {loc.toUpperCase()}
+                </button>
+              ))}
+            </div>
           </nav>
+
+          {/* Mobile hamburger */}
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="md:hidden flex flex-col gap-1.5 z-[101]"
+            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+          >
+            <span
+              className={`block w-6 h-0.5 transition-all duration-300 origin-center ${
+                scrolled ? 'bg-deep-charcoal' : 'bg-white'
+              } ${mobileOpen ? 'rotate-45 translate-y-2' : ''}`}
+            />
+            <span
+              className={`block w-6 h-0.5 transition-all duration-300 ${
+                scrolled ? 'bg-deep-charcoal' : 'bg-white'
+              } ${mobileOpen ? 'opacity-0' : ''}`}
+            />
+            <span
+              className={`block w-6 h-0.5 transition-all duration-300 origin-center ${
+                scrolled ? 'bg-deep-charcoal' : 'bg-white'
+              } ${mobileOpen ? '-rotate-45 -translate-y-2' : ''}`}
+            />
+          </button>
         </div>
+
+        {/* Mobile menu */}
+        {mobileOpen && (
+          <div className="md:hidden absolute top-20 left-0 right-0 bg-linen border-t border-warm-gray-300/20 shadow-lg px-6 py-6 space-y-4">
+            {navLinks.map((link) => (
+              <Link
+                key={link.label.en}
+                href={link.href}
+                className="block font-body text-sm font-medium text-deep-charcoal hover:text-teal-500 transition-colors"
+                onClick={() => setMobileOpen(false)}
+              >
+                {isEs ? link.label.es : link.label.en}
+              </Link>
+            ))}
+            <div className="flex rounded-sm overflow-hidden border border-warm-gray-800/15 w-fit">
+              {['en', 'es'].map((loc) => (
+                <button
+                  key={loc}
+                  onClick={() => {
+                    switchLocale(loc);
+                    setMobileOpen(false);
+                  }}
+                  className={`font-body text-[0.6875rem] font-medium tracking-[0.06em] px-2.5 py-1 transition-all duration-200 ${
+                    router.locale === loc
+                      ? 'bg-teal-500 text-white'
+                      : 'bg-transparent text-text-muted hover:text-deep-charcoal'
+                  }`}
+                >
+                  {loc.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </header>
 
-      <main>{children}</main>
+      {/* ── Main ────────────────────────────────────────── */}
+      <main className="font-body bg-linen">{children}</main>
 
+      {/* ── Footer ──────────────────────────────────────── */}
       <footer
         className="relative overflow-hidden"
         style={{
@@ -109,33 +204,65 @@ export default function ProfileLayout({ children, title, description, jsonLd }: 
           }}
         />
 
-        <div className="relative max-w-5xl mx-auto px-6 md:px-8 py-12">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+        <div className="relative max-w-[1400px] mx-auto px-[clamp(1.5rem,6vw,6rem)] pt-[clamp(3rem,8vh,6rem)] pb-[clamp(2rem,4vh,3rem)]">
+          {/* Top row */}
+          <div className="flex flex-col sm:flex-row justify-between gap-8 pb-12">
             <div>
-              <span className="font-heading text-lg font-medium text-white lowercase tracking-[0.04em]">
+              <span className="font-body text-2xl font-medium text-white lowercase tracking-[0.04em]">
                 medikah
               </span>
-              <p className="text-white/40 text-sm mt-2 max-w-[320px] leading-relaxed">
+              <p className="text-white/50 text-[0.9375rem] mt-5 max-w-[320px] leading-[1.7]">
                 {isEs
-                  ? 'Cuidado humano sin distancia.'
-                  : 'Human care without distance.'}
+                  ? 'Plataforma de coordinación de salud que cumple con HIPAA. Médicos verificados, en su idioma, en sus condiciones.'
+                  : 'HIPAA-compliant healthcare coordination platform. Verified physicians, in your language, on your terms.'}
               </p>
+              <div className="font-body text-[0.8125rem] font-medium tracking-[0.04em] text-teal-400 mt-8">
+                {isEs ? 'Cuidado humano sin distancia.' : 'Human care without distance.'}
+              </div>
+              {/* Trust badges */}
+              <div className="flex gap-3 mt-5 flex-wrap">
+                {['HIPAA', isEs ? 'Bilingüe' : 'Bilingual', isEs ? 'Cifrado' : 'Encrypted'].map((badge) => (
+                  <span
+                    key={badge}
+                    className="inline-flex items-center text-[0.6875rem] font-medium uppercase tracking-[0.04em] text-teal-300 bg-[rgba(44,122,140,0.15)] px-3.5 py-[5px] rounded-lg"
+                  >
+                    {badge}
+                  </span>
+                ))}
+              </div>
             </div>
-            <div className="flex items-center gap-6 text-sm">
-              <Link href="/privacy" className="text-white/50 hover:text-white transition-colors duration-200">
-                {isEs ? 'Privacidad' : 'Privacy'}
-              </Link>
-              <Link href="/terms" className="text-white/50 hover:text-white transition-colors duration-200">
-                {isEs ? 'Términos' : 'Terms'}
-              </Link>
+
+            {/* Legal links */}
+            <div>
+              <h4 className="text-[0.625rem] font-medium uppercase tracking-[0.2em] text-teal-400 mb-6">
+                {isEs ? 'Legal' : 'Legal'}
+              </h4>
+              <ul className="space-y-3">
+                {[
+                  { label: { en: 'Privacy Policy', es: 'Política de privacidad' }, href: '/privacy' },
+                  { label: { en: 'Terms of Service', es: 'Términos de servicio' }, href: '/terms' },
+                  { label: { en: 'HIPAA Notice', es: 'Aviso HIPAA' }, href: '/privacy#hipaa' },
+                ].map((link) => (
+                  <li key={link.label.en}>
+                    <Link
+                      href={link.href}
+                      className="text-white/50 text-[0.9375rem] hover:text-white transition-colors duration-200"
+                    >
+                      {isEs ? link.label.es : link.label.en}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
 
-          <div className="border-t border-white/[0.06] mt-8 pt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <p className="text-white/30 text-xs">
-              &copy; {new Date().getFullYear()} Medikah Corporation. {isEs ? 'Todos los derechos reservados.' : 'All rights reserved.'}
+          {/* Bottom bar */}
+          <div className="border-t border-white/[0.06] pt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p className="text-cream-500 text-xs">
+              &copy; {new Date().getFullYear()} Medikah Corporation.{' '}
+              {isEs ? 'Todos los derechos reservados.' : 'All rights reserved.'}
             </p>
-            <div className="flex gap-4 flex-wrap justify-center">
+            <div className="flex gap-[clamp(1rem,2vw,2rem)] flex-wrap justify-center">
               {[
                 { label: 'BeNeXT Global', href: 'https://benext.global' },
                 { label: 'Futuro', href: 'https://futuro.ngo' },
