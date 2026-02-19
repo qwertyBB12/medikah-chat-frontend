@@ -53,6 +53,7 @@ export interface PhysicianProfileData {
   // Identity
   fullName: string;
   email: string;
+  bio?: string;
   photoUrl?: string;
   linkedinUrl?: string;
   linkedinImported?: boolean;
@@ -104,6 +105,7 @@ function toSnakeCase(data: PhysicianProfileData): Record<string, unknown> {
   return {
     full_name: data.fullName,
     email: data.email,
+    bio: data.bio,
     photo_url: data.photoUrl,
     linkedin_url: data.linkedinUrl,
     linkedin_imported: data.linkedinImported || false,
@@ -245,6 +247,7 @@ export async function updatePhysicianProfile(
 
     // Only include fields that are provided
     if (data.fullName !== undefined) updates.full_name = data.fullName;
+    if (data.bio !== undefined) updates.bio = data.bio;
     if (data.email !== undefined) updates.email = data.email;
     if (data.photoUrl !== undefined) updates.photo_url = data.photoUrl;
     if (data.linkedinUrl !== undefined) updates.linkedin_url = data.linkedinUrl;
@@ -315,6 +318,7 @@ export async function getPhysicianProfile(
     return {
       fullName: data.full_name,
       email: data.email,
+      bio: data.bio,
       photoUrl: data.photo_url,
       linkedinUrl: data.linkedin_url,
       linkedinImported: data.linkedin_imported,

@@ -6,6 +6,7 @@
  */
 
 import { SupportedLang } from '../../lib/i18n';
+import { nameToSlug } from '../../lib/slug';
 import VerificationBadge from './VerificationBadge';
 
 interface ProfileOverviewProps {
@@ -26,6 +27,7 @@ const content = {
     pendingInquiries: 'Pending Inquiries',
     upcomingAppts: 'Upcoming Appointments',
     viewPublicProfile: 'View Public Profile',
+    editProfile: 'Edit Profile',
     profileCompleteness: 'Profile Completeness',
     completeProfile: 'Complete your profile to improve visibility.',
   },
@@ -34,6 +36,7 @@ const content = {
     pendingInquiries: 'Consultas Pendientes',
     upcomingAppts: 'Citas Proximas',
     viewPublicProfile: 'Ver Perfil Publico',
+    editProfile: 'Editar Perfil',
     profileCompleteness: 'Completitud del Perfil',
     completeProfile: 'Complete su perfil para mejorar su visibilidad.',
   },
@@ -141,11 +144,21 @@ export default function ProfileOverview(props: ProfileOverviewProps) {
         )}
       </div>
 
+      {/* Edit profile button */}
+      {physicianId && (
+        <button
+          onClick={() => document.getElementById('profile-editor')?.scrollIntoView({ behavior: 'smooth' })}
+          className="block w-full mt-4 text-center font-dm-sans text-sm font-semibold text-clinical-teal hover:text-clinical-teal/80 transition"
+        >
+          {t.editProfile}
+        </button>
+      )}
+
       {/* Public profile link */}
       {physicianId && verificationStatus === 'verified' && (
         <a
-          href={`/dr/${physicianId}`}
-          className="block mt-4 text-center font-dm-sans text-sm font-semibold text-clinical-teal hover:text-clinical-teal/80 transition"
+          href={`/dr/${nameToSlug(physicianName)}`}
+          className="block mt-2 text-center font-dm-sans text-sm font-semibold text-clinical-teal hover:text-clinical-teal/80 transition"
         >
           {t.viewPublicProfile}
         </a>

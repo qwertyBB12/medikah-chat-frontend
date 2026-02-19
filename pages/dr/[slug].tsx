@@ -10,11 +10,16 @@ import CredentialsBadges from '../../components/physician/profile/CredentialsBad
 import ProfilePublications from '../../components/physician/profile/ProfilePublications';
 import ProfileAvailability from '../../components/physician/profile/ProfileAvailability';
 import ProfileCTA from '../../components/physician/profile/ProfileCTA';
+import WebsitePracticePhilosophy from '../../components/physician/profile/WebsitePracticePhilosophy';
+import WebsiteServices from '../../components/physician/profile/WebsiteServices';
+import WebsiteFAQ from '../../components/physician/profile/WebsiteFAQ';
+import WebsiteLocation from '../../components/physician/profile/WebsiteLocation';
 
 interface PhysicianData {
   full_name: string;
   photo_url?: string;
   linkedin_url?: string;
+  bio?: string;
   primary_specialty?: string;
   sub_specialties?: string[];
   board_certifications?: { board: string; certification: string; year?: number }[];
@@ -35,14 +40,30 @@ interface PhysicianData {
   verification_status: string;
 }
 
-interface PhysicianProfilePageProps {
-  physician: PhysicianData;
+interface WebsiteData {
+  practice_philosophy?: string;
+  value_pillars?: { title: string; description: string }[];
+  services?: { title: string; description: string; icon?: string }[];
+  faqs?: { question: string; answer: string }[];
+  office_address?: string;
+  office_city?: string;
+  office_country?: string;
+  office_phone?: string;
+  office_email?: string;
+  appointment_url?: string;
+  custom_tagline?: string;
 }
 
-export default function PhysicianProfilePage({ physician }: PhysicianProfilePageProps) {
+interface PhysicianProfilePageProps {
+  physician: PhysicianData;
+  website: WebsiteData | null;
+}
+
+export default function PhysicianProfilePage({ physician, website }: PhysicianProfilePageProps) {
   const router = useRouter();
   const isEs = router.locale === 'es';
   const p = physician;
+  const w = website;
 
   const slug = nameToSlug(p.full_name);
   const pageTitle = `Dr. ${p.full_name} - ${p.primary_specialty || (isEs ? 'Médico' : 'Physician')} | Medikah`;
@@ -52,7 +73,7 @@ export default function PhysicianProfilePage({ physician }: PhysicianProfilePage
 
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'Physician',
+    '@type': w ? ['Physician', 'MedicalBusiness'] : 'Physician',
     name: `Dr. ${p.full_name}`,
     url: `https://medikah.health/dr/${slug}`,
     ...(p.photo_url && { image: p.photo_url }),
@@ -77,6 +98,17 @@ export default function PhysicianProfilePage({ physician }: PhysicianProfilePage
       name: 'Medikah Physician Network',
       url: 'https://medikah.health',
     },
+    ...(w?.office_address && {
+      address: {
+        '@type': 'PostalAddress',
+        streetAddress: w.office_address,
+        addressLocality: w.office_city,
+        addressCountry: w.office_country,
+      },
+    }),
+    ...(w?.office_phone && { telephone: w.office_phone }),
+    ...(w?.office_email && { email: w.office_email }),
+    ...(w?.appointment_url && { url: w.appointment_url }),
   };
 
   function handleScheduleClick() {
@@ -102,8 +134,17 @@ export default function PhysicianProfilePage({ physician }: PhysicianProfilePage
         fullName={p.full_name}
         primarySpecialty={p.primary_specialty}
         subSpecialties={p.sub_specialties}
+        bio={p.bio}
         isEs={isEs}
       />
+
+      {w && (
+        <WebsitePracticePhilosophy
+          practicePhilosophy={w.practice_philosophy}
+          valuePillars={w.value_pillars}
+          isEs={isEs}
+        />
+      )}
 
       <SpecialtiesGrid
         primarySpecialty={p.primary_specialty}
@@ -121,10 +162,24 @@ export default function PhysicianProfilePage({ physician }: PhysicianProfilePage
         isEs={isEs}
       />
 
+      {w && (
+        <WebsiteServices
+          services={w.services}
+          isEs={isEs}
+        />
+      )}
+
       <ProfilePublications
         publications={p.publications}
         isEs={isEs}
       />
+
+      {w && (
+        <WebsiteFAQ
+          faqs={w.faqs}
+          isEs={isEs}
+        />
+      )}
 
       <ProfileAvailability
         availableDays={p.available_days}
@@ -135,6 +190,18 @@ export default function PhysicianProfilePage({ physician }: PhysicianProfilePage
         currentInstitutions={p.current_institutions}
         isEs={isEs}
       />
+
+      {w && (
+        <WebsiteLocation
+          officeAddress={w.office_address}
+          officeCity={w.office_city}
+          officeCountry={w.office_country}
+          officePhone={w.office_phone}
+          officeEmail={w.office_email}
+          appointmentUrl={w.appointment_url}
+          isEs={isEs}
+        />
+      )}
 
       <ProfileCTA
         fullName={p.full_name}
@@ -159,7 +226,7 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
   try {
     const { data: physicians, error } = await supabaseAdmin
       .from('physicians')
-      .select('full_name, photo_url, linkedin_url, primary_specialty, sub_specialties, board_certifications, medical_school, medical_school_country, graduation_year, honors, residency, fellowships, publications, current_institutions, available_days, available_hours_start, available_hours_end, timezone, languages, licenses, verification_status')
+      .select('id, full_name, photo_url, linkedin_url, bio, primary_specialty, sub_specialties, board_certifications, medical_school, medical_school_country, graduation_year, honors, residency, fellowships, publications, current_institutions, available_days, available_hours_start, available_hours_end, timezone, languages, licenses, verification_status')
       .eq('verification_status', 'verified');
 
     if (error || !physicians) {
@@ -174,12 +241,21 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
       return { notFound: true };
     }
 
+    // Fetch website data if it exists and is enabled
+    const { data: websiteData } = await supabaseAdmin
+      .from('physician_website')
+      .select('*')
+      .eq('physician_id', physician.id)
+      .eq('enabled', true)
+      .maybeSingle();
+
     return {
       props: {
         physician: {
           full_name: physician.full_name,
           photo_url: physician.photo_url || null,
           linkedin_url: physician.linkedin_url || null,
+          bio: physician.bio || null,
           primary_specialty: physician.primary_specialty || null,
           sub_specialties: physician.sub_specialties || [],
           board_certifications: physician.board_certifications || [],
@@ -199,6 +275,19 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
           licenses: physician.licenses || [],
           verification_status: physician.verification_status,
         },
+        website: websiteData ? {
+          practice_philosophy: websiteData.practice_philosophy || null,
+          value_pillars: websiteData.value_pillars || [],
+          services: websiteData.services || [],
+          faqs: websiteData.faqs || [],
+          office_address: websiteData.office_address || null,
+          office_city: websiteData.office_city || null,
+          office_country: websiteData.office_country || null,
+          office_phone: websiteData.office_phone || null,
+          office_email: websiteData.office_email || null,
+          appointment_url: websiteData.appointment_url || null,
+          custom_tagline: websiteData.custom_tagline || null,
+        } : null,
       },
     };
   } catch {
