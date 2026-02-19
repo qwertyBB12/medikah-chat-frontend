@@ -59,7 +59,7 @@ export interface OnboardingBotMessage {
 }
 
 // Phases (simplified with batched forms)
-type OnboardingPhase =
+export type OnboardingPhase =
   | 'briefing'
   | 'identity'
   | 'licensing'
@@ -143,6 +143,7 @@ interface PhysicianOnboardingAgentProps {
   appendMessage: (message: OnboardingBotMessage) => void;
   onStateChange?: (state: OnboardingAgentState) => void;
   onProfileReady?: (physicianId: string, physicianName: string) => void;
+  onPhaseChange?: (phase: string) => void;
   linkedInData?: LinkedInImportData;
   sessionId?: string;
   sessionLinkedInData?: {
@@ -205,20 +206,27 @@ const PhysicianOnboardingAgent = forwardRef<
   PhysicianOnboardingAgentHandle,
   PhysicianOnboardingAgentProps
 >((props, ref) => {
-  const { lang, appendMessage, onStateChange, onProfileReady, linkedInData, sessionId, sessionLinkedInData } = props;
+  const { lang, appendMessage, onStateChange, onProfileReady, onPhaseChange, linkedInData, sessionId, sessionLinkedInData } = props;
   const copy = useMemo(() => onboardingCopy[lang], [lang]);
 
   const linkedInApplied = useRef(false);
   const appendMessageRef = useRef(appendMessage);
   const onStateChangeRef = useRef(onStateChange);
+  const onPhaseChangeRef = useRef(onPhaseChange);
 
   useEffect(() => { appendMessageRef.current = appendMessage; }, [appendMessage]);
   useEffect(() => { onStateChangeRef.current = onStateChange; }, [onStateChange]);
+  useEffect(() => { onPhaseChangeRef.current = onPhaseChange; }, [onPhaseChange]);
 
   // State
   const [state, setState] = useState<OnboardingAgentState>('idle');
-  const [_phase, setPhase] = useState<OnboardingPhase>('briefing');
+  const [phase, setPhase] = useState<OnboardingPhase>('briefing');
   const [question, setQuestion] = useState<QuestionKey | null>(null);
+
+  // Notify parent of phase changes
+  useEffect(() => {
+    onPhaseChangeRef.current?.(phase);
+  }, [phase]);
 
   // Collected data
   const dataRef = useRef<Partial<PhysicianProfileData>>({
