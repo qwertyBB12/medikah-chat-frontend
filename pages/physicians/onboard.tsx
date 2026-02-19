@@ -15,6 +15,7 @@ import PhysicianOnboardingAgent, {
   OnboardingBotMessage,
   OnboardingAgentState,
 } from '../../components/PhysicianOnboardingAgent';
+import OnboardingPhaseIndicator, { mapAgentPhaseToIndicator } from '../../components/physician/OnboardingPhaseIndicator';
 import LinkedInConnectButton, { LinkedInProfilePreview } from '../../components/LinkedInConnectButton';
 import PublicationSelector, { ManualPublicationForm } from '../../components/PublicationSelector';
 import PhysicianConsentModal, { PhysicianConsentData } from '../../components/PhysicianConsentModal';
@@ -77,6 +78,7 @@ export default function PhysicianOnboardingPage() {
   const [isSending, setIsSending] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [agentState, setAgentState] = useState<OnboardingAgentState>('idle');
+  const [agentPhase, setAgentPhase] = useState<string>('briefing');
   const [completedPhysicianId, setCompletedPhysicianId] = useState<string | null>(null);
 
   // LinkedIn data from NextAuth session (social login)
@@ -304,6 +306,11 @@ export default function PhysicianOnboardingPage() {
     setAgentState(state);
   }, []);
 
+  // Handle phase changes from agent (for progress indicator)
+  const handlePhaseChange = useCallback((phase: string) => {
+    setAgentPhase(phase);
+  }, []);
+
   // Handle profile ready - show consent modal
   const handleProfileReady = useCallback((physicianId: string, physicianName: string) => {
     setPendingPhysicianId(physicianId);
@@ -334,16 +341,14 @@ export default function PhysicianOnboardingPage() {
 
     setShowConsentModal(false);
     setCompletedPhysicianId(consentData.physicianId);
+    setAgentState('completed');
+    setAgentPhase('completed');
 
-    // Add completion message with delay
-    messageQueueRef.current.push({
-      text: lang === 'en'
-        ? 'Thank you for signing the Physician Network Agreement. Your registration is now complete! Welcome to the Medikah Network.'
-        : '¡Gracias por firmar el Acuerdo de Red de Médicos. Su registro está completo! Bienvenido a la Red Medikah.',
-      isVision: true,
-    });
-    triggerQueueProcessing();
-  }, [lang, triggerQueueProcessing]);
+    // Auto-redirect to dashboard after a brief delay
+    setTimeout(() => {
+      router.push('/physicians/dashboard');
+    }, 4000);
+  }, [lang, router]);
 
   // Handle consent cancel
   const handleConsentCancel = useCallback(() => {
@@ -417,21 +422,11 @@ export default function PhysicianOnboardingPage() {
 
   // Sidebar content for onboarding progress
   const sidebarContent = (
-    <div className="space-y-4">
-      <p className="font-dm-sans text-xs text-white/50 uppercase tracking-wider">
-        {lang === 'en' ? 'Onboarding Progress' : 'Progreso de Registro'}
-      </p>
-      <div className="space-y-2">
-        {['Briefing', 'Identity', 'Licensing', 'Specialty', 'Education', 'Publications', 'Availability'].map((step, idx) => (
-          <div key={step} className="flex items-center gap-3">
-            <div className={`w-2 h-2 rounded-full ${idx === 0 ? 'bg-clinical-teal' : 'bg-white/20'}`} />
-            <span className={`font-dm-sans text-sm ${idx === 0 ? 'text-white' : 'text-white/40'}`}>
-              {step}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
+    <OnboardingPhaseIndicator
+      currentPhase={mapAgentPhaseToIndicator(agentPhase)}
+      lang={lang}
+      variant="sidebar"
+    />
   );
 
   return (
@@ -742,6 +737,7 @@ export default function PhysicianOnboardingPage() {
         lang={lang}
         appendMessage={appendMessage}
         onStateChange={handleStateChange}
+        onPhaseChange={handlePhaseChange}
         onProfileReady={handleProfileReady}
         linkedInData={linkedInConnected && linkedInData ? linkedInData : undefined}
         sessionId={sessionId}

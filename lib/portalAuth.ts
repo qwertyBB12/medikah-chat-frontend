@@ -10,15 +10,14 @@ import { supabaseAdmin } from './supabaseServer';
 export type PortalRole = 'patient' | 'physician' | 'insurer' | 'employer';
 
 /**
- * Detect user role based on email
- * Checks physicians table first, defaults to patient
+ * Detect user role based on email (server-side only).
+ * Uses service role key to bypass RLS on the physicians table.
  */
 export async function detectUserRole(email: string): Promise<PortalRole> {
-  if (!supabase || !email) return 'patient';
+  if (!supabaseAdmin || !email) return 'patient';
 
   try {
-    // Check if user is a physician
-    const { data: physician } = await supabase
+    const { data: physician } = await supabaseAdmin
       .from('physicians')
       .select('id')
       .eq('email', email.toLowerCase())
@@ -37,54 +36,29 @@ export async function detectUserRole(email: string): Promise<PortalRole> {
 }
 
 /**
- * Get physician onboarding status
+ * Get physician onboarding status via server-side API route.
+ * Uses service role key to bypass RLS on the physicians table.
  */
-export async function getPhysicianOnboardingStatus(email: string): Promise<{
+export async function getPhysicianOnboardingStatus(_email: string): Promise<{
   isOnboarded: boolean;
   physicianId: string | null;
   verificationStatus: string | null;
   hasConsent: boolean;
 }> {
-  if (!supabase || !email) {
-    return {
-      isOnboarded: false,
-      physicianId: null,
-      verificationStatus: null,
-      hasConsent: false,
-    };
-  }
+  const fallback = {
+    isOnboarded: false,
+    physicianId: null,
+    verificationStatus: null,
+    hasConsent: false,
+  };
 
   try {
-    // Get physician record
-    const { data: physician } = await supabase
-      .from('physicians')
-      .select('id, verification_status, onboarding_completed_at, consent_signed_at')
-      .eq('email', email.toLowerCase())
-      .maybeSingle();
-
-    if (!physician) {
-      return {
-        isOnboarded: false,
-        physicianId: null,
-        verificationStatus: null,
-        hasConsent: false,
-      };
-    }
-
-    return {
-      isOnboarded: !!physician.onboarding_completed_at,
-      physicianId: physician.id,
-      verificationStatus: physician.verification_status,
-      hasConsent: !!physician.consent_signed_at,
-    };
+    const res = await fetch('/api/physicians/onboarding-status');
+    if (!res.ok) return fallback;
+    return await res.json();
   } catch (error) {
     console.error('Error checking physician status:', error);
-    return {
-      isOnboarded: false,
-      physicianId: null,
-      verificationStatus: null,
-      hasConsent: false,
-    };
+    return fallback;
   }
 }
 
