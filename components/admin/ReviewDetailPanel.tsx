@@ -103,23 +103,23 @@ export default function ReviewDetailPanel({
         </div>
 
         {/* License/credential being reviewed */}
-        {reviewData.license && (
+        {!!reviewData.license && (
           <div className="mt-6 pt-4 border-t border-border-line">
             <h4 className="font-dm-sans font-medium text-sm text-deep-charcoal mb-2">Credential Under Review</h4>
             <dl className="space-y-2 text-sm font-dm-sans">
-              {(reviewData.license as Record<string, unknown>).country && (
+              {!!(reviewData.license as Record<string, unknown>).country && (
                 <div className="flex justify-between">
                   <dt className="text-body-slate">Country</dt>
                   <dd className="text-deep-charcoal font-medium">{String((reviewData.license as Record<string, unknown>).country)}</dd>
                 </div>
               )}
-              {(reviewData.license as Record<string, unknown>).number && (
+              {!!(reviewData.license as Record<string, unknown>).number && (
                 <div className="flex justify-between">
                   <dt className="text-body-slate">License Number</dt>
                   <dd className="text-deep-charcoal font-medium">{String((reviewData.license as Record<string, unknown>).number)}</dd>
                 </div>
               )}
-              {(reviewData.license as Record<string, unknown>).state && (
+              {!!(reviewData.license as Record<string, unknown>).state && (
                 <div className="flex justify-between">
                   <dt className="text-body-slate">State</dt>
                   <dd className="text-deep-charcoal font-medium">{String((reviewData.license as Record<string, unknown>).state)}</dd>
@@ -130,7 +130,7 @@ export default function ReviewDetailPanel({
         )}
 
         {/* Board lookup URL */}
-        {reviewData.boardLookupUrl && (
+        {!!reviewData.boardLookupUrl && (
           <div className="mt-4">
             <a
               href={String(reviewData.boardLookupUrl)}
