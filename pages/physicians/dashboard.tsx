@@ -27,9 +27,10 @@ export default function PhysicianDashboard() {
   const lang: SupportedLang = router.locale?.toLowerCase().startsWith('es') ? 'es' : 'en';
 
   const [physicianStatus, setPhysicianStatus] = useState<PhysicianStatus | null>(null);
+  const [physicianName, setPhysicianName] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
-  // Auth guard
+  // Auth guard + fetch physician status
   useEffect(() => {
     if (authStatus === 'loading') return;
 
@@ -43,11 +44,32 @@ export default function PhysicianDashboard() {
     if (email) {
       getPhysicianOnboardingStatus(email).then((status) => {
         setPhysicianStatus(status);
-        setLoading(false);
 
         // If not onboarded, redirect to onboarding
         if (!status.isOnboarded || !status.hasConsent) {
+          setLoading(false);
           router.replace('/physicians/onboard');
+          return;
+        }
+
+        // Fetch full_name from DB so dashboard shows the real name, not the email
+        if (status.physicianId) {
+          fetch(`/api/physicians/${status.physicianId}/profile`)
+            .then((res) => res.ok ? res.json() : null)
+            .then((data) => {
+              if (data?.fullName) {
+                setPhysicianName(data.fullName);
+              } else {
+                setPhysicianName(session.user?.name || session.user?.email || '');
+              }
+            })
+            .catch(() => {
+              setPhysicianName(session.user?.name || session.user?.email || '');
+            })
+            .finally(() => setLoading(false));
+        } else {
+          setPhysicianName(session.user?.name || session.user?.email || '');
+          setLoading(false);
         }
       }).catch(() => {
         setLoading(false);
@@ -70,8 +92,6 @@ export default function PhysicianDashboard() {
       </div>
     );
   }
-
-  const physicianName = session.user?.name || session.user?.email || '';
 
   return (
     <>
