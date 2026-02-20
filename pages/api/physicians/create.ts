@@ -39,6 +39,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     dbData.verification_status = 'pending';
     dbData.onboarding_completed_at = new Date().toISOString();
 
+    // Strip fields that don't exist as columns in the physicians table
+    // (narrative is saved separately to physician_website)
+    delete dbData.narrative;
+
     // 1. Create Supabase Auth user for the physician
     const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
