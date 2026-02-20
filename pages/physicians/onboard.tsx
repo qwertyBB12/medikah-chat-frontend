@@ -411,7 +411,7 @@ export default function PhysicianOnboardingPage() {
   // Show loading while checking auth
   if (authStatus === 'loading' || !session) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FAFAFB]">
+      <div className="min-h-screen flex items-center justify-center bg-linen-light">
         <div className="flex items-center gap-2 text-body-slate">
           <span className="w-2 h-2 bg-inst-blue/30 rounded-full animate-typingBounce" />
           <span className="w-2 h-2 bg-inst-blue/30 rounded-full animate-typingBounce [animation-delay:0.2s]" />
@@ -464,17 +464,17 @@ export default function PhysicianOnboardingPage() {
           textareaRef,
           isSending: isSending || isTyping,
           placeholder: lang === 'en' ? 'Type your response…' : 'Escriba su respuesta…',
-          accentColor: 'teal',
+          accentColor: 'blue',
         } : undefined}
         headerTitle={lang === 'en' ? 'Join Network' : 'Únete'}
       >
         {messages.length === 0 && !isTyping ? (
           <div className="flex flex-col items-center justify-center h-full">
             <div className="text-center px-6">
-              <h2 className="font-dm-serif text-2xl text-inst-blue mb-3">
+              <h2 className="font-heading uppercase tracking-[0.02em] text-2xl text-inst-blue mb-3">
                 {lang === 'en' ? 'Welcome to Medikah' : 'Bienvenido a Medikah'}
               </h2>
-              <p className="font-dm-sans text-body-slate text-sm max-w-md">
+              <p className="font-body text-body-slate text-sm max-w-md">
                 {lang === 'en'
                   ? 'Starting your onboarding conversation...'
                   : 'Iniciando su conversación de registro...'}
@@ -494,13 +494,13 @@ export default function PhysicianOnboardingPage() {
                       message.sender === 'user'
                         ? 'bg-clinical-surface border-l-[3px] border-inst-blue px-6 py-5 rounded-[12px_12px_4px_12px] shadow-[0_1px_3px_rgba(27,42,65,0.06),0_4px_12px_rgba(44,122,140,0.04)] hover:-translate-y-px hover:shadow-[0_2px_4px_rgba(27,42,65,0.08),0_8px_16px_rgba(44,122,140,0.06)] mr-5 sm:mr-10'
                         : message.isVision
-                        ? 'bg-gradient-to-br from-clinical-teal to-[#1a5a66] text-white px-7 py-6 rounded-[16px] shadow-lg ml-5 sm:ml-10'
+                        ? 'bg-gradient-to-br from-inst-blue to-[#243447] text-white px-7 py-6 rounded-[16px] shadow-lg ml-5 sm:ml-10'
                         : message.isSummary
-                        ? 'bg-white border-2 border-clinical-teal/30 px-7 py-6 rounded-[12px] shadow-sm ml-5 sm:ml-10'
-                        : 'bg-white border-l-4 border-clinical-teal px-7 py-6 rounded-[12px_12px_12px_4px] shadow-[0_2px_4px_rgba(27,42,65,0.08),0_8px_20px_rgba(27,42,65,0.06)] hover:shadow-[0_3px_6px_rgba(27,42,65,0.08),0_12px_24px_rgba(27,42,65,0.06)] ml-5 sm:ml-10'
+                        ? 'bg-white border-2 border-inst-blue/30 px-7 py-6 rounded-[12px] shadow-sm ml-5 sm:ml-10'
+                        : 'bg-white border-l-4 border-inst-blue px-7 py-6 rounded-[12px_12px_12px_4px] shadow-[0_2px_4px_rgba(27,42,65,0.08),0_8px_20px_rgba(27,42,65,0.06)] hover:shadow-[0_3px_6px_rgba(27,42,65,0.08),0_12px_24px_rgba(27,42,65,0.06)] ml-5 sm:ml-10'
                     }`}
                   >
-                    <p className={`font-dm-sans text-base leading-[1.7] ${
+                    <p className={`font-body text-base leading-[1.7] ${
                       message.sender === 'user'
                         ? 'text-deep-charcoal'
                         : message.isVision
@@ -559,16 +559,16 @@ export default function PhysicianOnboardingPage() {
                                 }
                               }}
                               disabled={!isAwaitingInput}
-                              className={`font-dm-sans text-sm font-medium px-5 py-2.5 rounded-[10px] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+                              className={`font-body text-sm font-medium px-5 py-2.5 rounded-[10px] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
                                 action.type === 'primary'
-                                  ? 'bg-clinical-teal text-white hover:bg-[#2A8DA0] hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(44,122,140,0.3)]'
+                                  ? 'bg-teal-500 text-white hover:bg-teal-600 hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(44,122,140,0.3)]'
                                   : action.type === 'skip'
                                   ? 'text-archival-grey hover:text-body-slate border border-border-line hover:border-body-slate'
                                   : isToggle
                                   ? isSelected
-                                    ? 'bg-clinical-teal text-white border border-clinical-teal hover:bg-[#2A8DA0]'
-                                    : 'bg-white text-clinical-teal hover:bg-clinical-teal/10 border border-clinical-teal/30'
-                                  : 'bg-clinical-teal/10 text-clinical-teal hover:bg-clinical-teal/20 border border-clinical-teal/30'
+                                    ? 'bg-teal-500 text-white border border-teal-500 hover:bg-teal-600'
+                                    : 'bg-white text-teal-500 hover:bg-teal-500/10 border border-teal-500/30'
+                                  : 'bg-teal-500/10 text-teal-500 hover:bg-teal-500/20 border border-teal-500/30'
                               }`}
                             >
                               {isToggle && isSelected && <span className="mr-1">✓</span>}
@@ -692,11 +692,11 @@ export default function PhysicianOnboardingPage() {
               {/* Typing indicator */}
               {(isSending || isTyping) && (
                 <div className="flex justify-start animate-messageAppear">
-                  <div className="bg-white border-l-4 border-clinical-teal px-7 py-5 rounded-[12px_12px_12px_4px] shadow-[0_2px_4px_rgba(27,42,65,0.08),0_8px_20px_rgba(27,42,65,0.06)] ml-5 sm:ml-10">
+                  <div className="bg-white border-l-4 border-inst-blue px-7 py-5 rounded-[12px_12px_12px_4px] shadow-[0_2px_4px_rgba(27,42,65,0.08),0_8px_20px_rgba(27,42,65,0.06)] ml-5 sm:ml-10">
                     <div className="flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 bg-clinical-teal/30 rounded-full animate-typingBounce" />
-                      <span className="w-1.5 h-1.5 bg-clinical-teal/30 rounded-full animate-typingBounce [animation-delay:0.2s]" />
-                      <span className="w-1.5 h-1.5 bg-clinical-teal/30 rounded-full animate-typingBounce [animation-delay:0.4s]" />
+                      <span className="w-1.5 h-1.5 bg-inst-blue/30 rounded-full animate-typingBounce" />
+                      <span className="w-1.5 h-1.5 bg-inst-blue/30 rounded-full animate-typingBounce [animation-delay:0.2s]" />
+                      <span className="w-1.5 h-1.5 bg-inst-blue/30 rounded-full animate-typingBounce [animation-delay:0.4s]" />
                     </div>
                   </div>
                 </div>
@@ -716,23 +716,23 @@ export default function PhysicianOnboardingPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h2 className="font-dm-serif text-2xl text-inst-blue mb-2">
+              <h2 className="font-heading uppercase tracking-[0.02em] text-2xl text-inst-blue mb-2">
                 {lang === 'en' ? 'Registration Complete' : 'Registro Completo'}
               </h2>
-              <p className="font-dm-sans text-body-slate mb-1">
+              <p className="font-body text-body-slate mb-1">
                 {lang === 'en' ? 'Reference ID: ' : 'ID de Referencia: '}
-                <code className="font-mono text-xs bg-clinical-surface px-2 py-1 rounded">
+                <code className="font-mono text-xs bg-linen-light px-2 py-1 rounded">
                   {completedPhysicianId.slice(0, 8)}
                 </code>
               </p>
-              <p className="font-dm-sans text-sm text-archival-grey mb-6">
+              <p className="font-body text-sm text-archival-grey mb-6">
                 {lang === 'en'
                   ? 'Our team will review your credentials and be in touch soon.'
                   : 'Nuestro equipo revisará sus credenciales y se pondrá en contacto pronto.'}
               </p>
               <button
                 onClick={() => router.push('/physicians/dashboard')}
-                className="font-dm-sans px-6 py-3 bg-inst-blue text-white font-semibold rounded-lg hover:bg-clinical-teal transition-colors"
+                className="font-body px-6 py-3 bg-inst-blue text-white font-semibold rounded-lg hover:bg-clinical-teal transition-colors"
               >
                 {lang === 'en' ? 'Go to Dashboard' : 'Ir al Panel'}
               </button>

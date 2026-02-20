@@ -83,7 +83,7 @@ export default function PhysicianDashboard() {
   // Show loading state
   if (authStatus === 'loading' || loading || !session || !physicianStatus) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FAFAFB]">
+      <div className="min-h-screen flex items-center justify-center bg-linen-light">
         <div className="flex items-center gap-2 text-body-slate">
           <span className="w-2 h-2 bg-inst-blue/30 rounded-full animate-typingBounce" />
           <span className="w-2 h-2 bg-inst-blue/30 rounded-full animate-typingBounce [animation-delay:0.2s]" />
