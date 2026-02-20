@@ -259,21 +259,26 @@ export default function BatchedSpecialtyForm({
       </div>
 
       {/* Actions */}
-      <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="font-mulish text-sm text-body-slate hover:text-deep-charcoal transition-colors"
-        >
-          {labels.back}
-        </button>
-        <button
-          type="button"
-          onClick={handleSubmit}
-          className="px-6 py-2.5 bg-clinical-teal text-white font-mulish font-semibold text-sm rounded-lg hover:bg-clinical-teal/90 transition-colors"
-        >
-          {labels.continue}
-        </button>
+      <div className="mt-6 pt-4 border-t border-gray-100">
+        {error && (
+          <p className="font-body text-xs text-alert-garnet mb-3">{error}</p>
+        )}
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="font-body text-sm text-body-slate hover:text-deep-charcoal transition-colors"
+          >
+            {labels.back}
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            className="px-6 py-2.5 bg-teal-500 text-white font-body font-semibold text-sm rounded-lg hover:bg-teal-600 transition-colors"
+          >
+            {labels.continue}
+          </button>
+        </div>
       </div>
     </div>
   );
