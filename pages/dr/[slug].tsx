@@ -5,6 +5,7 @@ import { nameToSlug } from '../../lib/slug';
 import ProfileLayout from '../../components/physician/profile/ProfileLayout';
 import ProfileHero from '../../components/physician/profile/ProfileHero';
 import ProfileAbout from '../../components/physician/profile/ProfileAbout';
+import ProfileHighlights from '../../components/physician/profile/ProfileHighlights';
 import SpecialtiesGrid from '../../components/physician/profile/SpecialtiesGrid';
 import CredentialsBadges from '../../components/physician/profile/CredentialsBadges';
 import ProfilePublications from '../../components/physician/profile/ProfilePublications';
@@ -53,6 +54,17 @@ interface WebsiteData {
   office_email?: string;
   appointment_url?: string;
   custom_tagline?: string;
+  communication_style?: 'thorough' | 'collaborative' | 'direct' | 'reassuring' | null;
+  first_consult_expectation?: string;
+  narrative_status?: 'pending' | 'collected' | 'generated' | 'approved' | null;
+  approved_bio_en?: string;
+  approved_bio_es?: string;
+  approved_tagline_en?: string;
+  approved_tagline_es?: string;
+  generated_bio_en?: string;
+  generated_bio_es?: string;
+  generated_tagline_en?: string;
+  generated_tagline_es?: string;
 }
 
 interface PhysicianProfilePageProps {
@@ -65,6 +77,9 @@ export default function PhysicianProfilePage({ physician, website }: PhysicianPr
   const isEs = router.locale === 'es';
   const p = physician;
   const w = website;
+  const tagline = w?.custom_tagline
+    || (isEs ? w?.approved_tagline_es : w?.approved_tagline_en)
+    || undefined;
 
   const slug = nameToSlug(p.full_name);
   const pageTitle = `Dr. ${p.full_name} - ${p.primary_specialty || (isEs ? 'Médico' : 'Physician')} | Medikah`;
@@ -122,11 +137,9 @@ export default function PhysicianProfilePage({ physician, website }: PhysicianPr
         fullName={p.full_name}
         photoUrl={p.photo_url}
         primarySpecialty={p.primary_specialty}
-        boardCertifications={p.board_certifications}
-        currentInstitutions={p.current_institutions}
         languages={p.languages}
         timezone={p.timezone}
-        licenses={p.licenses}
+        tagline={tagline}
         isEs={isEs}
         onScheduleClick={handleScheduleClick}
       />
@@ -139,6 +152,21 @@ export default function PhysicianProfilePage({ physician, website }: PhysicianPr
         primarySpecialty={p.primary_specialty}
         subSpecialties={p.sub_specialties}
         bio={p.bio}
+        approvedBioEn={w?.approved_bio_en}
+        approvedBioEs={w?.approved_bio_es}
+        generatedBioEn={w?.narrative_status === 'approved' ? w?.generated_bio_en : undefined}
+        generatedBioEs={w?.narrative_status === 'approved' ? w?.generated_bio_es : undefined}
+        narrativeStatus={w?.narrative_status}
+        isEs={isEs}
+      />
+
+      <ProfileHighlights
+        primarySpecialty={p.primary_specialty}
+        subSpecialties={p.sub_specialties}
+        communicationStyle={w?.communication_style ?? undefined}
+        firstConsultExpectation={w?.first_consult_expectation ?? undefined}
+        currentInstitutions={p.current_institutions}
+        boardCertifications={p.board_certifications}
         isEs={isEs}
       />
 
@@ -150,13 +178,7 @@ export default function PhysicianProfilePage({ physician, website }: PhysicianPr
         />
       )}
 
-      <SpecialtiesGrid
-        primarySpecialty={p.primary_specialty}
-        subSpecialties={p.sub_specialties}
-        isEs={isEs}
-      />
-
-      {/* Linen-warm specialties → Dark credentials */}
+      {/* Linen narrative → Dark credentials */}
       <CurveDivider from="#E8E0D5" bg="#1B2A41" flip />
 
       <CredentialsBadges
@@ -169,7 +191,13 @@ export default function PhysicianProfilePage({ physician, website }: PhysicianPr
         isEs={isEs}
       />
 
-      {/* Dark credentials → Linen services/publications */}
+      <SpecialtiesGrid
+        primarySpecialty={p.primary_specialty}
+        subSpecialties={p.sub_specialties}
+        isEs={isEs}
+      />
+
+      {/* Professional section → Linen services/publications */}
       <CurveDivider from="#1B2A41" bg="#F0EAE0" />
 
       {w && (
@@ -300,6 +328,17 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
           office_email: websiteData.office_email || null,
           appointment_url: websiteData.appointment_url || null,
           custom_tagline: websiteData.custom_tagline || null,
+          communication_style: websiteData.communication_style || null,
+          first_consult_expectation: websiteData.first_consult_expectation || null,
+          narrative_status: websiteData.narrative_status || null,
+          approved_bio_en: websiteData.approved_bio_en || null,
+          approved_bio_es: websiteData.approved_bio_es || null,
+          approved_tagline_en: websiteData.approved_tagline_en || null,
+          approved_tagline_es: websiteData.approved_tagline_es || null,
+          generated_bio_en: websiteData.generated_bio_en || null,
+          generated_bio_es: websiteData.generated_bio_es || null,
+          generated_tagline_en: websiteData.generated_tagline_en || null,
+          generated_tagline_es: websiteData.generated_tagline_es || null,
         } : null,
       },
     };
