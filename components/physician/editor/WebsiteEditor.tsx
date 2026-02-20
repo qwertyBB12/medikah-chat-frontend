@@ -95,6 +95,7 @@ const content = {
     approveSuccess: 'Bio approved and published to your profile.',
     rejectSuccess: 'Bio rejected. Questionnaire responses preserved. Update your answers and regenerate.',
     regenerateWarning: 'Regenerating will require re-approval before changes appear on your public profile.',
+    generate: 'Generate Bio',
     regenerate: 'Regenerate',
     regenerating: 'Regenerating...',
     regenerateError: 'Failed to regenerate bio. Please try again.',
@@ -132,6 +133,7 @@ const content = {
     approveSuccess: 'Biografía aprobada y publicada en su perfil.',
     rejectSuccess: 'Biografía rechazada. Sus respuestas del cuestionario se conservaron. Actualice sus respuestas y regenere.',
     regenerateWarning: 'Regenerar requerirá una nueva aprobación antes de que los cambios aparezcan en su perfil público.',
+    generate: 'Generar Biografía',
     regenerate: 'Regenerar',
     regenerating: 'Regenerando...',
     regenerateError: 'No se pudo regenerar la biografía. Intente de nuevo.',
@@ -323,9 +325,11 @@ export default function WebsiteEditor({ physicianId, lang, accessToken }: Websit
 
   const selectedBio = lang === 'es' ? generatedData.generated_bio_es : generatedData.generated_bio_en;
   const selectedTagline = lang === 'es' ? generatedData.generated_tagline_es : generatedData.generated_tagline_en;
+  const isCollected = generatedData.narrative_status === 'collected';
   const isGenerated = generatedData.narrative_status === 'generated';
   const isApproved = generatedData.narrative_status === 'approved';
   const canShowPreview = isGenerated || isApproved;
+  const canGenerate = isCollected || isGenerated || isApproved;
   const isApprovalBusy = approvalState === 'approving' || approvalState === 'rejecting';
 
   const generatedDate = generatedData.narrative_generated_at
@@ -426,43 +430,45 @@ export default function WebsiteEditor({ physicianId, lang, accessToken }: Websit
                     {selectedBio || t.generatedPlaceholder}
                   </div>
                 </div>
-
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={handleRegenerate}
-                    disabled={generationState === 'generating' || isApprovalBusy}
-                    className="font-dm-sans text-sm font-semibold px-4 py-2 rounded-lg bg-clinical-teal text-white hover:bg-clinical-teal/90 disabled:opacity-50 transition"
-                  >
-                    {generationState === 'generating' ? t.regenerating : t.regenerate}
-                  </button>
-
-                  {isGenerated && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={handleApprove}
-                        disabled={generationState === 'generating' || isApprovalBusy}
-                        className="font-dm-sans text-sm font-semibold px-4 py-2 rounded-lg bg-confirm-green text-white hover:bg-confirm-green/90 disabled:opacity-50 transition"
-                      >
-                        {approvalState === 'approving' ? t.approving : t.approvePublish}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleReject}
-                        disabled={generationState === 'generating' || isApprovalBusy}
-                        className="font-dm-sans text-sm font-semibold px-4 py-2 rounded-lg border border-alert-garnet text-alert-garnet hover:bg-alert-garnet/5 disabled:opacity-50 transition"
-                      >
-                        {approvalState === 'rejecting' ? t.rejecting : t.rejectReanswer}
-                      </button>
-                    </>
-                  )}
-                </div>
-
-                {isApproved && (
-                  <p className="font-dm-sans text-xs text-archival-grey">{t.regenerateWarning}</p>
-                )}
               </>
+            )}
+
+            {canGenerate && (
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleRegenerate}
+                  disabled={generationState === 'generating' || isApprovalBusy}
+                  className="font-dm-sans text-sm font-semibold px-4 py-2 rounded-lg bg-clinical-teal text-white hover:bg-clinical-teal/90 disabled:opacity-50 transition"
+                >
+                  {generationState === 'generating' ? t.regenerating : (canShowPreview ? t.regenerate : t.generate)}
+                </button>
+
+                {isGenerated && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleApprove}
+                      disabled={generationState === 'generating' || isApprovalBusy}
+                      className="font-dm-sans text-sm font-semibold px-4 py-2 rounded-lg bg-confirm-green text-white hover:bg-confirm-green/90 disabled:opacity-50 transition"
+                    >
+                      {approvalState === 'approving' ? t.approving : t.approvePublish}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleReject}
+                      disabled={generationState === 'generating' || isApprovalBusy}
+                      className="font-dm-sans text-sm font-semibold px-4 py-2 rounded-lg border border-alert-garnet text-alert-garnet hover:bg-alert-garnet/5 disabled:opacity-50 transition"
+                    >
+                      {approvalState === 'rejecting' ? t.rejecting : t.rejectReanswer}
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+
+            {isApproved && (
+              <p className="font-dm-sans text-xs text-archival-grey">{t.regenerateWarning}</p>
             )}
 
             {approvalMessage === 'approve' && (
