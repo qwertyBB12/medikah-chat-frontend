@@ -5,6 +5,7 @@
  * quick stats, and profile completeness.
  */
 
+import { useState } from 'react';
 import { SupportedLang } from '../../lib/i18n';
 import { nameToSlug } from '../../lib/slug';
 import VerificationBadge from './VerificationBadge';
@@ -67,17 +68,19 @@ export default function ProfileOverview(props: ProfileOverviewProps) {
   const t = content[lang];
   const firstName = physicianName.split(' ')[0] || physicianName;
   const completeness = computeCompleteness(props);
+  const [imgError, setImgError] = useState(false);
 
   return (
     <div className="bg-linen-white rounded-[12px] border border-warm-gray-800/[0.06] shadow-sm p-6">
       <div className="flex items-start gap-4">
         {/* Avatar */}
         <div className="shrink-0">
-          {photoUrl ? (
+          {photoUrl && !imgError ? (
             <img
               src={photoUrl}
               alt={physicianName}
               className="w-16 h-16 rounded-full object-cover border-2 border-inst-blue/20"
+              onError={() => setImgError(true)}
             />
           ) : (
             <div className="w-16 h-16 rounded-full bg-inst-blue/10 flex items-center justify-center">
