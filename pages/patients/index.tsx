@@ -185,8 +185,9 @@ export default function PatientPortal() {
         { sender: 'bot', text: reply, actions: actionList },
       ]);
 
-      // Activate the scheduler when the backend signals scheduling stage
-      if (data.stage === 'scheduling' || data.appointment_confirmed === false) {
+      // Activate the client-side scheduler only when the backend
+      // explicitly signals the scheduling stage
+      if (data.stage === 'scheduling') {
         schedulerRef.current?.start();
       }
     } catch {
