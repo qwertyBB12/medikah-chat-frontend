@@ -22,6 +22,9 @@ interface DashboardContentProps {
   physicianName: string;
   verificationStatus: string | null;
   lang: SupportedLang;
+  profilePhotoUrl?: string;
+  profileEmail?: string;
+  profileSpecialty?: string;
 }
 
 interface DashboardData {
@@ -76,6 +79,9 @@ export default function DashboardContent({
   physicianName,
   verificationStatus,
   lang,
+  profilePhotoUrl,
+  profileEmail,
+  profileSpecialty,
 }: DashboardContentProps) {
   const t = content[lang];
   const normalizedStatus = verificationStatus?.toLowerCase() || 'pending';
@@ -135,9 +141,9 @@ export default function DashboardContent({
         <ProfileOverview
           physicianId={physicianId}
           physicianName={physicianName}
-          email={dashboardData.email}
-          specialty={dashboardData.specialty}
-          photoUrl={dashboardData.photoUrl}
+          email={dashboardData.email || profileEmail}
+          specialty={dashboardData.specialty || profileSpecialty}
+          photoUrl={dashboardData.photoUrl || profilePhotoUrl}
           verificationStatus={verificationStatus}
           inquiryCount={dashboardData.inquiryCount}
           upcomingAppointments={dashboardData.upcomingAppointments}

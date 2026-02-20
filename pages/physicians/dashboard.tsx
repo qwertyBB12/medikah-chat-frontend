@@ -28,6 +28,7 @@ export default function PhysicianDashboard() {
 
   const [physicianStatus, setPhysicianStatus] = useState<PhysicianStatus | null>(null);
   const [physicianName, setPhysicianName] = useState<string>('');
+  const [profileData, setProfileData] = useState<{ photoUrl?: string; email?: string; specialty?: string }>({});
   const [loading, setLoading] = useState(true);
 
   // Auth guard + fetch physician status
@@ -61,6 +62,13 @@ export default function PhysicianDashboard() {
                 setPhysicianName(data.fullName);
               } else {
                 setPhysicianName(session.user?.name || session.user?.email || '');
+              }
+              if (data) {
+                setProfileData({
+                  photoUrl: data.photoUrl,
+                  email: data.email,
+                  specialty: data.primarySpecialty,
+                });
               }
             })
             .catch(() => {
@@ -113,6 +121,9 @@ export default function PhysicianDashboard() {
             physicianName={physicianName}
             verificationStatus={physicianStatus.verificationStatus}
             lang={lang}
+            profilePhotoUrl={profileData.photoUrl}
+            profileEmail={profileData.email}
+            profileSpecialty={profileData.specialty}
           />
         </div>
       </PortalLayout>
