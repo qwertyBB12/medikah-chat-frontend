@@ -9,6 +9,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]';
 import { supabaseAdmin } from '../../../../lib/supabaseServer';
+import { generateBioForPhysician } from '../../../../lib/bioGenerator';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'PUT') {
@@ -90,6 +91,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.error('Error saving narrative responses:', error);
       return res.status(500).json({ error: 'Failed to save narrative responses' });
     }
+
+    // Fire-and-forget generation so narrative save is never blocked by template processing.
+    generateBioForPhysician(id).catch((generationError) => {
+      console.error('Error auto-generating physician bio after narrative save:', generationError);
+    });
 
     return res.status(200).json({ success: true });
   } catch (err) {

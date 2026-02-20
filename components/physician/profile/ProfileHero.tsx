@@ -4,12 +4,10 @@ import FadeInSection from './FadeInSection';
 interface ProfileHeroProps {
   fullName: string;
   photoUrl?: string;
+  tagline?: string;
   primarySpecialty?: string;
-  boardCertifications?: { board: string; certification: string; year?: number }[];
-  currentInstitutions?: string[];
   languages?: string[];
   timezone?: string;
-  licenses?: { country: string; countryCode: string }[];
   isEs: boolean;
   onScheduleClick: () => void;
 }
@@ -17,53 +15,13 @@ interface ProfileHeroProps {
 export default function ProfileHero({
   fullName,
   photoUrl,
+  tagline,
   primarySpecialty,
-  boardCertifications,
-  currentInstitutions,
   languages,
   timezone,
-  licenses,
   isEs,
   onScheduleClick,
 }: ProfileHeroProps) {
-  const countries = licenses
-    ? Array.from(new Set(licenses.map((l) => l.country)))
-    : [];
-
-  const credentials: { bold: string; detail: string }[] = [];
-
-  if (primarySpecialty) {
-    credentials.push({
-      bold: primarySpecialty,
-      detail: isEs ? 'Especialidad Principal' : 'Primary Specialty',
-    });
-  }
-
-  if (currentInstitutions && currentInstitutions.length > 0) {
-    credentials.push({
-      bold: currentInstitutions[0],
-      detail: currentInstitutions.length > 1
-        ? `+${currentInstitutions.length - 1} ${isEs ? 'más' : 'more'}`
-        : '',
-    });
-  }
-
-  if (boardCertifications && boardCertifications.length > 0) {
-    credentials.push({
-      bold: boardCertifications[0].certification || boardCertifications[0].board,
-      detail: boardCertifications.length > 1
-        ? `+${boardCertifications.length - 1} ${isEs ? 'más' : 'more'}`
-        : '',
-    });
-  }
-
-  if (countries.length > 0) {
-    credentials.push({
-      bold: isEs ? 'Licenciado en' : 'Licensed in',
-      detail: countries.join(', '),
-    });
-  }
-
   return (
     <section
       className="relative overflow-hidden"
@@ -90,9 +48,12 @@ export default function ProfileHero({
                 </span>
               </div>
 
-              <h1 className="font-heading text-[clamp(2.5rem,8vw,4.5rem)] font-medium uppercase tracking-[-0.02em] leading-[0.95] text-white mb-8">
+              <h1 className="font-heading text-[clamp(2.5rem,8vw,4.5rem)] font-medium uppercase tracking-[-0.02em] leading-[0.95] text-white">
                 {fullName}
               </h1>
+              {tagline && tagline.trim().length > 0 && (
+                <p className="text-white/60 text-lg font-body mt-3">{tagline}</p>
+              )}
             </div>
 
             {photoUrl && (
@@ -121,20 +82,6 @@ export default function ProfileHero({
                   sizes="144px"
                 />
               </div>
-            </div>
-          )}
-
-          {credentials.length > 0 && (
-            <div className="space-y-5 mb-12 max-w-3xl">
-              {credentials.map((c, i) => (
-                <div key={i} className="flex items-start gap-4">
-                  <div className="w-1 h-6 bg-teal-500 mt-1.5 shrink-0" />
-                  <p className="text-lg text-white/70 leading-relaxed">
-                    <strong className="font-semibold text-white">{c.bold}</strong>
-                    {c.detail && ` — ${c.detail}`}
-                  </p>
-                </div>
-              ))}
             </div>
           )}
 

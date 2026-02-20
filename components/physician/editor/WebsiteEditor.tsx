@@ -34,6 +34,17 @@ interface WebsiteFormData {
   custom_tagline: string;
 }
 
+type NarrativeStatus = 'pending' | 'collected' | 'generated' | 'approved' | null;
+
+interface GeneratedNarrativeData {
+  narrative_status: NarrativeStatus;
+  narrative_generated_at: string | null;
+  generated_bio_en: string;
+  generated_bio_es: string;
+  generated_tagline_en: string;
+  generated_tagline_es: string;
+}
+
 const EMPTY_FORM: WebsiteFormData = {
   enabled: true,
   practice_philosophy: '',
@@ -49,6 +60,15 @@ const EMPTY_FORM: WebsiteFormData = {
   custom_tagline: '',
 };
 
+const EMPTY_GENERATED: GeneratedNarrativeData = {
+  narrative_status: 'pending',
+  narrative_generated_at: null,
+  generated_bio_en: '',
+  generated_bio_es: '',
+  generated_tagline_en: '',
+  generated_tagline_es: '',
+};
+
 const content = {
   en: {
     title: 'Physician Website',
@@ -59,6 +79,26 @@ const content = {
     sectionServices: 'Services',
     sectionFaq: 'FAQs',
     sectionLocation: 'Location & Contact',
+    sectionGenerated: 'Generated Bio',
+    generatedTagline: 'Generated Tagline',
+    generatedBio: 'Generated Bio',
+    generatedPlaceholder: 'No generated content yet.',
+    statusPending: 'Complete onboarding to generate your bio.',
+    statusCollected: 'Bio generation in progress.',
+    statusNoGeneratedDate: 'No bio generated yet - complete the narrative questionnaire first.',
+    generatedOn: 'Bio generated on',
+    approvedBadge: 'Approved',
+    approvePublish: 'Approve & Publish',
+    rejectReanswer: 'Reject & Re-answer',
+    approving: 'Approving...',
+    rejecting: 'Rejecting...',
+    approveSuccess: 'Bio approved and published to your profile.',
+    rejectSuccess: 'Bio rejected. Questionnaire responses preserved. Update your answers and regenerate.',
+    regenerateWarning: 'Regenerating will require re-approval before changes appear on your public profile.',
+    regenerate: 'Regenerate',
+    regenerating: 'Regenerating...',
+    regenerateError: 'Failed to regenerate bio. Please try again.',
+    approvalError: 'Failed to update bio approval. Please try again.',
     taglineLabel: 'Custom Tagline',
     taglinePlaceholder: 'A brief tagline for your practice (optional)',
     save: 'Save Website',
@@ -76,6 +116,26 @@ const content = {
     sectionServices: 'Servicios',
     sectionFaq: 'Preguntas Frecuentes',
     sectionLocation: 'Ubicación y Contacto',
+    sectionGenerated: 'Biografía Generada',
+    generatedTagline: 'Lema Generado',
+    generatedBio: 'Biografía Generada',
+    generatedPlaceholder: 'Aún no hay contenido generado.',
+    statusPending: 'Complete el onboarding para generar su biografía.',
+    statusCollected: 'La generación de la biografía está en progreso.',
+    statusNoGeneratedDate: 'Aún no hay biografía generada. Complete primero el cuestionario narrativo.',
+    generatedOn: 'Biografía generada el',
+    approvedBadge: 'Aprobado',
+    approvePublish: 'Aprobar y Publicar',
+    rejectReanswer: 'Rechazar y Rehacer',
+    approving: 'Aprobando...',
+    rejecting: 'Rechazando...',
+    approveSuccess: 'Biografía aprobada y publicada en su perfil.',
+    rejectSuccess: 'Biografía rechazada. Sus respuestas del cuestionario se conservaron. Actualice sus respuestas y regenere.',
+    regenerateWarning: 'Regenerar requerirá una nueva aprobación antes de que los cambios aparezcan en su perfil público.',
+    regenerate: 'Regenerar',
+    regenerating: 'Regenerando...',
+    regenerateError: 'No se pudo regenerar la biografía. Intente de nuevo.',
+    approvalError: 'No se pudo actualizar la aprobación de la biografía. Intente de nuevo.',
     taglineLabel: 'Lema Personalizado',
     taglinePlaceholder: 'Un lema breve para su práctica (opcional)',
     save: 'Guardar Sitio Web',
@@ -87,12 +147,18 @@ const content = {
 };
 
 export default function WebsiteEditor({ physicianId, lang, accessToken }: WebsiteEditorProps) {
+  void accessToken;
   const t = content[lang];
 
   const [form, setForm] = useState<WebsiteFormData>(EMPTY_FORM);
+  const [generatedData, setGeneratedData] = useState<GeneratedNarrativeData>(EMPTY_GENERATED);
   const [loading, setLoading] = useState(true);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [generationState, setGenerationState] = useState<'idle' | 'generating' | 'error'>('idle');
+  const [approvalState, setApprovalState] = useState<'idle' | 'approving' | 'rejecting' | 'error'>('idle');
+  const [approvalMessage, setApprovalMessage] = useState<'approve' | 'reject' | null>(null);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    generated: true,
     philosophy: true,
     services: false,
     faq: false,
@@ -100,37 +166,59 @@ export default function WebsiteEditor({ physicianId, lang, accessToken }: Websit
   });
 
   // Load existing website data
-  useEffect(() => {
+  const loadWebsiteData = useCallback(async (showLoadingSpinner = true) => {
     if (!physicianId) return;
-    (async () => {
-      try {
-        const res = await fetch(`/api/physicians/${physicianId}/website`);
-        if (res.ok) {
-          const { data } = await res.json();
-          if (data) {
-            setForm({
-              enabled: data.enabled ?? true,
-              practice_philosophy: data.practice_philosophy || '',
-              value_pillars: data.value_pillars || [],
-              services: data.services || [],
-              faqs: data.faqs || [],
-              office_address: data.office_address || '',
-              office_city: data.office_city || '',
-              office_country: data.office_country || '',
-              office_phone: data.office_phone || '',
-              office_email: data.office_email || '',
-              appointment_url: data.appointment_url || '',
-              custom_tagline: data.custom_tagline || '',
-            });
-          }
+    if (showLoadingSpinner) {
+      setLoading(true);
+    }
+
+    try {
+      const res = await fetch(`/api/physicians/${physicianId}/website`);
+      if (res.ok) {
+        const { data } = await res.json();
+        if (data) {
+          setForm({
+            enabled: data.enabled ?? true,
+            practice_philosophy: data.practice_philosophy || '',
+            value_pillars: data.value_pillars || [],
+            services: data.services || [],
+            faqs: data.faqs || [],
+            office_address: data.office_address || '',
+            office_city: data.office_city || '',
+            office_country: data.office_country || '',
+            office_phone: data.office_phone || '',
+            office_email: data.office_email || '',
+            appointment_url: data.appointment_url || '',
+            custom_tagline: data.custom_tagline || '',
+          });
+
+          setGeneratedData({
+            narrative_status: data.narrative_status || 'pending',
+            narrative_generated_at: data.narrative_generated_at || null,
+            generated_bio_en: data.generated_bio_en || '',
+            generated_bio_es: data.generated_bio_es || '',
+            generated_tagline_en: data.generated_tagline_en || '',
+            generated_tagline_es: data.generated_tagline_es || '',
+          });
+          return;
         }
-      } catch {
-        // Use defaults
-      } finally {
+      }
+
+      setForm(EMPTY_FORM);
+      setGeneratedData(EMPTY_GENERATED);
+    } catch {
+      // Use defaults
+    } finally {
+      if (showLoadingSpinner) {
         setLoading(false);
       }
-    })();
+    }
   }, [physicianId]);
+
+  useEffect(() => {
+    if (!physicianId) return;
+    loadWebsiteData();
+  }, [physicianId, loadWebsiteData]);
 
   const toggleSection = (key: string) => {
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -159,6 +247,105 @@ export default function WebsiteEditor({ physicianId, lang, accessToken }: Websit
       setSaveState('error');
     }
   }, [physicianId, form]);
+
+  const handleRegenerate = useCallback(async () => {
+    if (!physicianId) return;
+
+    setGenerationState('generating');
+    setApprovalMessage(null);
+    setApprovalState('idle');
+    try {
+      const res = await fetch(`/api/physicians/${physicianId}/generate`, {
+        method: 'POST',
+      });
+
+      if (!res.ok) {
+        setGenerationState('error');
+        return;
+      }
+
+      await loadWebsiteData(false);
+      setGenerationState('idle');
+    } catch {
+      setGenerationState('error');
+    }
+  }, [physicianId, loadWebsiteData]);
+
+  const handleApprove = useCallback(async () => {
+    if (!physicianId) return;
+
+    setApprovalState('approving');
+    setApprovalMessage(null);
+    try {
+      const res = await fetch(`/api/physicians/${physicianId}/approve-bio`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'approve' }),
+      });
+
+      if (!res.ok) {
+        setApprovalState('error');
+        return;
+      }
+
+      await loadWebsiteData(false);
+      setApprovalState('idle');
+      setApprovalMessage('approve');
+    } catch {
+      setApprovalState('error');
+    }
+  }, [physicianId, loadWebsiteData]);
+
+  const handleReject = useCallback(async () => {
+    if (!physicianId) return;
+
+    setApprovalState('rejecting');
+    setApprovalMessage(null);
+    try {
+      const res = await fetch(`/api/physicians/${physicianId}/approve-bio`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reject' }),
+      });
+
+      if (!res.ok) {
+        setApprovalState('error');
+        return;
+      }
+
+      await loadWebsiteData(false);
+      setApprovalState('idle');
+      setApprovalMessage('reject');
+    } catch {
+      setApprovalState('error');
+    }
+  }, [physicianId, loadWebsiteData]);
+
+  const selectedBio = lang === 'es' ? generatedData.generated_bio_es : generatedData.generated_bio_en;
+  const selectedTagline = lang === 'es' ? generatedData.generated_tagline_es : generatedData.generated_tagline_en;
+  const isGenerated = generatedData.narrative_status === 'generated';
+  const isApproved = generatedData.narrative_status === 'approved';
+  const canShowPreview = isGenerated || isApproved;
+  const isApprovalBusy = approvalState === 'approving' || approvalState === 'rejecting';
+
+  const generatedDate = generatedData.narrative_generated_at
+    ? new Date(generatedData.narrative_generated_at)
+    : null;
+  const generatedDateLabel = generatedDate && !Number.isNaN(generatedDate.getTime())
+    ? generatedDate.toLocaleString(lang === 'es' ? 'es-ES' : 'en-US', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      })
+    : null;
+
+  const generationStatusMessage = (() => {
+    if (generatedData.narrative_status === 'pending') return t.statusPending;
+    if (generatedData.narrative_status === 'collected') return t.statusCollected;
+    if ((isGenerated || isApproved) && generatedDateLabel) {
+      return `${t.generatedOn} ${generatedDateLabel}`;
+    }
+    return t.statusNoGeneratedDate;
+  })();
 
   if (loading) {
     return (
@@ -201,6 +388,97 @@ export default function WebsiteEditor({ physicianId, lang, accessToken }: Websit
             <p className="font-dm-sans text-xs text-archival-grey">{t.enableDesc}</p>
           </div>
         </div>
+      </div>
+
+      {/* Generated bio preview */}
+      <div className="px-6 pb-4">
+        <CollapsibleSection
+          title={t.sectionGenerated}
+          open={openSections.generated}
+          onToggle={() => toggleSection('generated')}
+        >
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="font-dm-sans text-sm text-body-slate">{generationStatusMessage}</p>
+              {isApproved && (
+                <span className="inline-flex items-center rounded-full bg-confirm-green/10 text-confirm-green px-2.5 py-1 text-xs font-dm-sans font-semibold">
+                  {t.approvedBadge}
+                </span>
+              )}
+            </div>
+
+            {canShowPreview && (
+              <>
+                <div>
+                  <p className="font-dm-sans text-xs font-semibold uppercase tracking-[0.04em] text-archival-grey mb-1.5">
+                    {t.generatedTagline}
+                  </p>
+                  <div className="rounded-lg border border-border-line bg-clinical-surface/20 px-3 py-2 font-dm-sans text-sm text-deep-charcoal">
+                    {selectedTagline || t.generatedPlaceholder}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="font-dm-sans text-xs font-semibold uppercase tracking-[0.04em] text-archival-grey mb-1.5">
+                    {t.generatedBio}
+                  </p>
+                  <div className="rounded-lg border border-border-line bg-clinical-surface/20 px-3 py-2 font-dm-sans text-sm text-deep-charcoal whitespace-pre-line leading-relaxed">
+                    {selectedBio || t.generatedPlaceholder}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleRegenerate}
+                    disabled={generationState === 'generating' || isApprovalBusy}
+                    className="font-dm-sans text-sm font-semibold px-4 py-2 rounded-lg bg-clinical-teal text-white hover:bg-clinical-teal/90 disabled:opacity-50 transition"
+                  >
+                    {generationState === 'generating' ? t.regenerating : t.regenerate}
+                  </button>
+
+                  {isGenerated && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={handleApprove}
+                        disabled={generationState === 'generating' || isApprovalBusy}
+                        className="font-dm-sans text-sm font-semibold px-4 py-2 rounded-lg bg-confirm-green text-white hover:bg-confirm-green/90 disabled:opacity-50 transition"
+                      >
+                        {approvalState === 'approving' ? t.approving : t.approvePublish}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleReject}
+                        disabled={generationState === 'generating' || isApprovalBusy}
+                        className="font-dm-sans text-sm font-semibold px-4 py-2 rounded-lg border border-alert-garnet text-alert-garnet hover:bg-alert-garnet/5 disabled:opacity-50 transition"
+                      >
+                        {approvalState === 'rejecting' ? t.rejecting : t.rejectReanswer}
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {isApproved && (
+                  <p className="font-dm-sans text-xs text-archival-grey">{t.regenerateWarning}</p>
+                )}
+              </>
+            )}
+
+            {approvalMessage === 'approve' && (
+              <p className="font-dm-sans text-xs text-confirm-green">{t.approveSuccess}</p>
+            )}
+            {approvalMessage === 'reject' && (
+              <p className="font-dm-sans text-xs text-body-slate">{t.rejectSuccess}</p>
+            )}
+            {generationState === 'error' && (
+              <p className="font-dm-sans text-xs text-alert-garnet">{t.regenerateError}</p>
+            )}
+            {approvalState === 'error' && (
+              <p className="font-dm-sans text-xs text-alert-garnet">{t.approvalError}</p>
+            )}
+          </div>
+        </CollapsibleSection>
       </div>
 
       {/* Custom tagline */}
