@@ -106,27 +106,9 @@ export default function LandingFooter() {
           <p className="text-cream-500 text-xs">
             &copy; {new Date().getFullYear()} Medikah Corporation. {isEs ? 'Todos los derechos reservados.' : 'All rights reserved.'}
           </p>
-          <div className="flex gap-[clamp(1rem,2vw,2rem)] flex-wrap justify-center">
-            {[
-              { label: 'BeNeXT Global', href: 'https://benext.global' },
-              { label: 'Futuro', href: 'https://futuro.ngo' },
-              { label: 'NeXT', href: 'https://next.ngo' },
-              { label: 'Héctor H. López', href: 'https://hectorhlopez.com' },
-              { label: 'Medikah', href: '/', current: true },
-            ].map((link) => (
-              <a
-                key={link.label}
-                href={link.href}
-                className={`font-heading text-[0.625rem] font-medium uppercase tracking-[0.1em] transition-colors duration-200 ${
-                  link.current
-                    ? 'text-teal-400'
-                    : 'text-white/30 hover:text-white'
-                }`}
-              >
-                {link.label}
-              </a>
-            ))}
-          </div>
+          <span className="font-heading text-[0.625rem] font-medium uppercase tracking-[0.1em] text-teal-400">
+            Medikah
+          </span>
         </div>
       </div>
     </footer>

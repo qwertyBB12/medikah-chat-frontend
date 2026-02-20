@@ -79,29 +79,48 @@ export async function generateBioForPhysician(physicianId: string): Promise<BioO
     customTagline: websiteData?.custom_tagline || undefined,
   };
 
+  // Deterministic template output — serves as fallback if LLM is unavailable
   const templateOutput = generateBioAndTagline(input);
 
-  // Optional LLM polish pass — skipped silently if OPENAI_API_KEY is not set
+  // LLM craft pass — sends raw credentials + questionnaire data for creative writing
+  // Skipped silently if OPENAI_API_KEY is not set
   let finalOutput: BioOutput = templateOutput;
   let wasPolished = false;
 
-  // Current: OpenAI  |  Future: swap to ANTHROPIC_API_KEY
   if (process.env.OPENAI_API_KEY) {
-    const polished = await polishBio({
+    const crafted = await polishBio({
+      physicianName: physician.full_name,
+      primarySpecialty: physician.primary_specialty || undefined,
+      subSpecialties: arrayOrEmpty(physician.sub_specialties),
+      medicalSchool: physician.medical_school || undefined,
+      medicalSchoolCountry: physician.medical_school_country || undefined,
+      graduationYear: physician.graduation_year || undefined,
+      boardCertifications: arrayOrEmpty(physician.board_certifications),
+      residency: arrayOrEmpty(physician.residency),
+      fellowships: arrayOrEmpty(physician.fellowships),
+      currentInstitutions: arrayOrEmpty(physician.current_institutions),
+      languages: arrayOrEmpty(physician.languages),
+      communicationStyle: websiteData?.communication_style || undefined,
+      firstConsultExpectation: websiteData?.first_consult_expectation || undefined,
+      specialtyMotivation: websiteData?.specialty_motivation || undefined,
+      careValues: websiteData?.care_values || undefined,
+      originSentence: websiteData?.origin_sentence || undefined,
+      personalStatement: websiteData?.personal_statement || undefined,
+      personalInterests: websiteData?.personal_interests || undefined,
+      customTagline: websiteData?.custom_tagline || undefined,
+      // Template output as fallback
       templateBioEn: templateOutput.bioEn,
       templateBioEs: templateOutput.bioEs,
       templateTaglineEn: templateOutput.taglineEn,
       templateTaglineEs: templateOutput.taglineEs,
-      physicianName: physician.full_name,
-      primarySpecialty: physician.primary_specialty || undefined,
     });
 
-    if (polished.wasPolished) {
+    if (crafted.wasPolished) {
       finalOutput = {
-        bioEn: polished.polishedBioEn,
-        bioEs: polished.polishedBioEs,
-        taglineEn: polished.polishedTaglineEn,
-        taglineEs: polished.polishedTaglineEs,
+        bioEn: crafted.polishedBioEn,
+        bioEs: crafted.polishedBioEs,
+        taglineEn: crafted.polishedTaglineEn,
+        taglineEs: crafted.polishedTaglineEs,
       };
       wasPolished = true;
     }
