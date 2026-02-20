@@ -1,12 +1,13 @@
 /**
- * LLM Polish Pass for Physician Bios
+ * LLM Bio Crafter for Physician Profiles
  *
- * Optional layer on top of the deterministic template engine (bioTemplates.ts).
- * Smooths grammatical rough edges and improves sentence transitions — without
- * changing meaning or adding information.
+ * Takes raw physician credentials + narrative questionnaire answers and crafts
+ * compelling, personalized, bilingual bios and taglines. The LLM is the primary
+ * creative engine — the deterministic template (bioTemplates.ts) serves as
+ * fallback when no API key is set or the LLM call fails.
  *
- * Provider: OpenAI (GPT-4o-mini) — reads OPENAI_API_KEY.
- * Swap target: Anthropic Claude Haiku — uncomment the Claude block and swap
+ * Provider: OpenAI (GPT-4o) — reads OPENAI_API_KEY.
+ * Swap target: Anthropic Claude — uncomment the Claude block and swap
  * the env var check to ANTHROPIC_API_KEY when ready to migrate.
  *
  * Gracefully degrades: if the API key is not set or the call fails, returns
@@ -16,14 +17,37 @@
 import OpenAI from 'openai';
 // Future: import Anthropic from '@anthropic-ai/sdk';
 
-export interface PolishInput {
+export interface CraftInput {
+  // Physician credentials
+  physicianName: string;
+  primarySpecialty?: string;
+  subSpecialties?: string[];
+  medicalSchool?: string;
+  medicalSchoolCountry?: string;
+  graduationYear?: number;
+  boardCertifications?: { board: string; certification: string; year?: number }[];
+  residency?: { institution: string; specialty: string }[];
+  fellowships?: { institution: string; specialty: string }[];
+  currentInstitutions?: string[];
+  languages?: string[];
+  // Narrative questionnaire answers
+  communicationStyle?: string;
+  firstConsultExpectation?: string;
+  specialtyMotivation?: string;
+  careValues?: string;
+  originSentence?: string;
+  personalStatement?: string;
+  personalInterests?: string;
+  customTagline?: string;
+  // Template fallback (used if LLM fails)
   templateBioEn: string;
   templateBioEs: string;
   templateTaglineEn: string;
   templateTaglineEs: string;
-  physicianName: string;
-  primarySpecialty?: string;
 }
+
+// Keep the old interface name exported for backwards compatibility with bioGenerator
+export type PolishInput = CraftInput;
 
 export interface PolishOutput {
   polishedBioEn: string;
@@ -33,54 +57,150 @@ export interface PolishOutput {
   wasPolished: boolean;
 }
 
-const SYSTEM_PROMPT = `You are editing a physician's profile bio for Medikah, a healthcare platform.
+const SYSTEM_PROMPT = `You are a senior healthcare writer crafting a physician's profile for Medikah, a HIPAA-compliant platform that coordinates care across the Americas.
 
-You are given a template-assembled bio and tagline in English and Spanish. Your job is to lightly polish the prose for natural flow. Do NOT rewrite — only smooth grammatical rough edges and improve sentence transitions.
+You receive the physician's credentials and their personal questionnaire answers. Your job: write a bio that makes a patient think "this is MY doctor." Every physician who joins Medikah has a story — find it in the data and tell it well.
 
-Rules:
-- Preserve the physician's exact meaning. Do not add claims.
-- Warm but authoritative tone.
+## Bio structure — 3 paragraphs, each with a distinct emotional job
+
+PARAGRAPH 1 — AUTHORITY (who they are, why they're qualified)
+Open with a confident, specific sentence about who this physician is. Weave in board certifications, training, fellowship, and current institution naturally — not as a list, but as a narrative of expertise. End with a sentence that connects their communication style to how patients experience their care.
+
+PARAGRAPH 2 — MOTIVATION (why they chose this path)
+This is the heart. Use the physician's own words from the questionnaire (specialtyMotivation, careValues, originSentence) to reveal what drives them. If they provided an origin sentence, integrate it as a pull quote or woven naturally into prose. This paragraph should feel personal and specific — not something that could describe any doctor.
+
+PARAGRAPH 3 — THE HUMAN (what patients can expect)
+Ground the bio in the practical. What does a first visit look like? What should patients know? If there are personal interests, use them to show the full person. Close with the Medikah network membership as a quiet signal of credibility, not a sales pitch.
+
+## Tagline
+Craft a memorable 6-12 word tagline that captures this physician's essence. It should feel like a headline, not a job title. If the physician provided a custom tagline, use it verbatim.
+
+## Rules
+- Write in third person ("Dr. López" / "she" / "he" / "they").
+- Warm, authoritative tone. The reader should feel trust and warmth simultaneously.
 - Maximum 3 paragraphs per language, maximum 400 words per language.
 - Separate paragraphs with a blank line (two newlines).
-- No exclamation marks. No marketing language.
-- Forbidden phrases: "passionate about", "dedicated to excellence", "committed to providing", "world-class", "cutting-edge".
-- Clinical terms are fine. Jargon is not.
-- Do not invent biographical details.
-- Do not add information not present in the input.
-- If the input already reads naturally, return it unchanged.
-- Return valid JSON only — no markdown fences, no explanation.`;
+- NO exclamation marks. NO marketing buzzwords.
+- FORBIDDEN phrases: "passionate about", "dedicated to excellence", "committed to providing", "world-class", "cutting-edge", "journey", "holistic approach".
+- Every claim must come from the input data. Do NOT invent credentials, institutions, or biographical details.
+- If a field is missing, skip it gracefully — do not mention its absence.
+- Both English and Spanish bios must be original compositions, not translations. Each should read naturally in its language.
+- The Spanish bio should use the same warm professional register, but follow Spanish medical conventions (e.g., "Dr./Dra.", institution references).
+- Return valid JSON only — no markdown fences, no commentary, no explanation.`;
 
-function buildUserPrompt(input: PolishInput): string {
-  const specialtyLine = input.primarySpecialty
-    ? `, ${input.primarySpecialty}`
-    : '';
+function buildCredentialsBlock(input: CraftInput): string {
+  const lines: string[] = [];
 
-  return `Polish the following physician profile content. Return JSON with exactly these keys: bioEn, bioEs, taglineEn, taglineEs.
+  lines.push(`Name: Dr. ${input.physicianName}`);
 
-Physician: Dr. ${input.physicianName}${specialtyLine}
+  if (input.primarySpecialty) {
+    lines.push(`Primary specialty: ${input.primarySpecialty}`);
+  }
 
---- English Bio ---
-${input.templateBioEn}
+  if (input.subSpecialties && input.subSpecialties.length > 0) {
+    lines.push(`Sub-specialties: ${input.subSpecialties.join(', ')}`);
+  }
 
---- Spanish Bio ---
-${input.templateBioEs}
+  if (input.boardCertifications && input.boardCertifications.length > 0) {
+    const certs = input.boardCertifications
+      .map((c) => `${c.certification} (${c.board}${c.year ? `, ${c.year}` : ''})`)
+      .join('; ');
+    lines.push(`Board certifications: ${certs}`);
+  }
 
---- English Tagline ---
-${input.templateTaglineEn}
+  if (input.medicalSchool) {
+    let schoolLine = `Medical school: ${input.medicalSchool}`;
+    if (input.medicalSchoolCountry) schoolLine += `, ${input.medicalSchoolCountry}`;
+    if (input.graduationYear) schoolLine += ` (${input.graduationYear})`;
+    lines.push(schoolLine);
+  }
 
---- Spanish Tagline ---
-${input.templateTaglineEs}`;
+  if (input.residency && input.residency.length > 0) {
+    const res = input.residency
+      .map((r) => `${r.specialty} at ${r.institution}`)
+      .join('; ');
+    lines.push(`Residency: ${res}`);
+  }
+
+  if (input.fellowships && input.fellowships.length > 0) {
+    const fell = input.fellowships
+      .map((f) => `${f.specialty} at ${f.institution}`)
+      .join('; ');
+    lines.push(`Fellowship: ${fell}`);
+  }
+
+  if (input.currentInstitutions && input.currentInstitutions.length > 0) {
+    lines.push(`Current institution(s): ${input.currentInstitutions.join(', ')}`);
+  }
+
+  if (input.languages && input.languages.length > 0) {
+    lines.push(`Languages: ${input.languages.join(', ')}`);
+  }
+
+  return lines.join('\n');
 }
 
-interface ParsedPolishResponse {
+function buildNarrativeBlock(input: CraftInput): string {
+  const lines: string[] = [];
+
+  if (input.communicationStyle) {
+    lines.push(`Communication style: ${input.communicationStyle}`);
+  }
+
+  if (input.specialtyMotivation) {
+    lines.push(`Why they chose this specialty: ${input.specialtyMotivation}`);
+  }
+
+  if (input.careValues) {
+    lines.push(`What matters most in patient care: ${input.careValues}`);
+  }
+
+  if (input.originSentence) {
+    lines.push(`In their own words: "${input.originSentence}"`);
+  }
+
+  if (input.firstConsultExpectation) {
+    lines.push(`What patients can expect on first visit: ${input.firstConsultExpectation}`);
+  }
+
+  if (input.personalStatement) {
+    lines.push(`What they want every patient to know: ${input.personalStatement}`);
+  }
+
+  if (input.personalInterests) {
+    lines.push(`Outside the clinic: ${input.personalInterests}`);
+  }
+
+  return lines.length > 0 ? lines.join('\n') : 'No narrative questionnaire data provided.';
+}
+
+function buildUserPrompt(input: CraftInput): string {
+  const credentials = buildCredentialsBlock(input);
+  const narrative = buildNarrativeBlock(input);
+  const taglineNote = input.customTagline
+    ? `\nCustom tagline (use verbatim): "${input.customTagline}"`
+    : '';
+
+  return `Craft a compelling physician profile. Return JSON with exactly these keys: bioEn, bioEs, taglineEn, taglineEs.
+
+=== CREDENTIALS ===
+${credentials}
+
+=== QUESTIONNAIRE ANSWERS ===
+${narrative}
+${taglineNote}
+
+Remember: both English and Spanish should be original compositions. The tagline should be memorable, not generic.`;
+}
+
+interface ParsedResponse {
   bioEn: string;
   bioEs: string;
   taglineEn: string;
   taglineEs: string;
 }
 
-function parsePolishResponse(text: string): ParsedPolishResponse | null {
-  // Strip markdown code fences if the model wrapped its response
+function parseResponse(text: string): ParsedResponse | null {
   let cleaned = text.trim();
   const fenceMatch = cleaned.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/);
   if (fenceMatch) {
@@ -96,7 +216,7 @@ function parsePolishResponse(text: string): ParsedPolishResponse | null {
       typeof parsed.taglineEn === 'string' && parsed.taglineEn.length > 0 &&
       typeof parsed.taglineEs === 'string' && parsed.taglineEs.length > 0
     ) {
-      return parsed as ParsedPolishResponse;
+      return parsed as ParsedResponse;
     }
 
     return null;
@@ -105,7 +225,7 @@ function parsePolishResponse(text: string): ParsedPolishResponse | null {
   }
 }
 
-function toUnpolishedOutput(input: PolishInput): PolishOutput {
+function toFallbackOutput(input: CraftInput): PolishOutput {
   return {
     polishedBioEn: input.templateBioEn,
     polishedBioEs: input.templateBioEs,
@@ -117,14 +237,14 @@ function toUnpolishedOutput(input: PolishInput): PolishOutput {
 
 // ─── OpenAI provider (current) ──────────────────────────────────────────────
 
-async function polishViaOpenAI(input: PolishInput, apiKey: string): Promise<PolishOutput> {
+async function craftViaOpenAI(input: CraftInput, apiKey: string): Promise<PolishOutput> {
   const client = new OpenAI({ apiKey });
   const userPrompt = buildUserPrompt(input);
 
   const response = await client.chat.completions.create({
-    model: 'gpt-4o-mini',
-    max_tokens: 1500,
-    temperature: 0.3,
+    model: 'gpt-4o',
+    max_tokens: 2000,
+    temperature: 0.6,
     response_format: { type: 'json_object' },
     messages: [
       { role: 'system', content: SYSTEM_PROMPT },
@@ -133,11 +253,11 @@ async function polishViaOpenAI(input: PolishInput, apiKey: string): Promise<Poli
   });
 
   const text = response.choices[0]?.message?.content || '';
-  const parsed = parsePolishResponse(text);
+  const parsed = parseResponse(text);
 
   if (!parsed) {
-    console.warn('Bio polisher: could not parse OpenAI response, using template output');
-    return toUnpolishedOutput(input);
+    console.warn('Bio crafter: could not parse OpenAI response, using template output');
+    return toFallbackOutput(input);
   }
 
   return {
@@ -152,31 +272,31 @@ async function polishViaOpenAI(input: PolishInput, apiKey: string): Promise<Poli
 // ─── Anthropic provider (future swap) ───────────────────────────────────────
 //
 // To switch to Claude:
-// 1. npm install @anthropic-ai/sdk (already installed)
+// 1. npm install @anthropic-ai/sdk
 // 2. Set ANTHROPIC_API_KEY in env
-// 3. Uncomment polishViaClaude below
+// 3. Uncomment craftViaClaude below
 // 4. In polishBio(), swap the provider check from OPENAI_API_KEY to ANTHROPIC_API_KEY
 //
-// async function polishViaClaude(input: PolishInput, apiKey: string): Promise<PolishOutput> {
+// async function craftViaClaude(input: CraftInput, apiKey: string): Promise<PolishOutput> {
 //   const Anthropic = (await import('@anthropic-ai/sdk')).default;
 //   const client = new Anthropic({ apiKey });
 //   const userPrompt = buildUserPrompt(input);
 //
 //   const response = await client.messages.create({
 //     model: 'claude-haiku-4-5-20251001',
-//     max_tokens: 1500,
-//     temperature: 0.3,
+//     max_tokens: 2000,
+//     temperature: 0.6,
 //     system: SYSTEM_PROMPT,
 //     messages: [{ role: 'user', content: userPrompt }],
 //   });
 //
 //   const block = response.content[0];
 //   const text = block.type === 'text' ? block.text : '';
-//   const parsed = parsePolishResponse(text);
+//   const parsed = parseResponse(text);
 //
 //   if (!parsed) {
-//     console.warn('Bio polisher: could not parse Claude response, using template output');
-//     return toUnpolishedOutput(input);
+//     console.warn('Bio crafter: could not parse Claude response, using template output');
+//     return toFallbackOutput(input);
 //   }
 //
 //   return {
@@ -190,18 +310,17 @@ async function polishViaOpenAI(input: PolishInput, apiKey: string): Promise<Poli
 
 // ─── Public entry point ─────────────────────────────────────────────────────
 
-export async function polishBio(input: PolishInput): Promise<PolishOutput> {
-  // Current: OpenAI  |  Future: swap to ANTHROPIC_API_KEY + polishViaClaude
+export async function polishBio(input: CraftInput): Promise<PolishOutput> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    return toUnpolishedOutput(input);
+    return toFallbackOutput(input);
   }
 
   try {
-    return await polishViaOpenAI(input, apiKey);
-    // Future: return await polishViaClaude(input, apiKey);
+    return await craftViaOpenAI(input, apiKey);
+    // Future: return await craftViaClaude(input, apiKey);
   } catch (err) {
-    console.error('Bio polish failed, using template output:', err);
-    return toUnpolishedOutput(input);
+    console.error('Bio craft failed, using template output:', err);
+    return toFallbackOutput(input);
   }
 }
