@@ -145,25 +145,25 @@ export default function DashboardContent({
         />
 
         {/* Verification Status Card */}
-        <div className="bg-white rounded-[12px] border border-border-line p-6 shadow-sm">
+        <div className="bg-linen-white rounded-[12px] border border-warm-gray-800/[0.06] p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-dm-sans font-semibold text-lg text-deep-charcoal">
+            <h2 className="font-body font-semibold text-lg text-deep-charcoal">
               {t.statusCard.title}
             </h2>
             <VerificationBadge status={verificationStatus} lang={lang} />
           </div>
-          <p className="font-dm-sans text-sm text-body-slate leading-relaxed">
+          <p className="font-body text-sm text-body-slate leading-relaxed">
             {getStatusDescription()}
           </p>
 
           {/* Status progress indicator */}
           <div className="mt-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="font-dm-sans text-xs text-archival-grey">
+              <span className="font-body text-xs text-archival-grey">
                 {lang === 'en' ? 'Progress' : 'Progreso'}
               </span>
             </div>
-            <div className="h-2 bg-clinical-surface rounded-full overflow-hidden">
+            <div className="h-2 bg-linen-warm/40 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${
                   normalizedStatus === 'verified'
@@ -177,10 +177,10 @@ export default function DashboardContent({
               />
             </div>
             <div className="flex justify-between mt-2">
-              <span className="font-dm-sans text-xs text-archival-grey">
+              <span className="font-body text-xs text-archival-grey">
                 {lang === 'en' ? 'Submitted' : 'Enviado'}
               </span>
-              <span className="font-dm-sans text-xs text-archival-grey">
+              <span className="font-body text-xs text-archival-grey">
                 {lang === 'en' ? 'Verified' : 'Verificado'}
               </span>
             </div>
@@ -205,20 +205,20 @@ export default function DashboardContent({
 
       {/* Network Card - Full width */}
       <div className="bg-gradient-to-br from-inst-blue to-[#243447] rounded-[12px] p-6 text-white shadow-lg">
-        <h2 className="font-dm-sans font-semibold text-lg mb-3">
+        <h2 className="font-body font-semibold text-lg mb-3">
           {t.networkCard.title}
         </h2>
-        <p className="font-dm-sans text-sm text-white/80 leading-relaxed mb-6">
+        <p className="font-body text-sm text-white/80 leading-relaxed mb-6">
           {t.networkCard.description}
         </p>
         <div className="flex items-center gap-8">
           <div>
-            <p className="font-dm-sans text-3xl font-bold">250+</p>
-            <p className="font-dm-sans text-xs text-white/60">{t.networkCard.membersActive}</p>
+            <p className="font-body text-3xl font-bold">250+</p>
+            <p className="font-body text-xs text-white/60">{t.networkCard.membersActive}</p>
           </div>
           <div>
-            <p className="font-dm-sans text-3xl font-bold">12</p>
-            <p className="font-dm-sans text-xs text-white/60">{t.networkCard.countriesServed}</p>
+            <p className="font-body text-3xl font-bold">12</p>
+            <p className="font-body text-xs text-white/60">{t.networkCard.countriesServed}</p>
           </div>
         </div>
       </div>

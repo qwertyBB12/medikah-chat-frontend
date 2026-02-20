@@ -24,8 +24,8 @@ const portalColors: Record<PortalType, {
     accentBorder: 'border-inst-blue',
   },
   physician: {
-    sidebarGradient: 'from-clinical-teal to-[#1a5a66]',
-    accentBorder: 'border-clinical-teal',
+    sidebarGradient: 'from-inst-blue to-[#243447]',
+    accentBorder: 'border-inst-blue',
   },
   insurer: {
     sidebarGradient: 'from-inst-blue to-[#243447]',
@@ -92,7 +92,7 @@ export default function PortalLayout({
   const colors = portalColors[portal];
 
   return (
-    <div className="min-h-screen md:h-screen md:overflow-hidden flex flex-col md:flex-row bg-[#FAFAFB] text-deep-charcoal">
+    <div className="min-h-screen md:h-screen md:overflow-hidden flex flex-col md:flex-row bg-linen-light text-deep-charcoal">
       {/* Sidebar - Desktop */}
       <aside className={`hidden md:flex md:flex-col md:w-72 lg:w-80 bg-gradient-to-b ${colors.sidebarGradient} text-white md:sticky md:top-0 md:h-screen md:max-h-screen`}>
         <div className="flex flex-col items-center justify-center py-10 px-6 gap-3">
@@ -107,7 +107,7 @@ export default function PortalLayout({
           <span className="font-body text-[1.5rem] font-medium tracking-[0.04em] lowercase text-white">
             medikah
           </span>
-          <p className="font-dm-sans text-xs text-white/50 text-center mt-1">
+          <p className="font-body text-xs text-white/50 text-center mt-1">
             {labels.subtitle}
           </p>
         </div>
@@ -125,7 +125,7 @@ export default function PortalLayout({
             {onNewChat && (
               <button
                 onClick={onNewChat}
-                className="font-dm-sans w-full py-3 text-center font-semibold text-sm tracking-wide text-white/70 border border-white/20 hover:text-white hover:border-white/30 transition rounded-lg mb-4"
+                className="font-body w-full py-3 text-center font-semibold text-sm tracking-wide text-white/70 border border-white/20 hover:text-white hover:border-white/30 transition rounded-lg mb-4"
               >
                 New conversation
               </button>
@@ -137,7 +137,7 @@ export default function PortalLayout({
         <div className="px-6 py-6 mt-auto border-t border-white/10">
           <button
             onClick={onSignOut}
-            className="font-dm-sans w-full py-3 text-center text-sm font-medium tracking-wide text-white/60 hover:text-white transition"
+            className="font-body w-full py-3 text-center text-sm font-medium tracking-wide text-white/60 hover:text-white transition"
           >
             Sign out
           </button>
@@ -145,7 +145,7 @@ export default function PortalLayout({
       </aside>
 
       {/* Main content area */}
-      <div className="flex-1 flex flex-col bg-[#FAFAFB]">
+      <div className="flex-1 flex flex-col bg-linen-light">
         {/* Mobile header */}
         <header className={`md:hidden px-4 py-4 bg-gradient-to-r ${colors.sidebarGradient} text-white`}>
           <div className="flex items-center justify-between">
@@ -166,14 +166,14 @@ export default function PortalLayout({
               {onNewChat && (
                 <button
                   onClick={onNewChat}
-                  className="font-dm-sans px-3 py-2 text-xs font-semibold tracking-wide text-white/70 hover:text-white transition"
+                  className="font-body px-3 py-2 text-xs font-semibold tracking-wide text-white/70 hover:text-white transition"
                 >
                   New chat
                 </button>
               )}
               <button
                 onClick={onSignOut}
-                className="font-dm-sans px-3 py-2 text-xs font-semibold tracking-wide text-white/80 border border-white/20 hover:text-white hover:border-white/30 transition rounded-[8px]"
+                className="font-body px-3 py-2 text-xs font-semibold tracking-wide text-white/80 border border-white/20 hover:text-white hover:border-white/30 transition rounded-[8px]"
               >
                 Sign out
               </button>
