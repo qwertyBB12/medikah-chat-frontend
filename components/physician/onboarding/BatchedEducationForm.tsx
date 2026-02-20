@@ -277,18 +277,28 @@ export default function BatchedEducationForm({
           {residencies.map((res, index) => (
             <div
               key={index}
-              className="grid grid-cols-1 sm:grid-cols-4 gap-2 items-start border border-gray-200 rounded-lg p-3"
+              className="border border-gray-200 rounded-lg p-3 relative"
             >
-              <div className="sm:col-span-2">
-                <input
-                  type="text"
-                  value={res.institution || ''}
-                  onChange={(e) => updateResidency(index, 'institution', e.target.value)}
-                  placeholder={labels.institutionName}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 font-mulish text-sm text-deep-charcoal focus:outline-none focus:ring-2 focus:ring-clinical-teal/40 focus:border-clinical-teal"
-                />
-              </div>
-              <div className="flex gap-2">
+              {residencies.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => removeResidency(index)}
+                  className="absolute top-2 right-2 text-gray-400 hover:text-alert-garnet transition-colors"
+                  aria-label={labels.remove}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+              <input
+                type="text"
+                value={res.institution || ''}
+                onChange={(e) => updateResidency(index, 'institution', e.target.value)}
+                placeholder={labels.institutionName}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 font-body text-sm text-deep-charcoal focus:outline-none focus:ring-2 focus:ring-teal-500/40 focus:border-teal-500"
+              />
+              <div className="grid grid-cols-2 gap-2 mt-2">
                 <input
                   type="number"
                   value={res.startYear || ''}
@@ -296,7 +306,7 @@ export default function BatchedEducationForm({
                   placeholder={labels.startYear}
                   min="1950"
                   max={new Date().getFullYear()}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 font-mulish text-sm text-deep-charcoal focus:outline-none focus:ring-2 focus:ring-clinical-teal/40 focus:border-clinical-teal"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 font-body text-sm text-deep-charcoal focus:outline-none focus:ring-2 focus:ring-teal-500/40 focus:border-teal-500"
                 />
                 <input
                   type="number"
@@ -305,22 +315,8 @@ export default function BatchedEducationForm({
                   placeholder={labels.endYear}
                   min="1950"
                   max={new Date().getFullYear() + 5}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 font-mulish text-sm text-deep-charcoal focus:outline-none focus:ring-2 focus:ring-clinical-teal/40 focus:border-clinical-teal"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 font-body text-sm text-deep-charcoal focus:outline-none focus:ring-2 focus:ring-teal-500/40 focus:border-teal-500"
                 />
-              </div>
-              <div className="flex items-center">
-                {residencies.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeResidency(index)}
-                    className="text-gray-400 hover:text-alert-garnet transition-colors p-2"
-                    aria-label={labels.remove}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                )}
               </div>
             </div>
           ))}
@@ -346,23 +342,35 @@ export default function BatchedEducationForm({
           {fellowships.map((fel, index) => (
             <div
               key={index}
-              className="grid grid-cols-1 sm:grid-cols-4 gap-2 items-start border border-gray-200 rounded-lg p-3"
+              className="border border-gray-200 rounded-lg p-3 relative"
             >
-              <input
-                type="text"
-                value={fel.institution || ''}
-                onChange={(e) => updateFellowship(index, 'institution', e.target.value)}
-                placeholder={labels.institutionName}
-                className="border border-gray-300 rounded-lg px-3 py-2 font-mulish text-sm text-deep-charcoal focus:outline-none focus:ring-2 focus:ring-clinical-teal/40 focus:border-clinical-teal"
-              />
-              <input
-                type="text"
-                value={fel.specialty || ''}
-                onChange={(e) => updateFellowship(index, 'specialty', e.target.value)}
-                placeholder={labels.specialtyField}
-                className="border border-gray-300 rounded-lg px-3 py-2 font-mulish text-sm text-deep-charcoal focus:outline-none focus:ring-2 focus:ring-clinical-teal/40 focus:border-clinical-teal"
-              />
-              <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => removeFellowship(index)}
+                className="absolute top-2 right-2 text-gray-400 hover:text-alert-garnet transition-colors"
+                aria-label={labels.remove}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <input
+                  type="text"
+                  value={fel.institution || ''}
+                  onChange={(e) => updateFellowship(index, 'institution', e.target.value)}
+                  placeholder={labels.institutionName}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 font-body text-sm text-deep-charcoal focus:outline-none focus:ring-2 focus:ring-teal-500/40 focus:border-teal-500"
+                />
+                <input
+                  type="text"
+                  value={fel.specialty || ''}
+                  onChange={(e) => updateFellowship(index, 'specialty', e.target.value)}
+                  placeholder={labels.specialtyField}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 font-body text-sm text-deep-charcoal focus:outline-none focus:ring-2 focus:ring-teal-500/40 focus:border-teal-500"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2 mt-2">
                 <input
                   type="number"
                   value={fel.startYear || ''}
@@ -370,7 +378,7 @@ export default function BatchedEducationForm({
                   placeholder={labels.startYear}
                   min="1950"
                   max={new Date().getFullYear()}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 font-mulish text-sm text-deep-charcoal focus:outline-none focus:ring-2 focus:ring-clinical-teal/40 focus:border-clinical-teal"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 font-body text-sm text-deep-charcoal focus:outline-none focus:ring-2 focus:ring-teal-500/40 focus:border-teal-500"
                 />
                 <input
                   type="number"
@@ -379,20 +387,8 @@ export default function BatchedEducationForm({
                   placeholder={labels.endYear}
                   min="1950"
                   max={new Date().getFullYear() + 5}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 font-mulish text-sm text-deep-charcoal focus:outline-none focus:ring-2 focus:ring-clinical-teal/40 focus:border-clinical-teal"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 font-body text-sm text-deep-charcoal focus:outline-none focus:ring-2 focus:ring-teal-500/40 focus:border-teal-500"
                 />
-              </div>
-              <div className="flex items-center">
-                <button
-                  type="button"
-                  onClick={() => removeFellowship(index)}
-                  className="text-gray-400 hover:text-alert-garnet transition-colors p-2"
-                  aria-label={labels.remove}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
               </div>
             </div>
           ))}

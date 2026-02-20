@@ -8,11 +8,15 @@
 import Head from 'next/head';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/router';
-import { KeyboardEvent, useEffect, useRef, useState } from 'react';
+import { KeyboardEvent, useCallback, useEffect, useRef, useState } from 'react';
 import PortalLayout from '../../components/PortalLayout';
 import WelcomeRotator from '../../components/WelcomeRotator';
 import ConsentModal from '../../components/ConsentModal';
-import { SchedulerAction } from '../../components/ChatSchedulerAgent';
+import ChatSchedulerAgent, {
+  ChatSchedulerAgentHandle,
+  SchedulerAction,
+  SchedulerBotMessage,
+} from '../../components/ChatSchedulerAgent';
 import { hasValidConsent } from '../../lib/consent';
 import { SupportedLang } from '../../lib/i18n';
 
@@ -48,6 +52,14 @@ export default function PatientPortal() {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const sessionIdRef = useRef<string | null>(null);
+  const schedulerRef = useRef<ChatSchedulerAgentHandle>(null);
+
+  const appendSchedulerMessage = useCallback((msg: SchedulerBotMessage) => {
+    setMessages((prev) => [
+      ...prev,
+      { sender: 'bot', text: msg.text, actions: msg.actions },
+    ]);
+  }, []);
 
   const adjustTextareaHeight = () => {
     const el = textareaRef.current;
@@ -117,6 +129,16 @@ export default function PatientPortal() {
       return;
     }
 
+    // If the scheduler agent is active, route input to it instead of the backend
+    if (schedulerRef.current?.isActive()) {
+      const userMsg: Message = { sender: 'user', text: trimmed };
+      setMessages((msgs) => [...msgs, userMsg]);
+      setInput('');
+      requestAnimationFrame(() => adjustTextareaHeight());
+      await schedulerRef.current.handleUserInput(trimmed);
+      return;
+    }
+
     const userMsg: Message = { sender: 'user', text: trimmed };
     setMessages((msgs) => [...msgs, userMsg]);
     setIsSending(true);
@@ -162,6 +184,11 @@ export default function PatientPortal() {
         ...msgs,
         { sender: 'bot', text: reply, actions: actionList },
       ]);
+
+      // Activate the scheduler when the backend signals scheduling stage
+      if (data.stage === 'scheduling' || data.appointment_confirmed === false) {
+        schedulerRef.current?.start();
+      }
     } catch {
       setMessages((msgs) => [
         ...msgs,
@@ -185,6 +212,8 @@ export default function PatientPortal() {
     setMessages([]);
     setInput('');
     sessionIdRef.current = null;
+    // Scheduler resets itself after completion; starting a new chat
+    // ensures it won't carry stale state
     requestAnimationFrame(() => adjustTextareaHeight());
   };
 
@@ -209,6 +238,14 @@ export default function PatientPortal() {
         <title>Patient Portal — Medikah</title>
         <meta name="robots" content="noindex, nofollow" />
       </Head>
+
+      <ChatSchedulerAgent
+        ref={schedulerRef}
+        lang={lang}
+        sessionName={session.user?.name || undefined}
+        sessionEmail={session.user?.email || undefined}
+        appendMessage={appendSchedulerMessage}
+      />
 
       {showConsentModal && (
         <ConsentModal
