@@ -1,6 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /chat
-Disallow: /api/
-
-Sitemap: https://medikah.health/sitemap.xml
