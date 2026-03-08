@@ -1,0 +1,11 @@
+# *
+User-agent: *
+Allow: /
+Disallow: /chat
+Disallow: /api/
+
+# Host
+Host: https://medikah.health
+
+# Sitemaps
+Sitemap: https://medikah.health/sitemap.xml
