@@ -104,6 +104,19 @@ export interface OnboardingCopy {
   narrativeVision: string;
   narrativeComplete: string;
 
+  // Country selection (v1.1 lightweight flow)
+  askCountryOfPractice: string;
+  countrySelectionNote: string;
+  countryConfirmPrompt: string;
+  identityDocMX: string;
+  identityDocUS: string;
+
+  // Attestation (v1.1 lightweight flow)
+  attestationTitle: string;
+  attestationStatement: string;
+  attestationConfirmButton: string;
+  attestationSuccessMessage: string;
+
   // Common
   yes: string;
   no: string;
@@ -201,6 +214,19 @@ export const onboardingCopy: Record<SupportedLang, OnboardingCopy> = {
     narrativeTitle: 'Your Story',
     narrativeVision: 'Credentials tell what you\'ve done. This next part tells who you are. These questions help us build a profile that connects with patients on a human level — no right or wrong answers.',
     narrativeComplete: 'Thank you. These answers will help us craft a profile that truly represents you.',
+
+    // Country selection (v1.1 lightweight flow)
+    askCountryOfPractice: 'Where are you licensed to practice medicine?',
+    countrySelectionNote: 'Select all that apply -- you can be licensed in multiple countries.',
+    countryConfirmPrompt: 'Tap Continue when you\'ve selected all your countries.',
+    identityDocMX: 'For Mexico-licensed physicians, you\'ll provide your INE and CURP later in the credentialing process.',
+    identityDocUS: 'For US-licensed physicians, you\'ll provide a government-issued ID later in the credentialing process.',
+
+    // Attestation (v1.1 lightweight flow)
+    attestationTitle: 'Almost done -- please review your information.',
+    attestationStatement: 'I attest that the information I have provided is accurate and complete to the best of my knowledge.',
+    attestationConfirmButton: 'Confirm and Submit',
+    attestationSuccessMessage: 'Thank you, Dr. {name}. Your profile has been submitted successfully. You can complete your full credentials from your dashboard at any time.',
 
     // Completion
     completionTitle: 'Welcome to Medikah',
@@ -318,6 +344,19 @@ export const onboardingCopy: Record<SupportedLang, OnboardingCopy> = {
     narrativeTitle: 'Su Historia',
     narrativeVision: 'Las credenciales cuentan lo que ha hecho. Esta siguiente parte cuenta quién es usted. Estas preguntas nos ayudan a construir un perfil que conecte con los pacientes a nivel humano — no hay respuestas correctas o incorrectas.',
     narrativeComplete: 'Gracias. Estas respuestas nos ayudarán a crear un perfil que verdaderamente lo represente.',
+
+    // Country selection (v1.1 lightweight flow)
+    askCountryOfPractice: '¿Donde tiene licencia para ejercer la medicina?',
+    countrySelectionNote: 'Seleccione todos los que apliquen -- puede tener licencia en multiples paises.',
+    countryConfirmPrompt: 'Toque Continuar cuando haya seleccionado todos sus paises.',
+    identityDocMX: 'Para medicos con licencia en Mexico, proporcionara su INE y CURP mas adelante en el proceso de acreditacion.',
+    identityDocUS: 'Para medicos con licencia en EE.UU., proporcionara una identificacion oficial mas adelante en el proceso de acreditacion.',
+
+    // Attestation (v1.1 lightweight flow)
+    attestationTitle: 'Casi listo -- por favor revise su informacion.',
+    attestationStatement: 'Certifico que la informacion que he proporcionado es precisa y completa a mi leal saber y entender.',
+    attestationConfirmButton: 'Confirmar y Enviar',
+    attestationSuccessMessage: 'Gracias, Dr. {name}. Su perfil ha sido enviado exitosamente. Puede completar sus credenciales desde su panel en cualquier momento.',
 
     // Completion
     completionTitle: 'Bienvenido a Medikah',
