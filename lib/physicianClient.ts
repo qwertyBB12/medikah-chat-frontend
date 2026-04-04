@@ -109,6 +109,9 @@ export interface PhysicianProfileData {
   // Narrative questionnaire
   narrative?: NarrativeResponses;
 
+  // Country of practice (v1.1)
+  countryOfPractice?: string[];  // ISO 3166-1 alpha-2 codes, e.g. ['US', 'MX']
+
   // Onboarding metadata
   onboardingLanguage: string;
 }
@@ -146,6 +149,7 @@ function toSnakeCase(data: PhysicianProfileData): Record<string, unknown> {
     available_hours_end: data.availableHoursEnd,
     timezone: data.timezone,
     languages: data.languages,
+    country_of_practice: data.countryOfPractice || [],
     verification_status: 'pending',
     onboarding_completed_at: new Date().toISOString(),
     onboarding_language: data.onboardingLanguage,
@@ -474,5 +478,39 @@ export async function hasValidPhysicianConsent(
     return Array.isArray(data) && data.length > 0;
   } catch {
     return false;
+  }
+}
+
+/**
+ * Submit a timestamped digital attestation record for a physician.
+ * Calls the server-side /api/physicians/attest route which verifies ownership,
+ * computes a SHA-256 hash of the data snapshot, and stores the attestation record.
+ */
+export async function submitAttestation(params: {
+  physicianId: string;
+  dataSnapshot: Record<string, unknown>;
+  language?: string;
+  attestationVersion?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch('/api/physicians/attest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        physicianId: params.physicianId,
+        dataSnapshot: params.dataSnapshot,
+        language: params.language || 'en',
+        attestationVersion: params.attestationVersion || '1.0',
+      }),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      console.error('Attestation failed:', result.error);
+      return { success: false, error: result.error };
+    }
+    return { success: true };
+  } catch (err) {
+    console.error('Attestation network error:', err);
+    return { success: false, error: 'Network error.' };
   }
 }
