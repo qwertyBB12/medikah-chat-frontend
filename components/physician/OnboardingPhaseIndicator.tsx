@@ -1,7 +1,7 @@
 /**
  * Onboarding Phase Indicator
  *
- * Shows the 7 phases of physician onboarding with visual progress.
+ * Shows the 5 phases of physician onboarding (v1.1 lightweight flow) with visual progress.
  * Used in the sidebar and as a mobile progress bar.
  */
 
@@ -9,14 +9,10 @@ import { SupportedLang } from '../../lib/i18n';
 
 export type OnboardingPhaseKey =
   | 'welcome'
+  | 'country'
   | 'identity'
-  | 'licensing'
   | 'specialty'
-  | 'education'
-  | 'publications'
-  | 'availability'
-  | 'your_story'
-  | 'confirmation';
+  | 'review';
 
 interface PhaseDefinition {
   key: OnboardingPhaseKey;
@@ -26,15 +22,11 @@ interface PhaseDefinition {
 }
 
 export const ONBOARDING_PHASES: PhaseDefinition[] = [
-  { key: 'welcome', en: 'Welcome', es: 'Bienvenida', icon: '1' },
-  { key: 'identity', en: 'Identity', es: 'Identidad', icon: '2' },
-  { key: 'licensing', en: 'Licensing', es: 'Licencias', icon: '3' },
-  { key: 'specialty', en: 'Specialty', es: 'Especialidad', icon: '4' },
-  { key: 'education', en: 'Education', es: 'Educación', icon: '5' },
-  { key: 'publications', en: 'Publications', es: 'Publicaciones', icon: '6' },
-  { key: 'availability', en: 'Availability', es: 'Disponibilidad', icon: '7' },
-  { key: 'your_story', en: 'Your Story', es: 'Su Historia', icon: '8' },
-  { key: 'confirmation', en: 'Confirmation', es: 'Confirmación', icon: '✓' },
+  { key: 'welcome',   en: 'Welcome',    es: 'Bienvenida',   icon: '1' },
+  { key: 'country',   en: 'Country',    es: 'Pais',         icon: '2' },
+  { key: 'identity',  en: 'Identity',   es: 'Identidad',    icon: '3' },
+  { key: 'specialty', en: 'Specialty',  es: 'Especialidad', icon: '4' },
+  { key: 'review',    en: 'Review',     es: 'Revision',     icon: '✓' },
 ];
 
 // Map agent phases to indicator phases
@@ -44,23 +36,15 @@ export function mapAgentPhaseToIndicator(
   switch (agentPhase) {
     case 'briefing':
       return 'welcome';
+    case 'country_selection':
+      return 'country';
     case 'identity':
       return 'identity';
-    case 'licensing':
-      return 'licensing';
     case 'specialty':
       return 'specialty';
-    case 'education':
-      return 'education';
-    case 'intellectual':
-      return 'publications';
-    case 'presence':
-      return 'availability';
-    case 'narrative':
-      return 'your_story';
-    case 'confirmation':
+    case 'attestation':
     case 'completed':
-      return 'confirmation';
+      return 'review';
     default:
       return 'welcome';
   }

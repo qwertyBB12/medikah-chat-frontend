@@ -8,18 +8,17 @@
 import { SupportedLang } from './i18n';
 
 /**
- * The 7 phases of physician onboarding.
+ * The 5 phases of physician onboarding (v1.1 lightweight flow).
  * Maps to the phases in PhysicianOnboardingAgent.
+ * Full credential collection (licensing, education, intellectual, presence, narrative)
+ * is deferred to Phase 7 dashboard.
  */
 export const ONBOARDING_PHASE_ORDER = [
-  'briefing',
+  'welcome',
+  'country',
   'identity',
-  'licensing',
   'specialty',
-  'education',
-  'intellectual',
-  'presence',
-  'confirmation',
+  'review',
 ] as const;
 
 export type OnboardingPhase = (typeof ONBOARDING_PHASE_ORDER)[number];
@@ -82,18 +81,20 @@ export const pageTranslations: Record<
 };
 
 /**
- * Validate required fields before submission.
+ * Validate required fields before submission (v1.1 lightweight flow).
  * Returns an array of missing field names.
+ * Note: licenses are no longer required at onboarding — collected via dashboard (Phase 7).
  */
 export function validateOnboardingData(data: {
   fullName?: string;
   email?: string;
-  licenses?: unknown[];
+  countryOfPractice?: string[];
 }): string[] {
   const missing: string[] = [];
   if (!data.fullName || data.fullName.length < 3) missing.push('fullName');
   if (!data.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email))
     missing.push('email');
-  if (!data.licenses || data.licenses.length === 0) missing.push('licenses');
+  if (!data.countryOfPractice || data.countryOfPractice.length === 0)
+    missing.push('countryOfPractice');
   return missing;
 }

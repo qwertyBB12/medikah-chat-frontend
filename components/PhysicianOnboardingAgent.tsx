@@ -10,9 +10,6 @@ import {
 import { SupportedLang } from '../lib/i18n';
 import {
   onboardingCopy,
-  DAYS_OF_WEEK,
-  AMERICAS_TIMEZONES,
-  CONSULTATION_LANGUAGES,
 } from '../lib/physicianOnboardingContent';
 import {
   PhysicianProfileData,
@@ -23,8 +20,12 @@ import {
   createPhysicianProfile,
   logOnboardingAudit,
   checkPhysicianEmailExists,
-  saveNarrativeResponses,
+  submitAttestation,
 } from '../lib/physicianClient';
+
+// Country code allowlist — T-04-03 mitigation
+const VALID_COUNTRY_CODES = ['US', 'MX', 'CO', 'CA', 'OTHER'] as const;
+type ValidCountryCode = typeof VALID_COUNTRY_CODES[number];
 
 // Message types
 export interface OnboardingAction {
@@ -55,52 +56,33 @@ export interface OnboardingBotMessage {
   showManualPublicationForm?: boolean;
   isSummary?: boolean;
   summaryData?: Partial<PhysicianProfileData>;
-  // Batched form rendering
-  showBatchedForm?: 'licensing' | 'specialty' | 'education' | 'presence' | 'narrative';
+  // Batched form rendering — kept for specialty phase
+  showBatchedForm?: 'specialty';
 }
 
-// Phases (simplified with batched forms)
+// Phases (v1.1 lightweight flow — 4-5 exchanges)
 export type OnboardingPhase =
   | 'briefing'
+  | 'country_selection'   // first real question after greeting
   | 'identity'
-  | 'licensing'
   | 'specialty'
-  | 'education'
-  | 'intellectual'
-  | 'presence'
-  | 'narrative'
-  | 'confirmation'
+  | 'attestation'         // summary + confirm
   | 'completed';
 
-// Questions within each phase (reduced set)
+// Questions within each phase
 type QuestionKey =
+  // Country selection
+  | 'country_selection'
   // Identity
   | 'full_name'
   | 'email'
   | 'has_linkedin'
   | 'linkedin_url'
   | 'linkedin_confirm'
-  // Batched forms (single question per phase)
-  | 'licensing_form'
+  // Specialty (batched form)
   | 'specialty_form'
-  | 'education_form'
-  // Intellectual (kept conversational - optional phase)
-  | 'google_scholar'
-  | 'publication_source'
-  | 'pubmed_search'
-  | 'researchgate_url'
-  | 'academia_url'
-  | 'publications_manual'
-  | 'publications_select'
-  | 'presentations'
-  | 'books'
-  // Batched form
-  | 'presence_form'
-  // Narrative
-  | 'narrative_form'
-  // Confirmation
-  | 'confirm_profile'
-  | 'edit_choice';
+  // Attestation
+  | 'attest_confirm';
 
 export type OnboardingAgentState =
   | 'idle'
@@ -118,7 +100,7 @@ export interface PhysicianOnboardingAgentHandle {
   handlePublicationSelection?: (publications: import('../lib/publications').Publication[]) => void;
   handleManualPublication?: (publication: import('../lib/publications').Publication) => void;
   updateToggleData: (values: string[]) => void;
-  // Batched form callbacks
+  // Batched form callbacks (specialty kept; others deferred to Phase 7 dashboard)
   handleLicensingSubmit?: (data: { licenses: PhysicianLicense[] }) => void;
   handleSpecialtySubmit?: (data: { primarySpecialty: string; subSpecialties: string[]; boardCertifications: BoardCertification[] }) => void;
   handleEducationSubmit?: (data: { medicalSchool: string; medicalSchoolCountry: string; graduationYear: number; honors: string[]; residency: Residency[]; fellowships: Fellowship[] }) => void;
@@ -212,6 +194,15 @@ function slugToName(slug: string): string | null {
     .join(' ');
 }
 
+/** Country code label map */
+const COUNTRY_LABELS: Record<ValidCountryCode, string> = {
+  US: 'United States',
+  MX: 'Mexico',
+  CO: 'Colombia',
+  CA: 'Canada',
+  OTHER: 'Other',
+};
+
 const PhysicianOnboardingAgent = forwardRef<
   PhysicianOnboardingAgentHandle,
   PhysicianOnboardingAgentProps
@@ -233,6 +224,9 @@ const PhysicianOnboardingAgent = forwardRef<
   const [phase, setPhase] = useState<OnboardingPhase>('briefing');
   const [question, setQuestion] = useState<QuestionKey | null>(null);
 
+  // Toggle state for country selection
+  const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
+
   // Notify parent of phase changes
   useEffect(() => {
     onPhaseChangeRef.current?.(phase);
@@ -242,6 +236,7 @@ const PhysicianOnboardingAgent = forwardRef<
   const dataRef = useRef<Partial<PhysicianProfileData>>({
     licenses: [],
     languages: ['es', 'en'],
+    countryOfPractice: [],
   });
 
   // Stable wrappers
@@ -272,86 +267,58 @@ const PhysicianOnboardingAgent = forwardRef<
     return copy.greetingEvening;
   }, [copy]);
 
-  // Generate profile summary
-  const generateProfileSummary = useCallback((): string => {
+  // Generate attestation summary text
+  const generateAttestationSummary = useCallback((): string => {
     const data = dataRef.current;
     const lines: string[] = [];
+
     lines.push(`**${copy.profileSummaryTitle}**\n`);
 
-    if (data.fullName) lines.push(`**Name:** ${data.fullName}`);
+    if (data.fullName) lines.push(`**${lang === 'en' ? 'Name' : 'Nombre'}:** ${data.fullName}`);
     if (data.email) lines.push(`**Email:** ${data.email}`);
-    if (data.linkedinUrl) lines.push(`**LinkedIn:** ${data.linkedinUrl}`);
+    if (data.photoUrl) lines.push(`**${lang === 'en' ? 'Photo' : 'Foto'}:** ${lang === 'en' ? 'Uploaded' : 'Subida'}`);
 
-    if (data.licenses && data.licenses.length > 0) {
-      lines.push(`\n**Licenses:**`);
-      data.licenses.forEach(lic => {
-        const stateInfo = lic.state ? ` (${lic.state})` : '';
-        lines.push(`- ${lic.country}${stateInfo}: ${lic.number}`);
+    if (data.countryOfPractice && data.countryOfPractice.length > 0) {
+      const countryLabels = data.countryOfPractice.map(code => {
+        if (code in COUNTRY_LABELS) return COUNTRY_LABELS[code as ValidCountryCode];
+        return code;
       });
+      lines.push(`**${lang === 'en' ? 'Countries of Practice' : 'Paises de Practica'}:** ${countryLabels.join(', ')}`);
     }
 
-    if (data.primarySpecialty) lines.push(`\n**Primary Specialty:** ${data.primarySpecialty}`);
-    if (data.subSpecialties?.length) lines.push(`**Sub-specialties:** ${data.subSpecialties.join(', ')}`);
-    if (data.boardCertifications?.length) {
-      lines.push(`**Board Certifications:**`);
-      data.boardCertifications.forEach(cert => {
-        lines.push(`- ${cert.board}: ${cert.certification}${cert.year ? ` (${cert.year})` : ''}`);
-      });
-    }
-
-    if (data.medicalSchool) {
-      lines.push(`\n**Medical School:** ${data.medicalSchool}${data.medicalSchoolCountry ? `, ${data.medicalSchoolCountry}` : ''}${data.graduationYear ? ` (${data.graduationYear})` : ''}`);
-    }
-    if (data.honors?.length) lines.push(`**Honors:** ${data.honors.join(', ')}`);
-
-    if (data.residency?.length) {
-      lines.push(`\n**Residency:**`);
-      data.residency.forEach(r => {
-        lines.push(`- ${r.institution}: ${r.specialty} (${r.startYear}-${r.endYear})`);
-      });
-    }
-    if (data.fellowships?.length) {
-      lines.push(`**Fellowships:**`);
-      data.fellowships.forEach(f => {
-        lines.push(`- ${f.institution}: ${f.specialty} (${f.startYear}-${f.endYear})`);
-      });
-    }
-
-    if (data.googleScholarUrl) lines.push(`\n**Google Scholar:** ${data.googleScholarUrl}`);
-    if (data.publications?.length) lines.push(`**Publications:** ${data.publications.length} listed`);
-    if (data.presentations?.length) lines.push(`**Presentations:** ${data.presentations.length} listed`);
-
-    if (data.currentInstitutions?.length) {
-      lines.push(`\n**Current Practice:** ${data.currentInstitutions.join(', ')}`);
-    }
-    if (data.websiteUrl) lines.push(`**Website:** ${data.websiteUrl}`);
-
-    if (data.availableDays?.length) {
-      const dayLabels = data.availableDays.map(d => {
-        const day = DAYS_OF_WEEK.find(dw => dw.value === d);
-        return day ? day[lang] : d;
-      });
-      lines.push(`\n**Available Days:** ${dayLabels.join(', ')}`);
-    }
-    if (data.availableHoursStart && data.availableHoursEnd) {
-      lines.push(`**Hours:** ${data.availableHoursStart} - ${data.availableHoursEnd}`);
-    }
-    if (data.timezone) {
-      const tz = AMERICAS_TIMEZONES.find(t => t.value === data.timezone);
-      lines.push(`**Timezone:** ${tz?.label || data.timezone}`);
-    }
-    if (data.languages?.length) {
-      const langLabels = data.languages.map(l => {
-        const language = CONSULTATION_LANGUAGES.find(cl => cl.code === l);
-        return language ? language[lang] : l;
-      });
-      lines.push(`**Languages:** ${langLabels.join(', ')}`);
-    }
+    if (data.primarySpecialty) lines.push(`**${lang === 'en' ? 'Primary Specialty' : 'Especialidad Principal'}:** ${data.primarySpecialty}`);
 
     return lines.join('\n');
   }, [copy.profileSummaryTitle, lang]);
 
   // ── Phase transitions ──
+
+  const startCountrySelectionPhase = useCallback(() => {
+    setPhase('country_selection');
+    setSelectedCountries([]);
+
+    const countryActions: OnboardingAction[] = [
+      { label: 'United States', value: 'US', type: 'toggle', selected: false },
+      { label: 'Mexico', value: 'MX', type: 'toggle', selected: false },
+      { label: 'Colombia', value: 'CO', type: 'toggle', selected: false },
+      { label: lang === 'en' ? 'Canada' : 'Canada', value: 'CA', type: 'toggle', selected: false },
+      { label: lang === 'en' ? 'Other country' : 'Otro pais', value: 'OTHER', type: 'toggle', selected: false },
+    ];
+
+    const continueAction: OnboardingAction = {
+      label: lang === 'en' ? 'Continue' : 'Continuar',
+      value: 'country_confirm',
+      type: 'primary',
+    };
+
+    setQuestion('country_selection');
+    updateState('awaiting_user');
+
+    stableAppendMessage({
+      text: `${copy.askCountryOfPractice}\n\n_${copy.countrySelectionNote}_`,
+      actions: [...countryActions, continueAction],
+    });
+  }, [lang, copy, stableAppendMessage, updateState]);
 
   const startBriefing = useCallback(() => {
     setPhase('briefing');
@@ -367,7 +334,8 @@ const PhysicianOnboardingAgent = forwardRef<
       : linkedInData;
 
     // If LinkedIn data is already available (from session or OAuth callback),
-    // skip full briefing and go straight to LinkedIn confirmation
+    // skip full briefing and go straight to LinkedIn confirmation.
+    // Country selection appears AFTER LinkedIn data is confirmed (Pitfall 1 in RESEARCH.md).
     if (effectiveLinkedInData && !linkedInApplied.current) {
       linkedInApplied.current = true;
       const data = dataRef.current;
@@ -422,25 +390,7 @@ const PhysicianOnboardingAgent = forwardRef<
         ],
       });
     }, 5800);
-  }, [copy, stableAppendMessage, updateState, getTimeBasedGreeting, linkedInData, sessionLinkedInData, lang, sessionId]);
-
-  const startLicensingPhase = useCallback(() => {
-    setPhase('licensing');
-    updateState('processing');
-
-    stableAppendMessage({ text: copy.phase2Vision, isVision: true });
-
-    setTimeout(() => {
-      setQuestion('licensing_form');
-      updateState('awaiting_user');
-      stableAppendMessage({
-        text: lang === 'en'
-          ? 'Please fill in your medical license information below.'
-          : 'Por favor complete su informaci\u00f3n de licencia m\u00e9dica a continuaci\u00f3n.',
-        showBatchedForm: 'licensing',
-      });
-    }, 1200);
-  }, [copy, lang, stableAppendMessage, updateState]);
+  }, [copy, stableAppendMessage, updateState, getTimeBasedGreeting, linkedInData, sessionLinkedInData, lang, sessionId, startCountrySelectionPhase]);
 
   const startSpecialtyPhase = useCallback(() => {
     setPhase('specialty');
@@ -464,66 +414,13 @@ const PhysicianOnboardingAgent = forwardRef<
     }, 1000);
   }, [lang, stableAppendMessage, updateState]);
 
-  const startEducationPhase = useCallback(() => {
-    setPhase('education');
-    setQuestion('education_form');
-    updateState('awaiting_user');
-    stableAppendMessage({
-      text: lang === 'en'
-        ? 'Tell us about your medical education and training.'
-        : 'Cu\u00e9ntenos sobre su educaci\u00f3n y formaci\u00f3n m\u00e9dica.',
-      showBatchedForm: 'education',
-    });
-  }, [lang, stableAppendMessage, updateState]);
+  const startAttestationPhase = useCallback(() => {
+    setPhase('attestation');
 
-  const startIntellectualPhase = useCallback(() => {
-    setPhase('intellectual');
-    stableAppendMessage({ text: copy.phase5Vision, isVision: true });
-    setTimeout(() => {
-      askQuestion('google_scholar', copy.askGoogleScholar, [
-        { label: copy.yes, value: 'yes', type: 'primary' },
-        { label: copy.no, value: 'no', type: 'secondary' },
-      ]);
-    }, 600);
-  }, [copy, stableAppendMessage, askQuestion]);
-
-  const startPresencePhase = useCallback(() => {
-    setPhase('presence');
-    setQuestion('presence_form');
-    updateState('awaiting_user');
-    stableAppendMessage({
-      text: lang === 'en'
-        ? 'Almost done! Tell us about your practice and availability.'
-        : '\u00a1Casi terminamos! Cu\u00e9ntenos sobre su pr\u00e1ctica y disponibilidad.',
-      showBatchedForm: 'presence',
-    });
-  }, [lang, stableAppendMessage, updateState]);
-
-  const startNarrativePhase = useCallback(() => {
-    setPhase('narrative');
-    updateState('processing');
-
-    stableAppendMessage({ text: copy.narrativeVision, isVision: true });
+    stableAppendMessage({ text: copy.attestationTitle });
 
     setTimeout(() => {
-      setQuestion('narrative_form');
-      updateState('awaiting_user');
-      stableAppendMessage({
-        text: lang === 'en'
-          ? 'Take your time with these — there are no right or wrong answers.'
-          : 'Tómese su tiempo con estas — no hay respuestas correctas o incorrectas.',
-        showBatchedForm: 'narrative',
-      });
-    }, 1000);
-  }, [copy, lang, stableAppendMessage, updateState]);
-
-  const startConfirmationPhase = useCallback(() => {
-    setPhase('confirmation');
-
-    stableAppendMessage({ text: copy.phase7Vision });
-
-    setTimeout(() => {
-      const summary = generateProfileSummary();
+      const summary = generateAttestationSummary();
       stableAppendMessage({
         text: summary,
         isSummary: true,
@@ -531,23 +428,36 @@ const PhysicianOnboardingAgent = forwardRef<
       });
 
       setTimeout(() => {
-        askQuestion('confirm_profile', copy.confirmationQuestion, [
-          { label: copy.yes, value: 'confirm', type: 'primary' },
-          { label: copy.editPrompt, value: 'edit', type: 'secondary' },
-        ]);
+        stableAppendMessage({
+          text: copy.attestationStatement,
+          actions: [
+            {
+              label: copy.attestationConfirmButton,
+              value: 'attest_confirm',
+              type: 'primary',
+            },
+          ],
+        });
+        setQuestion('attest_confirm');
+        updateState('awaiting_user');
       }, 800);
     }, 1200);
-  }, [copy, generateProfileSummary, stableAppendMessage, askQuestion]);
+  }, [copy, generateAttestationSummary, stableAppendMessage, updateState]);
 
   const completeOnboarding = useCallback(async () => {
     updateState('processing');
 
     stableAppendMessage({
       text: lang === 'en'
-        ? 'Excellent! Your profile is ready. Before we finalize your registration, please review and sign the Physician Network Agreement.'
-        : '\u00a1Excelente! Su perfil est\u00e1 listo. Antes de finalizar su registro, por favor revise y firme el Acuerdo de Red de M\u00e9dicos.',
-      isVision: true,
+        ? 'Submitting your profile...'
+        : 'Enviando su perfil...',
     });
+
+    // Validate country codes against allowlist (T-04-03)
+    const rawCountries = dataRef.current.countryOfPractice || [];
+    const validatedCountries = rawCountries.filter(
+      (c): c is string => VALID_COUNTRY_CODES.includes(c as ValidCountryCode)
+    );
 
     const profileData: PhysicianProfileData = {
       fullName: dataRef.current.fullName || '',
@@ -559,54 +469,51 @@ const PhysicianOnboardingAgent = forwardRef<
       primarySpecialty: dataRef.current.primarySpecialty,
       subSpecialties: dataRef.current.subSpecialties,
       boardCertifications: dataRef.current.boardCertifications,
-      medicalSchool: dataRef.current.medicalSchool,
-      medicalSchoolCountry: dataRef.current.medicalSchoolCountry,
-      graduationYear: dataRef.current.graduationYear,
-      honors: dataRef.current.honors,
-      residency: dataRef.current.residency,
-      fellowships: dataRef.current.fellowships,
-      googleScholarUrl: dataRef.current.googleScholarUrl,
-      publications: dataRef.current.publications,
-      presentations: dataRef.current.presentations,
-      books: dataRef.current.books,
-      currentInstitutions: dataRef.current.currentInstitutions,
-      websiteUrl: dataRef.current.websiteUrl,
-      twitterUrl: dataRef.current.twitterUrl,
-      researchgateUrl: dataRef.current.researchgateUrl,
-      academiaEduUrl: dataRef.current.academiaEduUrl,
-      availableDays: dataRef.current.availableDays,
-      availableHoursStart: dataRef.current.availableHoursStart,
-      availableHoursEnd: dataRef.current.availableHoursEnd,
-      timezone: dataRef.current.timezone,
+      countryOfPractice: validatedCountries,
       languages: dataRef.current.languages || ['es', 'en'],
-      narrative: dataRef.current.narrative,
       onboardingLanguage: lang,
     };
 
     const result = await createPhysicianProfile(profileData);
 
     if (result.success && result.physicianId) {
-      // Save narrative responses to physician_website table
-      if (dataRef.current.narrative) {
-        saveNarrativeResponses(result.physicianId, dataRef.current.narrative)
-          .catch(err => console.warn('Failed to save narrative responses:', err));
+      const physicianId = result.physicianId;
+
+      // Submit attestation record (Plan 01 — T-04-07 non-repudiation)
+      const attestResult = await submitAttestation({
+        physicianId,
+        dataSnapshot: dataRef.current as Record<string, unknown>,
+        language: lang,
+        attestationVersion: '1.0',
+      });
+
+      if (!attestResult.success) {
+        console.warn('Attestation record save failed:', attestResult.error);
+        // Non-blocking — profile was created, log the warning and continue
       }
 
       await logOnboardingAudit({
-        physicianId: result.physicianId,
+        physicianId,
         email: profileData.email,
-        action: 'phase_completed',
-        phase: 'profile_created',
+        action: 'completed',
+        phase: 'attestation',
         dataSnapshot: profileData as unknown as Record<string, unknown>,
         language: lang,
       });
 
-      const physicianId = result.physicianId;
+      setPhase('completed');
+      updateState('completed');
+
+      const successMessage = copy.attestationSuccessMessage.replace(
+        '{name}',
+        profileData.fullName.split(' ')[0] || profileData.fullName
+      );
+
+      stableAppendMessage({ text: successMessage });
+
       setTimeout(() => {
         onProfileReady?.(physicianId, profileData.fullName);
       }, 800);
-
-      setPhase('confirmation');
     } else {
       stableAppendMessage({
         text: lang === 'en'
@@ -615,19 +522,9 @@ const PhysicianOnboardingAgent = forwardRef<
       });
       updateState('awaiting_user');
     }
-  }, [lang, stableAppendMessage, updateState, onProfileReady]);
+  }, [lang, copy, stableAppendMessage, updateState, onProfileReady]);
 
   // ── Batched form handlers ──
-
-  const handleLicensingSubmit = useCallback((formData: { licenses: PhysicianLicense[] }) => {
-    dataRef.current.licenses = formData.licenses;
-    stableAppendMessage({
-      text: lang === 'en'
-        ? `${formData.licenses.length} license(s) recorded. ${copy.licenseNote}`
-        : `${formData.licenses.length} licencia(s) registrada(s). ${copy.licenseNote}`,
-    });
-    setTimeout(() => startSpecialtyPhase(), 600);
-  }, [lang, copy, stableAppendMessage, startSpecialtyPhase]);
 
   const handleSpecialtySubmit = useCallback((formData: {
     primarySpecialty: string;
@@ -638,75 +535,10 @@ const PhysicianOnboardingAgent = forwardRef<
     dataRef.current.subSpecialties = formData.subSpecialties;
     dataRef.current.boardCertifications = formData.boardCertifications;
     stableAppendMessage({ text: copy.specialtyNote });
-    setTimeout(() => startEducationPhase(), 600);
-  }, [copy, stableAppendMessage, startEducationPhase]);
-
-  const handleEducationSubmit = useCallback((formData: {
-    medicalSchool: string;
-    medicalSchoolCountry: string;
-    graduationYear: number;
-    honors: string[];
-    residency: Residency[];
-    fellowships: Fellowship[];
-  }) => {
-    dataRef.current.medicalSchool = formData.medicalSchool;
-    dataRef.current.medicalSchoolCountry = formData.medicalSchoolCountry;
-    dataRef.current.graduationYear = formData.graduationYear;
-    dataRef.current.honors = formData.honors;
-    dataRef.current.residency = formData.residency;
-    dataRef.current.fellowships = formData.fellowships;
-    startIntellectualPhase();
-  }, [startIntellectualPhase]);
-
-  const handlePresenceSubmit = useCallback((formData: {
-    currentInstitutions: string[];
-    websiteUrl?: string;
-    twitterUrl?: string;
-    researchgateUrl?: string;
-    academiaEduUrl?: string;
-    availableDays: string[];
-    availableHoursStart: string;
-    availableHoursEnd: string;
-    timezone: string;
-    languages: string[];
-  }) => {
-    dataRef.current.currentInstitutions = formData.currentInstitutions;
-    dataRef.current.websiteUrl = formData.websiteUrl;
-    dataRef.current.twitterUrl = formData.twitterUrl;
-    dataRef.current.researchgateUrl = formData.researchgateUrl;
-    dataRef.current.academiaEduUrl = formData.academiaEduUrl;
-    dataRef.current.availableDays = formData.availableDays;
-    dataRef.current.availableHoursStart = formData.availableHoursStart;
-    dataRef.current.availableHoursEnd = formData.availableHoursEnd;
-    dataRef.current.timezone = formData.timezone;
-    dataRef.current.languages = formData.languages;
-    startNarrativePhase();
-  }, [startNarrativePhase]);
-
-  const handleNarrativeSubmit = useCallback((formData: {
-    firstConsultExpectation: string;
-    communicationStyle: string;
-    specialtyMotivation: string;
-    careValues: string;
-    originSentence: string;
-    personalStatement: string;
-    personalInterests: string;
-  }) => {
-    dataRef.current.narrative = {
-      firstConsultExpectation: formData.firstConsultExpectation,
-      communicationStyle: formData.communicationStyle,
-      specialtyMotivation: formData.specialtyMotivation,
-      careValues: formData.careValues,
-      originSentence: formData.originSentence,
-      personalStatement: formData.personalStatement,
-      personalInterests: formData.personalInterests,
-    };
-    stableAppendMessage({ text: copy.narrativeComplete });
-    setTimeout(() => startConfirmationPhase(), 600);
-  }, [copy, stableAppendMessage, startConfirmationPhase]);
+    setTimeout(() => startAttestationPhase(), 600);
+  }, [copy, stableAppendMessage, startAttestationPhase]);
 
   const handleFormCancel = useCallback(() => {
-    // Go back to previous phase - user can re-approach
     stableAppendMessage({
       text: lang === 'en'
         ? 'No worries. Let me know when you\'re ready to continue.'
@@ -728,6 +560,16 @@ const PhysicianOnboardingAgent = forwardRef<
     const data = dataRef.current;
 
     switch (currentQuestion) {
+      // Country selection — text input handled via action buttons; guard gracefully
+      case 'country_selection': {
+        stableAppendMessage({
+          text: lang === 'en'
+            ? 'Please tap a country button to select it, then tap Continue.'
+            : 'Por favor toque un boton de pais para seleccionarlo, luego toque Continuar.',
+        });
+        return true;
+      }
+
       // Identity Phase
       case 'full_name': {
         if (!input || input.length < 3) {
@@ -773,7 +615,8 @@ const PhysicianOnboardingAgent = forwardRef<
           language: lang,
         }).catch(err => console.warn('Audit log failed:', err));
 
-        startLicensingPhase();
+        // After identity, go to specialty
+        startSpecialtyPhase();
         return true;
       }
 
@@ -821,12 +664,8 @@ const PhysicianOnboardingAgent = forwardRef<
         return true;
       }
 
-      // Batched form phases - text input is not expected, but handle gracefully
-      case 'licensing_form':
-      case 'specialty_form':
-      case 'education_form':
-      case 'presence_form':
-      case 'narrative_form': {
+      // Batched form phase — text input not expected
+      case 'specialty_form': {
         stableAppendMessage({
           text: lang === 'en'
             ? 'Please use the form above to enter your information.'
@@ -835,211 +674,13 @@ const PhysicianOnboardingAgent = forwardRef<
         return true;
       }
 
-      // Intellectual Phase (kept conversational)
-      case 'researchgate_url': {
-        if (!input || !input.includes('researchgate.net')) {
-          stableAppendMessage({
-            text: lang === 'en'
-              ? 'Please enter a valid ResearchGate profile URL (e.g., https://www.researchgate.net/profile/Your-Name)'
-              : 'Por favor ingresa una URL v\u00e1lida de ResearchGate (ej., https://www.researchgate.net/profile/Tu-Nombre)',
-          });
-          return true;
-        }
-        data.researchgateUrl = input;
-        updateState('processing');
-
-        try {
-          const response = await fetch('/api/publications/search', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ source: 'researchgate', query: input }),
-          });
-          const result = await response.json();
-
-          if (result.success && result.publications.length > 0) {
-            stableAppendMessage({
-              text: lang === 'en'
-                ? `Found ${result.publications.length} publications! Select which ones to include in your profile:`
-                : `\u00a1Encontramos ${result.publications.length} publicaciones! Selecciona cu\u00e1les incluir en tu perfil:`,
-              showPublicationSelector: {
-                publications: result.publications,
-                source: 'researchgate',
-                profileName: result.profileName,
-              },
-            } as OnboardingBotMessage);
-            setQuestion('publications_select');
-            updateState('awaiting_user');
-          } else {
-            stableAppendMessage({
-              text: lang === 'en'
-                ? 'Could not fetch publications from that profile. You can try another source or add manually.'
-                : 'No se pudieron obtener publicaciones de ese perfil. Puedes probar otra fuente o agregar manualmente.',
-              actions: [
-                { label: lang === 'en' ? 'Try another source' : 'Probar otra fuente', value: 'retry', type: 'primary' },
-                { label: lang === 'en' ? 'Skip publications' : 'Omitir publicaciones', value: 'skip', type: 'skip' },
-              ],
-            });
-            setQuestion('publication_source');
-            updateState('awaiting_user');
-          }
-        } catch {
-          stableAppendMessage({ text: lang === 'en' ? 'Error fetching publications. Please try again.' : 'Error al obtener publicaciones. Por favor intenta de nuevo.' });
-          updateState('awaiting_user');
-        }
-        return true;
-      }
-
-      case 'academia_url': {
-        if (!input || !input.includes('academia.edu')) {
-          stableAppendMessage({
-            text: lang === 'en'
-              ? 'Please enter a valid Academia.edu profile URL'
-              : 'Por favor ingresa una URL v\u00e1lida de Academia.edu',
-          });
-          return true;
-        }
-        data.academiaEduUrl = input;
-        updateState('processing');
-
-        try {
-          const response = await fetch('/api/publications/search', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ source: 'academia', query: input }),
-          });
-          const result = await response.json();
-
-          if (result.success && result.publications.length > 0) {
-            stableAppendMessage({
-              text: lang === 'en'
-                ? `Found ${result.publications.length} publications! Select which ones to include:`
-                : `\u00a1Encontramos ${result.publications.length} publicaciones! Selecciona cu\u00e1les incluir:`,
-              showPublicationSelector: {
-                publications: result.publications,
-                source: 'academia',
-                profileName: result.profileName,
-              },
-            } as OnboardingBotMessage);
-            setQuestion('publications_select');
-            updateState('awaiting_user');
-          } else {
-            stableAppendMessage({
-              text: lang === 'en'
-                ? 'Could not fetch publications. Try another source or add manually.'
-                : 'No se pudieron obtener publicaciones. Prueba otra fuente o agrega manualmente.',
-              actions: [
-                { label: lang === 'en' ? 'Try another source' : 'Probar otra fuente', value: 'retry', type: 'primary' },
-                { label: lang === 'en' ? 'Skip' : 'Omitir', value: 'skip', type: 'skip' },
-              ],
-            });
-            setQuestion('publication_source');
-            updateState('awaiting_user');
-          }
-        } catch {
-          stableAppendMessage({ text: lang === 'en' ? 'Error fetching publications.' : 'Error al obtener publicaciones.' });
-          updateState('awaiting_user');
-        }
-        return true;
-      }
-
-      case 'pubmed_search': {
-        if (!input || input.length < 3) {
-          stableAppendMessage({
-            text: lang === 'en'
-              ? 'Please enter your name or ORCID ID'
-              : 'Por favor ingresa tu nombre o ORCID ID',
-          });
-          return true;
-        }
-        updateState('processing');
-
-        try {
-          const response = await fetch('/api/publications/search', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ source: 'pubmed', query: input }),
-          });
-          const result = await response.json();
-
-          if (result.success && result.publications.length > 0) {
-            stableAppendMessage({
-              text: lang === 'en'
-                ? `Found ${result.publications.length} publications on PubMed! Select which ones to include:`
-                : `\u00a1Encontramos ${result.publications.length} publicaciones en PubMed! Selecciona cu\u00e1les incluir:`,
-              showPublicationSelector: {
-                publications: result.publications,
-                source: 'pubmed',
-                profileName: result.profileName,
-              },
-            } as OnboardingBotMessage);
-            setQuestion('publications_select');
-            updateState('awaiting_user');
-          } else {
-            stableAppendMessage({
-              text: lang === 'en'
-                ? 'No publications found on PubMed for that name. Try a different format or add manually.'
-                : 'No se encontraron publicaciones en PubMed para ese nombre. Prueba otro formato o agrega manualmente.',
-              actions: [
-                { label: lang === 'en' ? 'Try another source' : 'Probar otra fuente', value: 'retry', type: 'primary' },
-                { label: lang === 'en' ? 'Skip' : 'Omitir', value: 'skip', type: 'skip' },
-              ],
-            });
-            setQuestion('publication_source');
-            updateState('awaiting_user');
-          }
-        } catch {
-          stableAppendMessage({ text: lang === 'en' ? 'Error searching PubMed.' : 'Error al buscar en PubMed.' });
-          updateState('awaiting_user');
-        }
-        return true;
-      }
-
-      case 'publications_manual':
-      case 'publications_select': {
-        return true;
-      }
-
-      case 'presentations': {
-        if (input.toLowerCase() !== 'skip' && input) {
-          data.presentations = input.split(/\n+/).map(p => ({
-            title: p.trim(),
-            conference: '',
-          }));
-        }
-        askQuestion('books', copy.askBooks, [
-          { label: copy.skipPrompt, value: 'skip', type: 'skip' },
-        ]);
-        return true;
-      }
-
-      case 'books': {
-        if (input.toLowerCase() !== 'skip' && input) {
-          data.books = input.split(/\n+/).map(b => ({
-            title: b.trim(),
-            role: 'author' as const,
-          }));
-        }
-        stableAppendMessage({ text: copy.intellectualNote });
-        setTimeout(() => startPresencePhase(), 600);
-        return true;
-      }
-
-      // Confirmation Phase
-      case 'confirm_profile': {
-        return true;
-      }
-
-      case 'edit_choice': {
+      // Attestation — handled via action button only
+      case 'attest_confirm': {
         stableAppendMessage({
           text: lang === 'en'
-            ? 'Let\'s start over. You can update any information.'
-            : 'Comencemos de nuevo. Puede actualizar cualquier informaci\u00f3n.',
+            ? 'Please tap "Confirm and Submit" to complete your registration.'
+            : 'Por favor toque "Confirmar y Enviar" para completar su registro.',
         });
-        dataRef.current = { licenses: [], languages: ['es', 'en'] };
-        setTimeout(() => {
-          setPhase('identity');
-          askQuestion('full_name', copy.askFullName);
-        }, 500);
         return true;
       }
 
@@ -1048,8 +689,7 @@ const PhysicianOnboardingAgent = forwardRef<
     }
   }, [
     state, question, copy, lang, stableAppendMessage, askQuestion, updateState,
-    startLicensingPhase, startIntellectualPhase, startPresencePhase,
-    startConfirmationPhase,
+    startSpecialtyPhase,
   ]);
 
   // ── Handle action button clicks ──
@@ -1059,6 +699,66 @@ const PhysicianOnboardingAgent = forwardRef<
     const data = dataRef.current;
 
     switch (currentQuestion) {
+      case 'country_selection': {
+        if (value === 'country_confirm') {
+          // Validate and store selected countries
+          const validatedCountries = selectedCountries.filter(
+            (c): c is string => VALID_COUNTRY_CODES.includes(c as ValidCountryCode)
+          );
+
+          if (validatedCountries.length === 0) {
+            stableAppendMessage({
+              text: lang === 'en'
+                ? 'Please select at least one country before continuing.'
+                : 'Por favor seleccione al menos un pais antes de continuar.',
+            });
+            return true;
+          }
+
+          data.countryOfPractice = validatedCountries;
+
+          const countryLabels = validatedCountries.map(code =>
+            code in COUNTRY_LABELS ? COUNTRY_LABELS[code as ValidCountryCode] : code
+          );
+
+          stableAppendMessage({
+            text: lang === 'en'
+              ? `Selected: ${countryLabels.join(', ')}. Let's continue.`
+              : `Seleccionado: ${countryLabels.join(', ')}. Continuemos.`,
+          });
+
+          // Show country-specific identity hint if applicable
+          const hasMX = validatedCountries.includes('MX');
+          const hasUS = validatedCountries.includes('US');
+          if (hasMX || hasUS) {
+            const hint = hasMX ? copy.identityDocMX : copy.identityDocUS;
+            setTimeout(() => {
+              stableAppendMessage({ text: hint });
+            }, 600);
+          }
+
+          // Transition to identity phase
+          setTimeout(() => {
+            setPhase('identity');
+            askQuestion('full_name', copy.askFullName);
+          }, hasMX || hasUS ? 1400 : 800);
+
+          return true;
+        }
+
+        // Toggle country selection
+        if (VALID_COUNTRY_CODES.includes(value as ValidCountryCode)) {
+          setSelectedCountries(prev => {
+            const updated = prev.includes(value)
+              ? prev.filter(c => c !== value)
+              : [...prev, value];
+            return updated;
+          });
+          return true;
+        }
+        return true;
+      }
+
       case 'has_linkedin':
         if (value === 'yes') {
           const effectiveData: LinkedInImportData | undefined = sessionLinkedInData
@@ -1105,8 +805,9 @@ const PhysicianOnboardingAgent = forwardRef<
               ? 'No problem at all. Let\'s get to know you the old-fashioned way.'
               : 'No hay problema. Conozc\u00e1mosle de la manera tradicional.',
           });
+          // Go to country selection first (D-08), then identity
           setTimeout(() => {
-            askQuestion('full_name', copy.askFullName);
+            startCountrySelectionPhase();
           }, 800);
         }
         return true;
@@ -1135,6 +836,7 @@ const PhysicianOnboardingAgent = forwardRef<
               : `\u00a1Datos de LinkedIn confirmados!${confirmData.fullName ? ' Hemos pre-llenado tu nombre' : ''}${confirmData.email ? ' y correo' : ''}.`,
           });
 
+          // After LinkedIn confirm, go to country selection (Pitfall 1 from RESEARCH.md)
           if (!confirmData.fullName) {
             setTimeout(() => {
               askQuestion('full_name', lang === 'en'
@@ -1148,7 +850,10 @@ const PhysicianOnboardingAgent = forwardRef<
                 : '\u00bfCu\u00e1l es su correo electr\u00f3nico profesional? (LinkedIn no proporcion\u00f3 esto)');
             }, 500);
           } else {
-            startLicensingPhase();
+            // Both name and email are available — go to country selection
+            setTimeout(() => {
+              startCountrySelectionPhase();
+            }, 500);
           }
           return true;
         } else if (value === 'linkedin_edit') {
@@ -1158,7 +863,7 @@ const PhysicianOnboardingAgent = forwardRef<
               : '\u00a1No hay problema! Ingresemos tu informaci\u00f3n manualmente.',
           });
           setTimeout(() => {
-            askQuestion('full_name', copy.askFullName);
+            startCountrySelectionPhase();
           }, 500);
           return true;
         }
@@ -1184,173 +889,35 @@ const PhysicianOnboardingAgent = forwardRef<
         }
         break;
 
-      case 'google_scholar':
-        if (value === 'yes') {
-          stableAppendMessage({
-            text: lang === 'en'
-              ? 'Great! How would you like to add your publications?'
-              : '\u00a1Excelente! \u00bfC\u00f3mo te gustar\u00eda agregar tus publicaciones?',
-            actions: [
-              { label: 'ResearchGate', value: 'researchgate', type: 'secondary' },
-              { label: 'Academia.edu', value: 'academia', type: 'secondary' },
-              { label: 'PubMed', value: 'pubmed', type: 'secondary' },
-              { label: lang === 'en' ? 'Manual entry' : 'Entrada manual', value: 'manual', type: 'secondary' },
-            ],
-          });
-          setQuestion('publication_source');
-          updateState('awaiting_user');
-        } else {
-          // Skip publications entirely, go to presence
-          stableAppendMessage({ text: copy.intellectualNote });
-          setTimeout(() => startPresencePhase(), 600);
-        }
-        return true;
-
-      case 'publication_source':
-        if (value === 'researchgate') {
-          askQuestion('researchgate_url',
-            lang === 'en'
-              ? 'Please paste your ResearchGate profile URL:'
-              : 'Por favor pega la URL de tu perfil de ResearchGate:'
-          );
-        } else if (value === 'academia') {
-          askQuestion('academia_url',
-            lang === 'en'
-              ? 'Please paste your Academia.edu profile URL:'
-              : 'Por favor pega la URL de tu perfil de Academia.edu:'
-          );
-        } else if (value === 'pubmed') {
-          askQuestion('pubmed_search',
-            lang === 'en'
-              ? 'Enter your name as it appears on PubMed (e.g., "Smith John" or ORCID ID):'
-              : 'Ingresa tu nombre como aparece en PubMed (ej., "Garc\u00eda Juan" o ORCID ID):'
-          );
-        } else if (value === 'manual') {
-          stableAppendMessage({
-            text: lang === 'en'
-              ? 'Add your publications using the form below. Click Cancel when done.'
-              : 'Agrega tus publicaciones usando el formulario. Haz clic en Cancelar cuando termines.',
-            showManualPublicationForm: true,
-          } as OnboardingBotMessage);
-          setQuestion('publications_manual');
-          updateState('awaiting_user');
-        } else if (value === 'retry') {
-          stableAppendMessage({
-            text: lang === 'en'
-              ? 'Choose a different source for your publications:'
-              : 'Elige otra fuente para tus publicaciones:',
-            actions: [
-              { label: 'ResearchGate', value: 'researchgate', type: 'secondary' },
-              { label: 'Academia.edu', value: 'academia', type: 'secondary' },
-              { label: 'PubMed', value: 'pubmed', type: 'secondary' },
-              { label: lang === 'en' ? 'Manual entry' : 'Entrada manual', value: 'manual', type: 'secondary' },
-              { label: lang === 'en' ? 'Skip' : 'Omitir', value: 'skip', type: 'skip' },
-            ],
-          });
-          updateState('awaiting_user');
-        } else if (value === 'skip') {
-          // Skip publications, move to presentations
-          askQuestion('presentations', copy.askPresentations, [
-            { label: copy.skipPrompt, value: 'skip', type: 'skip' },
-          ]);
-        }
-        return true;
-
-      case 'publications_select':
-      case 'publications_manual':
-        if (value === 'publications_cancel' || value === 'publications_done') {
-          const pubCount = dataRef.current.publications?.length || 0;
-          stableAppendMessage({
-            text: pubCount > 0
-              ? (lang === 'en' ? `Great! ${pubCount} publication(s) added to your profile.` : `\u00a1Excelente! ${pubCount} publicaci\u00f3n(es) agregadas a tu perfil.`)
-              : (lang === 'en' ? 'No publications added.' : 'No se agregaron publicaciones.'),
-          });
-          askQuestion('presentations', copy.askPresentations, [
-            { label: copy.skipPrompt, value: 'skip', type: 'skip' },
-          ]);
-        }
-        return true;
-
-      case 'presentations':
-        if (value === 'skip') {
-          return handleUserInput('skip');
-        }
-        break;
-
-      case 'books':
-        if (value === 'skip') {
-          return handleUserInput('skip');
-        }
-        break;
-
-      case 'confirm_profile':
-        if (value === 'confirm') {
+      case 'attest_confirm': {
+        if (value === 'attest_confirm') {
           await completeOnboarding();
-        } else if (value === 'edit') {
-          setQuestion('edit_choice');
-          askQuestion('edit_choice', copy.editPrompt);
         }
         return true;
+      }
     }
 
     return false;
   }, [
-    question, lang, copy, askQuestion, handleUserInput, updateState,
-    startLicensingPhase, startPresencePhase, completeOnboarding,
+    question, lang, copy, askQuestion, updateState,
+    startCountrySelectionPhase, startSpecialtyPhase, completeOnboarding,
     linkedInData, sessionLinkedInData, sessionId, stableAppendMessage,
+    selectedCountries,
   ]);
 
   // Start the onboarding
   const start = useCallback(() => {
     if (state !== 'idle') return;
-    dataRef.current = { licenses: [], languages: ['es', 'en'] };
+    dataRef.current = { licenses: [], languages: ['es', 'en'], countryOfPractice: [] };
+    setSelectedCountries([]);
     startBriefing();
   }, [state, startBriefing]);
 
-  // Handle publication selection from PublicationSelector component
-  const handlePublicationSelection = useCallback((publications: import('../lib/publications').Publication[]) => {
-    dataRef.current.publications = publications.map(p => ({
-      title: p.title,
-      journal: p.journal,
-      year: p.year,
-      url: p.url || (p.doi ? `https://doi.org/${p.doi}` : undefined),
-    }));
-
-    stableAppendMessage({
-      text: lang === 'en'
-        ? `Added ${publications.length} publications to your profile.`
-        : `Se agregaron ${publications.length} publicaciones a tu perfil.`,
-    });
-
-    askQuestion('presentations', copy.askPresentations, [
-      { label: copy.skipPrompt, value: 'skip', type: 'skip' },
-    ]);
-  }, [lang, stableAppendMessage, copy, askQuestion]);
-
-  // Handle manual publication entry
-  const handleManualPublication = useCallback((publication: import('../lib/publications').Publication) => {
-    const existing = dataRef.current.publications || [];
-    dataRef.current.publications = [
-      ...existing,
-      {
-        title: publication.title,
-        journal: publication.journal,
-        year: publication.year,
-        url: publication.url || (publication.doi ? `https://doi.org/${publication.doi}` : undefined),
-      },
-    ];
-
-    stableAppendMessage({
-      text: lang === 'en'
-        ? `Added: "${publication.title}". Add another or click Cancel when done.`
-        : `Agregado: "${publication.title}". Agrega otro o haz clic en Cancelar cuando termines.`,
-      showManualPublicationForm: true,
-    } as OnboardingBotMessage);
-  }, [lang, stableAppendMessage]);
-
-  // Update toggle data (kept for backward compatibility)
-  const updateToggleData = useCallback((_values: string[]) => {
-    // No longer used for batched forms, but kept for interface compatibility
+  // Update toggle data — used for country selection from the parent renderer
+  const updateToggleData = useCallback((values: string[]) => {
+    // Validate against allowlist before setting
+    const validated = values.filter(v => VALID_COUNTRY_CODES.includes(v as ValidCountryCode));
+    setSelectedCountries(validated);
   }, []);
 
   // Expose methods via ref
@@ -1360,18 +927,19 @@ const PhysicianOnboardingAgent = forwardRef<
     isAwaitingInput: () => state === 'awaiting_user',
     handleUserInput,
     handleActionClick,
-    handlePublicationSelection,
-    handleManualPublication,
     updateToggleData,
-    handleLicensingSubmit,
+    // Specialty form — still used in the lightweight flow
     handleSpecialtySubmit,
-    handleEducationSubmit,
-    handlePresenceSubmit,
-    handleNarrativeSubmit,
     handleFormCancel,
+    // The following are no longer part of the onboarding flow (deferred to Phase 7 dashboard)
+    // but are kept in the interface for backward compatibility
+    handleLicensingSubmit: undefined,
+    handleEducationSubmit: undefined,
+    handlePresenceSubmit: undefined,
+    handleNarrativeSubmit: undefined,
     getCollectedData: () => ({ ...dataRef.current }),
     getLicensedCountryCodes: () =>
-      (dataRef.current.licenses || []).map((l) => l.countryCode).filter(Boolean),
+      (dataRef.current.countryOfPractice || []).filter(Boolean),
   }));
 
   return null;
