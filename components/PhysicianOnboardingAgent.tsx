@@ -914,8 +914,9 @@ const PhysicianOnboardingAgent = forwardRef<
   }, [state, startBriefing]);
 
   // Update toggle data — used for country selection from the parent renderer
-  const updateToggleData = useCallback((values: string[]) => {
-    // Validate against allowlist before setting
+  const updateToggleData = useCallback((...args: unknown[]) => {
+    // Called as (values[]) from __done__ button, or (key, values[]) from toggle click
+    const values = Array.isArray(args[0]) ? args[0] as string[] : Array.isArray(args[1]) ? args[1] as string[] : [];
     const validated = values.filter(v => VALID_COUNTRY_CODES.includes(v as ValidCountryCode));
     setSelectedCountries(validated);
   }, []);
