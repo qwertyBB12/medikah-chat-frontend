@@ -405,3 +405,161 @@ AND table_name IN (
   'physician_consent_records'
 )
 ORDER BY table_name;
+
+
+-- =====================================================
+-- Migration 013: Country-Aware Schema (v1.1 foundation)
+-- =====================================================
+
+-- Add country_of_practice as an array of ISO 3166-1 alpha-2 codes (per D-07, D-10)
+ALTER TABLE physicians
+  ADD COLUMN IF NOT EXISTS country_of_practice TEXT[] NOT NULL DEFAULT '{}';
+
+CREATE INDEX IF NOT EXISTS idx_physicians_country_of_practice
+  ON physicians USING GIN(country_of_practice);
+
+-- Timestamp when the physician completed digital attestation (per D-14)
+ALTER TABLE physicians
+  ADD COLUMN IF NOT EXISTS attestation_completed_at TIMESTAMPTZ;
+
+-- Normalized medical license records
+CREATE TABLE IF NOT EXISTS physician_licenses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  physician_id UUID NOT NULL REFERENCES physicians(id) ON DELETE CASCADE,
+  country_code TEXT NOT NULL,
+  license_type TEXT NOT NULL,
+  license_number TEXT,
+  issuing_state TEXT,
+  degree_type TEXT,
+  expiration_date DATE,
+  issued_date DATE,
+  is_primary BOOLEAN DEFAULT FALSE,
+  verification_status TEXT NOT NULL DEFAULT 'pending',
+  verified_at TIMESTAMPTZ,
+  verification_source TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_physician_licenses_physician_id ON physician_licenses(physician_id);
+CREATE INDEX IF NOT EXISTS idx_physician_licenses_country_code ON physician_licenses(country_code);
+
+ALTER TABLE physician_licenses ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Physicians can view own licenses"
+  ON physician_licenses FOR SELECT
+  USING (physician_id IN (SELECT id FROM physicians WHERE email = auth.jwt() ->> 'email'));
+
+CREATE POLICY "Service role can manage licenses"
+  ON physician_licenses FOR ALL
+  USING (auth.role() = 'service_role');
+
+CREATE OR REPLACE FUNCTION update_physician_licenses_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN NEW.updated_at = NOW(); RETURN NEW; END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER physician_licenses_updated_at
+  BEFORE UPDATE ON physician_licenses
+  FOR EACH ROW EXECUTE FUNCTION update_physician_licenses_updated_at();
+
+COMMENT ON TABLE physician_licenses IS 'Normalized medical license records for physicians (NPI, state medical, cedula profesional, etc.)';
+
+-- Board certifications, Consejo certs, fellowships, colegio memberships
+CREATE TABLE IF NOT EXISTS physician_certifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  physician_id UUID NOT NULL REFERENCES physicians(id) ON DELETE CASCADE,
+  country_code TEXT NOT NULL,
+  certification_type TEXT NOT NULL,
+  certifying_body TEXT,
+  specialty TEXT,
+  issued_date DATE,
+  expiration_date DATE,
+  recertification_year INTEGER,
+  point_threshold_met BOOLEAN,
+  verification_status TEXT NOT NULL DEFAULT 'pending',
+  verified_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_physician_certs_physician_id ON physician_certifications(physician_id);
+CREATE INDEX IF NOT EXISTS idx_physician_certs_country_code ON physician_certifications(country_code);
+
+ALTER TABLE physician_certifications ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Physicians can view own certifications"
+  ON physician_certifications FOR SELECT
+  USING (physician_id IN (SELECT id FROM physicians WHERE email = auth.jwt() ->> 'email'));
+
+CREATE POLICY "Service role can manage certifications"
+  ON physician_certifications FOR ALL
+  USING (auth.role() = 'service_role');
+
+CREATE OR REPLACE FUNCTION update_physician_certifications_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN NEW.updated_at = NOW(); RETURN NEW; END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER physician_certifications_updated_at
+  BEFORE UPDATE ON physician_certifications
+  FOR EACH ROW EXECUTE FUNCTION update_physician_certifications_updated_at();
+
+COMMENT ON TABLE physician_certifications IS 'Board certifications, Consejo Mexicano certs, fellowships, and colegio memberships';
+
+-- Document uploads for physician identity verification and credential evidence
+CREATE TABLE IF NOT EXISTS physician_documents (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  physician_id UUID NOT NULL REFERENCES physicians(id) ON DELETE CASCADE,
+  document_type TEXT NOT NULL,
+  related_credential_id UUID,
+  related_credential_table TEXT,
+  file_name TEXT,
+  storage_path TEXT NOT NULL,
+  mime_type TEXT,
+  uploaded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  verified BOOLEAN DEFAULT FALSE,
+  verified_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_physician_docs_physician_id ON physician_documents(physician_id);
+
+ALTER TABLE physician_documents ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Physicians can view own documents"
+  ON physician_documents FOR SELECT
+  USING (physician_id IN (SELECT id FROM physicians WHERE email = auth.jwt() ->> 'email'));
+
+CREATE POLICY "Service role can manage documents"
+  ON physician_documents FOR ALL
+  USING (auth.role() = 'service_role');
+
+COMMENT ON TABLE physician_documents IS 'Document uploads for physician identity verification and credential evidence';
+
+-- Timestamped digital attestation records
+CREATE TABLE IF NOT EXISTS physician_attestation_records (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  physician_id UUID NOT NULL REFERENCES physicians(id) ON DELETE CASCADE,
+  attestation_version TEXT NOT NULL DEFAULT '1.0',
+  attested_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  data_snapshot JSONB NOT NULL,
+  data_snapshot_hash TEXT,
+  ip_address INET,
+  user_agent TEXT,
+  language TEXT NOT NULL DEFAULT 'en',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_physician_attestation_physician_id ON physician_attestation_records(physician_id);
+
+ALTER TABLE physician_attestation_records ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Physicians can view own attestation records"
+  ON physician_attestation_records FOR SELECT
+  USING (physician_id IN (SELECT id FROM physicians WHERE email = auth.jwt() ->> 'email'));
+
+CREATE POLICY "Service role can manage attestation records"
+  ON physician_attestation_records FOR ALL
+  USING (auth.role() = 'service_role');
+
+COMMENT ON TABLE physician_attestation_records IS 'Timestamped digital attestation records — physician confirms submitted data is accurate';
