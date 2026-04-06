@@ -33,7 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Ownership check: session email must match physician email (T-05-06)
     const { data: physician, error: lookupError } = await supabaseAdmin
       .from('physicians')
-      .select('id, email')
+      .select('id, email, full_name')
       .eq('id', physicianId)
       .single();
 
@@ -63,6 +63,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .eq('country_code', 'US')
       .maybeSingle();
 
+    // NPI identity cross-verification: compare NPPES name to physician profile name
+    function normalizeNameForComparison(name: string): string {
+      return name
+        .toLowerCase()
+        .replace(/[^a-z\s]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    let nameMatch = true;
+    let verificationStatusToWrite: 'verified' | 'manual_review' = 'verified';
+
+    if (result.found && physician.full_name) {
+      const nppsName = normalizeNameForComparison(result.fullName || '');
+      const profileName = normalizeNameForComparison(physician.full_name || '');
+
+      const profileWords = profileName.split(' ').filter((w) => w.length > 1);
+      const nppsWords = nppsName.split(' ').filter((w) => w.length > 1);
+
+      const matchingWords = profileWords.filter((pw) => nppsWords.includes(pw));
+      nameMatch = matchingWords.length >= Math.min(2, profileWords.length);
+
+      if (!nameMatch) {
+        verificationStatusToWrite = 'manual_review';
+      }
+    }
+
     if (result.found) {
       if (existingLicense) {
         // UPDATE existing NPI row
@@ -70,7 +97,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           .from('physician_licenses')
           .update({
             license_number: npiNumber,
-            verification_status: 'verified',
+            verification_status: verificationStatusToWrite,
             verified_at: new Date().toISOString(),
             verification_source: 'npi_registry',
             updated_at: new Date().toISOString(),
@@ -85,7 +112,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             country_code: 'US',
             license_type: 'npi',
             license_number: npiNumber,
-            verification_status: 'verified',
+            verification_status: verificationStatusToWrite,
             verified_at: new Date().toISOString(),
             verification_source: 'npi_registry',
           });
@@ -102,6 +129,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           enumerationDate: result.enumerationDate,
           status: result.status,
         },
+        nameMatch,
+        verificationStatus: verificationStatusToWrite,
       });
     } else {
       // NPI not found — still persist the failed lookup
