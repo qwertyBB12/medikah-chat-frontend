@@ -16,6 +16,7 @@ import InquiryList from './InquiryList';
 import AvailabilityEditor from './AvailabilityEditor';
 import ProfileEditor from './editor/ProfileEditor';
 import WebsiteEditor from './editor/WebsiteEditor';
+import USCredentialSection from './credentials/USCredentialSection';
 
 interface DashboardContentProps {
   physicianId: string | null;
@@ -48,6 +49,10 @@ const content = {
       verifiedDesc: 'Your credentials have been verified. You can now receive consultations.',
       rejectedDesc: 'Additional information is needed. Please check your email for details.',
     },
+    credentialSection: {
+      title: 'Credentialing',
+      subtitle: 'Complete your US credential profile at your own pace.',
+    },
     networkCard: {
       title: 'Medikah Network',
       description: 'You are part of a network of credentialed physicians across the Americas, connecting patients with quality healthcare.',
@@ -64,6 +69,10 @@ const content = {
       underReviewDesc: 'Un especialista en verificaci\u00f3n est\u00e1 revisando sus documentos.',
       verifiedDesc: 'Sus credenciales han sido verificadas. Ya puede recibir consultas.',
       rejectedDesc: 'Se necesita informaci\u00f3n adicional. Por favor revise su correo electr\u00f3nico para m\u00e1s detalles.',
+    },
+    credentialSection: {
+      title: 'Acreditacion',
+      subtitle: 'Complete su perfil de credenciales de EE.UU. a su propio ritmo.',
     },
     networkCard: {
       title: 'Red Medikah',
@@ -197,16 +206,33 @@ export default function DashboardContent({
       {/* Row 2: AI Diagnosis Tool - Full width */}
       <AIDiagnosisTool lang={lang} accessToken={accessToken} />
 
-      {/* Row 3: Inquiry List - Full width */}
+      {/* Row 3: US Credential Section - Full width */}
+      {physicianId && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-body font-semibold text-lg text-deep-charcoal">
+                {t.credentialSection.title}
+              </h2>
+              <p className="font-body text-sm text-body-slate">
+                {t.credentialSection.subtitle}
+              </p>
+            </div>
+          </div>
+          <USCredentialSection physicianId={physicianId} lang={lang} />
+        </div>
+      )}
+
+      {/* Row 4: Inquiry List - Full width */}
       {physicianId && <InquiryList physicianId={physicianId} lang={lang} accessToken={accessToken} />}
 
-      {/* Row 4: Availability Editor - Full width */}
+      {/* Row 5: Availability Editor - Full width */}
       {physicianId && <AvailabilityEditor physicianId={physicianId} lang={lang} accessToken={accessToken} />}
 
-      {/* Row 5: Profile Editor - Full width */}
+      {/* Row 6: Profile Editor - Full width */}
       {physicianId && <ProfileEditor physicianId={physicianId} lang={lang} accessToken={accessToken} />}
 
-      {/* Row 6: Website Editor - Full width */}
+      {/* Row 7: Website Editor - Full width */}
       {physicianId && <WebsiteEditor physicianId={physicianId} lang={lang} accessToken={accessToken} />}
 
       {/* Network Card - Full width */}
