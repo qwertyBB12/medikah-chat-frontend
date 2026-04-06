@@ -25,6 +25,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Physician ID is required' });
     }
 
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!UUID_REGEX.test(physicianId)) {
+      return res.status(400).json({ error: 'Invalid physician ID format' });
+    }
+
     // Ownership check: session email must match physician email (T-05-06)
     const { data: physician, error: lookupError } = await supabaseAdmin
       .from('physicians')
