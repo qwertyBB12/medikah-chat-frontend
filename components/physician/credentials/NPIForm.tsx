@@ -8,7 +8,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import type { NPIEntry, CredentialResponse } from '../../../lib/credentialTypes';
-import { saveCredential } from '../../../lib/credentialClient';
+
 import type { SupportedLang } from '../../../lib/i18n';
 
 interface NPIFormProps {
@@ -134,18 +134,7 @@ export default function NPIForm({
         setLookupResult(data);
         setLookupStatus('found');
 
-        // Save NPI entry to credentials
-        await saveCredential(physicianId, {
-          section: 'npi',
-          data: {
-            npiNumber: trimmed,
-            fullName: data.fullName,
-            primarySpecialty: data.primarySpecialty,
-            practiceState: data.practiceState,
-            verificationStatus: 'verified',
-            verifiedAt: new Date().toISOString(),
-          },
-        });
+        // Refresh parent state — npi-lookup API already persisted the verified NPI record
         onSave();
 
         // T-05-13: Trigger FSMB check — display only Clear/Flagged/Pending

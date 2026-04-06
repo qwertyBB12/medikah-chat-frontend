@@ -200,12 +200,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           verificationStatus: c.verification_status as USSubSpecialtyEntry['verificationStatus'],
         }));
 
+      // Map FSMB check row
+      const fsmbRow = (certifications || []).find((c) => c.certification_type === 'fsmb_check') || null;
+      const fsmbStatus: CredentialResponse['fsmb'] = fsmbRow
+        ? {
+            status: fsmbRow.verification_status === 'verified'
+              ? 'clear'
+              : fsmbRow.verification_status === 'failed'
+                ? 'flagged'
+                : fsmbRow.verification_status === 'manual_review'
+                  ? 'error'
+                  : 'pending',
+            checkedAt: fsmbRow.verified_at || undefined,
+          }
+        : null;
+
       const response: CredentialResponse = {
         npi: npiEntry,
         stateLicenses,
         boardCertifications,
         subSpecialties,
-        fsmb: null, // Plan 02 will add FSMB lookup service
+        fsmb: fsmbStatus,
       };
 
       return res.status(200).json(response);
