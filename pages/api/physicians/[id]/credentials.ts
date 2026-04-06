@@ -11,6 +11,7 @@ import type {
   USBoardCertEntry,
   USSubSpecialtyEntry,
 } from '../../../../lib/credentialTypes';
+import { verifyStateLicense } from '../../../../lib/stateBoardVerify';
 
 // UUID validation regex
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -329,6 +330,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return res.status(500).json({ error: 'Failed to update state license' });
           }
 
+          // Fire-and-forget state board verification for launch states (TX, NM, CA)
+          verifyStateLicense(licenseData.id, licenseData.state, licenseData.licenseNumber, physicianId)
+            .catch((err) => console.error('State board verification failed:', err));
+
           await syncDualWrite(physicianId);
           return res.status(201).json({ success: true, credentialId: licenseData.id });
         } else {
@@ -352,6 +357,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             console.error('State license insert failed:', error);
             return res.status(500).json({ error: 'Failed to save state license' });
           }
+
+          // Fire-and-forget state board verification for launch states (TX, NM, CA)
+          verifyStateLicense(inserted?.id, licenseData.state, licenseData.licenseNumber, physicianId)
+            .catch((err) => console.error('State board verification failed:', err));
 
           await syncDualWrite(physicianId);
           return res.status(201).json({ success: true, credentialId: inserted?.id });
