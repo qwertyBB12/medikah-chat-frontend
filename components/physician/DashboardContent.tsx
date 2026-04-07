@@ -6,7 +6,7 @@
  * patient inquiries, availability editor, and network card.
  */
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { SupportedLang } from '../../lib/i18n';
 import { useSupabaseToken } from '../../lib/useSupabaseToken';
 import VerificationBadge from './VerificationBadge';
@@ -18,6 +18,15 @@ import ProfileEditor from './editor/ProfileEditor';
 import WebsiteEditor from './editor/WebsiteEditor';
 import USCredentialSection from './credentials/USCredentialSection';
 import MXCredentialSection from './credentials/MXCredentialSection';
+import ContactInfoSection from './ContactInfoSection';
+import { computeCompleteness } from '../../lib/completenessService';
+import type { CompletenessResult } from '../../lib/completenessService';
+import { getContactInfo } from '../../lib/contactClient';
+import type { ContactInfo } from '../../lib/contactTypes';
+import { getCredentials } from '../../lib/credentialClient';
+import type { CredentialResponse } from '../../lib/credentialTypes';
+import { getMXCredentials } from '../../lib/mxCredentialClient';
+import type { MXCredentialResponse } from '../../lib/mxCredentialTypes';
 
 interface DashboardContentProps {
   physicianId: string | null;
@@ -59,6 +68,8 @@ const content = {
       title: 'Mexico Credentials',
       subtitle: 'Complete your Mexico credential profile at your own pace.',
     },
+    usCredentialHeader: '🇺🇸 US Credentials',
+    mxCredentialHeader: '🇲🇽 Mexico Credentials',
     networkCard: {
       title: 'Medikah Network',
       description: 'You are part of a network of credentialed physicians across the Americas, connecting patients with quality healthcare.',
@@ -84,6 +95,8 @@ const content = {
       title: 'Credenciales de Mexico',
       subtitle: 'Complete su perfil de credenciales de Mexico a su propio ritmo.',
     },
+    usCredentialHeader: '🇺🇸 Credenciales de EE.UU.',
+    mxCredentialHeader: '🇲🇽 Credenciales de Mexico',
     networkCard: {
       title: 'Red Medikah',
       description: 'Usted es parte de una red de m\u00e9dicos acreditados en las Am\u00e9ricas, conectando pacientes con atenci\u00f3n m\u00e9dica de calidad.',
@@ -111,6 +124,12 @@ export default function DashboardContent({
     upcomingAppointments: 0,
   });
   const [countryOfPractice, setCountryOfPractice] = useState<string[]>([]);
+
+  // Phase 7 completeness state
+  const [contactInfo, setContactInfo] = useState<Partial<ContactInfo>>({});
+  const [usCredentials, setUSCredentials] = useState<CredentialResponse | null>(null);
+  const [mxCredentials, setMXCredentials] = useState<MXCredentialResponse | null>(null);
+  const [completeness, setCompleteness] = useState<CompletenessResult>({ percentage: 0, missingItems: [] });
 
   // Fetch dashboard data from backend
   useEffect(() => {
@@ -143,6 +162,48 @@ export default function DashboardContent({
     })();
   }, [physicianId, accessToken]);
 
+  // Fetch completeness data (credentials + contact) when physicianId and countryOfPractice are ready
+  useEffect(() => {
+    if (!physicianId) return;
+
+    async function fetchCompletenessData() {
+      const [contactRes, usRes, mxRes] = await Promise.all([
+        getContactInfo(physicianId!),
+        getCredentials(physicianId!),
+        countryOfPractice.includes('MX')
+          ? getMXCredentials(physicianId!)
+          : Promise.resolve({ success: true, data: null as MXCredentialResponse | null }),
+      ]);
+
+      const contact = contactRes.success ? (contactRes.data || {}) : {};
+      const usCreds = usRes.success ? (usRes.data || null) : null;
+      const mxCreds = mxRes.success ? (mxRes.data || null) : null;
+
+      setContactInfo(contact);
+      setUSCredentials(usCreds);
+      setMXCredentials(mxCreds);
+
+      const result = computeCompleteness(countryOfPractice, usCreds, mxCreds, contact);
+      setCompleteness(result);
+    }
+
+    fetchCompletenessData();
+  }, [physicianId, countryOfPractice]);
+
+  // Recalculate completeness when contact info changes (auto-save callback)
+  const handleContactChange = useCallback(
+    (updatedContact: Partial<ContactInfo>) => {
+      setContactInfo(updatedContact);
+      const result = computeCompleteness(countryOfPractice, usCredentials, mxCredentials, updatedContact);
+      setCompleteness(result);
+    },
+    [countryOfPractice, usCredentials, mxCredentials]
+  );
+
+  // Derived: dual-credential flag
+  const isDualCredential =
+    countryOfPractice.includes('US') && countryOfPractice.includes('MX');
+
   // Get status description
   const getStatusDescription = () => {
     switch (normalizedStatus) {
@@ -172,6 +233,8 @@ export default function DashboardContent({
           inquiryCount={dashboardData.inquiryCount}
           upcomingAppointments={dashboardData.upcomingAppointments}
           lang={lang}
+          completenessPercentage={completeness.percentage}
+          missingItems={completeness.missingItems}
         />
 
         {/* Verification Status Card */}
@@ -221,11 +284,41 @@ export default function DashboardContent({
       {/* Row 2: AI Diagnosis Tool - Full width */}
       <AIDiagnosisTool lang={lang} accessToken={accessToken} />
 
-      {/* Row 3: US Credential Section - Full width */}
-      {/* Gate on countryOfPractice.includes('US'). For legacy physicians without the field,
-          default to showing US section for backward compatibility (T-06-15: UX gating only). */}
-      {physicianId && (countryOfPractice.length === 0 || countryOfPractice.includes('US')) && (
-        <div className="space-y-2">
+      {/* Row 2.5: Contact & Practice Info — shared section above credentials (D-05) */}
+      {physicianId && (
+        <ContactInfoSection
+          physicianId={physicianId}
+          lang={lang}
+          onContactChange={handleContactChange}
+        />
+      )}
+
+      {/* Row 3: Credential sections with country headers */}
+
+      {/* Dual-credential: both US and MX with country flag headers (DUAL-02, D-10) */}
+      {physicianId && isDualCredential && (
+        <>
+          {/* US Credentials with country header */}
+          <div id="us-credential-section" className="space-y-2">
+            <h2 className="font-body text-base font-bold text-deep-charcoal">
+              {lang === 'es' ? t.usCredentialHeader : t.usCredentialHeader}
+            </h2>
+            <USCredentialSection physicianId={physicianId} lang={lang} />
+          </div>
+
+          {/* MX Credentials with country header — 32px gap (D-10) */}
+          <div id="mx-credential-section" className="space-y-2 mt-8">
+            <h2 className="font-body text-base font-bold text-deep-charcoal">
+              {lang === 'es' ? t.mxCredentialHeader : t.mxCredentialHeader}
+            </h2>
+            <MXCredentialSection physicianId={physicianId} lang={lang} />
+          </div>
+        </>
+      )}
+
+      {/* Single-country: US-only (or legacy physicians without countryOfPractice) */}
+      {physicianId && !isDualCredential && (countryOfPractice.length === 0 || countryOfPractice.includes('US')) && (
+        <div id="us-credential-section" className="space-y-2">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="font-body font-semibold text-lg text-deep-charcoal">
@@ -240,9 +333,9 @@ export default function DashboardContent({
         </div>
       )}
 
-      {/* Row 3b: MX Credential Section - Full width */}
-      {physicianId && countryOfPractice.includes('MX') && (
-        <div className="space-y-2">
+      {/* Single-country: MX-only */}
+      {physicianId && !isDualCredential && countryOfPractice.includes('MX') && (
+        <div id="mx-credential-section" className="space-y-2">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="font-body font-semibold text-lg text-deep-charcoal">
