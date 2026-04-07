@@ -64,13 +64,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .maybeSingle();
 
     // NPI identity cross-verification: compare NPPES name to physician profile name
-    function normalizeNameForComparison(name: string): string {
+    const normalizeNameForComparison = (name: string): string => {
       return name
         .toLowerCase()
         .replace(/[^a-z\s]/g, '')
         .replace(/\s+/g, ' ')
         .trim();
-    }
+    };
 
     let nameMatch = true;
     let verificationStatusToWrite: 'verified' | 'manual_review' = 'verified';
