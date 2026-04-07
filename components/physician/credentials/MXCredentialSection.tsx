@@ -13,55 +13,9 @@ import { getMXCredentials } from '../../../lib/mxCredentialClient';
 import type { SupportedLang } from '../../../lib/i18n';
 import CedulaProfesionalForm from './CedulaProfesionalForm';
 import IdentityForm from './IdentityForm';
-
-// Panels 2, 3, 5 are created in Plan 04 — stub components for now
-function EspecialidadesForm(_props: {
-  physicianId: string;
-  lang: SupportedLang;
-  especialidades: MXCredentialResponse['especialidades'];
-  onRefresh: () => void;
-}) {
-  return (
-    <div className="py-4 text-center">
-      <p className="font-dm-sans text-sm text-archival-grey">
-        {/* TODO: Implemented in Plan 04 */}
-        Especialidades form — coming soon.
-      </p>
-    </div>
-  );
-}
-
-function ConsejoForm(_props: {
-  physicianId: string;
-  lang: SupportedLang;
-  consejos: MXCredentialResponse['consejos'];
-  onRefresh: () => void;
-}) {
-  return (
-    <div className="py-4 text-center">
-      <p className="font-dm-sans text-sm text-archival-grey">
-        {/* TODO: Implemented in Plan 04 */}
-        Consejo certification form — coming soon.
-      </p>
-    </div>
-  );
-}
-
-function ColegiosForm(_props: {
-  physicianId: string;
-  lang: SupportedLang;
-  colegios: MXCredentialResponse['colegios'];
-  onRefresh: () => void;
-}) {
-  return (
-    <div className="py-4 text-center">
-      <p className="font-dm-sans text-sm text-archival-grey">
-        {/* TODO: Implemented in Plan 04 */}
-        Professional society memberships — coming soon.
-      </p>
-    </div>
-  );
-}
+import EspecialidadesForm from './EspecialidadesForm';
+import ConsejoForm from './ConsejoForm';
+import ColegiosForm from './ColegiosForm';
 
 interface MXCredentialSectionProps {
   physicianId: string;
@@ -331,6 +285,7 @@ export default function MXCredentialSection({ physicianId, lang }: MXCredentialS
                       physicianId={physicianId}
                       lang={lang}
                       consejos={data?.consejos ?? []}
+                      especialidades={data?.especialidades ?? []}
                       onRefresh={refreshData}
                     />
                   )}
