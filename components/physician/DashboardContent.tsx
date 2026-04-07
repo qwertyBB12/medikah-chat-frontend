@@ -17,6 +17,7 @@ import AvailabilityEditor from './AvailabilityEditor';
 import ProfileEditor from './editor/ProfileEditor';
 import WebsiteEditor from './editor/WebsiteEditor';
 import USCredentialSection from './credentials/USCredentialSection';
+import MXCredentialSection from './credentials/MXCredentialSection';
 
 interface DashboardContentProps {
   physicianId: string | null;
@@ -34,6 +35,7 @@ interface DashboardData {
   email?: string;
   inquiryCount: number;
   upcomingAppointments: number;
+  countryOfPractice?: string[];
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
@@ -52,6 +54,10 @@ const content = {
     credentialSection: {
       title: 'Credentialing',
       subtitle: 'Complete your US credential profile at your own pace.',
+    },
+    mxCredentialSection: {
+      title: 'Mexico Credentials',
+      subtitle: 'Complete your Mexico credential profile at your own pace.',
     },
     networkCard: {
       title: 'Medikah Network',
@@ -73,6 +79,10 @@ const content = {
     credentialSection: {
       title: 'Acreditacion',
       subtitle: 'Complete su perfil de credenciales de EE.UU. a su propio ritmo.',
+    },
+    mxCredentialSection: {
+      title: 'Credenciales de Mexico',
+      subtitle: 'Complete su perfil de credenciales de Mexico a su propio ritmo.',
     },
     networkCard: {
       title: 'Red Medikah',
@@ -100,6 +110,7 @@ export default function DashboardContent({
     inquiryCount: 0,
     upcomingAppointments: 0,
   });
+  const [countryOfPractice, setCountryOfPractice] = useState<string[]>([]);
 
   // Fetch dashboard data from backend
   useEffect(() => {
@@ -120,7 +131,11 @@ export default function DashboardContent({
             email: data.email,
             inquiryCount: data.inquiry_count || 0,
             upcomingAppointments: data.upcoming_appointments || 0,
+            countryOfPractice: data.country_of_practice,
           });
+          if (Array.isArray(data.country_of_practice)) {
+            setCountryOfPractice(data.country_of_practice);
+          }
         }
       } catch {
         // Use defaults
@@ -207,7 +222,9 @@ export default function DashboardContent({
       <AIDiagnosisTool lang={lang} accessToken={accessToken} />
 
       {/* Row 3: US Credential Section - Full width */}
-      {physicianId && (
+      {/* Gate on countryOfPractice.includes('US'). For legacy physicians without the field,
+          default to showing US section for backward compatibility (T-06-15: UX gating only). */}
+      {physicianId && (countryOfPractice.length === 0 || countryOfPractice.includes('US')) && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div>
@@ -220,6 +237,23 @@ export default function DashboardContent({
             </div>
           </div>
           <USCredentialSection physicianId={physicianId} lang={lang} />
+        </div>
+      )}
+
+      {/* Row 3b: MX Credential Section - Full width */}
+      {physicianId && countryOfPractice.includes('MX') && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-body font-semibold text-lg text-deep-charcoal">
+                {t.mxCredentialSection.title}
+              </h2>
+              <p className="font-body text-sm text-body-slate">
+                {t.mxCredentialSection.subtitle}
+              </p>
+            </div>
+          </div>
+          <MXCredentialSection physicianId={physicianId} lang={lang} />
         </div>
       )}
 
