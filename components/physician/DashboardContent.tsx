@@ -27,7 +27,6 @@ import { getCredentials } from '../../lib/credentialClient';
 import type { CredentialResponse } from '../../lib/credentialTypes';
 import { getMXCredentials } from '../../lib/mxCredentialClient';
 import type { MXCredentialResponse } from '../../lib/mxCredentialTypes';
-import { supabase } from '../../lib/supabase';
 
 interface DashboardContentProps {
   physicianId: string | null;
@@ -37,6 +36,7 @@ interface DashboardContentProps {
   profilePhotoUrl?: string;
   profileEmail?: string;
   profileSpecialty?: string;
+  initialCountryOfPractice?: string[];
 }
 
 interface DashboardData {
@@ -115,6 +115,7 @@ export default function DashboardContent({
   profilePhotoUrl,
   profileEmail,
   profileSpecialty,
+  initialCountryOfPractice,
 }: DashboardContentProps) {
   const t = content[lang];
   const normalizedStatus = verificationStatus?.toLowerCase() || 'pending';
@@ -124,7 +125,14 @@ export default function DashboardContent({
     inquiryCount: 0,
     upcomingAppointments: 0,
   });
-  const [countryOfPractice, setCountryOfPractice] = useState<string[]>([]);
+  const [countryOfPractice, setCountryOfPractice] = useState<string[]>(initialCountryOfPractice || []);
+
+  // Sync when prop arrives after async profile fetch
+  useEffect(() => {
+    if (initialCountryOfPractice && initialCountryOfPractice.length > 0) {
+      setCountryOfPractice(initialCountryOfPractice);
+    }
+  }, [initialCountryOfPractice]);
 
   // Phase 7 completeness state
   const [contactInfo, setContactInfo] = useState<Partial<ContactInfo>>({});
@@ -158,17 +166,6 @@ export default function DashboardContent({
           }
         }
 
-        // Fallback: fetch country_of_practice from Supabase if backend didn't provide it
-        if (supabase) {
-          const { data: row } = await supabase
-            .from('physicians')
-            .select('country_of_practice')
-            .eq('id', physicianId)
-            .single();
-          if (row?.country_of_practice && Array.isArray(row.country_of_practice)) {
-            setCountryOfPractice(row.country_of_practice);
-          }
-        }
       } catch {
         // Use defaults
       }
