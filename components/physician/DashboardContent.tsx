@@ -27,6 +27,7 @@ import { getCredentials } from '../../lib/credentialClient';
 import type { CredentialResponse } from '../../lib/credentialTypes';
 import { getMXCredentials } from '../../lib/mxCredentialClient';
 import type { MXCredentialResponse } from '../../lib/mxCredentialTypes';
+import { supabase } from '../../lib/supabase';
 
 interface DashboardContentProps {
   physicianId: string | null;
@@ -154,6 +155,18 @@ export default function DashboardContent({
           });
           if (Array.isArray(data.country_of_practice)) {
             setCountryOfPractice(data.country_of_practice);
+          }
+        }
+
+        // Fallback: fetch country_of_practice from Supabase if backend didn't provide it
+        if (supabase) {
+          const { data: row } = await supabase
+            .from('physicians')
+            .select('country_of_practice')
+            .eq('id', physicianId)
+            .single();
+          if (row?.country_of_practice && Array.isArray(row.country_of_practice)) {
+            setCountryOfPractice(row.country_of_practice);
           }
         }
       } catch {
