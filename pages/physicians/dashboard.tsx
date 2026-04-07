@@ -28,7 +28,7 @@ export default function PhysicianDashboard() {
 
   const [physicianStatus, setPhysicianStatus] = useState<PhysicianStatus | null>(null);
   const [physicianName, setPhysicianName] = useState<string>('');
-  const [profileData, setProfileData] = useState<{ photoUrl?: string; email?: string; specialty?: string }>({});
+  const [profileData, setProfileData] = useState<{ photoUrl?: string; email?: string; specialty?: string; countryOfPractice?: string[] }>({});
   const [loading, setLoading] = useState(true);
 
   // Auth guard + fetch physician status
@@ -68,6 +68,7 @@ export default function PhysicianDashboard() {
                   photoUrl: data.photoUrl,
                   email: data.email,
                   specialty: data.primarySpecialty,
+                  countryOfPractice: data.countryOfPractice,
                 });
               }
             })
@@ -124,6 +125,7 @@ export default function PhysicianDashboard() {
             profilePhotoUrl={profileData.photoUrl}
             profileEmail={profileData.email}
             profileSpecialty={profileData.specialty}
+            initialCountryOfPractice={profileData.countryOfPractice}
           />
         </div>
       </PortalLayout>

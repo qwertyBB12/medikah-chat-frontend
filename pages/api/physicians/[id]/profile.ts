@@ -58,6 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       languages: physician.languages || [],
       websiteUrl: physician.website_url,
       linkedinImported: physician.linkedin_imported,
+      countryOfPractice: physician.country_of_practice || [],
     });
   } catch (err) {
     console.error('Exception fetching physician profile:', err);
