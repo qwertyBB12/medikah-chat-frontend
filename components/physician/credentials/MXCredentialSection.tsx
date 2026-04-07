@@ -16,6 +16,8 @@ import IdentityForm from './IdentityForm';
 import EspecialidadesForm from './EspecialidadesForm';
 import ConsejoForm from './ConsejoForm';
 import ColegiosForm from './ColegiosForm';
+import CompletionBadge from './CompletionBadge';
+import type { CompletionStatus } from './CompletionBadge';
 
 interface MXCredentialSectionProps {
   physicianId: string;
@@ -23,7 +25,6 @@ interface MXCredentialSectionProps {
 }
 
 type MXPanelId = 'cedulaProfesional' | 'especialidades' | 'consejo' | 'identity' | 'colegios';
-type CompletionStatus = 'empty' | 'in_progress' | 'complete';
 
 const content = {
   en: {
@@ -86,40 +87,6 @@ function getIdentityCompletion(data: MXCredentialResponse | null): CompletionSta
 function getColegiosCompletion(data: MXCredentialResponse | null): CompletionStatus {
   if (!data || data.colegios.length === 0) return 'empty';
   return 'in_progress';
-}
-
-// Sub-components
-
-interface CompletionBadgeProps {
-  status: CompletionStatus;
-  label: string;
-}
-
-function CompletionBadge({ status, label }: CompletionBadgeProps) {
-  if (status === 'complete') {
-    return (
-      <span className="flex items-center gap-1 font-dm-sans text-xs text-confirm-green bg-confirm-green/10 px-2 py-0.5 rounded-full">
-        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-        </svg>
-        {label}
-      </span>
-    );
-  }
-  if (status === 'in_progress') {
-    return (
-      <span className="flex items-center gap-1 font-dm-sans text-xs text-caution-amber bg-caution-amber/10 px-2 py-0.5 rounded-full">
-        <span className="w-2 h-2 rounded-full bg-caution-amber inline-block" />
-        {label}
-      </span>
-    );
-  }
-  return (
-    <span className="flex items-center gap-1 font-dm-sans text-xs text-archival-grey bg-archival-grey/10 px-2 py-0.5 rounded-full">
-      <span className="w-2 h-2 rounded-full bg-archival-grey/40 inline-block" />
-      {label}
-    </span>
-  );
 }
 
 interface ChevronProps {
