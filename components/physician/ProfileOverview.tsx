@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { SupportedLang } from '../../lib/i18n';
 import { nameToSlug } from '../../lib/slug';
 import VerificationBadge from './VerificationBadge';
+import type { MissingItem } from '../../lib/completenessService';
 
 interface ProfileOverviewProps {
   physicianId: string | null;
@@ -20,6 +21,8 @@ interface ProfileOverviewProps {
   inquiryCount: number;
   upcomingAppointments: number;
   lang: SupportedLang;
+  completenessPercentage?: number;
+  missingItems?: MissingItem[];
 }
 
 const content = {
@@ -29,8 +32,10 @@ const content = {
     upcomingAppts: 'Upcoming Appointments',
     viewPublicProfile: 'View Public Profile',
     editProfile: 'Edit Profile',
-    profileCompleteness: 'Profile Completeness',
+    profileCompleteness: 'Credential Completeness',
     completeProfile: 'Complete your profile to improve visibility.',
+    completeMessage: 'Your credential profile is complete.',
+    needsAttention: 'Items needing attention:',
   },
   es: {
     profileTitle: 'Su Perfil',
@@ -38,8 +43,10 @@ const content = {
     upcomingAppts: 'Citas Proximas',
     viewPublicProfile: 'Ver Perfil Publico',
     editProfile: 'Editar Perfil',
-    profileCompleteness: 'Completitud del Perfil',
+    profileCompleteness: 'Completitud de Credenciales',
     completeProfile: 'Complete su perfil para mejorar su visibilidad.',
+    completeMessage: 'Su perfil de credenciales esta completo.',
+    needsAttention: 'Elementos que necesitan atencion:',
   },
 };
 
@@ -64,10 +71,13 @@ export default function ProfileOverview(props: ProfileOverviewProps) {
     inquiryCount,
     upcomingAppointments,
     lang,
+    completenessPercentage,
+    missingItems,
   } = props;
   const t = content[lang];
   const firstName = physicianName.split(' ')[0] || physicianName;
-  const completeness = computeCompleteness(props);
+  // Use weighted completeness from prop if provided; fall back to legacy 5-field check
+  const completeness = completenessPercentage !== undefined ? completenessPercentage : computeCompleteness(props);
   const [imgError, setImgError] = useState(false);
 
   return (
@@ -132,6 +142,10 @@ export default function ProfileOverview(props: ProfileOverviewProps) {
         </div>
         <div className="h-2 bg-linen-warm/40 rounded-full overflow-hidden">
           <div
+            role="progressbar"
+            aria-valuenow={completeness}
+            aria-valuemin={0}
+            aria-valuemax={100}
             className={`h-full rounded-full transition-all duration-500 ${
               completeness >= 80
                 ? 'bg-confirm-green'
@@ -142,7 +156,25 @@ export default function ProfileOverview(props: ProfileOverviewProps) {
             style={{ width: `${completeness}%` }}
           />
         </div>
-        {completeness < 100 && (
+        {completeness === 100 && (
+          <p className="mt-2 font-dm-sans text-xs text-confirm-green">{t.completeMessage}</p>
+        )}
+        {missingItems && missingItems.length > 0 && completeness < 100 && (
+          <div className="mt-2 space-y-1">
+            <p className="font-dm-sans text-xs text-archival-grey">{t.needsAttention}</p>
+            {missingItems.slice(0, 3).map((item, i) => (
+              <button
+                key={i}
+                onClick={() => document.getElementById(item.sectionId)?.scrollIntoView({ behavior: 'smooth' })}
+                className="block font-dm-sans text-xs text-caution-amber hover:text-clinical-teal transition-colors"
+              >
+                {item.countryPrefix === 'us' ? '🇺🇸 ' : item.countryPrefix === 'mx' ? '🇲🇽 ' : ''}
+                {lang === 'es' ? item.labelEs : item.label}
+              </button>
+            ))}
+          </div>
+        )}
+        {(!missingItems || missingItems.length === 0) && completeness < 100 && (
           <p className="font-body text-xs text-archival-grey mt-1">{t.completeProfile}</p>
         )}
       </div>
