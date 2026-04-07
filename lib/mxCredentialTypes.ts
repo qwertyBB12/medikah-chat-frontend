@@ -77,17 +77,21 @@ export interface DeleteMXCredentialPayload {
   credentialId: string;
 }
 
+// Identity section data (CURP + INE document upload status)
+// Maps to physicians.curp_number and physician_documents for INE front/back uploads
+export interface MXIdentityData {
+  curp?: string; // 18-char CURP validated against CURP_REGEX
+  ineFrontUploaded: boolean; // derived from physician_documents (document_type='ine_front')
+  ineBackUploaded: boolean; // derived from physician_documents (document_type='ine_back')
+}
+
 // Response from GET /api/physicians/[id]/mx-credentials
 export interface MXCredentialResponse {
   cedulaProfesional: CedulaProfesionalEntry | null;
   registroEstatal: RegistroEstatalEntry | null;
   especialidades: CedulaEspecialidadEntry[];
   consejos: ConsejoEntry[];
-  identity: {
-    curp?: string;
-    ineFrontUploaded: boolean;
-    ineBackUploaded: boolean;
-  };
+  identity: MXIdentityData;
   colegios: ColegioEntry[];
 }
 
