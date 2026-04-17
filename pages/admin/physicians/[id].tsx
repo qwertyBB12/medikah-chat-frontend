@@ -7,6 +7,7 @@ import { supabaseAdmin } from '../../../lib/supabaseServer';
 import AdminLayout from '../../../components/admin/AdminLayout';
 import { listRecordsForPhysician } from '../../../lib/verificationRecordService';
 import type { VerificationRecordRow } from '../../../lib/verificationTypes';
+import { daysUntilExpiration } from '../../../lib/expirationFlags';
 
 interface VerificationResult {
   id: string;
@@ -243,6 +244,17 @@ const statusStyles: Record<string, { bg: string; text: string; dot: string; labe
   failed: { bg: 'bg-red-50', text: 'text-red-700', dot: 'bg-red-500', label: 'Failed' },
   manual_review: { bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-500', label: 'Manual Review' },
   approved: { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500', label: 'Approved' },
+  expiring_90d: { bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-500', label: 'Expiring \u226490d' },
+  consejo_recert_due: { bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-500', label: 'Recert Due' },
+  manual_review_pending: { bg: 'bg-red-50', text: 'text-red-700', dot: 'bg-red-500', label: 'Manual Review' },
+  disciplinary_action_found: { bg: 'bg-red-50', text: 'text-red-700', dot: 'bg-red-500', label: 'Disciplinary' },
+  not_found: { bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-500', label: 'Not Found' },
+  found: { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500', label: 'Found' },
+  error: { bg: 'bg-red-50', text: 'text-red-700', dot: 'bg-red-500', label: 'Error' },
+  timeout: { bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-500', label: 'Timeout' },
+  create: { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500', label: 'Created' },
+  update: { bg: 'bg-blue-50', text: 'text-blue-700', dot: 'bg-blue-500', label: 'Updated' },
+  delete: { bg: 'bg-red-50', text: 'text-red-700', dot: 'bg-red-500', label: 'Deleted' },
 };
 
 const verificationTypeLabels: Record<string, string> = {
@@ -255,7 +267,17 @@ const verificationTypeLabels: Record<string, string> = {
   international_credential: 'International Credential',
 };
 
-export default function PhysicianDetailPage({ admin, physician, verificationResults, reviewHistory }: PhysicianDetailProps) {
+export default function PhysicianDetailPage({
+  admin,
+  physician,
+  verificationResults,
+  reviewHistory,
+  verificationRecords,
+  credentialAuditLog,
+  licenses,
+  certifications,
+  documents,
+}: PhysicianDetailProps) {
   const router = useRouter();
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -468,6 +490,259 @@ export default function PhysicianDetailPage({ admin, physician, verificationResu
               )}
             </div>
           </div>
+        </div>
+
+        {/* Section A — Licenses */}
+        <div className="bg-white rounded-[12px] border border-border-line shadow-sm p-6 mt-6">
+          <h2 className="font-dm-sans font-semibold text-deep-charcoal text-lg mb-4">
+            Licenses
+            <span className="font-dm-sans font-normal text-sm text-body-slate ml-2">({licenses.length})</span>
+          </h2>
+          {licenses.length === 0 ? (
+            <p className="font-dm-sans text-sm text-body-slate">No licenses on file</p>
+          ) : (
+            <div className="space-y-3">
+              {licenses.map((l) => {
+                const lStatus = statusStyles[l.verification_status] || statusStyles.pending;
+                const days = daysUntilExpiration(l.expiration_date);
+                return (
+                  <div key={l.id} className="border border-border-line/50 rounded-[8px] p-4">
+                    <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-dm-sans text-sm font-semibold text-deep-charcoal">
+                          {l.country_code} · {l.license_type.replace(/_/g, ' ')}
+                          {l.license_number && <span className="text-body-slate"> · #{l.license_number}</span>}
+                        </span>
+                        {l.is_primary && (
+                          <span className="font-dm-sans text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-clinical-teal/10 text-clinical-teal border border-clinical-teal/30">
+                            PRIMARY
+                          </span>
+                        )}
+                      </div>
+                      <span className={`inline-flex items-center font-dm-sans font-medium text-xs rounded-full px-2 py-0.5 ${lStatus.bg} ${lStatus.text}`}>
+                        {lStatus.label}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {l.expiration_flag && (
+                        <span className="font-dm-sans text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                          Expiring {days != null ? `in ${days}d` : 'soon'}
+                        </span>
+                      )}
+                      {l.manual_review_required && (
+                        <span className="font-dm-sans text-xs px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
+                          Manual review required
+                        </span>
+                      )}
+                    </div>
+                    <p className="font-dm-sans text-xs text-body-slate">
+                      {l.issuing_state && <>State: {l.issuing_state} · </>}
+                      {l.expiration_date && <>Expires: {l.expiration_date} · </>}
+                      {l.verification_source && <>Source: {l.verification_source}</>}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Section B — Certifications */}
+        <div className="bg-white rounded-[12px] border border-border-line shadow-sm p-6 mt-6">
+          <h2 className="font-dm-sans font-semibold text-deep-charcoal text-lg mb-4">
+            Certifications
+            <span className="font-dm-sans font-normal text-sm text-body-slate ml-2">({certifications.length})</span>
+          </h2>
+          {certifications.length === 0 ? (
+            <p className="font-dm-sans text-sm text-body-slate">No certifications on file</p>
+          ) : (
+            <div className="space-y-3">
+              {certifications.map((c) => {
+                const cStatus = statusStyles[c.verification_status] || statusStyles.pending;
+                const days = daysUntilExpiration(c.expiration_date);
+                return (
+                  <div key={c.id} className="border border-border-line/50 rounded-[8px] p-4">
+                    <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                      <span className="font-dm-sans text-sm font-semibold text-deep-charcoal">
+                        {c.country_code} · {c.certification_type.replace(/_/g, ' ')}
+                        {c.certifying_body && <> · {c.certifying_body}</>}
+                      </span>
+                      <span className={`inline-flex items-center font-dm-sans font-medium text-xs rounded-full px-2 py-0.5 ${cStatus.bg} ${cStatus.text}`}>
+                        {cStatus.label}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {c.expiration_flag && (
+                        <span className="font-dm-sans text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                          Expiring {days != null ? `in ${days}d` : 'soon'}
+                        </span>
+                      )}
+                      {c.manual_review_required && (
+                        <span className="font-dm-sans text-xs px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
+                          Manual review required
+                        </span>
+                      )}
+                      {c.consejo_recert_due === true && (
+                        <span className="font-dm-sans text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                          Recert due
+                        </span>
+                      )}
+                    </div>
+                    <p className="font-dm-sans text-xs text-body-slate">
+                      {c.specialty && <>Specialty: {c.specialty} · </>}
+                      {c.recertification_year != null && <>Last recert: {c.recertification_year} · </>}
+                      {c.expiration_date && <>Expires: {c.expiration_date}</>}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Section C — Documents */}
+        <div className="bg-white rounded-[12px] border border-border-line shadow-sm p-6 mt-6">
+          <h2 className="font-dm-sans font-semibold text-deep-charcoal text-lg mb-4">
+            Documents
+            <span className="font-dm-sans font-normal text-sm text-body-slate ml-2">({documents.length})</span>
+          </h2>
+          {documents.length === 0 ? (
+            <p className="font-dm-sans text-sm text-body-slate">No documents uploaded</p>
+          ) : (
+            <div className="space-y-2">
+              {documents.map((d) => (
+                <div key={d.id} className="flex items-center justify-between gap-3 border border-border-line/50 rounded-[8px] p-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-dm-sans text-sm font-medium text-deep-charcoal truncate">
+                      {d.file_name || d.storage_path.split('/').pop() || 'unnamed'}
+                    </p>
+                    <p className="font-dm-sans text-xs text-body-slate">
+                      {d.document_type} · {d.mime_type || 'unknown type'} · uploaded {new Date(d.uploaded_at).toLocaleString()}
+                    </p>
+                    {d.signed_url_error && (
+                      <p className="font-dm-sans text-xs text-alert-garnet mt-1">
+                        Signed URL error: {d.signed_url_error}
+                      </p>
+                    )}
+                  </div>
+                  {d.signed_url ? (
+                    <a
+                      href={d.signed_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-dm-sans text-xs font-medium px-3 py-1.5 rounded-[8px] bg-clinical-teal text-white hover:bg-clinical-teal/90 transition flex-shrink-0"
+                    >
+                      Download
+                    </a>
+                  ) : (
+                    <span className="font-dm-sans text-xs text-archival-grey flex-shrink-0">No URL</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Section D — Verification Records (Phase 8 — Legal Evidence) */}
+        <div className="bg-white rounded-[12px] border border-border-line shadow-sm p-6 mt-6">
+          <h2 className="font-dm-sans font-semibold text-deep-charcoal text-lg mb-1">
+            Verification Records (Phase 8 — Legal Evidence)
+            <span className="font-dm-sans font-normal text-sm text-body-slate ml-2">({verificationRecords.length})</span>
+          </h2>
+          <p className="font-dm-sans text-xs text-body-slate mb-4">
+            Timestamped raw responses from external APIs (NPI, SEP, FSMB). Per VERF-01 every lookup writes one row here.
+          </p>
+          {verificationRecords.length === 0 ? (
+            <p className="font-dm-sans text-sm text-body-slate">No verification records yet</p>
+          ) : (
+            <div className="space-y-3">
+              {verificationRecords.map((r) => {
+                const rStatus = statusStyles[r.result_status] || statusStyles.pending;
+                return (
+                  <details key={r.id} className="border border-border-line/50 rounded-[8px]">
+                    <summary className="cursor-pointer p-3 flex items-center justify-between gap-3 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-dm-sans text-sm font-semibold text-deep-charcoal">{r.source}</span>
+                        <span className={`inline-flex items-center font-dm-sans font-medium text-xs rounded-full px-2 py-0.5 ${rStatus.bg} ${rStatus.text}`}>
+                          {rStatus.label}
+                        </span>
+                        {r.related_table && (
+                          <span className="font-dm-sans text-[10px] text-body-slate">
+                            → {r.related_table}#{r.related_id?.slice(0, 8)}
+                          </span>
+                        )}
+                      </div>
+                      <span className="font-dm-sans text-xs text-archival-grey">
+                        {new Date(r.recorded_at).toLocaleString()}
+                      </span>
+                    </summary>
+                    <div className="px-3 pb-3 border-t border-border-line/50 pt-3">
+                      <p className="font-dm-sans text-xs font-semibold text-body-slate mb-1">Lookup input</p>
+                      <pre className="font-mono text-[11px] bg-clinical-surface rounded-[8px] p-2 mb-3 overflow-x-auto">
+                        {JSON.stringify(r.lookup_input, null, 2)}
+                      </pre>
+                      {r.summary && (
+                        <>
+                          <p className="font-dm-sans text-xs font-semibold text-body-slate mb-1">Summary</p>
+                          <pre className="font-mono text-[11px] bg-clinical-surface rounded-[8px] p-2 mb-3 overflow-x-auto">
+                            {JSON.stringify(r.summary, null, 2)}
+                          </pre>
+                        </>
+                      )}
+                      <p className="font-dm-sans text-xs font-semibold text-body-slate mb-1">Raw response</p>
+                      <pre className="font-mono text-[11px] bg-clinical-surface rounded-[8px] p-2 overflow-x-auto max-h-64">
+                        {JSON.stringify(r.raw_response, null, 2)}
+                      </pre>
+                    </div>
+                  </details>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Section E — Credential Audit Log (Phase 8 — Field-Level Changes) */}
+        <div className="bg-white rounded-[12px] border border-border-line shadow-sm p-6 mt-6">
+          <h2 className="font-dm-sans font-semibold text-deep-charcoal text-lg mb-1">
+            Credential Audit Log
+            <span className="font-dm-sans font-normal text-sm text-body-slate ml-2">({credentialAuditLog.length})</span>
+          </h2>
+          <p className="font-dm-sans text-xs text-body-slate mb-4">
+            Append-only field-level history of every credential change. Per VERF-05.
+          </p>
+          {credentialAuditLog.length === 0 ? (
+            <p className="font-dm-sans text-sm text-body-slate">No audit entries yet</p>
+          ) : (
+            <ol className="space-y-2">
+              {credentialAuditLog.map((a) => {
+                const aStatus = statusStyles[a.change_type] || statusStyles.pending;
+                return (
+                  <li key={a.id} className="border-l-2 border-border-line pl-3 py-1">
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap min-w-0">
+                        <span className={`inline-flex items-center font-dm-sans font-medium text-[10px] rounded-full px-1.5 py-0.5 ${aStatus.bg} ${aStatus.text}`}>
+                          {aStatus.label}
+                        </span>
+                        <span className="font-dm-sans text-xs text-deep-charcoal truncate">
+                          <span className="font-semibold">{a.field_name}</span>
+                          <span className="text-body-slate"> on </span>
+                          <span className="font-mono text-[11px]">{a.target_table}#{a.target_id.slice(0, 8)}</span>
+                        </span>
+                      </div>
+                      <span className="font-dm-sans text-[11px] text-archival-grey flex-shrink-0">
+                        {a.actor_role}:{a.actor_email} · {new Date(a.changed_at).toLocaleString()}
+                      </span>
+                    </div>
+                    {(a.old_value !== null || a.new_value !== null) && a.field_name !== '_row' && (
+                      <p className="font-mono text-[11px] text-body-slate mt-1 truncate">
+                        {JSON.stringify(a.old_value)} → {JSON.stringify(a.new_value)}
+                      </p>
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+          )}
         </div>
       </div>
     </AdminLayout>
