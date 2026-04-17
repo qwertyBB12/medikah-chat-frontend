@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
 import { supabaseAdmin } from '../../../../lib/supabaseServer';
 import { lookupCedula } from '../../../../lib/sepLookup';
+import { recordLookup } from '../../../../lib/verificationRecordService';
+import type { VerificationResultStatus } from '../../../../lib/verificationTypes';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // POST only (T-06-01: auth gate before any action)
@@ -91,6 +93,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const verifiedAt = new Date().toISOString();
 
+    // D-05: SEP failure flags for manual review but never blocks the physician.
+    const manualReviewRequired = !result.found;
+
+    // Track the physician_licenses row id so the verification_records row can
+    // link back via related_id (Plan 08-03 / VERF-01).
+    let relatedId: string | null = existingLicense?.id ?? null;
+
     if (existingLicense) {
       // UPDATE existing row
       await supabaseAdmin
@@ -100,25 +109,52 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           verified_at: verifiedAt,
           verification_source: 'sep_cedula',
           raw_verification_data: result.rawResponse ?? null,
+          manual_review_required: manualReviewRequired,
           updated_at: verifiedAt,
         })
         .eq('id', existingLicense.id);
     } else {
       // INSERT new row
       // expiration_date is NULL — MX cedulas are lifetime credentials (per PROJECT.md)
-      await supabaseAdmin.from('physician_licenses').insert({
-        physician_id: physicianId,
-        country_code: 'MX',
-        license_type: cedulaType,
-        license_number: cedulaNumber.trim(),
-        issuing_authority: 'SEP',
-        expiration_date: null,
-        verification_status: verificationStatus,
-        verified_at: verifiedAt,
-        verification_source: 'sep_cedula',
-        raw_verification_data: result.rawResponse ?? null,
-      });
+      const { data: insertedLicense } = await supabaseAdmin
+        .from('physician_licenses')
+        .insert({
+          physician_id: physicianId,
+          country_code: 'MX',
+          license_type: cedulaType,
+          license_number: cedulaNumber.trim(),
+          issuing_authority: 'SEP',
+          expiration_date: null,
+          verification_status: verificationStatus,
+          verified_at: verifiedAt,
+          verification_source: 'sep_cedula',
+          raw_verification_data: result.rawResponse ?? null,
+          manual_review_required: manualReviewRequired,
+        })
+        .select('id')
+        .single();
+      relatedId = insertedLicense?.id ?? null;
     }
+
+    // VERF-01: persist the raw SEP response for audit. Best-effort.
+    const resultStatus: VerificationResultStatus = result.found ? 'found' : 'not_found';
+    await recordLookup({
+      physicianId,
+      source: 'sep_cedula',
+      relatedTable: 'physician_licenses',
+      relatedId,
+      lookupInput: { cedulaNumber: cedulaNumber.trim(), cedulaType },
+      rawResponse: (result.rawResponse ?? { error: result.error }) as Record<string, unknown>,
+      resultStatus,
+      summary: result.found
+        ? {
+            fullName: result.fullName,
+            titulo: result.titulo,
+            institucion: result.institucion,
+            anioRegistro: result.anioRegistro,
+          }
+        : { error: result.error },
+    });
 
     // Return success — doctor is NEVER blocked by SEP failure (D-05)
     // Even on SEP failure, we return success with manual_review status
@@ -139,6 +175,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   } catch (err) {
     console.error('SEP lookup API error:', err);
+    // Best-effort audit even in the exception path — recordLookup never throws.
+    try {
+      const physicianId = (req.query.id as string) || '';
+      const body = (req.body ?? {}) as { cedulaNumber?: unknown; cedulaType?: unknown };
+      await recordLookup({
+        physicianId,
+        source: 'sep_cedula',
+        relatedTable: 'physician_licenses',
+        relatedId: null,
+        lookupInput: {
+          cedulaNumber: typeof body.cedulaNumber === 'string' ? body.cedulaNumber : null,
+          cedulaType: typeof body.cedulaType === 'string' ? body.cedulaType : null,
+        },
+        rawResponse: { error: String(err) },
+        resultStatus: 'error',
+        summary: { message: String(err) },
+      });
+    } catch {
+      /* swallow — never mask the original 500 */
+    }
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

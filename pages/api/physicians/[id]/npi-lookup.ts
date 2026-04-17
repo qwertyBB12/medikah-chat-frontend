@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
 import { supabaseAdmin } from '../../../../lib/supabaseServer';
 import { lookupNPI } from '../../../../lib/npiLookup';
+import { recordLookup } from '../../../../lib/verificationRecordService';
+import type { VerificationResultStatus } from '../../../../lib/verificationTypes';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -90,6 +92,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
+    // Track the physician_licenses row id we write to so the verification_records
+    // row can link back via related_id (Plan 08-03 / VERF-01).
+    let relatedId: string | null = existingLicense?.id ?? null;
+
     if (result.found) {
       if (existingLicense) {
         // UPDATE existing NPI row
@@ -100,12 +106,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             verification_status: verificationStatusToWrite,
             verified_at: new Date().toISOString(),
             verification_source: 'npi_registry',
+            // Clear prior manual_review_required flag on a successful found lookup —
+            // it may have been set by a previous not_found lookup for the same NPI.
+            manual_review_required: verificationStatusToWrite === 'manual_review',
             updated_at: new Date().toISOString(),
           })
           .eq('id', existingLicense.id);
       } else {
         // INSERT new NPI row
-        await supabaseAdmin
+        const { data: insertedLicense } = await supabaseAdmin
           .from('physician_licenses')
           .insert({
             physician_id: physicianId,
@@ -115,8 +124,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             verification_status: verificationStatusToWrite,
             verified_at: new Date().toISOString(),
             verification_source: 'npi_registry',
-          });
+            manual_review_required: verificationStatusToWrite === 'manual_review',
+          })
+          .select('id')
+          .single();
+        relatedId = insertedLicense?.id ?? null;
       }
+
+      // VERF-01: persist the raw NPPES response for audit. Best-effort.
+      const resultStatus: VerificationResultStatus = 'found';
+      await recordLookup({
+        physicianId,
+        source: 'npi_registry',
+        relatedTable: 'physician_licenses',
+        relatedId,
+        lookupInput: { npiNumber },
+        rawResponse: result as unknown as Record<string, unknown>,
+        resultStatus,
+        summary: {
+          fullName: result.fullName,
+          primarySpecialty: result.primarySpecialty,
+          practiceState: result.practiceState,
+          nameMatch,
+        },
+      });
 
       return res.status(200).json({
         success: true,
@@ -133,7 +164,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         verificationStatus: verificationStatusToWrite,
       });
     } else {
-      // NPI not found — still persist the failed lookup
+      // NPI not found — still persist the failed lookup and flag for manual review
       if (existingLicense) {
         await supabaseAdmin
           .from('physician_licenses')
@@ -142,11 +173,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             verification_status: 'failed',
             verified_at: new Date().toISOString(),
             verification_source: 'npi_registry',
+            manual_review_required: true,
             updated_at: new Date().toISOString(),
           })
           .eq('id', existingLicense.id);
       } else {
-        await supabaseAdmin
+        const { data: insertedLicense } = await supabaseAdmin
           .from('physician_licenses')
           .insert({
             physician_id: physicianId,
@@ -156,8 +188,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             verification_status: 'failed',
             verified_at: new Date().toISOString(),
             verification_source: 'npi_registry',
-          });
+            manual_review_required: true,
+          })
+          .select('id')
+          .single();
+        relatedId = insertedLicense?.id ?? null;
       }
+
+      // VERF-01: persist the failed lookup for audit. Best-effort.
+      const resultStatus: VerificationResultStatus = 'not_found';
+      await recordLookup({
+        physicianId,
+        source: 'npi_registry',
+        relatedTable: 'physician_licenses',
+        relatedId,
+        lookupInput: { npiNumber },
+        rawResponse: result as unknown as Record<string, unknown>,
+        resultStatus,
+        summary: { error: result.error },
+      });
 
       return res.status(200).json({
         success: true,
@@ -167,6 +216,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   } catch (err) {
     console.error('NPI lookup API error:', err);
+    // Best-effort audit even in the exception path — recordLookup never throws.
+    try {
+      const physicianId = (req.query.id as string) || '';
+      const bodyNpi = (req.body as { npiNumber?: unknown })?.npiNumber;
+      await recordLookup({
+        physicianId,
+        source: 'npi_registry',
+        relatedTable: 'physician_licenses',
+        relatedId: null,
+        lookupInput: { npiNumber: typeof bodyNpi === 'string' ? bodyNpi : null },
+        rawResponse: { error: String(err) },
+        resultStatus: 'error',
+        summary: { message: String(err) },
+      });
+    } catch {
+      /* swallow — never mask the original 500 */
+    }
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

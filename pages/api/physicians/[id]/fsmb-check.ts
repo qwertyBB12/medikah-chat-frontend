@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../auth/[...nextauth]';
 import { supabaseAdmin } from '../../../../lib/supabaseServer';
 import { checkFSMB } from '../../../../lib/fsmbCheck';
+import { recordLookup } from '../../../../lib/verificationRecordService';
+import type { VerificationResultStatus } from '../../../../lib/verificationTypes';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -72,6 +74,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .eq('certification_type', 'fsmb_check')
       .maybeSingle();
 
+    // T-05-11 / VERF-04: any non-'clear' FSMB outcome is a manual-review trigger.
+    // 'flagged' means disciplinary action found; 'error' / 'manual_review' means
+    // DocInfo could not complete the check and a human must review.
+    const manualReviewRequired = result.status !== 'clear';
+
+    // Track the physician_certifications row id so verification_records can link back.
+    let relatedId: string | null = existingCert?.id ?? null;
+
     if (existingCert) {
       // UPDATE existing FSMB check row
       await supabaseAdmin
@@ -82,12 +92,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           specialty: result.status,
           verification_status: verificationStatus,
           verified_at: result.checkedAt,
+          manual_review_required: manualReviewRequired,
           updated_at: new Date().toISOString(),
         })
         .eq('id', existingCert.id);
     } else {
       // INSERT new FSMB check row
-      await supabaseAdmin
+      const { data: insertedCert } = await supabaseAdmin
         .from('physician_certifications')
         .insert({
           physician_id: physicianId,
@@ -97,30 +108,42 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           specialty: result.status,
           verification_status: verificationStatus,
           verified_at: result.checkedAt,
-        });
+          manual_review_required: manualReviewRequired,
+        })
+        .select('id')
+        .single();
+      relatedId = insertedCert?.id ?? null;
     }
 
-    // Audit log entry — full result stored for legal audit trail (T-05-11)
-    // rawResponse and actionCount stored here only, NOT returned to client (D-09)
-    await supabaseAdmin
-      .from('physician_onboarding_audit')
-      .insert({
-        physician_id: physicianId,
-        email: session.user.email,
-        action: 'fsmb_check',
-        data_snapshot: {
-          npiNumber,
-          result: {
-            status: result.status,
-            hasActions: result.hasActions,
-            actionCount: result.actionCount,
-            checkedAt: result.checkedAt,
-            source: result.source,
-            error: result.error,
-          },
-        },
-        language: 'en',
-      });
+    // Plan 08-03: the previous ad-hoc write to physician_onboarding_audit (action='fsmb_check')
+    // has been REMOVED. Its content is superseded by verification_records (richer payload,
+    // related_id link, normalized source='fsmb'). See 08-03-PLAN.md Task 1 for rationale.
+    // Map FSMB result.status to VerificationResultStatus:
+    //   'clear' | 'flagged' -> 'found'  (DocInfo returned a usable answer)
+    //   'error'             -> 'error'
+    //   anything else       -> 'not_found'
+    const resultStatus: VerificationResultStatus =
+      result.status === 'clear' || result.status === 'flagged'
+        ? 'found'
+        : result.status === 'error'
+          ? 'error'
+          : 'not_found';
+
+    await recordLookup({
+      physicianId,
+      source: 'fsmb',
+      relatedTable: 'physician_certifications',
+      relatedId,
+      lookupInput: { npiNumber, fullName: fullName ?? null },
+      rawResponse: result as unknown as Record<string, unknown>,
+      resultStatus,
+      summary: {
+        status: result.status,
+        hasActions: result.hasActions,
+        actionCount: result.actionCount,
+        source: result.source,
+      },
+    });
 
     // D-09: Return only status to client — never rawResponse or actionCount
     return res.status(200).json({
@@ -130,6 +153,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   } catch (err) {
     console.error('FSMB check API error:', err);
+    // Best-effort audit even in the exception path — recordLookup never throws.
+    try {
+      const physicianId = (req.query.id as string) || '';
+      const body = (req.body ?? {}) as { npiNumber?: unknown; fullName?: unknown };
+      await recordLookup({
+        physicianId,
+        source: 'fsmb',
+        relatedTable: 'physician_certifications',
+        relatedId: null,
+        lookupInput: {
+          npiNumber: typeof body.npiNumber === 'string' ? body.npiNumber : null,
+          fullName: typeof body.fullName === 'string' ? body.fullName : null,
+        },
+        rawResponse: { error: String(err) },
+        resultStatus: 'error',
+        summary: { message: String(err) },
+      });
+    } catch {
+      /* swallow — never mask the original 500 */
+    }
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
