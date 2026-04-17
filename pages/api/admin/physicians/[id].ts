@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getAdminUser } from '../../../../lib/adminAuth';
 import { supabaseAdmin } from '../../../../lib/supabaseServer';
+import { listRecordsForPhysician } from '../../../../lib/verificationRecordService';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const admin = await getAdminUser(req, res);
@@ -43,10 +44,89 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .eq('physician_id', physicianId)
         .order('created_at', { ascending: false });
 
+      // Phase 8 evidence + credentials + documents — 5 parallel reads.
+      // listRecordsForPhysician comes from the Phase 8 service layer (do NOT
+      // requery verification_records directly here).
+      const [verRecords, auditLog, licenses, certs, documents] = await Promise.all([
+        listRecordsForPhysician(physicianId),
+        supabaseAdmin
+          .from('credential_audit_log')
+          .select(
+            'id, actor_email, actor_role, target_table, target_id, field_name, old_value, new_value, change_type, changed_at',
+          )
+          .eq('physician_id', physicianId)
+          .order('changed_at', { ascending: false })
+          .limit(200),
+        supabaseAdmin
+          .from('physician_licenses')
+          .select('*')
+          .eq('physician_id', physicianId)
+          .order('created_at', { ascending: false }),
+        supabaseAdmin
+          .from('physician_certifications')
+          .select('*')
+          .eq('physician_id', physicianId)
+          .order('created_at', { ascending: false }),
+        supabaseAdmin
+          .from('physician_documents')
+          .select(
+            'id, document_type, related_credential_id, related_credential_table, file_name, storage_path, mime_type, uploaded_at, verified, verified_at',
+          )
+          .eq('physician_id', physicianId)
+          .order('uploaded_at', { ascending: false }),
+      ]);
+
+      // Generate signed URLs for each document (10-minute TTL, T-09-03).
+      // Sequential per-document signing — admin views are low-volume.
+      // Failures degrade to signed_url: null + signed_url_error rather than
+      // failing the whole request.
+      type DocRow = {
+        id: string;
+        document_type: string;
+        related_credential_id: string | null;
+        related_credential_table: string | null;
+        file_name: string | null;
+        storage_path: string;
+        mime_type: string | null;
+        uploaded_at: string;
+        verified: boolean | null;
+        verified_at: string | null;
+      };
+      const documentsWithSignedUrls: Array<
+        DocRow & { signed_url: string | null; signed_url_error?: string }
+      > = [];
+      for (const doc of (documents.data ?? []) as DocRow[]) {
+        try {
+          const { data: signed, error: signErr } = await supabaseAdmin.storage
+            .from('physician-docs')
+            .createSignedUrl(doc.storage_path, 60 * 10);
+          if (signErr || !signed) {
+            documentsWithSignedUrls.push({
+              ...doc,
+              signed_url: null,
+              signed_url_error: signErr?.message ?? 'unknown signing error',
+            });
+          } else {
+            documentsWithSignedUrls.push({ ...doc, signed_url: signed.signedUrl });
+          }
+        } catch (e) {
+          documentsWithSignedUrls.push({
+            ...doc,
+            signed_url: null,
+            signed_url_error: e instanceof Error ? e.message : String(e),
+          });
+        }
+      }
+
       return res.status(200).json({
         physician: data,
-        verificationResults: verificationResults || [],
-        reviewHistory: reviewHistory || [],
+        verificationResults: verificationResults || [],   // existing — Phase 5 tier results
+        reviewHistory: reviewHistory || [],               // existing — older review queue
+        verificationRecords: verRecords || [],            // NEW — Phase 8 raw API audit (VERF-01)
+        credentialAuditLog: auditLog.data || [],          // NEW — Phase 8 field-level changes (VERF-05)
+        licenses: licenses.data || [],                    // NEW — full license rows incl. expiration_flag + manual_review_required
+        certifications: certs.data || [],                 // NEW — full cert rows incl. expiration_flag + manual_review_required
+        documents: documentsWithSignedUrls,               // NEW — docs with 10-min signed URLs
       });
     } catch (err) {
       console.error('Error fetching physician:', err);
