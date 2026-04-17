@@ -12,6 +12,41 @@ import type {
   USSubSpecialtyEntry,
 } from '../../../../lib/credentialTypes';
 import { verifyStateLicense } from '../../../../lib/stateBoardVerify';
+import {
+  logCreate,
+  logUpdateDiff,
+  logDelete,
+} from '../../../../lib/credentialAuditService';
+
+// Fields watched by credential_audit_log for each normalized table (Plan 08-03).
+// Only these fields produce audit rows on UPDATE; other columns (timestamps,
+// raw blobs, verification_source) are not worth the noise.
+const LICENSE_WATCH_FIELDS = [
+  'license_number',
+  'issuing_state',
+  'license_type',
+  'expiration_date',
+  'issued_date',
+  'is_primary',
+  'verification_status',
+  'manual_review_required',
+  'specialty',
+  'issuing_authority',
+  'degree_type',
+] as const;
+
+const CERTIFICATION_WATCH_FIELDS = [
+  'certifying_body',
+  'specialty',
+  'certification_type',
+  'issued_date',
+  'expiration_date',
+  'recertification_year',
+  'point_threshold_met',
+  'verification_status',
+  'manual_review_required',
+  'member_number',
+] as const;
 
 // UUID validation regex
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -28,6 +63,12 @@ function isValidDate(dateStr: string): boolean {
 /**
  * Sync all US credential data from normalized tables back into the physicians JSONB columns.
  * This maintains backward compatibility per D-11.
+ *
+ * Note (Phase 8): JSONB dual-write sync does NOT emit credential_audit_log rows.
+ * Those rows are emitted at the normalized-table write sites (physician_licenses /
+ * physician_certifications). The physicians JSONB columns are a derived view
+ * maintained for backward compat only (D-11). Logging every JSONB reshuffle would
+ * produce a duplicate audit row per CRUD call.
  */
 async function syncDualWrite(physicianId: string): Promise<void> {
   if (!supabaseAdmin) return;
@@ -248,6 +289,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         // Upsert to physician_licenses
         if (npiData.id) {
+          // VERF-05: snapshot the row before UPDATE for field-level audit diff
+          const { data: beforeRow } = await supabaseAdmin
+            .from('physician_licenses')
+            .select('*')
+            .eq('id', npiData.id)
+            .eq('physician_id', physicianId)
+            .single();
+
           const { error } = await supabaseAdmin
             .from('physician_licenses')
             .update({
@@ -263,6 +312,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return res.status(500).json({ error: 'Failed to update NPI' });
           }
 
+          // VERF-05: read-after-write snapshot, then diff and log changed fields
+          const { data: afterRow } = await supabaseAdmin
+            .from('physician_licenses')
+            .select('*')
+            .eq('id', npiData.id)
+            .single();
+          await logUpdateDiff({
+            physicianId,
+            actorEmail: session.user.email.toLowerCase(),
+            actorRole: 'physician',
+            targetTable: 'physician_licenses',
+            targetId: npiData.id,
+            before: beforeRow as Record<string, unknown> | null,
+            after: afterRow as Record<string, unknown> | null,
+            watchFields: [...LICENSE_WATCH_FIELDS],
+          });
+
           await syncDualWrite(physicianId);
           return res.status(201).json({ success: true, credentialId: npiData.id });
         } else {
@@ -275,12 +341,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               license_number: npiData.npiNumber,
               verification_status: 'pending',
             })
-            .select('id')
+            .select('*')
             .single();
 
           if (error) {
             console.error('NPI insert failed:', error);
             return res.status(500).json({ error: 'Failed to save NPI' });
+          }
+
+          // VERF-05: log the create with the full inserted-row snapshot
+          if (inserted?.id) {
+            await logCreate({
+              physicianId,
+              actorEmail: session.user.email.toLowerCase(),
+              actorRole: 'physician',
+              targetTable: 'physician_licenses',
+              targetId: inserted.id,
+              snapshot: inserted as Record<string, unknown>,
+            });
           }
 
           await syncDualWrite(physicianId);
@@ -312,6 +390,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         if (licenseData.id) {
+          // VERF-05: snapshot before UPDATE
+          const { data: beforeRow } = await supabaseAdmin
+            .from('physician_licenses')
+            .select('*')
+            .eq('id', licenseData.id)
+            .eq('physician_id', physicianId)
+            .single();
+
           const { error } = await supabaseAdmin
             .from('physician_licenses')
             .update({
@@ -329,6 +415,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             console.error('State license update failed:', error);
             return res.status(500).json({ error: 'Failed to update state license' });
           }
+
+          // VERF-05: read-after-write snapshot + diff
+          const { data: afterRow } = await supabaseAdmin
+            .from('physician_licenses')
+            .select('*')
+            .eq('id', licenseData.id)
+            .single();
+          await logUpdateDiff({
+            physicianId,
+            actorEmail: session.user.email.toLowerCase(),
+            actorRole: 'physician',
+            targetTable: 'physician_licenses',
+            targetId: licenseData.id,
+            before: beforeRow as Record<string, unknown> | null,
+            after: afterRow as Record<string, unknown> | null,
+            watchFields: [...LICENSE_WATCH_FIELDS],
+          });
 
           // Fire-and-forget state board verification for launch states (TX, NM, CA)
           verifyStateLicense(licenseData.id, licenseData.state, licenseData.licenseNumber, physicianId)
@@ -350,12 +453,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               is_primary: licenseData.isPrimary,
               verification_status: 'pending',
             })
-            .select('id')
+            .select('*')
             .single();
 
           if (error) {
             console.error('State license insert failed:', error);
             return res.status(500).json({ error: 'Failed to save state license' });
+          }
+
+          // VERF-05: log create with inserted-row snapshot
+          if (inserted?.id) {
+            await logCreate({
+              physicianId,
+              actorEmail: session.user.email.toLowerCase(),
+              actorRole: 'physician',
+              targetTable: 'physician_licenses',
+              targetId: inserted.id,
+              snapshot: inserted as Record<string, unknown>,
+            });
           }
 
           // Fire-and-forget state board verification for launch states (TX, NM, CA)
@@ -381,6 +496,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         if (certData.id) {
+          // VERF-05: snapshot before UPDATE
+          const { data: beforeRow } = await supabaseAdmin
+            .from('physician_certifications')
+            .select('*')
+            .eq('id', certData.id)
+            .eq('physician_id', physicianId)
+            .single();
+
           const { error } = await supabaseAdmin
             .from('physician_certifications')
             .update({
@@ -398,6 +521,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return res.status(500).json({ error: 'Failed to update board certification' });
           }
 
+          // VERF-05: read-after-write snapshot + diff
+          const { data: afterRow } = await supabaseAdmin
+            .from('physician_certifications')
+            .select('*')
+            .eq('id', certData.id)
+            .single();
+          await logUpdateDiff({
+            physicianId,
+            actorEmail: session.user.email.toLowerCase(),
+            actorRole: 'physician',
+            targetTable: 'physician_certifications',
+            targetId: certData.id,
+            before: beforeRow as Record<string, unknown> | null,
+            after: afterRow as Record<string, unknown> | null,
+            watchFields: [...CERTIFICATION_WATCH_FIELDS],
+          });
+
           await syncDualWrite(physicianId);
           return res.status(201).json({ success: true, credentialId: certData.id });
         } else {
@@ -413,12 +553,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               expiration_date: certData.expirationDate || null,
               verification_status: 'pending',
             })
-            .select('id')
+            .select('*')
             .single();
 
           if (error) {
             console.error('Board cert insert failed:', error);
             return res.status(500).json({ error: 'Failed to save board certification' });
+          }
+
+          // VERF-05: log create with inserted-row snapshot
+          if (inserted?.id) {
+            await logCreate({
+              physicianId,
+              actorEmail: session.user.email.toLowerCase(),
+              actorRole: 'physician',
+              targetTable: 'physician_certifications',
+              targetId: inserted.id,
+              snapshot: inserted as Record<string, unknown>,
+            });
           }
 
           await syncDualWrite(physicianId);
@@ -443,6 +595,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         if (subData.id) {
+          // VERF-05: snapshot before UPDATE
+          const { data: beforeRow } = await supabaseAdmin
+            .from('physician_certifications')
+            .select('*')
+            .eq('id', subData.id)
+            .eq('physician_id', physicianId)
+            .single();
+
           const { error } = await supabaseAdmin
             .from('physician_certifications')
             .update({
@@ -461,6 +621,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return res.status(500).json({ error: 'Failed to update sub-specialty/fellowship' });
           }
 
+          // VERF-05: read-after-write snapshot + diff
+          const { data: afterRow } = await supabaseAdmin
+            .from('physician_certifications')
+            .select('*')
+            .eq('id', subData.id)
+            .single();
+          await logUpdateDiff({
+            physicianId,
+            actorEmail: session.user.email.toLowerCase(),
+            actorRole: 'physician',
+            targetTable: 'physician_certifications',
+            targetId: subData.id,
+            before: beforeRow as Record<string, unknown> | null,
+            after: afterRow as Record<string, unknown> | null,
+            watchFields: [...CERTIFICATION_WATCH_FIELDS],
+          });
+
           await syncDualWrite(physicianId);
           return res.status(201).json({ success: true, credentialId: subData.id });
         } else {
@@ -476,12 +653,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               expiration_date: subData.expirationDate || null,
               verification_status: 'pending',
             })
-            .select('id')
+            .select('*')
             .single();
 
           if (error) {
             console.error('Sub-specialty insert failed:', error);
             return res.status(500).json({ error: 'Failed to save sub-specialty/fellowship' });
+          }
+
+          // VERF-05: log create with inserted-row snapshot
+          if (inserted?.id) {
+            await logCreate({
+              physicianId,
+              actorEmail: session.user.email.toLowerCase(),
+              actorRole: 'physician',
+              targetTable: 'physician_certifications',
+              targetId: inserted.id,
+              snapshot: inserted as Record<string, unknown>,
+            });
           }
 
           await syncDualWrite(physicianId);
@@ -509,6 +698,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       if (section === 'npi' || section === 'state_license') {
+        // VERF-05: snapshot row before DELETE for audit. Ownership enforced via physician_id.
+        const { data: snapshot } = await supabaseAdmin
+          .from('physician_licenses')
+          .select('*')
+          .eq('id', credentialId)
+          .eq('physician_id', physicianId)
+          .maybeSingle();
+
         // DELETE from physician_licenses, physician_id check prevents deleting another's record (T-05-05)
         const { error } = await supabaseAdmin
           .from('physician_licenses')
@@ -520,7 +717,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           console.error('License delete failed:', error);
           return res.status(500).json({ error: 'Failed to delete credential' });
         }
+
+        // VERF-05: log the delete with last-known snapshot
+        if (snapshot) {
+          await logDelete({
+            physicianId,
+            actorEmail: session.user.email.toLowerCase(),
+            actorRole: 'physician',
+            targetTable: 'physician_licenses',
+            targetId: credentialId,
+            snapshot: snapshot as Record<string, unknown>,
+          });
+        }
       } else if (section === 'board_cert' || section === 'sub_specialty') {
+        // VERF-05: snapshot row before DELETE for audit
+        const { data: snapshot } = await supabaseAdmin
+          .from('physician_certifications')
+          .select('*')
+          .eq('id', credentialId)
+          .eq('physician_id', physicianId)
+          .maybeSingle();
+
         // DELETE from physician_certifications, physician_id check prevents deleting another's record (T-05-05)
         const { error } = await supabaseAdmin
           .from('physician_certifications')
@@ -531,6 +748,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (error) {
           console.error('Certification delete failed:', error);
           return res.status(500).json({ error: 'Failed to delete credential' });
+        }
+
+        // VERF-05: log the delete with last-known snapshot
+        if (snapshot) {
+          await logDelete({
+            physicianId,
+            actorEmail: session.user.email.toLowerCase(),
+            actorRole: 'physician',
+            targetTable: 'physician_certifications',
+            targetId: credentialId,
+            snapshot: snapshot as Record<string, unknown>,
+          });
         }
       } else {
         return res.status(400).json({ error: `Unknown credential section: ${section}` });
