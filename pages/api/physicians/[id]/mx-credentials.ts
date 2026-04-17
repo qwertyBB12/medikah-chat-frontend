@@ -13,6 +13,43 @@ import type {
   ColegioEntry,
 } from '../../../../lib/mxCredentialTypes';
 import { CURP_REGEX } from '../../../../lib/mxCredentialTypes';
+import {
+  logCreate,
+  logUpdateDiff,
+  logDelete,
+} from '../../../../lib/credentialAuditService';
+
+// Fields watched by credential_audit_log for each normalized MX table (Plan 08-03).
+// MX-specific fields included: degree_type (registro_estatal), specialty (cedula_especialidad),
+// recertification_year + point_threshold_met (consejo), member_number (colegio).
+const MX_LICENSE_WATCH_FIELDS = [
+  'license_number',
+  'license_type',
+  'issuing_state',
+  'issuing_authority',
+  'degree_type',
+  'specialty',
+  'issued_date',
+  'expiration_date',
+  'verification_status',
+  'manual_review_required',
+] as const;
+
+const MX_CERTIFICATION_WATCH_FIELDS = [
+  'certifying_body',
+  'specialty',
+  'certification_type',
+  'recertification_year',
+  'point_threshold_met',
+  'member_number',
+  'issued_date',
+  'expiration_date',
+  'verification_status',
+  'manual_review_required',
+] as const;
+
+// T-06-10 identity: watch CURP only (other profile fields are out of scope here).
+const PHYSICIAN_IDENTITY_WATCH_FIELDS = ['curp_number'] as const;
 
 // UUID validation regex
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -30,6 +67,12 @@ function isValidDate(dateStr: string): boolean {
  * Sync all MX credential data from normalized tables back into the physicians JSONB columns.
  * Uses a read-merge-write pattern: reads existing JSONB, filters out MX entries,
  * appends fresh MX entries, writes back. This preserves US entries.
+ *
+ * Note (Phase 8): JSONB dual-write sync does NOT emit credential_audit_log rows.
+ * Those rows are emitted at the normalized-table write sites (physician_licenses /
+ * physician_certifications). The physicians JSONB columns are a derived view
+ * maintained for backward compat only (D-11). Logging every JSONB reshuffle would
+ * produce a duplicate audit row per CRUD call.
  */
 async function syncMXDualWrite(physicianId: string): Promise<void> {
   if (!supabaseAdmin) return;
@@ -289,6 +332,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           return res.status(400).json({ error: 'curp must be a valid 18-character CURP (T-06-10)' });
         }
 
+        // VERF-05: snapshot physicians row before UPDATE (curp_number only)
+        const { data: beforeIdentity } = await supabaseAdmin
+          .from('physicians')
+          .select('id, curp_number')
+          .eq('id', physicianId)
+          .single();
+
         const { error: curpError } = await supabaseAdmin
           .from('physicians')
           .update({ curp_number: identityData.curp.toUpperCase() })
@@ -298,6 +348,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           console.error('CURP update failed:', curpError);
           return res.status(500).json({ error: 'Failed to save CURP' });
         }
+
+        // VERF-05: read-after-write + diff for curp_number
+        const { data: afterIdentity } = await supabaseAdmin
+          .from('physicians')
+          .select('id, curp_number')
+          .eq('id', physicianId)
+          .single();
+        await logUpdateDiff({
+          physicianId,
+          actorEmail: session.user.email.toLowerCase(),
+          actorRole: 'physician',
+          targetTable: 'physicians',
+          targetId: physicianId,
+          before: beforeIdentity as Record<string, unknown> | null,
+          after: afterIdentity as Record<string, unknown> | null,
+          watchFields: [...PHYSICIAN_IDENTITY_WATCH_FIELDS],
+        });
 
         return res.status(200).json({ success: true });
       }
@@ -310,6 +377,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         if (cpData.id) {
+          // VERF-05: snapshot before UPDATE
+          const { data: beforeRow } = await supabaseAdmin
+            .from('physician_licenses')
+            .select('*')
+            .eq('id', cpData.id)
+            .eq('physician_id', physicianId)
+            .single();
+
           const { error } = await supabaseAdmin
             .from('physician_licenses')
             .update({
@@ -325,6 +400,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return res.status(500).json({ error: 'Failed to update Cédula Profesional' });
           }
 
+          // VERF-05: read-after-write snapshot + diff
+          const { data: afterRow } = await supabaseAdmin
+            .from('physician_licenses')
+            .select('*')
+            .eq('id', cpData.id)
+            .single();
+          await logUpdateDiff({
+            physicianId,
+            actorEmail: session.user.email.toLowerCase(),
+            actorRole: 'physician',
+            targetTable: 'physician_licenses',
+            targetId: cpData.id,
+            before: beforeRow as Record<string, unknown> | null,
+            after: afterRow as Record<string, unknown> | null,
+            watchFields: [...MX_LICENSE_WATCH_FIELDS],
+          });
+
           await syncMXDualWrite(physicianId);
           return res.status(201).json({ success: true, credentialId: cpData.id });
         } else {
@@ -338,12 +430,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               expiration_date: null, // lifetime — no expiration
               verification_status: 'pending',
             })
-            .select('id')
+            .select('*')
             .single();
 
           if (error) {
             console.error('Cédula Profesional insert failed:', error);
             return res.status(500).json({ error: 'Failed to save Cédula Profesional' });
+          }
+
+          // VERF-05: log create with inserted-row snapshot
+          if (inserted?.id) {
+            await logCreate({
+              physicianId,
+              actorEmail: session.user.email.toLowerCase(),
+              actorRole: 'physician',
+              targetTable: 'physician_licenses',
+              targetId: inserted.id,
+              snapshot: inserted as Record<string, unknown>,
+            });
           }
 
           await syncMXDualWrite(physicianId);
@@ -367,6 +471,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         if (reData.id) {
+          // VERF-05: snapshot before UPDATE
+          const { data: beforeRow } = await supabaseAdmin
+            .from('physician_licenses')
+            .select('*')
+            .eq('id', reData.id)
+            .eq('physician_id', physicianId)
+            .single();
+
           const { error } = await supabaseAdmin
             .from('physician_licenses')
             .update({
@@ -384,6 +496,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return res.status(500).json({ error: 'Failed to update Registro Estatal' });
           }
 
+          // VERF-05: read-after-write snapshot + diff
+          const { data: afterRow } = await supabaseAdmin
+            .from('physician_licenses')
+            .select('*')
+            .eq('id', reData.id)
+            .single();
+          await logUpdateDiff({
+            physicianId,
+            actorEmail: session.user.email.toLowerCase(),
+            actorRole: 'physician',
+            targetTable: 'physician_licenses',
+            targetId: reData.id,
+            before: beforeRow as Record<string, unknown> | null,
+            after: afterRow as Record<string, unknown> | null,
+            watchFields: [...MX_LICENSE_WATCH_FIELDS],
+          });
+
           await syncMXDualWrite(physicianId);
           return res.status(201).json({ success: true, credentialId: reData.id });
         } else {
@@ -399,12 +528,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               issued_date: reData.registrationDate || null,
               verification_status: 'pending',
             })
-            .select('id')
+            .select('*')
             .single();
 
           if (error) {
             console.error('Registro Estatal insert failed:', error);
             return res.status(500).json({ error: 'Failed to save Registro Estatal' });
+          }
+
+          // VERF-05: log create with inserted-row snapshot
+          if (inserted?.id) {
+            await logCreate({
+              physicianId,
+              actorEmail: session.user.email.toLowerCase(),
+              actorRole: 'physician',
+              targetTable: 'physician_licenses',
+              targetId: inserted.id,
+              snapshot: inserted as Record<string, unknown>,
+            });
           }
 
           await syncMXDualWrite(physicianId);
@@ -428,6 +569,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         if (ceData.id) {
+          // VERF-05: snapshot before UPDATE
+          const { data: beforeRow } = await supabaseAdmin
+            .from('physician_licenses')
+            .select('*')
+            .eq('id', ceData.id)
+            .eq('physician_id', physicianId)
+            .single();
+
           const { error } = await supabaseAdmin
             .from('physician_licenses')
             .update({
@@ -446,6 +595,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return res.status(500).json({ error: 'Failed to update Cédula de Especialidad' });
           }
 
+          // VERF-05: read-after-write snapshot + diff
+          const { data: afterRow } = await supabaseAdmin
+            .from('physician_licenses')
+            .select('*')
+            .eq('id', ceData.id)
+            .single();
+          await logUpdateDiff({
+            physicianId,
+            actorEmail: session.user.email.toLowerCase(),
+            actorRole: 'physician',
+            targetTable: 'physician_licenses',
+            targetId: ceData.id,
+            before: beforeRow as Record<string, unknown> | null,
+            after: afterRow as Record<string, unknown> | null,
+            watchFields: [...MX_LICENSE_WATCH_FIELDS],
+          });
+
           await syncMXDualWrite(physicianId);
           return res.status(201).json({ success: true, credentialId: ceData.id });
         } else {
@@ -462,12 +628,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               expiration_date: null, // lifetime — no expiration
               verification_status: 'pending',
             })
-            .select('id')
+            .select('*')
             .single();
 
           if (error) {
             console.error('Cédula Especialidad insert failed:', error);
             return res.status(500).json({ error: 'Failed to save Cédula de Especialidad' });
+          }
+
+          // VERF-05: log create with inserted-row snapshot
+          if (inserted?.id) {
+            await logCreate({
+              physicianId,
+              actorEmail: session.user.email.toLowerCase(),
+              actorRole: 'physician',
+              targetTable: 'physician_licenses',
+              targetId: inserted.id,
+              snapshot: inserted as Record<string, unknown>,
+            });
           }
 
           await syncMXDualWrite(physicianId);
@@ -486,13 +664,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         if (consejoData.id) {
+          // VERF-05: snapshot before UPDATE
+          const { data: beforeRow } = await supabaseAdmin
+            .from('physician_certifications')
+            .select('*')
+            .eq('id', consejoData.id)
+            .eq('physician_id', physicianId)
+            .single();
+
           const { error } = await supabaseAdmin
             .from('physician_certifications')
             .update({
               certifying_body: consejoData.consejoName.trim(),
               specialty: consejoData.specialty.trim(),
               recertification_year: consejoData.recertificationYear || null,
-              point_threshold_met: null, // Phase 8 concern
+              point_threshold_met: null, // Phase 8 concern (admin-driven evaluation in Phase 9)
               updated_at: new Date().toISOString(),
             })
             .eq('id', consejoData.id)
@@ -502,6 +688,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             console.error('Consejo update failed:', error);
             return res.status(500).json({ error: 'Failed to update Consejo certification' });
           }
+
+          // VERF-05: read-after-write snapshot + diff
+          const { data: afterRow } = await supabaseAdmin
+            .from('physician_certifications')
+            .select('*')
+            .eq('id', consejoData.id)
+            .single();
+          await logUpdateDiff({
+            physicianId,
+            actorEmail: session.user.email.toLowerCase(),
+            actorRole: 'physician',
+            targetTable: 'physician_certifications',
+            targetId: consejoData.id,
+            before: beforeRow as Record<string, unknown> | null,
+            after: afterRow as Record<string, unknown> | null,
+            watchFields: [...MX_CERTIFICATION_WATCH_FIELDS],
+          });
 
           await syncMXDualWrite(physicianId);
           return res.status(201).json({ success: true, credentialId: consejoData.id });
@@ -515,15 +718,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               certifying_body: consejoData.consejoName.trim(),
               specialty: consejoData.specialty.trim(),
               recertification_year: consejoData.recertificationYear || null,
-              point_threshold_met: null, // Phase 8 concern
+              point_threshold_met: null, // Phase 8 concern (admin-driven evaluation in Phase 9)
               verification_status: 'pending',
             })
-            .select('id')
+            .select('*')
             .single();
 
           if (error) {
             console.error('Consejo insert failed:', error);
             return res.status(500).json({ error: 'Failed to save Consejo certification' });
+          }
+
+          // VERF-05: log create with inserted-row snapshot
+          if (inserted?.id) {
+            await logCreate({
+              physicianId,
+              actorEmail: session.user.email.toLowerCase(),
+              actorRole: 'physician',
+              targetTable: 'physician_certifications',
+              targetId: inserted.id,
+              snapshot: inserted as Record<string, unknown>,
+            });
           }
 
           await syncMXDualWrite(physicianId);
@@ -539,6 +754,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         if (colegioData.id) {
+          // VERF-05: snapshot before UPDATE
+          const { data: beforeRow } = await supabaseAdmin
+            .from('physician_certifications')
+            .select('*')
+            .eq('id', colegioData.id)
+            .eq('physician_id', physicianId)
+            .single();
+
           const { error } = await supabaseAdmin
             .from('physician_certifications')
             .update({
@@ -554,6 +777,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return res.status(500).json({ error: 'Failed to update Colegio membership' });
           }
 
+          // VERF-05: read-after-write snapshot + diff
+          const { data: afterRow } = await supabaseAdmin
+            .from('physician_certifications')
+            .select('*')
+            .eq('id', colegioData.id)
+            .single();
+          await logUpdateDiff({
+            physicianId,
+            actorEmail: session.user.email.toLowerCase(),
+            actorRole: 'physician',
+            targetTable: 'physician_certifications',
+            targetId: colegioData.id,
+            before: beforeRow as Record<string, unknown> | null,
+            after: afterRow as Record<string, unknown> | null,
+            watchFields: [...MX_CERTIFICATION_WATCH_FIELDS],
+          });
+
           await syncMXDualWrite(physicianId);
           return res.status(201).json({ success: true, credentialId: colegioData.id });
         } else {
@@ -567,12 +807,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               member_number: colegioData.membershipNumber || null,
               verification_status: 'pending',
             })
-            .select('id')
+            .select('*')
             .single();
 
           if (error) {
             console.error('Colegio insert failed:', error);
             return res.status(500).json({ error: 'Failed to save Colegio membership' });
+          }
+
+          // VERF-05: log create with inserted-row snapshot
+          if (inserted?.id) {
+            await logCreate({
+              physicianId,
+              actorEmail: session.user.email.toLowerCase(),
+              actorRole: 'physician',
+              targetTable: 'physician_certifications',
+              targetId: inserted.id,
+              snapshot: inserted as Record<string, unknown>,
+            });
           }
 
           await syncMXDualWrite(physicianId);
@@ -604,15 +856,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         section === 'registro_estatal' ||
         section === 'cedula_especialidad'
       ) {
-        // Verify credential belongs to this physician (T-06-11)
-        const { data: existing, error: fetchErr } = await supabaseAdmin
+        // VERF-05 + T-06-11: snapshot full row before DELETE (also enforces ownership)
+        const { data: snapshot, error: fetchErr } = await supabaseAdmin
           .from('physician_licenses')
-          .select('id, physician_id')
+          .select('*')
           .eq('id', credentialId)
           .eq('physician_id', physicianId)
           .single();
 
-        if (fetchErr || !existing) {
+        if (fetchErr || !snapshot) {
           return res.status(403).json({ error: 'Credential not found or forbidden' });
         }
 
@@ -626,16 +878,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           console.error('MX license delete failed:', error);
           return res.status(500).json({ error: 'Failed to delete credential' });
         }
+
+        // VERF-05: log delete with last-known snapshot
+        await logDelete({
+          physicianId,
+          actorEmail: session.user.email.toLowerCase(),
+          actorRole: 'physician',
+          targetTable: 'physician_licenses',
+          targetId: credentialId,
+          snapshot: snapshot as Record<string, unknown>,
+        });
       } else if (section === 'consejo' || section === 'colegio') {
-        // Verify credential belongs to this physician (T-06-11)
-        const { data: existing, error: fetchErr } = await supabaseAdmin
+        // VERF-05 + T-06-11: snapshot full row before DELETE (also enforces ownership)
+        const { data: snapshot, error: fetchErr } = await supabaseAdmin
           .from('physician_certifications')
-          .select('id, physician_id')
+          .select('*')
           .eq('id', credentialId)
           .eq('physician_id', physicianId)
           .single();
 
-        if (fetchErr || !existing) {
+        if (fetchErr || !snapshot) {
           return res.status(403).json({ error: 'Credential not found or forbidden' });
         }
 
@@ -649,6 +911,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           console.error('MX certification delete failed:', error);
           return res.status(500).json({ error: 'Failed to delete credential' });
         }
+
+        // VERF-05: log delete with last-known snapshot
+        await logDelete({
+          physicianId,
+          actorEmail: session.user.email.toLowerCase(),
+          actorRole: 'physician',
+          targetTable: 'physician_certifications',
+          targetId: credentialId,
+          snapshot: snapshot as Record<string, unknown>,
+        });
       } else {
         return res.status(400).json({ error: `Unknown credential section: ${section}` });
       }
