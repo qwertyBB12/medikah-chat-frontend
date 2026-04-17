@@ -5,6 +5,8 @@ import Image from 'next/image';
 import { getAdminFromContext, AdminUser } from '../../../lib/adminAuth';
 import { supabaseAdmin } from '../../../lib/supabaseServer';
 import AdminLayout from '../../../components/admin/AdminLayout';
+import { listRecordsForPhysician } from '../../../lib/verificationRecordService';
+import type { VerificationRecordRow } from '../../../lib/verificationTypes';
 
 interface VerificationResult {
   id: string;
@@ -30,11 +32,82 @@ interface ReviewHistoryItem {
   created_at: string;
 }
 
+interface CredentialAuditLogRow {
+  id: string;
+  actor_email: string;
+  actor_role: 'physician' | 'system' | 'admin';
+  target_table: 'physician_licenses' | 'physician_certifications' | 'physicians';
+  target_id: string;
+  field_name: string;
+  old_value: unknown;
+  new_value: unknown;
+  change_type: 'create' | 'update' | 'delete';
+  changed_at: string;
+}
+
+interface PhysicianLicense {
+  id: string;
+  country_code: string;
+  license_type: string;
+  license_number: string | null;
+  issuing_state: string | null;
+  degree_type: string | null;
+  expiration_date: string | null;
+  issued_date: string | null;
+  is_primary: boolean | null;
+  verification_status: string;
+  verified_at: string | null;
+  verification_source: string | null;
+  expiration_flag: boolean;
+  manual_review_required: boolean;
+  created_at: string;
+}
+
+interface PhysicianCertification {
+  id: string;
+  country_code: string;
+  certification_type: string;
+  certifying_body: string | null;
+  specialty: string | null;
+  issued_date: string | null;
+  expiration_date: string | null;
+  recertification_year: number | null;
+  point_threshold_met: boolean | null;
+  verification_status: string;
+  verified_at: string | null;
+  expiration_flag: boolean;
+  manual_review_required: boolean;
+  created_at: string;
+  /** Computed server-side via is_consejo_recertification_due() Postgres function */
+  consejo_recert_due?: boolean;
+}
+
+interface PhysicianDocumentRow {
+  id: string;
+  document_type: string;
+  related_credential_id: string | null;
+  related_credential_table: string | null;
+  file_name: string | null;
+  storage_path: string;
+  mime_type: string | null;
+  uploaded_at: string;
+  verified: boolean | null;
+  verified_at: string | null;
+  /** Generated server-side, 10-min TTL */
+  signed_url: string | null;
+  signed_url_error?: string | null;
+}
+
 interface PhysicianDetailProps {
   admin: AdminUser;
   physician: Record<string, unknown>;
   verificationResults: VerificationResult[];
   reviewHistory: ReviewHistoryItem[];
+  verificationRecords: VerificationRecordRow[];
+  credentialAuditLog: CredentialAuditLogRow[];
+  licenses: PhysicianLicense[];
+  certifications: PhysicianCertification[];
+  documents: PhysicianDocumentRow[];
 }
 
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
@@ -71,12 +144,93 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
       .order('created_at', { ascending: false }),
   ]);
 
+  // Phase 8 evidence + credentials + documents — 5 parallel reads.
+  // listRecordsForPhysician comes from the Phase 8 service layer (do NOT
+  // requery verification_records directly here).
+  const [verRecordsRaw, auditRes, licRes, certRes, docRes] = await Promise.all([
+    listRecordsForPhysician(physicianId),
+    supabaseAdmin
+      .from('credential_audit_log')
+      .select(
+        'id, actor_email, actor_role, target_table, target_id, field_name, old_value, new_value, change_type, changed_at',
+      )
+      .eq('physician_id', physicianId)
+      .order('changed_at', { ascending: false })
+      .limit(200),
+    supabaseAdmin
+      .from('physician_licenses')
+      .select('*')
+      .eq('physician_id', physicianId)
+      .order('is_primary', { ascending: false })
+      .order('created_at', { ascending: false }),
+    supabaseAdmin
+      .from('physician_certifications')
+      .select('*')
+      .eq('physician_id', physicianId)
+      .order('created_at', { ascending: false }),
+    supabaseAdmin
+      .from('physician_documents')
+      .select(
+        'id, document_type, related_credential_id, related_credential_table, file_name, storage_path, mime_type, uploaded_at, verified, verified_at',
+      )
+      .eq('physician_id', physicianId)
+      .order('uploaded_at', { ascending: false }),
+  ]);
+
+  // Compute consejo_recert_due for consejo certs via Postgres function.
+  // Sequential per-cert call; pre-gated on recertification_year !== null
+  // so non-consejo certs cost zero round-trips.
+  const certs: PhysicianCertification[] = [];
+  for (const c of (certRes.data || []) as PhysicianCertification[]) {
+    let consejo_recert_due: boolean | undefined = undefined;
+    if (c.certification_type === 'consejo' && c.recertification_year != null) {
+      try {
+        const { data: due } = await supabaseAdmin.rpc('is_consejo_recertification_due', {
+          p_cert_id: c.id,
+        });
+        consejo_recert_due = due === true;
+      } catch {
+        consejo_recert_due = undefined;
+      }
+    }
+    certs.push({ ...c, consejo_recert_due });
+  }
+
+  // Generate signed URLs for each document (10-minute TTL = 600s, T-09-13).
+  // Per-doc try/catch returns signed_url=null + signed_url_error rather than
+  // failing the whole request.
+  type DocRowRaw = Omit<PhysicianDocumentRow, 'signed_url' | 'signed_url_error'>;
+  const documents: PhysicianDocumentRow[] = [];
+  for (const d of (docRes.data || []) as DocRowRaw[]) {
+    try {
+      const { data: signed, error: signErr } = await supabaseAdmin.storage
+        .from('physician-docs')
+        .createSignedUrl(d.storage_path, 600);
+      documents.push({
+        ...d,
+        signed_url: signed?.signedUrl ?? null,
+        signed_url_error: signErr?.message ?? null,
+      });
+    } catch (err) {
+      documents.push({
+        ...d,
+        signed_url: null,
+        signed_url_error: err instanceof Error ? err.message : 'unknown error',
+      });
+    }
+  }
+
   return {
     props: {
       admin,
       physician,
       verificationResults: verRes.data || [],
       reviewHistory: reviewRes.data || [],
+      verificationRecords: verRecordsRaw || [],
+      credentialAuditLog: (auditRes.data as CredentialAuditLogRow[] | null) || [],
+      licenses: ((licRes.data as PhysicianLicense[] | null) || []),
+      certifications: certs,
+      documents,
     },
   };
 };
