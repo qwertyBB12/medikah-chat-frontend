@@ -95,8 +95,8 @@ export default function EmployerPortal() {
 
         <p className="font-dm-sans text-white/30 text-xs mt-16">
           {lang === 'en'
-            ? 'Contact partners@medikah.com for early access'
-            : 'Contacte partners@medikah.com para acceso anticipado'}
+            ? 'Contact partnerships@medikah.health for early access'
+            : 'Contacte partnerships@medikah.health para acceso anticipado'}
         </p>
       </div>
     </>
