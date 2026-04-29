@@ -1,0 +1,195 @@
+/**
+ * OPS-01: Práctikah workspace compliance audit log writer.
+ *
+ * Append-only INSERT into workspace_audit_log. Never throws. Best-effort write
+ * — audit failures are logged via console.error but never propagate to callers.
+ * DB-side append-only RLS (migration 017, Plan 11-01) is the security guarantee;
+ * this helper standardizes call sites.
+ *
+ * Per OPS-01: 6-year retention required. No UPDATE or DELETE policies on this table.
+ *
+ * Per D-13 (Table B) from Phase 11 CONTEXT.md: workspace_audit_log tracks 9 actions
+ * covering the doctor-facing workspace lifecycle (login, mailbox access, domain changes,
+ * site edits, theme changes, tier upgrades/downgrades, PHI warnings, consent signing).
+ *
+ * Per D's Discretion (11-CONTEXT.md): IP address + user agent are captured ONLY for
+ * security-relevant actions (workspace.login, consent.signed, phi_warning.overridden).
+ * Routine actions (mailbox.access, theme.changed, etc.) omit these fields to minimize
+ * PII surface and keep payload size small.
+ *
+ * Usage (server-side API routes only — never imported by client-side React):
+ *
+ *   import { logEvent, extractRequestContext } from '@/lib/workspaceAuditService';
+ *
+ *   const { ipAddress, userAgent } = extractRequestContext(req);
+ *   await logEvent({
+ *     physicianId: auth.physicianId,
+ *     actorId: session.user.id,
+ *     actorRole: 'physician',
+ *     action: 'workspace.login',
+ *     detail: { provider: session.user.provider },
+ *     ipAddress,
+ *     userAgent,
+ *   });
+ */
+
+import { supabaseAdmin } from './supabaseServer';
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+/**
+ * The 9 OPS-01 workspace lifecycle actions tracked in workspace_audit_log.
+ * Covers login, mailbox access, domain/site/theme changes, tier transitions,
+ * PHI safeguard events, and consent signing.
+ */
+export type WorkspaceAction =
+  | 'workspace.login'
+  | 'mailbox.access'
+  | 'domain.changed'
+  | 'site.edited'
+  | 'theme.changed'
+  | 'pro.upgraded'
+  | 'pro.downgraded'
+  | 'phi_warning.overridden'
+  | 'consent.signed';
+
+export type ActorRole = 'physician' | 'admin' | 'system';
+
+export interface WorkspaceAuditEvent {
+  /** UUID of the physician whose workspace was acted on. */
+  physicianId: string;
+  /** UUID of the actor performing the action. Null for system-initiated events. */
+  actorId?: string;
+  /** Role of the actor. */
+  actorRole: ActorRole;
+  /** The action that occurred (one of the 9 OPS-01 actions). */
+  action: WorkspaceAction;
+  /** Optional resource type (e.g. 'domain', 'mailbox', 'theme'). */
+  resourceType?: string;
+  /** Optional UUID of the specific resource acted on. */
+  resourceId?: string;
+  /** Arbitrary structured detail about the action. */
+  detail?: Record<string, unknown>;
+  /**
+   * Client IP address. Captured only for security-relevant actions
+   * (workspace.login, consent.signed, phi_warning.overridden) per D's Discretion.
+   * Use extractRequestContext(req) to populate from Next.js req.
+   */
+  ipAddress?: string;
+  /**
+   * HTTP User-Agent header. Same security-relevance filter as ipAddress.
+   * Use extractRequestContext(req) to populate from Next.js req.
+   */
+  userAgent?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Security-relevance filter
+// ---------------------------------------------------------------------------
+
+/**
+ * Actions where IP address + user agent are captured for security audit.
+ * Per D's Discretion in Phase 11 CONTEXT.md: only security-relevant actions
+ * record these fields to minimize PII surface.
+ */
+const SECURITY_RELEVANT_ACTIONS: ReadonlySet<WorkspaceAction> = new Set<WorkspaceAction>([
+  'workspace.login',
+  'consent.signed',
+  'phi_warning.overridden',
+]);
+
+// ---------------------------------------------------------------------------
+// Main writer
+// ---------------------------------------------------------------------------
+
+/**
+ * Best-effort INSERT into workspace_audit_log. Never throws.
+ *
+ * Per OPS-01: this table has 6-year retention and no UPDATE/DELETE policies.
+ * A unique-violation on (physician_id, action, occurred_at) is theoretically
+ * impossible (occurred_at has microsecond precision from Postgres NOW()) but
+ * the try/catch handles any DB error gracefully.
+ *
+ * IP address and user agent are captured only for security-relevant actions
+ * (workspace.login, consent.signed, phi_warning.overridden) per D's Discretion.
+ * All other actions receive null for these fields.
+ */
+export async function logEvent(event: WorkspaceAuditEvent): Promise<void> {
+  if (!supabaseAdmin) {
+    console.error(
+      '[workspaceAuditService] supabaseAdmin not configured — audit skipped',
+      {
+        physicianId: event.physicianId,
+        action: event.action,
+      },
+    );
+    return;
+  }
+
+  // Security-relevance filter for IP / UA per D's Discretion.
+  const securityRelevant = SECURITY_RELEVANT_ACTIONS.has(event.action);
+  const ipAddress = securityRelevant ? (event.ipAddress ?? null) : null;
+  const userAgent = securityRelevant ? (event.userAgent ?? null) : null;
+
+  try {
+    const { error } = await supabaseAdmin.from('workspace_audit_log').insert({
+      physician_id: event.physicianId,
+      actor_id: event.actorId ?? null,
+      actor_role: event.actorRole,
+      action: event.action,
+      resource_type: event.resourceType ?? null,
+      resource_id: event.resourceId ?? null,
+      detail: event.detail ?? {},
+      ip_address: ipAddress,
+      user_agent: userAgent,
+    });
+
+    if (error) {
+      console.error('[workspaceAuditService.logEvent] insert failed', {
+        physicianId: event.physicianId,
+        action: event.action,
+        error: error.message,
+      });
+    }
+  } catch (err) {
+    console.error('[workspaceAuditService.logEvent] exception', err);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Request context helper
+// ---------------------------------------------------------------------------
+
+/**
+ * Extract IP address and User-Agent from a Next.js API route request.
+ *
+ * Used by Plan 11-07's BFF routes to populate ipAddress + userAgent at the
+ * request boundary before calling logEvent. Follows the x-forwarded-for →
+ * socket.remoteAddress fallback chain used by Netlify and Render edge proxies.
+ *
+ * @example
+ *   const { ipAddress, userAgent } = extractRequestContext(req);
+ *   await logEvent({ ..., action: 'workspace.login', ipAddress, userAgent });
+ */
+export function extractRequestContext(req: {
+  headers: Record<string, string | string[] | undefined>;
+  socket?: { remoteAddress?: string };
+}): { ipAddress?: string; userAgent?: string } {
+  // x-forwarded-for may be a comma-separated list; take the first (client) IP
+  const forwarded = req.headers['x-forwarded-for'];
+  const ipFromHeader =
+    typeof forwarded === 'string'
+      ? forwarded.split(',')[0]?.trim()
+      : Array.isArray(forwarded)
+        ? forwarded[0]
+        : undefined;
+
+  const ipAddress = ipFromHeader ?? req.socket?.remoteAddress ?? undefined;
+
+  const ua = req.headers['user-agent'];
+  const userAgent = typeof ua === 'string' ? ua : undefined;
+
+  return { ipAddress, userAgent };
+}
