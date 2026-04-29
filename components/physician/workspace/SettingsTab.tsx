@@ -1,19 +1,21 @@
 /**
- * Phase 12 Plan 12-01: SettingsTab
+ * Phase 12 Plan 12-03: SettingsTab (fully implemented)
  *
- * Workspace sub-tab with mailbox settings:
- *   1. Mailbox password change (inline form — same shape as MailboxTab)
- *   2. IMAP credentials accordion (host/port/username + reveal-once password)
- *   3. Auto-configure iPhone (.mobileconfig download)
- *   4. Two-factor authentication status (D-12 deferral)
+ * Workspace Settings sub-tab with 4 sections:
+ *   1. Mailbox password change — uses <MailboxPasswordForm mode="rotate" />
+ *   2. IMAP credentials accordion — fetches /api/practikah/mailbox/imap-credentials;
+ *      each field has a copy-to-clipboard button with 2-sec "Copied!" feedback.
+ *   3. Auto-configure iPhone — anchor download to /api/practikah/mailbox/mobileconfig
+ *   4. Two-factor authentication status — static per D-12 deferral; SOGo handles 2FA.
  *
- * Most handlers are stubbed in this plan and ship in 12-03. This file builds
- * the UI shell and wires fetch calls; 12-03 supplies real handlers.
+ * All copy bilingual via lib/practikahWorkspaceContent.ts.
+ * Brand colors + radii per CLAUDE.md.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { SupportedLang } from '../../../lib/i18n';
 import { content as workspaceContent } from '../../../lib/practikahWorkspaceContent';
+import MailboxPasswordForm from './MailboxPasswordForm';
 
 interface SettingsTabProps {
   physicianId: string;
@@ -21,27 +23,57 @@ interface SettingsTabProps {
   accessToken: string | null;
 }
 
+interface ImapCredentials {
+  host: string;
+  imap_port: number;
+  smtp_port: number;
+  smtp_starttls_port: number;
+  username: string;
+  protocol_imap: string;
+  protocol_smtp: string;
+}
+
 interface WorkspaceStatus {
-  mailbox_address?: string | null;
-  mailbox_local_part?: string | null;
   tfa_enabled?: boolean | null;
+}
+
+/** Per-field clipboard copy with 2-second feedback. */
+function CopyButton({ value, copyLabel, copiedLabel }: { value: string; copyLabel: string; copiedLabel: string }) {
+  const [copied, setCopied] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(true);
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {
+      // Fallback: silently ignore clipboard failure
+    });
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="ml-2 font-dm-sans text-xs text-clinical-teal hover:text-clinical-teal/80 transition-colors shrink-0"
+    >
+      {copied ? copiedLabel : copyLabel}
+    </button>
+  );
 }
 
 export default function SettingsTab({ physicianId, lang, accessToken }: SettingsTabProps) {
   const t = workspaceContent[lang];
+
+  // IMAP credentials state
+  const [imapCreds, setImapCreds] = useState<ImapCredentials | null>(null);
+  const [imapLoading, setImapLoading] = useState(false);
+  const [imapError, setImapError] = useState(false);
+  const [imapOpen, setImapOpen] = useState(false);
+
+  // Workspace status for 2FA indicator
   const [status, setStatus] = useState<WorkspaceStatus | null>(null);
-
-  // Reveal-once state
-  const [showRevealConfirm, setShowRevealConfirm] = useState(false);
-  const [revealedPassword, setRevealedPassword] = useState<string | null>(null);
-  const [revealedOnce, setRevealedOnce] = useState(false);
-
-  // Change password inline form state
-  const [oldPwd, setOldPwd] = useState('');
-  const [newPwd, setNewPwd] = useState('');
-  const [confirmPwd, setConfirmPwd] = useState('');
-  const [pwdState, setPwdState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
     if (!physicianId || !accessToken) return;
@@ -61,251 +93,165 @@ export default function SettingsTab({ physicianId, lang, accessToken }: Settings
     })();
   }, [physicianId, accessToken]);
 
-  const submitPasswordChange = async () => {
-    if (newPwd.length < 12 || newPwd !== confirmPwd) {
-      setPwdState('error');
-      return;
-    }
-    setPwdState('saving');
+  /** Lazy-load IMAP credentials when the accordion is opened. */
+  const handleImapToggle = async (open: boolean) => {
+    setImapOpen(open);
+    if (!open || imapCreds || imapLoading) return;
+    setImapLoading(true);
+    setImapError(false);
     try {
-      const res = await fetch('/api/practikah/mailbox/change-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ old_password: oldPwd, new_password: newPwd }),
-      });
+      const res = await fetch('/api/practikah/mailbox/imap-credentials');
       if (res.ok) {
-        setPwdState('saved');
-        setOldPwd('');
-        setNewPwd('');
-        setConfirmPwd('');
-        setTimeout(() => {
-          setPwdState('idle');
-          setShowForm(false);
-        }, 2000);
+        const data = (await res.json()) as ImapCredentials;
+        setImapCreds(data);
       } else {
-        setPwdState('error');
+        setImapError(true);
       }
     } catch {
-      setPwdState('error');
+      setImapError(true);
+    } finally {
+      setImapLoading(false);
     }
   };
 
-  const requestReveal = async () => {
-    setShowRevealConfirm(false);
-    try {
-      // 12-03 ships the actual handler — this calls the stub and reveals once
-      const res = await fetch('/api/practikah/mailbox/change-password?reveal=once', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      if (res.ok) {
-        const data = (await res.json()) as { revealed_password?: string };
-        if (data.revealed_password) {
-          setRevealedPassword(data.revealed_password);
-          setRevealedOnce(true);
-        }
-      }
-    } catch {
-      // ignore
-    }
-  };
-
-  const triggerMobileconfigDownload = () => {
-    // GET request — 12-03 implements the actual binary stream-through
-    window.location.href = '/api/practikah/mailbox/mobileconfig';
-  };
-
-  const username = status?.mailbox_address || `you@medikah.health`;
   const tfaEnabled = Boolean(status?.tfa_enabled);
 
   return (
     <div className="space-y-6">
-      {/* Section 1: Change Password inline form */}
-      <div className="bg-linen-white rounded-[12px] border border-warm-gray-800/[0.06] p-6 shadow-sm">
+      {/* Section 1: Mailbox password change */}
+      <div className="bg-white rounded-[12px] border border-warm-gray-800/[0.06] p-6 shadow-sm">
         <h2 className="font-body font-semibold text-lg text-deep-charcoal mb-1">
           {t.mailbox.changePasswordCardTitle}
         </h2>
-        <p className="font-body text-sm text-body-slate mb-4">
+        <p className="font-body text-sm text-body-slate mb-5">
           {t.mailbox.changePasswordCardSubtitle}
         </p>
-
-        {!showForm && (
-          <button
-            type="button"
-            onClick={() => setShowForm(true)}
-            className="bg-inst-blue text-white px-4 py-2 rounded-md font-dm-sans text-sm hover:bg-inst-blue/90 transition-colors"
-          >
-            {t.mailbox.changePassword}
-          </button>
-        )}
-        {showForm && (
-          <div className="space-y-3">
-            <div>
-              <label className="block font-dm-sans text-xs text-body-slate mb-1">
-                {t.mailbox.oldPasswordLabel}
-              </label>
-              <input
-                type="password"
-                value={oldPwd}
-                onChange={(e) => setOldPwd(e.target.value)}
-                className="w-full border border-warm-gray-800/[0.12] rounded-md px-3 py-2 font-body text-sm focus:outline-none focus:ring-2 focus:ring-clinical-teal/40"
-                autoComplete="current-password"
-              />
-            </div>
-            <div>
-              <label className="block font-dm-sans text-xs text-body-slate mb-1">
-                {t.mailbox.newPasswordLabel}
-              </label>
-              <input
-                type="password"
-                value={newPwd}
-                onChange={(e) => setNewPwd(e.target.value)}
-                minLength={12}
-                className="w-full border border-warm-gray-800/[0.12] rounded-md px-3 py-2 font-body text-sm focus:outline-none focus:ring-2 focus:ring-clinical-teal/40"
-                autoComplete="new-password"
-              />
-            </div>
-            <div>
-              <label className="block font-dm-sans text-xs text-body-slate mb-1">
-                {t.mailbox.confirmPasswordLabel}
-              </label>
-              <input
-                type="password"
-                value={confirmPwd}
-                onChange={(e) => setConfirmPwd(e.target.value)}
-                minLength={12}
-                className="w-full border border-warm-gray-800/[0.12] rounded-md px-3 py-2 font-body text-sm focus:outline-none focus:ring-2 focus:ring-clinical-teal/40"
-                autoComplete="new-password"
-              />
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={submitPasswordChange}
-                disabled={pwdState === 'saving'}
-                className="bg-clinical-teal text-white px-4 py-2 rounded-md font-dm-sans text-sm hover:bg-clinical-teal/90 disabled:opacity-50 transition-colors"
-              >
-                {pwdState === 'saving' ? t.mailbox.saving : t.mailbox.submit}
-              </button>
-              {pwdState === 'saved' && (
-                <span className="font-body text-sm text-confirm-green">{t.mailbox.saved}</span>
-              )}
-              {pwdState === 'error' && (
-                <span className="font-body text-sm text-alert-garnet">{t.mailbox.error}</span>
-              )}
-            </div>
-          </div>
-        )}
+        <MailboxPasswordForm lang={lang} mode="rotate" />
       </div>
 
       {/* Section 2: IMAP credentials accordion */}
-      <div className="bg-linen-white rounded-[12px] border border-warm-gray-800/[0.06] p-6 shadow-sm">
+      <div className="bg-white rounded-[12px] border border-warm-gray-800/[0.06] p-6 shadow-sm">
         <h2 className="font-body font-semibold text-lg text-deep-charcoal mb-1">
-          {t.settings.imapCardTitle}
-        </h2>
-        <p className="font-body text-sm text-body-slate mb-4">{t.settings.imapCardSubtitle}</p>
-
-        <details className="border border-warm-gray-800/[0.08] rounded-md p-3">
-          <summary className="font-dm-sans text-sm font-medium text-inst-blue cursor-pointer">
-            {t.settings.imapCardTitle}
-          </summary>
-          <dl className="mt-3 space-y-2 font-dm-sans text-sm">
-            <div className="flex justify-between gap-4">
-              <dt className="text-body-slate">{t.settings.imapHost}</dt>
-              <dd className="text-deep-charcoal break-all">mail.medikah.health</dd>
-            </div>
-            <div className="flex justify-between gap-4">
-              <dt className="text-body-slate">{t.settings.imapPort}</dt>
-              <dd className="text-deep-charcoal">993</dd>
-            </div>
-            <div className="flex justify-between gap-4">
-              <dt className="text-body-slate">{t.settings.smtpHost}</dt>
-              <dd className="text-deep-charcoal break-all">mail.medikah.health</dd>
-            </div>
-            <div className="flex justify-between gap-4">
-              <dt className="text-body-slate">{t.settings.smtpPort}</dt>
-              <dd className="text-deep-charcoal">465</dd>
-            </div>
-            <div className="flex justify-between gap-4">
-              <dt className="text-body-slate">{t.settings.username}</dt>
-              <dd className="text-deep-charcoal break-all">{username}</dd>
-            </div>
-            <div className="pt-2">
-              <button
-                type="button"
-                disabled={revealedOnce}
-                onClick={() => setShowRevealConfirm(true)}
-                className="bg-caution-amber/10 text-caution-amber border border-caution-amber px-3 py-1 rounded-md font-dm-sans text-xs disabled:opacity-50"
-              >
-                {revealedOnce ? t.settings.password.hide : t.settings.password.reveal}
-              </button>
-              {revealedPassword && (
-                <p className="mt-2 font-dm-sans text-sm bg-caution-amber/10 border border-caution-amber rounded-md p-2 text-deep-charcoal break-all">
-                  {revealedPassword}
-                </p>
-              )}
-            </div>
-          </dl>
-        </details>
-
-        {/* Reveal confirmation modal */}
-        {showRevealConfirm && (
-          <div
-            className="fixed inset-0 bg-deep-charcoal/40 flex items-center justify-center z-50 p-4"
-            role="dialog"
-            aria-modal="true"
-          >
-            <div className="bg-white rounded-md p-6 max-w-md">
-              <h3 className="font-body font-semibold text-lg text-deep-charcoal mb-2">
-                {t.settings.revealConfirmTitle}
-              </h3>
-              <p className="font-body text-sm text-body-slate mb-4">
-                {t.settings.revealConfirmBody}
-              </p>
-              <div className="flex gap-2 justify-end">
-                <button
-                  type="button"
-                  onClick={() => setShowRevealConfirm(false)}
-                  className="bg-linen text-body-slate px-4 py-2 rounded-md font-dm-sans text-sm"
-                >
-                  {t.settings.revealConfirmNo}
-                </button>
-                <button
-                  type="button"
-                  onClick={requestReveal}
-                  className="bg-caution-amber text-white px-4 py-2 rounded-md font-dm-sans text-sm"
-                >
-                  {t.settings.revealConfirmYes}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Section 3: Auto-configure iPhone (.mobileconfig) */}
-      <div className="bg-linen-white rounded-[12px] border border-warm-gray-800/[0.06] p-6 shadow-sm">
-        <h2 className="font-body font-semibold text-lg text-deep-charcoal mb-1">
-          {t.settings.mobileconfig.button}
+          {t.settings.imap.title}
         </h2>
         <p className="font-body text-sm text-body-slate mb-4">
-          {t.settings.mobileconfig.subtitle}
+          {t.settings.imap.helpText}
         </p>
-        <button
-          type="button"
-          onClick={triggerMobileconfigDownload}
-          className="bg-inst-blue text-white px-4 py-2 rounded-md font-dm-sans text-sm hover:bg-inst-blue/90 transition-colors"
+
+        <details
+          className="border border-warm-gray-800/[0.08] rounded-md"
+          onToggle={(e) => handleImapToggle((e.target as HTMLDetailsElement).open)}
         >
-          {t.settings.mobileconfig.button}
-        </button>
+          <summary className="px-4 py-3 font-dm-sans text-sm font-medium text-inst-blue cursor-pointer select-none">
+            {t.settings.imapCardTitle}
+          </summary>
+
+          <div className="px-4 pb-4">
+            {imapLoading && (
+              <p className="font-body text-sm text-archival-grey mt-3">Loading...</p>
+            )}
+            {imapError && (
+              <p className="font-body text-sm text-alert-garnet mt-3">
+                {t.settings.mobileconfig.subtitle}
+              </p>
+            )}
+            {imapCreds && (
+              <dl className="mt-3 space-y-2 font-dm-sans text-sm">
+                {/* Host */}
+                <div className="flex items-center justify-between gap-4">
+                  <dt className="text-body-slate">{t.settings.imap.host}</dt>
+                  <dd className="flex items-center text-deep-charcoal break-all">
+                    <code className="font-mono">{imapCreds.host}</code>
+                    <CopyButton
+                      value={imapCreds.host}
+                      copyLabel={t.settings.imap.copy}
+                      copiedLabel={t.settings.imap.copied}
+                    />
+                  </dd>
+                </div>
+                {/* IMAP port */}
+                <div className="flex items-center justify-between gap-4">
+                  <dt className="text-body-slate">{t.settings.imap.imapPort}</dt>
+                  <dd className="flex items-center text-deep-charcoal">
+                    <code className="font-mono">{imapCreds.imap_port}</code>
+                    <CopyButton
+                      value={String(imapCreds.imap_port)}
+                      copyLabel={t.settings.imap.copy}
+                      copiedLabel={t.settings.imap.copied}
+                    />
+                  </dd>
+                </div>
+                {/* SMTP port SSL */}
+                <div className="flex items-center justify-between gap-4">
+                  <dt className="text-body-slate">{t.settings.imap.smtpPort}</dt>
+                  <dd className="flex items-center text-deep-charcoal">
+                    <code className="font-mono">{imapCreds.smtp_port}</code>
+                    <CopyButton
+                      value={String(imapCreds.smtp_port)}
+                      copyLabel={t.settings.imap.copy}
+                      copiedLabel={t.settings.imap.copied}
+                    />
+                  </dd>
+                </div>
+                {/* SMTP port STARTTLS */}
+                <div className="flex items-center justify-between gap-4">
+                  <dt className="text-body-slate">{t.settings.imap.smtpStarttls}</dt>
+                  <dd className="flex items-center text-deep-charcoal">
+                    <code className="font-mono">{imapCreds.smtp_starttls_port}</code>
+                    <CopyButton
+                      value={String(imapCreds.smtp_starttls_port)}
+                      copyLabel={t.settings.imap.copy}
+                      copiedLabel={t.settings.imap.copied}
+                    />
+                  </dd>
+                </div>
+                {/* Username */}
+                <div className="flex items-center justify-between gap-4">
+                  <dt className="text-body-slate">{t.settings.imap.username}</dt>
+                  <dd className="flex items-center text-deep-charcoal break-all">
+                    <code className="font-mono">{imapCreds.username}</code>
+                    <CopyButton
+                      value={imapCreds.username}
+                      copyLabel={t.settings.imap.copy}
+                      copiedLabel={t.settings.imap.copied}
+                    />
+                  </dd>
+                </div>
+                {/* Security protocol */}
+                <div className="flex items-center justify-between gap-4">
+                  <dt className="text-body-slate">{t.settings.imap.protocol}</dt>
+                  <dd className="text-deep-charcoal">{imapCreds.protocol_imap}</dd>
+                </div>
+              </dl>
+            )}
+          </div>
+        </details>
+      </div>
+
+      {/* Section 3: Auto-configure iPhone */}
+      <div className="bg-white rounded-[12px] border border-warm-gray-800/[0.06] p-6 shadow-sm">
+        <h2 className="font-body font-semibold text-lg text-deep-charcoal mb-1">
+          {t.settings.mobileconfigCard.title}
+        </h2>
+        <p className="font-body text-sm text-body-slate mb-4">
+          {t.settings.mobileconfigCard.description}
+        </p>
+        {/* Anchor download — browser triggers file download natively (T-12-03-04) */}
+        <a
+          href="/api/practikah/mailbox/mobileconfig"
+          download="practikah.mobileconfig"
+          className="inline-block bg-inst-blue text-white px-4 py-2 rounded-md font-dm-sans text-sm font-medium hover:bg-inst-blue/90 transition-colors"
+        >
+          {t.settings.mobileconfigCard.button}
+        </a>
       </div>
 
       {/* Section 4: Two-factor authentication status */}
-      <div className="bg-linen-white rounded-[12px] border border-warm-gray-800/[0.06] p-6 shadow-sm">
-        <h2 className="font-body font-semibold text-lg text-deep-charcoal mb-1">
-          {t.settings.tfa.title}
+      <div className="bg-white rounded-[12px] border border-warm-gray-800/[0.06] p-6 shadow-sm">
+        <h2 className="font-body font-semibold text-lg text-deep-charcoal mb-2">
+          {t.settings.tfaCard.title}
         </h2>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3 mb-3">
           <span
             className={`font-dm-sans text-xs px-3 py-1 rounded-full ${
               tfaEnabled
@@ -313,10 +259,20 @@ export default function SettingsTab({ physicianId, lang, accessToken }: Settings
                 : 'bg-archival-grey/10 text-archival-grey'
             }`}
           >
-            {tfaEnabled ? t.settings.tfa.enabled : t.settings.tfa.notEnabled}
+            {tfaEnabled ? t.settings.tfa.enabled : t.settings.tfaCard.notEnrolled}
           </span>
         </div>
-        <p className="font-body text-sm text-body-slate mt-2">{t.settings.tfa.deferralCopy}</p>
+        <p className="font-body text-sm text-body-slate mb-3">
+          {t.settings.tfaCard.promptOnLogin}
+        </p>
+        <a
+          href="https://mail.medikah.health"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block font-dm-sans text-sm text-clinical-teal hover:text-clinical-teal/80 transition-colors"
+        >
+          {t.settings.tfaCard.openMailboxPrompt} →
+        </a>
       </div>
     </div>
   );
