@@ -1,0 +1,81 @@
+import { NextRequest, NextResponse } from 'next/server';
+
+const APEX = 'medikah.health';
+
+/**
+ * Reserved subdomains — every subdomain Phase 10 provisioned + defensive future-reservations.
+ *
+ * Sources:
+ *  - Phase 10 vendor-inventory.md: practikah (Mailcow admin), mail (webmail), api (FastAPI backend),
+ *    send (Resend bounce subdomain, used for email delivery tracking)
+ *  - Phase 11/12 CONTEXT.md: practikah (D-01 marketing landing), klinikah (reserved patient-side brand)
+ *  - DNS-only labels added defensively — they never serve HTTP but cheap to guard
+ */
+const RESERVED_SUBDOMAINS = new Set([
+  'mail',        // Mailcow webmail at mail.medikah.health (D-05)
+  'practikah',   // Marketing landing + Mailcow admin subdomain (D-01, vendor-inventory.md)
+  'klinikah',    // Reserved patient-side brand (PROJECT.md)
+  'api',         // FastAPI backend at api.medikah.health
+  'admin',       // Admin tools (defensive — not yet live)
+  'www',         // Apex www alias
+  'send',        // Resend bounce subdomain (Phase 10 SPF/DKIM records at send.medikah.health)
+  'mailcow',     // Mailcow infra subdomain (defensive)
+  // DNS-only labels (defensive — should never hit HTTP middleware but cheap to include):
+  '_dmarc', '_domainkey', '_mta-sts', 'mta-sts',
+]);
+
+export function middleware(req: NextRequest) {
+  const host = req.headers.get('host') || '';
+  const hostname = host.split(':')[0].toLowerCase();
+
+  // Localhost / dev — early return so `npm run dev` works without subdomain setup.
+  if (
+    hostname === 'localhost' ||
+    hostname.endsWith('.localhost') ||
+    hostname === '127.0.0.1' ||
+    hostname === '0.0.0.0'
+  ) {
+    return NextResponse.next();
+  }
+
+  // Pass-through for apex + www.
+  if (hostname === APEX || hostname === `www.${APEX}`) return NextResponse.next();
+
+  // Pass-through for non-medikah.health hosts (Netlify preview deploys, Phase 13 Pro custom domains).
+  if (!hostname.endsWith(`.${APEX}`)) return NextResponse.next();
+
+  // Extract the leftmost label (slug candidate).
+  const slug = hostname.slice(0, hostname.length - (APEX.length + 1));
+
+  // Empty slug means hostname IS the apex (already handled above) or has empty label — pass through.
+  if (!slug) return NextResponse.next();
+
+  // Reserved subdomain — pass through to its own pages tree or external service.
+  if (RESERVED_SUBDOMAINS.has(slug)) return NextResponse.next();
+
+  // Multi-level subdomains (e.g., a.b.medikah.health) — not supported in Phase 12; pass through.
+  // Phase 13 Pro custom domains are handled by Cloudflare Worker, not this middleware.
+  if (slug.includes('.')) return NextResponse.next();
+
+  // Slug must match a safe URL-segment pattern; reject path traversal, special chars, etc. (T-12-04-01, T-12-04-06)
+  if (!/^[a-z0-9-]+$/.test(slug)) return NextResponse.next();
+
+  // Rewrite to /sites/<slug> tree. Preserves path, query string, and hash.
+  // The rewrite is internal — the browser URL stays as <slug>.medikah.health.
+  // Cache safety (T-12-04-04): the Netlify edge cache key includes the full host header,
+  // so dr-a.medikah.health and dr-b.medikah.health never share a cache entry.
+  const url = req.nextUrl.clone();
+  url.pathname = `/sites/${slug}${url.pathname === '/' ? '' : url.pathname}`;
+  return NextResponse.rewrite(url);
+}
+
+export const config = {
+  /**
+   * Matcher excludes:
+   *  - /_next/* (Next.js internals: HMR, chunks, image optimization)
+   *  - /api/*   (BFF routes must remain routable on apex without rewrite)
+   *  - /favicon.ico, /robots.txt, /sitemap.xml (static well-known paths)
+   *  - Anything with a file extension (Netlify static assets: .js, .css, .png, etc.)
+   */
+  matcher: ['/((?!_next/|api/|favicon.ico|robots.txt|sitemap.xml|.*\\..*).*)'],
+};
