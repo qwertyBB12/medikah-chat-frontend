@@ -40,12 +40,27 @@ import { supabaseAdmin } from './supabaseServer';
 // ---------------------------------------------------------------------------
 
 /**
- * The 9 OPS-01 workspace lifecycle actions tracked in workspace_audit_log.
- * Covers login, mailbox access, domain/site/theme changes, tier transitions,
- * PHI safeguard events, and consent signing.
+ * OPS-01 workspace lifecycle actions tracked in workspace_audit_log.
+ *
+ * Original 9 actions (Plan 11-07): login, mailbox access, domain/site/theme changes,
+ * tier transitions, PHI safeguard events, and consent signing.
+ *
+ * Phase 12 Plan 12-01 additions:
+ *   workspace.setup_completed — SECURITY_RELEVANT (initial provisioning — IP/UA captured)
+ *   workspace.password_changed — SECURITY_RELEVANT (credential rotation)
+ *   workspace.theme_changed    — informational (replaces legacy theme.changed for workspace surface)
+ *   workspace.mobileconfig_requested — informational
+ *   workspace.site_published   — informational
+ *   workspace.site_disabled    — informational
  */
 export type WorkspaceAction =
   | 'workspace.login'
+  | 'workspace.setup_completed'
+  | 'workspace.password_changed'
+  | 'workspace.theme_changed'
+  | 'workspace.mobileconfig_requested'
+  | 'workspace.site_published'
+  | 'workspace.site_disabled'
   | 'mailbox.access'
   | 'domain.changed'
   | 'site.edited'
@@ -93,9 +108,18 @@ export interface WorkspaceAuditEvent {
  * Actions where IP address + user agent are captured for security audit.
  * Per D's Discretion in Phase 11 CONTEXT.md: only security-relevant actions
  * record these fields to minimize PII surface.
+ *
+ * Phase 12 Plan 12-01 additions:
+ *   workspace.setup_completed — initial mailbox provisioning (one-time critical event)
+ *   workspace.password_changed — credential rotation (security-relevant)
+ *
+ * Informational actions (workspace.theme_changed, mobileconfig_requested,
+ * workspace.site_published, workspace.site_disabled) do NOT capture IP/UA.
  */
 const SECURITY_RELEVANT_ACTIONS: ReadonlySet<WorkspaceAction> = new Set<WorkspaceAction>([
   'workspace.login',
+  'workspace.setup_completed',
+  'workspace.password_changed',
   'consent.signed',
   'phi_warning.overridden',
 ]);
