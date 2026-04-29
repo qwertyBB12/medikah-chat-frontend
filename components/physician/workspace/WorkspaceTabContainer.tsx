@@ -24,7 +24,7 @@ import SettingsTab from './SettingsTab';
 
 export type WorkspaceSubTab = 'mailbox' | 'calendar' | 'site' | 'settings';
 
-const VALID_SUBTABS: ReadonlySet<WorkspaceSubTab> = new Set([
+const VALID_SUBTABS: Set<WorkspaceSubTab> = new Set<WorkspaceSubTab>([
   'mailbox',
   'calendar',
   'site',
