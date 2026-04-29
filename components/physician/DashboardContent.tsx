@@ -19,6 +19,7 @@ import WebsiteEditor from './editor/WebsiteEditor';
 import USCredentialSection from './credentials/USCredentialSection';
 import MXCredentialSection from './credentials/MXCredentialSection';
 import ContactInfoSection from './ContactInfoSection';
+import WorkspaceTabContainer from './workspace/WorkspaceTabContainer';
 import { computeCompleteness } from '../../lib/completenessService';
 import type { CompletenessResult } from '../../lib/completenessService';
 import { getContactInfo } from '../../lib/contactClient';
@@ -371,6 +372,16 @@ export default function DashboardContent({
 
       {/* Row 7: Website Editor - Full width */}
       {physicianId && <WebsiteEditor physicianId={physicianId} lang={lang} accessToken={accessToken} />}
+
+      {/* Row 8: Workspace (Práctikah) — Mailbox / Calendar / Site / Settings (Phase 12, Plan 12-01) */}
+      {physicianId && normalizedStatus === 'verified' && (
+        <WorkspaceTabContainer
+          physicianId={physicianId}
+          lang={lang}
+          accessToken={accessToken}
+          physicianFullName={physicianName}
+        />
+      )}
 
       {/* Network Card - Full width */}
       <div className="bg-gradient-to-br from-inst-blue to-[#243447] rounded-[12px] p-6 text-white shadow-lg">
