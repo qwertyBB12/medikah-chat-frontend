@@ -86,6 +86,47 @@ export interface WorkspaceContent {
     revealConfirmBody: string;
     revealConfirmYes: string;
     revealConfirmNo: string;
+    /** Phase 12-03 additions for MailboxPasswordForm + SettingsTab wiring */
+    passwordForm: {
+      currentLabel: string;
+      newLabel: string;
+      confirmLabel: string;
+      submit: string;
+      submitting: string;
+      success: string;
+      error: string;
+      errorWeak: string;
+      errorMismatch: string;
+      strengthMeter: string;
+      strengthWeak: string;
+      strengthFair: string;
+      strengthGood: string;
+      strengthStrong: string;
+    };
+    imap: {
+      title: string;
+      host: string;
+      imapPort: string;
+      smtpPort: string;
+      smtpStarttls: string;
+      username: string;
+      protocol: string;
+      copy: string;
+      copied: string;
+      helpText: string;
+    };
+    mobileconfigCard: {
+      title: string;
+      description: string;
+      button: string;
+      error: string;
+    };
+    tfaCard: {
+      title: string;
+      notEnrolled: string;
+      promptOnLogin: string;
+      openMailboxPrompt: string;
+    };
   };
   wizard: {
     progress: string;
@@ -227,6 +268,46 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
       revealConfirmBody: "We will show your password once. Save it in your password manager — we don't store it anywhere you can see it again.",
       revealConfirmYes: 'Reveal once',
       revealConfirmNo: 'Cancel',
+      passwordForm: {
+        currentLabel: 'Current password',
+        newLabel: 'New password (min. 12 characters)',
+        confirmLabel: 'Confirm new password',
+        submit: 'Update password',
+        submitting: 'Updating...',
+        success: 'Password updated successfully.',
+        error: 'Could not update password. Please try again.',
+        errorWeak: 'Password must be at least 12 characters.',
+        errorMismatch: 'Passwords do not match.',
+        strengthMeter: 'Strength',
+        strengthWeak: 'Weak',
+        strengthFair: 'Fair',
+        strengthGood: 'Good',
+        strengthStrong: 'Strong',
+      },
+      imap: {
+        title: 'IMAP / SMTP Connection Details',
+        host: 'Host',
+        imapPort: 'IMAP Port (SSL/TLS)',
+        smtpPort: 'SMTP Port (SSL/TLS)',
+        smtpStarttls: 'SMTP Port (STARTTLS)',
+        username: 'Username',
+        protocol: 'Security',
+        copy: 'Copy',
+        copied: 'Copied!',
+        helpText: 'Use these details in Apple Mail, Outlook, or Gmail. Use the password you set above.',
+      },
+      mobileconfigCard: {
+        title: 'Auto-configure iPhone / iPad',
+        description: 'Download a one-tap iOS profile that sets up Mail and Calendar automatically.',
+        button: 'Download iOS profile',
+        error: 'Could not download the profile. Please try again.',
+      },
+      tfaCard: {
+        title: 'Two-factor authentication',
+        notEnrolled: 'Not yet enrolled',
+        promptOnLogin: 'You will be prompted to set up 2FA the next time you open your mailbox.',
+        openMailboxPrompt: 'Open Mailbox to set up 2FA',
+      },
     },
     wizard: {
       progress: 'Step {n} of 3',
@@ -366,6 +447,46 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
       revealConfirmBody: 'Te mostraremos tu contraseña una vez. Guárdala en tu gestor de contraseñas — no la almacenamos en un lugar que puedas volver a ver.',
       revealConfirmYes: 'Mostrar una vez',
       revealConfirmNo: 'Cancelar',
+      passwordForm: {
+        currentLabel: 'Contraseña actual',
+        newLabel: 'Nueva contraseña (mín. 12 caracteres)',
+        confirmLabel: 'Confirmar nueva contraseña',
+        submit: 'Actualizar contraseña',
+        submitting: 'Actualizando...',
+        success: 'Contraseña actualizada correctamente.',
+        error: 'No se pudo actualizar la contraseña. Inténtalo de nuevo.',
+        errorWeak: 'La contraseña debe tener al menos 12 caracteres.',
+        errorMismatch: 'Las contraseñas no coinciden.',
+        strengthMeter: 'Seguridad',
+        strengthWeak: 'Débil',
+        strengthFair: 'Aceptable',
+        strengthGood: 'Buena',
+        strengthStrong: 'Fuerte',
+      },
+      imap: {
+        title: 'Datos de conexión IMAP / SMTP',
+        host: 'Servidor',
+        imapPort: 'Puerto IMAP (SSL/TLS)',
+        smtpPort: 'Puerto SMTP (SSL/TLS)',
+        smtpStarttls: 'Puerto SMTP (STARTTLS)',
+        username: 'Usuario',
+        protocol: 'Seguridad',
+        copy: 'Copiar',
+        copied: '¡Copiado!',
+        helpText: 'Usa estos datos en Apple Mail, Outlook o Gmail. Usa la contraseña que configuraste arriba.',
+      },
+      mobileconfigCard: {
+        title: 'Auto-configurar iPhone / iPad',
+        description: 'Descarga un perfil iOS que configura Mail y Calendario automáticamente.',
+        button: 'Descargar perfil iOS',
+        error: 'No se pudo descargar el perfil. Inténtalo de nuevo.',
+      },
+      tfaCard: {
+        title: 'Autenticación de dos factores',
+        notEnrolled: 'Aún no inscrita',
+        promptOnLogin: 'Te pediremos que configures 2FA la próxima vez que abras tu buzón.',
+        openMailboxPrompt: 'Abrir buzón para configurar 2FA',
+      },
     },
     wizard: {
       progress: 'Paso {n} de 3',

@@ -13,6 +13,7 @@
 import { useEffect, useState } from 'react';
 import type { SupportedLang } from '../../../lib/i18n';
 import { content as workspaceContent, format as fmt } from '../../../lib/practikahWorkspaceContent';
+import MailboxPasswordForm from './MailboxPasswordForm';
 
 interface MailboxTabProps {
   physicianId: string;
@@ -26,17 +27,9 @@ interface WorkspaceStatus {
   tier?: 'free' | 'pro' | null;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
-
 export default function MailboxTab({ physicianId, lang, accessToken }: MailboxTabProps) {
   const t = workspaceContent[lang];
   const [status, setStatus] = useState<WorkspaceStatus | null>(null);
-
-  // Change Password inline form state
-  const [oldPwd, setOldPwd] = useState('');
-  const [newPwd, setNewPwd] = useState('');
-  const [confirmPwd, setConfirmPwd] = useState('');
-  const [pwdState, setPwdState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
@@ -56,35 +49,6 @@ export default function MailboxTab({ physicianId, lang, accessToken }: MailboxTa
       }
     })();
   }, [physicianId, accessToken]);
-
-  const submitPasswordChange = async () => {
-    if (newPwd.length < 12 || newPwd !== confirmPwd) {
-      setPwdState('error');
-      return;
-    }
-    setPwdState('saving');
-    try {
-      const res = await fetch('/api/practikah/mailbox/change-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ old_password: oldPwd, new_password: newPwd }),
-      });
-      if (res.ok) {
-        setPwdState('saved');
-        setOldPwd('');
-        setNewPwd('');
-        setConfirmPwd('');
-        setTimeout(() => {
-          setPwdState('idle');
-          setShowForm(false);
-        }, 2000);
-      } else {
-        setPwdState('error');
-      }
-    } catch {
-      setPwdState('error');
-    }
-  };
 
   const mailboxAddress = status?.mailbox_address || `you@medikah.health`;
   const quotaUsed = (status?.mailbox_quota_used_gb ?? 0).toFixed(2);
@@ -130,13 +94,9 @@ export default function MailboxTab({ physicianId, lang, accessToken }: MailboxTa
         >
           {t.mailbox.openButton}
         </a>
-        <span className="ml-2 text-xs text-archival-grey">
-          {/* anchor for API_URL — not user-visible */}
-          {API_URL ? '' : ''}
-        </span>
       </div>
 
-      {/* Card 2: Change Password inline action */}
+      {/* Card 2: Change Password — uses shared MailboxPasswordForm */}
       <div className="bg-linen-white rounded-[12px] border border-warm-gray-800/[0.06] p-6 shadow-sm">
         <h2 className="font-body font-semibold text-lg text-deep-charcoal mb-1">
           {t.mailbox.changePasswordCardTitle}
@@ -145,7 +105,7 @@ export default function MailboxTab({ physicianId, lang, accessToken }: MailboxTa
           {t.mailbox.changePasswordCardSubtitle}
         </p>
 
-        {!showForm && (
+        {!showForm ? (
           <button
             type="button"
             onClick={() => setShowForm(true)}
@@ -153,65 +113,15 @@ export default function MailboxTab({ physicianId, lang, accessToken }: MailboxTa
           >
             {t.mailbox.changePassword}
           </button>
-        )}
-
-        {showForm && (
-          <div className="space-y-3">
-            <div>
-              <label className="block font-dm-sans text-xs text-body-slate mb-1">
-                {t.mailbox.oldPasswordLabel}
-              </label>
-              <input
-                type="password"
-                value={oldPwd}
-                onChange={(e) => setOldPwd(e.target.value)}
-                className="w-full border border-warm-gray-800/[0.12] rounded-md px-3 py-2 font-body text-sm focus:outline-none focus:ring-2 focus:ring-clinical-teal/40"
-                autoComplete="current-password"
-              />
-            </div>
-            <div>
-              <label className="block font-dm-sans text-xs text-body-slate mb-1">
-                {t.mailbox.newPasswordLabel}
-              </label>
-              <input
-                type="password"
-                value={newPwd}
-                onChange={(e) => setNewPwd(e.target.value)}
-                minLength={12}
-                className="w-full border border-warm-gray-800/[0.12] rounded-md px-3 py-2 font-body text-sm focus:outline-none focus:ring-2 focus:ring-clinical-teal/40"
-                autoComplete="new-password"
-              />
-            </div>
-            <div>
-              <label className="block font-dm-sans text-xs text-body-slate mb-1">
-                {t.mailbox.confirmPasswordLabel}
-              </label>
-              <input
-                type="password"
-                value={confirmPwd}
-                onChange={(e) => setConfirmPwd(e.target.value)}
-                minLength={12}
-                className="w-full border border-warm-gray-800/[0.12] rounded-md px-3 py-2 font-body text-sm focus:outline-none focus:ring-2 focus:ring-clinical-teal/40"
-                autoComplete="new-password"
-              />
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={submitPasswordChange}
-                disabled={pwdState === 'saving'}
-                className="bg-clinical-teal text-white px-4 py-2 rounded-md font-dm-sans text-sm hover:bg-clinical-teal/90 disabled:opacity-50 transition-colors"
-              >
-                {pwdState === 'saving' ? t.mailbox.saving : t.mailbox.submit}
-              </button>
-              {pwdState === 'saved' && (
-                <span className="font-body text-sm text-confirm-green">{t.mailbox.saved}</span>
-              )}
-              {pwdState === 'error' && (
-                <span className="font-body text-sm text-alert-garnet">{t.mailbox.error}</span>
-              )}
-            </div>
-          </div>
+        ) : (
+          <MailboxPasswordForm
+            lang={lang}
+            mode="rotate"
+            onSuccess={() => {
+              // Collapse the form 2 seconds after success (MailboxPasswordForm shows its own banner)
+              setTimeout(() => setShowForm(false), 3500);
+            }}
+          />
         )}
       </div>
     </div>
