@@ -64,8 +64,12 @@ export function middleware(req: NextRequest) {
   // The rewrite is internal — the browser URL stays as <slug>.medikah.health.
   // Cache safety (T-12-04-04): the Netlify edge cache key includes the full host header,
   // so dr-a.medikah.health and dr-b.medikah.health never share a cache entry.
+  //
+  // Special case: /sitemap.xml on a slug subdomain → /sites/<slug>/sitemap.xml
+  // (WEB-14: per-slug sitemap endpoint). The SSR handler writes raw XML.
   const url = req.nextUrl.clone();
-  url.pathname = `/sites/${slug}${url.pathname === '/' ? '' : url.pathname}`;
+  const originalPath = url.pathname;
+  url.pathname = `/sites/${slug}${originalPath === '/' ? '' : originalPath}`;
   return NextResponse.rewrite(url);
 }
 
@@ -74,8 +78,17 @@ export const config = {
    * Matcher excludes:
    *  - /_next/* (Next.js internals: HMR, chunks, image optimization)
    *  - /api/*   (BFF routes must remain routable on apex without rewrite)
-   *  - /favicon.ico, /robots.txt, /sitemap.xml (static well-known paths)
-   *  - Anything with a file extension (Netlify static assets: .js, .css, .png, etc.)
+   *  - /favicon.ico, /robots.txt, /sitemap.xml (apex static well-known paths)
+   *  - Most file extensions (Netlify static assets: .js, .css, .png, etc.)
+   *
+   * NOTE: /sitemap.xml is NOT excluded globally — it is excluded by the .*\\..*
+   * pattern only when on the apex domain (pass-through). When on a slug subdomain
+   * (<slug>.medikah.health/sitemap.xml), the middleware must rewrite to
+   * /sites/<slug>/sitemap.xml. The rewrite function below handles this case
+   * explicitly before the file-extension guard.
+   *
+   * We allow *.xml paths through the matcher so the middleware can decide
+   * whether to rewrite (slug subdomain) or pass through (apex).
    */
-  matcher: ['/((?!_next/|api/|favicon.ico|robots.txt|sitemap.xml|.*\\..*).*)'],
+  matcher: ['/((?!_next/|api/|favicon.ico|robots.txt|.*\\.(js|css|png|jpg|jpeg|gif|ico|woff|woff2|ttf|svg|webp|map|json|txt)).*)'],
 };
