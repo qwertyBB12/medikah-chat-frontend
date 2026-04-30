@@ -22,6 +22,8 @@ import WebsitePracticePhilosophy from '../../profile/WebsitePracticePhilosophy';
 import WebsiteFAQ from '../../profile/WebsiteFAQ';
 import WebsiteLocation from '../../profile/WebsiteLocation';
 import ProfileCTA from '../../profile/ProfileCTA';
+import TryProContactForm from '../sections/TryProContactForm';
+import StateLicensureDisclaimer from '../sections/StateLicensureDisclaimer';
 import type { PracikahTheme } from '../../../../lib/practikahTheme';
 
 // ---------------------------------------------------------------------------
@@ -29,6 +31,7 @@ import type { PracikahTheme } from '../../../../lib/practikahTheme';
 // ---------------------------------------------------------------------------
 
 interface PhysicianRecord {
+  id: string;
   full_name: string;
   photo_url?: string | null;
   primary_specialty?: string | null;
@@ -49,6 +52,11 @@ interface PhysicianRecord {
   current_institutions?: string[];
   communication_style?: string | null;
   first_consult_expectation?: string | null;
+  // WEB-15 / WEB-16: contact form + licensure disclaimer
+  country?: string | null;
+  primary_state?: string | null;
+  licensed_states?: string[] | null;
+  cedula_state?: string | null;
 }
 
 interface WebsiteRecord {
@@ -221,6 +229,23 @@ export default function ClassicLayout({ physician, website, theme, isEs, slug }:
         isEs={isEs}
         onScheduleClick={handleScheduleClick}
       />
+
+      {/*
+       * 10. Contact form — WEB-15. Posts to /api/physicians/{id}/inquiries.
+       *     Non-PHI disclaimer banner rendered inside the form component.
+       *     id="contact" anchors the ThemedShell header "Contact" nav link.
+       */}
+      <TryProContactForm
+        physicianId={p.id}
+        isEs={isEs}
+        accentColor={accent}
+      />
+
+      {/*
+       * 11. State-licensure disclaimer — WEB-16. Auto-generated from physician credentials.
+       *     Counsel review required before public launch (T-12-06-08).
+       */}
+      <StateLicensureDisclaimer physician={p} isEs={isEs} />
     </div>
   );
 }

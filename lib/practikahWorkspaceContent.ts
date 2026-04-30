@@ -51,6 +51,32 @@ export interface ThemingContent {
   preview: { title: string; refresh: string; openInNewTab: string };
 }
 
+export interface TryProContactContent {
+  title: string;
+  subtitle: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  /** Non-PHI disclaimer — prominent, not hidden. Must render clearly above the submit button. */
+  disclaimer: string;
+  submit: string;
+  submitting: string;
+  success: string;
+  error: string;
+  required: {
+    name: string;
+    email: string;
+    emailInvalid: string;
+    subject: string;
+    message: string;
+  };
+  maxLength: {
+    subject: number;
+    message: number;
+  };
+}
+
 export interface WorkspaceContent {
   workspace: {
     title: string;
@@ -166,6 +192,7 @@ export interface WorkspaceContent {
       openMailboxPrompt: string;
     };
   };
+  tryProContact: TryProContactContent;
   wizard: {
     progress: string;
     title: {
@@ -412,6 +439,31 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         openMailboxPrompt: 'Open Mailbox to set up 2FA',
       },
     },
+    tryProContact: {
+      title: 'Contact',
+      subtitle: 'Have a general question? Send a message.',
+      name: 'Your name',
+      email: 'Your email',
+      subject: 'Subject',
+      message: 'Message',
+      disclaimer:
+        'Please do not include medical or personal health information. For clinical questions, use the Medikah patient inquiry channel.',
+      submit: 'Send message',
+      submitting: 'Sending...',
+      success: 'Message sent. The physician will be in touch.',
+      error: 'Could not send message. Please try again.',
+      required: {
+        name: 'Name is required.',
+        email: 'Email is required.',
+        emailInvalid: 'Please enter a valid email address.',
+        subject: 'Subject is required.',
+        message: 'Message is required.',
+      },
+      maxLength: {
+        subject: 120,
+        message: 800,
+      },
+    },
     wizard: {
       progress: 'Step {n} of 3',
       title: {
@@ -654,6 +706,31 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         notEnrolled: 'Aún no inscrita',
         promptOnLogin: 'Te pediremos que configures 2FA la próxima vez que abras tu buzón.',
         openMailboxPrompt: 'Abrir buzón para configurar 2FA',
+      },
+    },
+    tryProContact: {
+      title: 'Contacto',
+      subtitle: '¿Tienes una pregunta general? Envía un mensaje.',
+      name: 'Tu nombre',
+      email: 'Tu correo electrónico',
+      subject: 'Asunto',
+      message: 'Mensaje',
+      disclaimer:
+        'Por favor no incluya información médica o de salud personal. Para preguntas clínicas, use el canal de consultas de pacientes de Medikah.',
+      submit: 'Enviar mensaje',
+      submitting: 'Enviando...',
+      success: 'Mensaje enviado. El médico se pondrá en contacto.',
+      error: 'No se pudo enviar el mensaje. Inténtalo de nuevo.',
+      required: {
+        name: 'El nombre es obligatorio.',
+        email: 'El correo es obligatorio.',
+        emailInvalid: 'Por favor ingresa un correo electrónico válido.',
+        subject: 'El asunto es obligatorio.',
+        message: 'El mensaje es obligatorio.',
+      },
+      maxLength: {
+        subject: 120,
+        message: 800,
       },
     },
     wizard: {

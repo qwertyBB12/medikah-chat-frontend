@@ -28,6 +28,8 @@ import WebsiteFAQ from '../../profile/WebsiteFAQ';
 import ProfileCTA from '../../profile/ProfileCTA';
 import CredentialsBadges from '../../profile/CredentialsBadges';
 import SpecialtiesGrid from '../../profile/SpecialtiesGrid';
+import TryProContactForm from '../sections/TryProContactForm';
+import StateLicensureDisclaimer from '../sections/StateLicensureDisclaimer';
 import type { PracikahTheme } from '../../../../lib/practikahTheme';
 import type { LayoutProps } from './ClassicLayout';
 
@@ -298,6 +300,23 @@ export default function EditorialLayout({ physician, website, theme, isEs, slug 
         isEs={isEs}
         onScheduleClick={handleScheduleClick}
       />
+
+      {/*
+       * 12. Contact form — WEB-15. Posts to /api/physicians/{id}/inquiries.
+       *     Placed after FAQ (last narrative section) per plan spec.
+       *     id="contact" anchors the ThemedShell header "Contact" nav link.
+       */}
+      <TryProContactForm
+        physicianId={p.id}
+        isEs={isEs}
+        accentColor={accent}
+      />
+
+      {/*
+       * 13. State-licensure disclaimer — WEB-16. Auto-generated bilingually.
+       *     Positioned above the footer per Editorial layout spec.
+       */}
+      <StateLicensureDisclaimer physician={p} isEs={isEs} />
     </div>
   );
 }

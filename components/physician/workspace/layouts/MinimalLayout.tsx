@@ -28,6 +28,8 @@ import CredentialsBadges from '../../profile/CredentialsBadges';
 import WebsiteLocation from '../../profile/WebsiteLocation';
 import WebsiteServices from '../../profile/WebsiteServices';
 import WebsitePracticePhilosophy from '../../profile/WebsitePracticePhilosophy';
+import TryProContactForm from '../sections/TryProContactForm';
+import StateLicensureDisclaimer from '../sections/StateLicensureDisclaimer';
 import type { PracikahTheme } from '../../../../lib/practikahTheme';
 import type { LayoutProps } from './ClassicLayout';
 
@@ -244,6 +246,24 @@ export default function MinimalLayout({ physician, website, theme, isEs, slug }:
           )}
         </div>
       </section>
+
+      {/*
+       * 10. Contact form — WEB-15. Minimal layout: generous margin, single-column.
+       *     id="contact" anchors the ThemedShell header "Contact" nav link.
+       */}
+      <div className="max-w-2xl mx-auto">
+        <TryProContactForm
+          physicianId={p.id}
+          isEs={isEs}
+          accentColor={accent}
+        />
+      </div>
+
+      {/*
+       * 11. State-licensure disclaimer — WEB-16. Positioned right before
+       *     the final tag-line block (i.e., at the bottom of the page) per spec.
+       */}
+      <StateLicensureDisclaimer physician={p} isEs={isEs} />
     </div>
   );
 }
