@@ -18,6 +18,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import type { PracikahTheme } from '../../../lib/practikahTheme';
 import { adjustHover, safeFaviconUrl } from '../../../lib/practikahTheme';
+import type { OpenGraphMeta } from '../../../lib/practikahJsonLd';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -29,8 +30,10 @@ export interface ThemedShellProps {
   title: string;
   description: string;
   slug: string;
-  /** JSON-LD structured data. 12-06 will populate; default undefined here. */
+  /** JSON-LD structured data (WEB-13). Populated by 12-06. */
   jsonLd?: Record<string, unknown>;
+  /** Full OG + Twitter card meta (WEB-13). Populated by 12-06. */
+  ogMeta?: OpenGraphMeta;
 }
 
 // ---------------------------------------------------------------------------
@@ -54,6 +57,7 @@ export default function ThemedShell({
   description,
   slug,
   jsonLd,
+  ogMeta,
 }: ThemedShellProps) {
   const fontWeightValue = FONT_WEIGHT_MAP[theme.font_weight] ?? '400';
   const accent = theme.accent_color;
@@ -64,22 +68,37 @@ export default function ThemedShell({
   return (
     <>
       <Head>
-        <title>{title}</title>
-        <meta name="description" content={description} />
-        <meta property="og:title" content={title} />
-        <meta property="og:description" content={description} />
+        <title>{ogMeta?.title || title}</title>
+        <meta name="description" content={ogMeta?.description || description} />
+
+        {/* OpenGraph — WEB-13 (FREE-09: share-able preview) */}
+        <meta property="og:title" content={ogMeta?.title || title} />
+        <meta property="og:description" content={ogMeta?.description || description} />
         <meta property="og:type" content="profile" />
-        <meta property="og:url" content={`https://${slug}.medikah.health`} />
-        <meta name="twitter:card" content="summary" />
-        <meta name="twitter:title" content={title} />
-        <meta name="twitter:description" content={description} />
+        <meta property="og:url" content={ogMeta?.url || `https://${slug}.medikah.health`} />
+        {ogMeta?.ogImage && <meta property="og:image" content={ogMeta.ogImage} />}
+        <meta property="og:locale" content={ogMeta?.locale === 'es' ? 'es_MX' : 'en_US'} />
+        <meta property="og:site_name" content="Práctikah" />
+
+        {/* Twitter card — WEB-13 */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={ogMeta?.title || title} />
+        <meta name="twitter:description" content={ogMeta?.description || description} />
+        {ogMeta?.ogImage && <meta name="twitter:image" content={ogMeta.ogImage} />}
+
+        {/* Favicon — T-12-04-05: safeFaviconUrl rejects javascript: URIs */}
         <link rel="icon" href={faviconHref} />
+
+        {/* JSON-LD structured data — WEB-13 */}
         {jsonLd && (
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
           />
         )}
+
+        {/* Robots: ALLOW indexing — Try Pro preview is share-able per FREE-07/FREE-09 */}
+        <meta name="robots" content="index,follow" />
       </Head>
 
       {/*
