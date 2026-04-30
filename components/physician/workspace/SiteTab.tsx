@@ -29,6 +29,7 @@ import type { SupportedLang } from '../../../lib/i18n';
 import { content as workspaceContent } from '../../../lib/practikahWorkspaceContent';
 import { nameToSlug } from '../../../lib/slug';
 import ThemingEditor from './theming/ThemingEditor';
+import { trackEngagementEvent } from '../../../lib/practikahEngagementHeuristic';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -176,6 +177,18 @@ export default function SiteTab({ physicianId, lang, accessToken, physicianFullN
   };
 
   // ---------------------------------------------------------------------------
+  // Preview visit tracking (once per session — debounced with sessionStorage)
+  // ---------------------------------------------------------------------------
+
+  const trackPreviewVisit = () => {
+    const key = `practikah_preview_visit_tracked_${physicianId}`;
+    if (typeof sessionStorage !== 'undefined' && !sessionStorage.getItem(key)) {
+      sessionStorage.setItem(key, '1');
+      trackEngagementEvent('preview_visit');
+    }
+  };
+
+  // ---------------------------------------------------------------------------
   // Copy share link
   // ---------------------------------------------------------------------------
 
@@ -184,6 +197,8 @@ export default function SiteTab({ physicianId, lang, accessToken, physicianFullN
       await navigator.clipboard.writeText(siteUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+      // Track share link copy engagement event (D-20 heuristic threshold: >= 1 copy)
+      trackEngagementEvent('share_link_copied');
     } catch {
       // ignore
     }
@@ -327,6 +342,7 @@ export default function SiteTab({ physicianId, lang, accessToken, physicianFullN
           src={previewUrl}
           className="w-full h-[600px] rounded-md border border-warm-gray-800/[0.08]"
           title={t.site.previewLabel}
+          onLoad={trackPreviewVisit}
         />
 
         <div className="flex flex-wrap gap-2 mt-4">
@@ -344,6 +360,7 @@ export default function SiteTab({ physicianId, lang, accessToken, physicianFullN
             target="_blank"
             rel="noopener noreferrer"
             className="bg-inst-blue text-white px-4 py-2 rounded-md font-dm-sans text-sm hover:bg-inst-blue/90 transition-colors"
+            onClick={trackPreviewVisit}
           >
             {t.site.openInNewTab}
           </a>

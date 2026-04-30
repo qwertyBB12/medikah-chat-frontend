@@ -26,6 +26,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { SupportedLang } from '../../../../lib/i18n';
 import type { LayoutVariant, FontWeight, PracikahTheme } from '../../../../lib/practikahTheme';
+import { trackEngagementEvent } from '../../../../lib/practikahEngagementHeuristic';
 import { DEFAULT_THEME } from '../../../../lib/practikahTheme';
 import { content } from '../../../../lib/practikahWorkspaceContent';
 import LayoutVariantPicker from './LayoutVariantPicker';
@@ -144,6 +145,8 @@ export default function ThemingEditor({
           setDirty(false);
           setPreviewKey(Date.now()); // refresh iframe
           setTimeout(() => setSaveState('idle'), 2000);
+          // Fire-and-forget engagement event — tracks theme edit for upgrade CTA heuristic (D-20)
+          trackEngagementEvent('theme_edit');
         } else {
           setSaveState('error');
         }
