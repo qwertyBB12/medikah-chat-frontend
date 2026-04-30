@@ -193,6 +193,22 @@ export interface WorkspaceContent {
     };
   };
   tryProContact: TryProContactContent;
+  /** Upgrade CTA banner + upgrade placeholder page strings (Phase 12-07 / D-20 / FREE-08) */
+  upgrade: {
+    banner: {
+      /** D-20 LOCKED copy — "Make this real at your own domain" */
+      headline: string;
+      body: string;
+      cta: string;
+      dismiss: string;
+    };
+    page: {
+      headline: string;
+      body: string;
+      notify: string;
+      done: string;
+    };
+  };
   wizard: {
     progress: string;
     title: {
@@ -437,6 +453,20 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         notEnrolled: 'Not yet enrolled',
         promptOnLogin: 'You will be prompted to set up 2FA the next time you open your mailbox.',
         openMailboxPrompt: 'Open Mailbox to set up 2FA',
+      },
+    },
+    upgrade: {
+      banner: {
+        headline: 'Make this real at your own domain',
+        body: 'Take this Try Pro preview live at your own domain — your own email, no Medikah branding.',
+        cta: 'See pricing',
+        dismiss: 'Maybe later',
+      },
+      page: {
+        headline: 'Práctikah Pro — coming soon',
+        body: "We're putting the finishing touches on Práctikah Pro. Domain search, Stripe checkout, and one-click migration of your Try Pro theme to a custom domain are launching soon. Want a heads-up the moment it's live?",
+        notify: 'Notify me',
+        done: "Done — we'll notify you.",
       },
     },
     tryProContact: {
@@ -706,6 +736,20 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         notEnrolled: 'Aún no inscrita',
         promptOnLogin: 'Te pediremos que configures 2FA la próxima vez que abras tu buzón.',
         openMailboxPrompt: 'Abrir buzón para configurar 2FA',
+      },
+    },
+    upgrade: {
+      banner: {
+        headline: 'Hazlo real en tu propio dominio',
+        body: 'Lleva esta vista previa Try Pro a tu propio dominio — tu propio correo, sin la marca de Medikah.',
+        cta: 'Ver precios',
+        dismiss: 'Quizás después',
+      },
+      page: {
+        headline: 'Práctikah Pro — próximamente',
+        body: 'Estamos puliendo los detalles finales de Práctikah Pro. Búsqueda de dominio, pago con Stripe y migración con un clic de tu tema Try Pro a un dominio personalizado se lanzan pronto. ¿Quieres saber cuándo esté listo?',
+        notify: 'Avísame',
+        done: '¡Listo! Te avisaremos.',
       },
     },
     tryProContact: {
