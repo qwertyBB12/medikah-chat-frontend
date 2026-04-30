@@ -16,6 +16,41 @@
 
 export type WorkspaceLang = 'en' | 'es';
 
+export interface ThemingContent {
+  title: string;
+  tabLayout: string;
+  tabColors: string;
+  tabTypography: string;
+  tabPhotos: string;
+  tabBrand: string;
+  tabContent: string;
+  savePending: string;
+  saved: string;
+  saveError: string;
+  layout: {
+    classic: { name: string; desc: string };
+    editorial: { name: string; desc: string };
+    minimal: { name: string; desc: string };
+  };
+  colors: { title: string; helper: string };
+  fonts: { title: string; light: string; regular: string; bold: string };
+  favicon: {
+    title: string;
+    helper: string;
+    upload: string;
+    remove: string;
+    error: { size: string; mime: string; dim: string };
+  };
+  photos: {
+    title: string;
+    helper: string;
+    add: string;
+    remove: string;
+    error: { size: string; mime: string; dim: string };
+  };
+  preview: { title: string; refresh: string; openInNewTab: string };
+}
+
 export interface WorkspaceContent {
   workspace: {
     title: string;
@@ -26,6 +61,7 @@ export interface WorkspaceContent {
       settings: string;
     };
   };
+  theming: ThemingContent;
   mailbox: {
     address: { label: string };
     openButton: string;
@@ -70,6 +106,8 @@ export interface WorkspaceContent {
     notClaimedTitle: string;
     notClaimedBody: string;
     claimButton: string;
+    claimDescription: string;
+    claimSuccess: string;
   };
   settings: {
     imapHost: string;
@@ -200,6 +238,69 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         settings: 'Settings',
       },
     },
+    theming: {
+      title: 'Edit Theme',
+      tabLayout: 'Layout',
+      tabColors: 'Colors',
+      tabTypography: 'Typography',
+      tabPhotos: 'Photos',
+      tabBrand: 'Brand',
+      tabContent: 'Content',
+      savePending: 'Saving...',
+      saved: 'All changes saved',
+      saveError: 'Save failed — retry',
+      layout: {
+        classic: {
+          name: 'Classic',
+          desc: 'Traditional medical practice — top hero photo, services grid, credentials prominent, location card with map',
+        },
+        editorial: {
+          name: 'Editorial',
+          desc: 'Personality-forward — large narrative bio dominates, smaller services list, photo gallery as "moments"',
+        },
+        minimal: {
+          name: 'Minimal',
+          desc: 'Restrained portfolio — lots of whitespace, single-column flow, accent used sparingly',
+        },
+      },
+      colors: {
+        title: 'Accent Color',
+        helper: 'All swatches WCAG-AA contrast verified',
+      },
+      fonts: {
+        title: 'Font Weight',
+        light: 'Light',
+        regular: 'Regular',
+        bold: 'Bold',
+      },
+      favicon: {
+        title: 'Favicon',
+        helper: 'Shown in browser tabs. PNG, SVG, ICO, or WebP. Min 64×64px, max 5 MB.',
+        upload: 'Upload favicon',
+        remove: 'Remove',
+        error: {
+          size: 'File must be under 5 MB.',
+          mime: 'Accepted formats: PNG, SVG, ICO, WebP.',
+          dim: 'Favicon must be at least 64×64 pixels.',
+        },
+      },
+      photos: {
+        title: 'Office Photos',
+        helper: 'Up to 6 photos of your practice space. Min 1200×800px, max 5 MB each. PNG, JPEG, or WebP.',
+        add: 'Add photo',
+        remove: 'Remove',
+        error: {
+          size: 'Photo must be under 5 MB.',
+          mime: 'Accepted formats: PNG, JPEG, WebP.',
+          dim: 'Photo must be at least 1200×800 pixels.',
+        },
+      },
+      preview: {
+        title: 'Live preview',
+        refresh: 'Refresh preview',
+        openInNewTab: 'Open in new tab',
+      },
+    },
     mailbox: {
       address: { label: 'Your mailbox address' },
       openButton: 'Open Mailbox',
@@ -244,6 +345,8 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
       notClaimedTitle: 'Claim your Try Pro preview',
       notClaimedBody: 'Spin up your free, de-branded preview site. You can theme it later.',
       claimButton: 'Claim Try Pro Preview',
+      claimDescription: "Get your doctor site live at your own subdomain. It's free and takes one click.",
+      claimSuccess: 'Your Try Pro preview is live!',
     },
     settings: {
       imapHost: 'IMAP Host',
@@ -379,6 +482,69 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         settings: 'Configuración',
       },
     },
+    theming: {
+      title: 'Editar Tema',
+      tabLayout: 'Diseño',
+      tabColors: 'Colores',
+      tabTypography: 'Tipografía',
+      tabPhotos: 'Fotos',
+      tabBrand: 'Marca',
+      tabContent: 'Contenido',
+      savePending: 'Guardando...',
+      saved: 'Todos los cambios guardados',
+      saveError: 'Error al guardar — reintentar',
+      layout: {
+        classic: {
+          name: 'Clásico',
+          desc: 'Consulta médica tradicional — foto de héroe superior, cuadrícula de servicios, credenciales prominentes, tarjeta de ubicación con mapa',
+        },
+        editorial: {
+          name: 'Editorial',
+          desc: 'Personalidad destacada — gran bio narrativa, lista de servicios compacta, galería de fotos como "momentos"',
+        },
+        minimal: {
+          name: 'Minimalista',
+          desc: 'Portafolio contenido — mucho espacio en blanco, flujo de una columna, acento usado con moderación',
+        },
+      },
+      colors: {
+        title: 'Color de Acento',
+        helper: 'Todos los colores cumplen el contraste WCAG-AA',
+      },
+      fonts: {
+        title: 'Peso de Fuente',
+        light: 'Delgada',
+        regular: 'Normal',
+        bold: 'Negrita',
+      },
+      favicon: {
+        title: 'Favicon',
+        helper: 'Aparece en las pestañas del navegador. PNG, SVG, ICO o WebP. Mín 64×64 px, máx 5 MB.',
+        upload: 'Subir favicon',
+        remove: 'Eliminar',
+        error: {
+          size: 'El archivo debe pesar menos de 5 MB.',
+          mime: 'Formatos aceptados: PNG, SVG, ICO, WebP.',
+          dim: 'El favicon debe ser de al menos 64×64 píxeles.',
+        },
+      },
+      photos: {
+        title: 'Fotos del Consultorio',
+        helper: 'Hasta 6 fotos de tu espacio de trabajo. Mín 1200×800 px, máx 5 MB por foto. PNG, JPEG o WebP.',
+        add: 'Añadir foto',
+        remove: 'Eliminar',
+        error: {
+          size: 'La foto debe pesar menos de 5 MB.',
+          mime: 'Formatos aceptados: PNG, JPEG, WebP.',
+          dim: 'La foto debe ser de al menos 1200×800 píxeles.',
+        },
+      },
+      preview: {
+        title: 'Vista previa en vivo',
+        refresh: 'Actualizar vista previa',
+        openInNewTab: 'Abrir en nueva pestaña',
+      },
+    },
     mailbox: {
       address: { label: 'Tu dirección de correo' },
       openButton: 'Abrir Buzón',
@@ -423,6 +589,8 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
       notClaimedTitle: 'Reclama tu vista previa Try Pro',
       notClaimedBody: 'Activa tu sitio gratuito sin marca. Puedes personalizarlo después.',
       claimButton: 'Reclamar Vista Previa Try Pro',
+      claimDescription: 'Activa tu sitio de médico en tu propio subdominio. Es gratis y con un solo clic.',
+      claimSuccess: '¡Tu vista previa Try Pro está activa!',
     },
     settings: {
       imapHost: 'Servidor IMAP',
