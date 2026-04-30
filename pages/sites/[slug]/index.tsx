@@ -31,6 +31,12 @@ import {
   loadThemeForPhysician,
   type PracikahTheme,
 } from '../../../lib/practikahTheme';
+import {
+  buildPhysicianJsonLd,
+  buildOpenGraphMeta,
+  type PhysicianJsonLdInput,
+  type OpenGraphMeta,
+} from '../../../lib/practikahJsonLd';
 import ThemedShell from '../../../components/physician/workspace/ThemedShell';
 import ClassicLayout from '../../../components/physician/workspace/layouts/ClassicLayout';
 import EditorialLayout from '../../../components/physician/workspace/layouts/EditorialLayout';
@@ -61,6 +67,13 @@ interface PhysicianRecord {
   publications?: { title: string; journal?: string; year?: number; url?: string }[];
   current_institutions?: string[];
   verification_status: string;
+  // WEB-13 / WEB-16: added for JSON-LD + licensure disclaimer
+  country?: string | null;
+  primary_state?: string | null;
+  licensed_states?: string[] | null;
+  cedula?: string | null;
+  cedula_state?: string | null;
+  npi?: string | null;
 }
 
 interface WebsiteRecord {
@@ -95,6 +108,8 @@ interface SitesPageProps {
   website: WebsiteRecord | null;
   theme: PracikahTheme;
   siteEnabled: boolean;
+  jsonLd: Record<string, unknown>;
+  ogMeta: OpenGraphMeta;
 }
 
 // ---------------------------------------------------------------------------
@@ -107,6 +122,8 @@ export default function SitesPage({
   website,
   theme,
   siteEnabled,
+  jsonLd,
+  ogMeta,
 }: SitesPageProps) {
   const router = useRouter();
   const isEs = router.locale === 'es';
@@ -137,14 +154,6 @@ export default function SitesPage({
     );
   }
 
-  // Build page title + meta description
-  const title = `Dr. ${p.full_name}${p.primary_specialty ? ` — ${p.primary_specialty}` : ''}`;
-  const description =
-    (w?.practice_philosophy?.slice(0, 160)) ||
-    (isEs
-      ? `Conoce al Dr. ${p.full_name}${p.primary_specialty ? `, especialista en ${p.primary_specialty}` : ''}.`
-      : `Meet Dr. ${p.full_name}, ${p.primary_specialty || 'physician'}.`);
-
   // Layout selection — branched on theme.layout_variant
   const Layout =
     theme.layout_variant === 'editorial'
@@ -154,7 +163,14 @@ export default function SitesPage({
         : ClassicLayout;
 
   return (
-    <ThemedShell theme={theme} title={title} description={description} slug={slug}>
+    <ThemedShell
+      theme={theme}
+      title={ogMeta.title}
+      description={ogMeta.description}
+      slug={slug}
+      jsonLd={jsonLd}
+      ogMeta={ogMeta}
+    >
       <Layout
         physician={p}
         website={w}
@@ -192,8 +208,9 @@ export const getServerSideProps: GetServerSideProps<SitesPageProps> = async ({
     // T-12-04-02: only verified physicians. nameToSlug(full_name) === slug.
     //
     // T-12-04-03: explicit SELECT column list excludes `email`, `password`,
-    // `auth_user_id`, `sep_diploma_status`, `npi`, `license_country`,
-    // `credentials_country`, and any clinical/PHI fields.
+    // `auth_user_id`, `sep_diploma_status`, and any clinical/PHI fields.
+    // WEB-13: Added country, primary_state, licensed_states, npi, cedula, cedula_state
+    //         for JSON-LD structured data and WEB-16 licensure disclaimer.
     //
     // Scale note: for > 1000 physicians, replace with a denormalized slug column
     // lookup. Out of scope for Phase 12 — deferred to Phase 14 scaling work.
@@ -203,7 +220,8 @@ export const getServerSideProps: GetServerSideProps<SitesPageProps> = async ({
         'id, full_name, photo_url, primary_specialty, sub_specialties, board_certifications, ' +
         'medical_school, medical_school_country, graduation_year, residency, fellowships, ' +
         'publications, current_institutions, available_days, available_hours_start, ' +
-        'available_hours_end, timezone, languages, bio, verification_status'
+        'available_hours_end, timezone, languages, bio, verification_status, ' +
+        'country, primary_state, licensed_states, npi, cedula, cedula_state'
       )
       .eq('verification_status', 'verified');
 
@@ -238,7 +256,31 @@ export const getServerSideProps: GetServerSideProps<SitesPageProps> = async ({
     // ── Step 4: Load theme (DEFAULT_THEME if no row) ──────────────────────
     const theme = await loadThemeForPhysician(physician.id);
 
-    // ── Step 5: Cache-Control (WEB-08 TTFB target) ───────────────────────
+    // ── Step 5: Build JSON-LD + OG meta (WEB-13) ─────────────────────────
+    //
+    // Locale from request: Next.js i18n populates `req.locale` (not available in
+    // getServerSideProps context object directly). Default to 'en'; the client-side
+    // router.locale switch handles display. JSON-LD locale is 'en' by default.
+    const jsonLdInput: PhysicianJsonLdInput = {
+      slug,
+      fullName: physician.full_name,
+      photoUrl: physician.photo_url || null,
+      primarySpecialty: physician.primary_specialty || null,
+      subSpecialties: physician.sub_specialties || [],
+      languages: physician.languages || [],
+      timezone: physician.timezone || null,
+      country: physician.country || null,
+      primaryState: physician.primary_state || null,
+      licensedStates: physician.licensed_states || null,
+      bio: physician.bio || null,
+      boardCertifications: physician.board_certifications || [],
+      npi: physician.npi || null,
+      cedula: physician.cedula || null,
+    };
+    const jsonLd = buildPhysicianJsonLd(jsonLdInput, 'en');
+    const ogMeta = buildOpenGraphMeta(jsonLdInput, theme, 'en');
+
+    // ── Step 6: Cache-Control (WEB-08 TTFB target) ───────────────────────
     //
     // T-12-04-04: cache key includes the URL slug (different slugs = different
     // Netlify edge cache entries). No cross-tenant data leakage.
@@ -275,6 +317,12 @@ export const getServerSideProps: GetServerSideProps<SitesPageProps> = async ({
           languages: physician.languages || [],
           bio: physician.bio || null,
           verification_status: physician.verification_status,
+          country: physician.country || null,
+          primary_state: physician.primary_state || null,
+          licensed_states: physician.licensed_states || null,
+          npi: physician.npi || null,
+          cedula: physician.cedula || null,
+          cedula_state: physician.cedula_state || null,
         },
         website: websiteData
           ? {
@@ -305,6 +353,8 @@ export const getServerSideProps: GetServerSideProps<SitesPageProps> = async ({
           : null,
         theme,
         siteEnabled,
+        jsonLd,
+        ogMeta,
       },
     };
   } catch {
