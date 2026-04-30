@@ -16,6 +16,8 @@ import { useEffect, useRef, useState } from 'react';
 import type { SupportedLang } from '../../../lib/i18n';
 import { content as workspaceContent } from '../../../lib/practikahWorkspaceContent';
 import MailboxPasswordForm from './MailboxPasswordForm';
+import UpgradeCTABanner from './UpgradeCTABanner';
+import type { EngagementCounters } from '../../../lib/practikahEngagementHeuristic';
 
 interface SettingsTabProps {
   physicianId: string;
@@ -35,6 +37,7 @@ interface ImapCredentials {
 
 interface WorkspaceStatus {
   tfa_enabled?: boolean | null;
+  engagement_counters?: EngagementCounters;
 }
 
 /** Per-field clipboard copy with 2-second feedback. */
@@ -72,8 +75,11 @@ export default function SettingsTab({ physicianId, lang, accessToken }: Settings
   const [imapError, setImapError] = useState(false);
   const [imapOpen, setImapOpen] = useState(false);
 
-  // Workspace status for 2FA indicator
+  // Workspace status for 2FA indicator + engagement counters
   const [status, setStatus] = useState<WorkspaceStatus | null>(null);
+
+  // Upgrade CTA banner dismiss state
+  const [bannerDismissed, setBannerDismissed] = useState(false);
 
   useEffect(() => {
     if (!physicianId || !accessToken) return;
@@ -274,6 +280,16 @@ export default function SettingsTab({ physicianId, lang, accessToken }: Settings
           {t.settings.tfaCard.openMailboxPrompt} →
         </a>
       </div>
+
+      {/* Engagement-gated upgrade CTA banner (D-20 / WSPC-07) — at bottom of Settings tab */}
+      {!bannerDismissed && (
+        <UpgradeCTABanner
+          lang={lang}
+          counters={status?.engagement_counters ?? null}
+          placement="settings-tab"
+          onDismiss={() => setBannerDismissed(true)}
+        />
+      )}
     </div>
   );
 }

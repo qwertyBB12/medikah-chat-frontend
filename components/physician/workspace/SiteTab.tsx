@@ -29,7 +29,8 @@ import type { SupportedLang } from '../../../lib/i18n';
 import { content as workspaceContent } from '../../../lib/practikahWorkspaceContent';
 import { nameToSlug } from '../../../lib/slug';
 import ThemingEditor from './theming/ThemingEditor';
-import { trackEngagementEvent } from '../../../lib/practikahEngagementHeuristic';
+import UpgradeCTABanner from './UpgradeCTABanner';
+import { trackEngagementEvent, type EngagementCounters } from '../../../lib/practikahEngagementHeuristic';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -70,6 +71,10 @@ export default function SiteTab({ physicianId, lang, accessToken, physicianFullN
   const [enabled, setEnabled] = useState<boolean>(false);
   const [cachebust, setCachebust] = useState<number>(() => Date.now());
 
+  // Engagement counters for upgrade CTA gating (D-20 / FREE-08)
+  const [engagementCounters, setEngagementCounters] = useState<EngagementCounters | null>(null);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+
   // Track the full name for slug — prefer fetched data
   const [fetchedFullName, setFetchedFullName] = useState<string | null>(null);
 
@@ -98,24 +103,26 @@ export default function SiteTab({ physicianId, lang, accessToken, physicianFullN
       }
     })();
 
-    // Also load physician full_name for slug if not passed via props
-    if (!physicianFullName) {
-      (async () => {
-        try {
-          const res = await fetch('/api/practikah/workspace-status');
-          if (res.ok) {
-            const data = (await res.json()) as {
-              full_name?: string;
-              website_enabled?: boolean;
-            };
-            if (data.full_name) setFetchedFullName(data.full_name);
-            setEnabled(Boolean(data.website_enabled));
+    // Also load physician full_name, website_enabled, and engagement_counters
+    (async () => {
+      try {
+        const res = await fetch('/api/practikah/workspace-status');
+        if (res.ok) {
+          const data = (await res.json()) as {
+            full_name?: string;
+            website_enabled?: boolean;
+            engagement_counters?: EngagementCounters;
+          };
+          if (data.full_name) setFetchedFullName(data.full_name);
+          setEnabled(Boolean(data.website_enabled));
+          if (data.engagement_counters) {
+            setEngagementCounters(data.engagement_counters);
           }
-        } catch {
-          // Non-fatal
         }
-      })();
-    }
+      } catch {
+        // Non-fatal
+      }
+    })();
   }, [physicianId, physicianFullName]);
 
   // ---------------------------------------------------------------------------
@@ -315,6 +322,16 @@ export default function SiteTab({ physicianId, lang, accessToken, physicianFullN
 
   return (
     <div className="space-y-6">
+      {/* Engagement-gated upgrade CTA banner (D-20 / FREE-08 / WSPC-07) — ABOVE preview */}
+      {!bannerDismissed && (
+        <UpgradeCTABanner
+          lang={lang}
+          counters={engagementCounters}
+          placement="site-tab"
+          onDismiss={() => setBannerDismissed(true)}
+        />
+      )}
+
       {/* Card: Site preview + actions */}
       <div className="bg-linen rounded-[12px] border border-warm-gray-800/[0.06] p-6 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-4">
