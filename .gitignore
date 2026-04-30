@@ -17,3 +17,6 @@ yarn.lock
 .env.*
 !.env.example
 tsconfig.tsbuildinfo
+
+# Local Netlify folder
+.netlify
