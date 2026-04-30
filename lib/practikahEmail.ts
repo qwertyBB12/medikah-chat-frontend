@@ -42,7 +42,15 @@ async function sendEmail(options: {
   from?: string;
 }): Promise<SendEmailResult> {
   const apiKey = process.env.RESEND_API_KEY;
-  const defaultFrom = process.env.PRACTIKAH_EMAIL_FROM || 'practikah@medikah.health';
+  const configuredFrom = process.env.PRACTIKAH_EMAIL_FROM;
+  if (!configuredFrom) {
+    // T-12-07-05: Log operator action item — set up practikah@medikah.health alias post-deploy
+    console.warn(
+      '[practikahEmail] PRACTIKAH_EMAIL_FROM is not set — falling back to practikah@medikah.health. ' +
+      'Set up the practikah@medikah.health sender alias in Resend or configure PRACTIKAH_EMAIL_FROM env var.',
+    );
+  }
+  const defaultFrom = configuredFrom || 'practikah@medikah.health';
   const fromAddress = options.from || defaultFrom;
 
   if (!apiKey) {
