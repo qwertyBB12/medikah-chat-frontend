@@ -209,6 +209,26 @@ export interface WorkspaceContent {
       done: string;
     };
   };
+  /** SAT compliance gate notice (Phase 13-03 / D-22 / D-23). Bilingual keys
+   * are duplicated under each locale block so a single SATBlockedNotice
+   * component can resolve the right copy regardless of which locale block
+   * the caller selected. */
+  sat: {
+    blocked: {
+      headline_en: string;
+      headline_es: string;
+      body_en: string;
+      body_es: string;
+      cta_notify_en: string;
+      cta_notify_es: string;
+    };
+    unsupported: {
+      headline_en: string;
+      headline_es: string;
+      body_en: string;
+      body_es: string;
+    };
+  };
   wizard: {
     progress: string;
     title: {
@@ -467,6 +487,26 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         body: "We're putting the finishing touches on Práctikah Pro. Domain search, Stripe checkout, and one-click migration of your Try Pro theme to a custom domain are launching soon. Want a heads-up the moment it's live?",
         notify: 'Notify me',
         done: "Done — we'll notify you.",
+      },
+    },
+    sat: {
+      blocked: {
+        headline_en: 'Práctikah Pro is launching in México soon',
+        headline_es: 'Práctikah Pro estará disponible en México pronto',
+        body_en:
+          "We're completing tax compliance with the SAT (Servicio de Administración Tributaria) so we can collect IVA correctly on Mexican subscriptions. We'll email you the moment Pro is available — your free workspace stays fully active in the meantime.",
+        body_es:
+          'Estamos finalizando el cumplimiento fiscal con el SAT (Servicio de Administración Tributaria) para cobrar correctamente el IVA en suscripciones mexicanas. Te avisaremos por correo en cuanto Pro esté disponible — mientras tanto, tu espacio gratuito sigue completamente activo.',
+        cta_notify_en: 'Notify me when Pro launches in México',
+        cta_notify_es: 'Avísame cuando Pro esté disponible en México',
+      },
+      unsupported: {
+        headline_en: "Práctikah Pro isn't available in your country yet",
+        headline_es: 'Práctikah Pro aún no está disponible en tu país',
+        body_en:
+          "We're currently launching in México and the United States. Your free workspace works the same anywhere — we'll expand to more countries soon.",
+        body_es:
+          'Estamos lanzando inicialmente en México y Estados Unidos. Tu espacio gratuito funciona igual en cualquier país — pronto expandiremos a más regiones.',
       },
     },
     tryProContact: {
@@ -750,6 +790,26 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         body: 'Estamos puliendo los detalles finales de Práctikah Pro. Búsqueda de dominio, pago con Stripe y migración con un clic de tu tema Try Pro a un dominio personalizado se lanzan pronto. ¿Quieres saber cuándo esté listo?',
         notify: 'Avísame',
         done: '¡Listo! Te avisaremos.',
+      },
+    },
+    sat: {
+      blocked: {
+        headline_en: 'Práctikah Pro is launching in México soon',
+        headline_es: 'Práctikah Pro estará disponible en México pronto',
+        body_en:
+          "We're completing tax compliance with the SAT (Servicio de Administración Tributaria) so we can collect IVA correctly on Mexican subscriptions. We'll email you the moment Pro is available — your free workspace stays fully active in the meantime.",
+        body_es:
+          'Estamos finalizando el cumplimiento fiscal con el SAT (Servicio de Administración Tributaria) para cobrar correctamente el IVA en suscripciones mexicanas. Te avisaremos por correo en cuanto Pro esté disponible — mientras tanto, tu espacio gratuito sigue completamente activo.',
+        cta_notify_en: 'Notify me when Pro launches in México',
+        cta_notify_es: 'Avísame cuando Pro esté disponible en México',
+      },
+      unsupported: {
+        headline_en: "Práctikah Pro isn't available in your country yet",
+        headline_es: 'Práctikah Pro aún no está disponible en tu país',
+        body_en:
+          "We're currently launching in México and the United States. Your free workspace works the same anywhere — we'll expand to more countries soon.",
+        body_es:
+          'Estamos lanzando inicialmente en México y Estados Unidos. Tu espacio gratuito funciona igual en cualquier país — pronto expandiremos a más regiones.',
       },
     },
     tryProContact: {
