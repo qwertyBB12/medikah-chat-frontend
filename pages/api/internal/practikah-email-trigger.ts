@@ -25,7 +25,13 @@
 
 import crypto from 'crypto';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { sendPracikahLiveEmail } from '../../../lib/practikahEmail';
+import {
+  sendPracikahLiveEmail,
+  sendProLiveEmail,
+  sendDunningSupplementEmail,
+  sendDowngradeNoticeEmail,
+  sendEppCodeDeliveryEmail,
+} from '../../../lib/practikahEmail';
 
 export default async function handler(
   req: NextApiRequest,
@@ -73,37 +79,69 @@ export default async function handler(
   // ---------------------------------------------------------------------------
   // Parse and validate body
   // ---------------------------------------------------------------------------
-  const { kind, to, lang, mailbox_address, slug, first_name, last_name } =
-    req.body || {};
+  const body = req.body || {};
+  const kind = body.kind;
+  const to = body.to;
+  const lang = body.lang || 'en';
 
-  if (kind !== 'practikah_live') {
-    return void res.status(400).json({ error: `Unknown kind: ${kind}` });
+  if (!to || typeof to !== 'string') {
+    return void res.status(400).json({ error: 'Missing required field: to' });
   }
-
-  if (!to || !lang || !mailbox_address || !slug || !first_name || !last_name) {
-    return void res.status(400).json({
-      error: 'Missing required fields: to, lang, mailbox_address, slug, first_name, last_name',
-    });
-  }
-
   if (lang !== 'en' && lang !== 'es') {
     return void res.status(400).json({ error: 'lang must be "en" or "es"' });
   }
 
   // ---------------------------------------------------------------------------
-  // Trigger the email
+  // Trigger the appropriate email by kind (Phase 12-02 + 13-09)
   // ---------------------------------------------------------------------------
   try {
-    const result = await sendPracikahLiveEmail({
-      to,
-      lang,
-      mailboxAddress: mailbox_address,
-      slug,
-      firstName: first_name,
-      lastName: last_name,
-    });
+    if (kind === 'practikah_live') {
+      const { mailbox_address, slug, first_name, last_name } = body;
+      if (!mailbox_address || !slug || !first_name || !last_name) {
+        return void res.status(400).json({
+          error: 'Missing required fields: mailbox_address, slug, first_name, last_name',
+        });
+      }
+      const result = await sendPracikahLiveEmail({
+        to, lang,
+        mailboxAddress: mailbox_address,
+        slug, firstName: first_name, lastName: last_name,
+      });
+      return void res.status(result.success ? 200 : 502).json(result);
+    }
 
-    return void res.status(result.success ? 200 : 502).json(result);
+    // Phase 13-09 — Pro lifecycle emails (PRO-13 / OPS-12 / PRO-11)
+    if (kind === 'pro_live') {
+      const { domain, first_name, last_name } = body;
+      if (!domain) return void res.status(400).json({ error: 'Missing required field: domain' });
+      const result = await sendProLiveEmail({ to, lang, domain, firstName: first_name, lastName: last_name });
+      return void res.status(result.success ? 200 : 502).json(result);
+    }
+
+    if (kind === 'dunning_grace_started') {
+      const graceDays = Number(body.grace_days || 7);
+      const result = await sendDunningSupplementEmail({ to, lang, graceDays });
+      return void res.status(result.success ? 200 : 502).json(result);
+    }
+
+    if (kind === 'downgrade_notice') {
+      const { domain } = body;
+      const frozenHoldDays = Number(body.frozen_hold_days || 30);
+      if (!domain) return void res.status(400).json({ error: 'Missing required field: domain' });
+      const result = await sendDowngradeNoticeEmail({ to, lang, domain, frozenHoldDays });
+      return void res.status(result.success ? 200 : 502).json(result);
+    }
+
+    if (kind === 'epp_code_delivery') {
+      const { domain, epp_code } = body;
+      if (!domain || !epp_code) {
+        return void res.status(400).json({ error: 'Missing required fields: domain, epp_code' });
+      }
+      const result = await sendEppCodeDeliveryEmail({ to, lang, domain, eppCode: epp_code });
+      return void res.status(result.success ? 200 : 502).json(result);
+    }
+
+    return void res.status(400).json({ error: `Unknown kind: ${kind}` });
   } catch (err) {
     console.error('[practikah-email-trigger] unhandled error:', err);
     return void res.status(500).json({ error: 'Internal server error' });

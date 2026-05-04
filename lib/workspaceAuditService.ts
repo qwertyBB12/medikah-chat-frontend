@@ -68,6 +68,21 @@ export type WorkspaceAction =
   | 'pro.upgraded'
   | 'pro.downgraded'
   | 'billing.checkout_started'
+  // Phase 13-09 / D-29 — dunning + downgrade lifecycle
+  | 'billing.payment_failed'
+  | 'billing.dunning_retry_1'
+  | 'billing.dunning_retry_2'
+  | 'billing.dunning_retry_3'
+  | 'billing.grace_started'
+  | 'billing.downgraded_to_free'
+  | 'billing.mailbox_frozen'
+  | 'billing.mailbox_purged'
+  | 'billing.domain_released'
+  | 'billing.transfer_out_requested'
+  // Phase 13-06 — pro saga audit actions
+  | 'pro.upgrade_succeeded'
+  | 'pro.upgrade_failed_pre_por'
+  | 'pro.upgrade_finish_later'
   | 'phi_warning.overridden'
   | 'consent.signed';
 
