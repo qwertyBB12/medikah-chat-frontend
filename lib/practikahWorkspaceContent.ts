@@ -213,6 +213,60 @@ export interface WorkspaceContent {
       notify: string;
       done: string;
     };
+    /** Phase 13-05 — UpgradeWizard shell (plan/review/checkout steps).
+     *
+     * Every visible string keyed here per CLAUDE.md (bilingual EN/ES
+     * non-negotiable). Brand colors only — no hardcoded hex codes.
+     */
+    wizard: {
+      headline: string;
+      stepLabels: {
+        satCheck: string;
+        plan: string;
+        domain: string;
+        review: string;
+        checkout: string;
+        provisioning: string;
+      };
+      stepProgress: string;
+      plan: {
+        sectionTitle: string;
+        sectionSubtitle: string;
+        standardTitle: string;
+        premiumTitle: string;
+        cadenceAnnual: string;
+        cadenceMonthly: string;
+        cadenceLabel: string;
+        annualSavings: string;
+        valueBullets: string[];
+        guarantee: string;
+        continueCta: string;
+      };
+      review: {
+        sectionTitle: string;
+        sectionSubtitle: string;
+        domainLabel: string;
+        planLabel: string;
+        cadenceLabel: string;
+        totalLabel: string;
+        backCta: string;
+        confirmCta: string;
+      };
+      checkout: {
+        handoffHeadline: string;
+        handoffText: string;
+        cta: string;
+        loading: string;
+        cancelledNotice: string;
+      };
+      provisioning: {
+        placeholder: string;
+      };
+      errors: {
+        generic: string;
+        network: string;
+      };
+    };
     /** Phase 13-04 / PRO-01 / PRO-02 / PRO-14 — DomainSearch + DefensiveSuggestions */
     search: {
       headline: string;
@@ -530,6 +584,61 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         body: "We're putting the finishing touches on Práctikah Pro. Domain search, Stripe checkout, and one-click migration of your Try Pro theme to a custom domain are launching soon. Want a heads-up the moment it's live?",
         notify: 'Notify me',
         done: "Done — we'll notify you.",
+      },
+      wizard: {
+        headline: 'Upgrade to Práctikah Pro',
+        stepLabels: {
+          satCheck: 'Eligibility',
+          plan: 'Choose plan',
+          domain: 'Pick domain',
+          review: 'Review',
+          checkout: 'Payment',
+          provisioning: 'Setting up',
+        },
+        stepProgress: 'Step {current} of {total}',
+        plan: {
+          sectionTitle: 'Pick your Práctikah Pro plan',
+          sectionSubtitle: 'Custom domain, Práctikah mailbox, and a de-branded site at your address. 30-day money-back guarantee.',
+          standardTitle: 'Standard',
+          premiumTitle: 'Premium',
+          cadenceAnnual: 'Annual',
+          cadenceMonthly: 'Monthly',
+          cadenceLabel: 'Billing cadence',
+          annualSavings: 'Save vs monthly',
+          valueBullets: [
+            'Custom domain (you own it — fully transferable via EPP)',
+            'Práctikah mailbox at your domain',
+            'De-branded website with your theme',
+            'One-click migration from Try Pro preview',
+            'Priority support during launch',
+          ],
+          guarantee: '30-day money-back guarantee — no questions asked.',
+          continueCta: 'Continue',
+        },
+        review: {
+          sectionTitle: 'Review your selection',
+          sectionSubtitle: 'Confirm everything looks right before continuing to secure payment.',
+          domainLabel: 'Domain',
+          planLabel: 'Plan',
+          cadenceLabel: 'Cadence',
+          totalLabel: 'Charged today',
+          backCta: 'Back',
+          confirmCta: 'Continue to secure checkout',
+        },
+        checkout: {
+          handoffHeadline: 'Secure checkout via Stripe',
+          handoffText: 'Stripe handles your payment securely. We never see your card details. After payment, your domain and mailbox are set up automatically — usually in under 3 minutes.',
+          cta: 'Continue to secure checkout',
+          loading: 'Opening Stripe…',
+          cancelledNotice: 'Payment cancelled — you can resume any time.',
+        },
+        provisioning: {
+          placeholder: 'Provisioning your Pro workspace…',
+        },
+        errors: {
+          generic: 'Something went wrong starting checkout. Please try again.',
+          network: 'Network error — please check your connection and try again.',
+        },
       },
       search: {
         headline: 'Choose your professional domain',
@@ -869,6 +978,61 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         body: 'Estamos puliendo los detalles finales de Práctikah Pro. Búsqueda de dominio, pago con Stripe y migración con un clic de tu tema Try Pro a un dominio personalizado se lanzan pronto. ¿Quieres saber cuándo esté listo?',
         notify: 'Avísame',
         done: '¡Listo! Te avisaremos.',
+      },
+      wizard: {
+        headline: 'Pasa a Práctikah Pro',
+        stepLabels: {
+          satCheck: 'Elegibilidad',
+          plan: 'Elige plan',
+          domain: 'Elige dominio',
+          review: 'Revisar',
+          checkout: 'Pago',
+          provisioning: 'Configurando',
+        },
+        stepProgress: 'Paso {current} de {total}',
+        plan: {
+          sectionTitle: 'Elige tu plan Práctikah Pro',
+          sectionSubtitle: 'Dominio propio, buzón Práctikah y un sitio sin marca en tu dirección. Garantía de devolución de 30 días.',
+          standardTitle: 'Estándar',
+          premiumTitle: 'Premium',
+          cadenceAnnual: 'Anual',
+          cadenceMonthly: 'Mensual',
+          cadenceLabel: 'Frecuencia de pago',
+          annualSavings: 'Ahorra vs mensual',
+          valueBullets: [
+            'Dominio propio (es tuyo — transferible vía EPP)',
+            'Buzón Práctikah en tu dominio',
+            'Sitio web sin marca con tu tema',
+            'Migración con un clic desde tu vista previa Try Pro',
+            'Soporte prioritario durante el lanzamiento',
+          ],
+          guarantee: 'Garantía de devolución de 30 días — sin preguntas.',
+          continueCta: 'Continuar',
+        },
+        review: {
+          sectionTitle: 'Revisa tu selección',
+          sectionSubtitle: 'Confirma que todo se vea bien antes de continuar al pago seguro.',
+          domainLabel: 'Dominio',
+          planLabel: 'Plan',
+          cadenceLabel: 'Frecuencia',
+          totalLabel: 'Cargo hoy',
+          backCta: 'Volver',
+          confirmCta: 'Continuar al pago seguro',
+        },
+        checkout: {
+          handoffHeadline: 'Pago seguro con Stripe',
+          handoffText: 'Stripe procesa tu pago de forma segura. Nunca vemos los datos de tu tarjeta. Al confirmar, tu dominio y buzón se configuran automáticamente — usualmente en menos de 3 minutos.',
+          cta: 'Continuar al pago seguro',
+          loading: 'Abriendo Stripe…',
+          cancelledNotice: 'Pago cancelado — puedes retomarlo en cualquier momento.',
+        },
+        provisioning: {
+          placeholder: 'Configurando tu espacio Pro…',
+        },
+        errors: {
+          generic: 'Hubo un problema al iniciar el pago. Inténtalo de nuevo.',
+          network: 'Error de red — verifica tu conexión e inténtalo de nuevo.',
+        },
       },
       search: {
         headline: 'Elige tu dominio profesional',
