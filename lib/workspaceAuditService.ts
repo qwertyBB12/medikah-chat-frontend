@@ -67,6 +67,7 @@ export type WorkspaceAction =
   | 'theme.changed'
   | 'pro.upgraded'
   | 'pro.downgraded'
+  | 'billing.checkout_started'
   | 'phi_warning.overridden'
   | 'consent.signed';
 
