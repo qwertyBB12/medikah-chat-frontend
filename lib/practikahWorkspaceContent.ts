@@ -193,7 +193,12 @@ export interface WorkspaceContent {
     };
   };
   tryProContact: TryProContactContent;
-  /** Upgrade CTA banner + upgrade placeholder page strings (Phase 12-07 / D-20 / FREE-08) */
+  /** Upgrade CTA banner + upgrade placeholder page strings (Phase 12-07 / D-20 / FREE-08)
+   *
+   * Phase 13-04 extends this namespace with `search` for the DomainSearch +
+   * DefensiveSuggestions wizard step. Every visible string keyed here per
+   * CLAUDE.md (bilingual EN/ES non-negotiable).
+   */
   upgrade: {
     banner: {
       /** D-20 LOCKED copy — "Make this real at your own domain" */
@@ -207,6 +212,44 @@ export interface WorkspaceContent {
       body: string;
       notify: string;
       done: string;
+    };
+    /** Phase 13-04 / PRO-01 / PRO-02 / PRO-14 — DomainSearch + DefensiveSuggestions */
+    search: {
+      headline: string;
+      subheadline: string;
+      seedClinicLabel: string;
+      seedClinicPlaceholder: string;
+      freeformLabel: string;
+      freeformPlaceholder: string;
+      primaryHeading: string;
+      defensiveHeading: string;
+      defensiveSubheading: string;
+      pricingWholesale: string;
+      pricingService: string;
+      pricingTotal: string;
+      pricingNote: string;
+      available: string;
+      taken: string;
+      checking: string;
+      selectCta: string;
+      reserveCta: string;
+      showMore: string;
+      showLess: string;
+      empty: string;
+      /** Reason badges — keys mirror SUGGESTION_REASON_KEYS in lib/domainSuggestions.ts */
+      rules: {
+        dr_lastname: string;
+        dra_lastname: string;
+        lastname_md: string;
+        consultorio_lastname: string;
+        first_last: string;
+        paternal_maternal: string;
+        clinic_name: string;
+        freeform: string;
+        defensive_com_mirror: string;
+        defensive_consultorio: string;
+        defensive_concat: string;
+      };
     };
   };
   /** SAT compliance gate notice (Phase 13-03 / D-22 / D-23). Bilingual keys
@@ -487,6 +530,42 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         body: "We're putting the finishing touches on Práctikah Pro. Domain search, Stripe checkout, and one-click migration of your Try Pro theme to a custom domain are launching soon. Want a heads-up the moment it's live?",
         notify: 'Notify me',
         done: "Done — we'll notify you.",
+      },
+      search: {
+        headline: 'Choose your professional domain',
+        subheadline: "Pick the address patients will see. We'll set it up for you in under 3 minutes.",
+        seedClinicLabel: 'Clinic name (optional)',
+        seedClinicPlaceholder: 'e.g. Consultorio Cardiológico Lopez',
+        freeformLabel: 'Or type your own',
+        freeformPlaceholder: 'e.g. drlopez',
+        primaryHeading: 'Suggested for you',
+        defensiveHeading: 'Protect your brand — also reserve',
+        defensiveSubheading: 'Common variations a competitor or squatter could grab. Add any to your plan with one click.',
+        pricingWholesale: 'Domain (wholesale)',
+        pricingService: 'Práctikah Pro service',
+        pricingTotal: 'Total per year',
+        pricingNote: 'Wholesale price comes directly from the registrar. The service fee covers email, website, and setup.',
+        available: 'Available',
+        taken: 'Taken',
+        checking: 'Checking…',
+        selectCta: 'Select',
+        reserveCta: 'Reserve',
+        showMore: 'Show more options',
+        showLess: 'Show fewer',
+        empty: 'Type a clinic name above or pick one of the suggestions to begin.',
+        rules: {
+          dr_lastname: 'Dr + your lastname',
+          dra_lastname: 'Dra + your lastname',
+          lastname_md: 'Lastname + MD',
+          consultorio_lastname: 'Consultorio + lastname',
+          first_last: 'First + lastname',
+          paternal_maternal: 'Paternal + maternal',
+          clinic_name: 'Your clinic name',
+          freeform: "What you typed",
+          defensive_com_mirror: '.com mirror of your top pick',
+          defensive_consultorio: 'Consultorio variant',
+          defensive_concat: 'First + lastname concat',
+        },
       },
     },
     sat: {
@@ -790,6 +869,42 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         body: 'Estamos puliendo los detalles finales de Práctikah Pro. Búsqueda de dominio, pago con Stripe y migración con un clic de tu tema Try Pro a un dominio personalizado se lanzan pronto. ¿Quieres saber cuándo esté listo?',
         notify: 'Avísame',
         done: '¡Listo! Te avisaremos.',
+      },
+      search: {
+        headline: 'Elige tu dominio profesional',
+        subheadline: 'Elige la dirección que verán tus pacientes. Lo dejamos listo en menos de 3 minutos.',
+        seedClinicLabel: 'Nombre del consultorio (opcional)',
+        seedClinicPlaceholder: 'ej. Consultorio Cardiológico López',
+        freeformLabel: 'O escribe el tuyo',
+        freeformPlaceholder: 'ej. drlopez',
+        primaryHeading: 'Sugeridos para ti',
+        defensiveHeading: 'Protege tu marca — también reserva',
+        defensiveSubheading: 'Variantes comunes que un competidor o squatter podría registrar. Agrega cualquiera a tu plan con un clic.',
+        pricingWholesale: 'Dominio (mayorista)',
+        pricingService: 'Servicio Práctikah Pro',
+        pricingTotal: 'Total por año',
+        pricingNote: 'El precio mayorista viene directo del registrador. La tarifa de servicio cubre correo, sitio web y configuración.',
+        available: 'Disponible',
+        taken: 'No disponible',
+        checking: 'Verificando…',
+        selectCta: 'Seleccionar',
+        reserveCta: 'Reservar',
+        showMore: 'Ver más opciones',
+        showLess: 'Ver menos',
+        empty: 'Escribe el nombre de tu consultorio arriba o elige una de las sugerencias.',
+        rules: {
+          dr_lastname: 'Dr + tu apellido',
+          dra_lastname: 'Dra + tu apellido',
+          lastname_md: 'Apellido + MD',
+          consultorio_lastname: 'Consultorio + apellido',
+          first_last: 'Nombre + apellido',
+          paternal_maternal: 'Apellido paterno + materno',
+          clinic_name: 'Nombre de tu consultorio',
+          freeform: 'Lo que escribiste',
+          defensive_com_mirror: 'Versión .com de tu opción principal',
+          defensive_consultorio: 'Variante con consultorio',
+          defensive_concat: 'Nombre + apellido juntos',
+        },
       },
     },
     sat: {
