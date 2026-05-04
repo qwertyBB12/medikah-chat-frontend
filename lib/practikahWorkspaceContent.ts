@@ -410,6 +410,43 @@ export interface WorkspaceContent {
       goToSettings: string;
     };
   };
+  /** Phase 13-09 — billing surfaces (DunningBanner / BillingCard /
+   *  SubscriptionStatus / billing.tsx page). Per CLAUDE.md every visible
+   *  string is bilingual EN/ES. Per D-27 the dunning copy is warm and
+   *  non-judgmental. */
+  billing: {
+    pageHeading: string;
+    pageSubtitle: string;
+    statusActive: string;
+    statusPastDue: string;
+    statusGrace: string;
+    statusCanceled: string;
+    statusUnknown: string;
+    expirationLabel: string;
+    autoRenewOn: string;
+    autoRenewOff: string;
+    domainLabel: string;
+    manageBillingCta: string;
+    transferOutHeading: string;
+    transferOutBody: string;
+    transferOutCta: string;
+    transferOutConfirm: string;
+    transferOutSuccess: string;
+    transferOutErrorGeneric: string;
+    eppLabel: string;
+    eppCopyCta: string;
+    eppCopiedLabel: string;
+    dnsRecordsHeading: string;
+    dnsRecordsHelp: string;
+    dunning: {
+      retryHeadline: string;
+      retryBody: string;
+      graceHeadline: string;
+      graceBody: string;
+      ctaUpdatePayment: string;
+    };
+    freeRedirect: string;
+  };
 }
 
 export const content: Record<WorkspaceLang, WorkspaceContent> = {
@@ -830,6 +867,39 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         goToSettings: 'Open Settings',
       },
     },
+    billing: {
+      pageHeading: 'Billing',
+      pageSubtitle: 'Manage your Pro subscription, custom domain, and DNS records.',
+      statusActive: 'Active',
+      statusPastDue: 'Payment retrying',
+      statusGrace: 'Grace period',
+      statusCanceled: 'Canceled',
+      statusUnknown: 'Unknown',
+      expirationLabel: 'Renews on {date}',
+      autoRenewOn: 'Auto-renewal on',
+      autoRenewOff: 'Auto-renewal off',
+      domainLabel: 'Your domain',
+      manageBillingCta: 'Manage billing',
+      transferOutHeading: 'Transfer your domain out',
+      transferOutBody: "Your domain is yours. Request the EPP transfer code and we'll deliver it instantly to your email and on this page — paste it at any registrar to bring your domain elsewhere.",
+      transferOutCta: 'Transfer my domain out',
+      transferOutConfirm: "We'll generate your EPP transfer authorization code now. Continue?",
+      transferOutSuccess: 'Here is your EPP code — paste it at the gaining registrar within 30 days.',
+      transferOutErrorGeneric: "We couldn't issue the EPP code right now. Please retry in a moment.",
+      eppLabel: 'EPP code',
+      eppCopyCta: 'Copy code',
+      eppCopiedLabel: 'Copied',
+      dnsRecordsHeading: 'DNS records (read-only)',
+      dnsRecordsHelp: "These records keep your custom domain working. Full self-service editing is on the roadmap; for now, contact us for changes.",
+      dunning: {
+        retryHeadline: "Let's keep your Pro workspace going",
+        retryBody: "Your last payment didn't go through. Stripe is retrying automatically — most cases are a quick card update from the billing portal.",
+        graceHeadline: 'Pro features end in {days} days unless we can charge your card',
+        graceBody: 'Your custom domain stays yours. Update your payment method to keep your Pro workspace.',
+        ctaUpdatePayment: 'Update payment',
+      },
+      freeRedirect: "You're on the free plan. Visit the upgrade page to start a Pro subscription.",
+    },
   },
   es: {
     workspace: {
@@ -1247,6 +1317,39 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         imapAccordionTitle: 'Credenciales IMAP (para Apple Mail / Outlook / Gmail)',
         goToSettings: 'Abrir Configuración',
       },
+    },
+    billing: {
+      pageHeading: 'Facturación',
+      pageSubtitle: 'Administra tu suscripción Pro, tu dominio personalizado y tus registros DNS.',
+      statusActive: 'Activa',
+      statusPastDue: 'Reintentando pago',
+      statusGrace: 'Período de gracia',
+      statusCanceled: 'Cancelada',
+      statusUnknown: 'Desconocido',
+      expirationLabel: 'Se renueva el {date}',
+      autoRenewOn: 'Renovación automática activa',
+      autoRenewOff: 'Renovación automática desactivada',
+      domainLabel: 'Tu dominio',
+      manageBillingCta: 'Administrar facturación',
+      transferOutHeading: 'Transferir tu dominio',
+      transferOutBody: 'Tu dominio es tuyo. Solicita el código EPP y te lo enviamos al instante a tu correo y aquí — pégalo en cualquier registrador para llevarte tu dominio.',
+      transferOutCta: 'Transferir mi dominio',
+      transferOutConfirm: 'Generaremos tu código de autorización EPP ahora. ¿Continuar?',
+      transferOutSuccess: 'Aquí está tu código EPP — pégalo en el registrador receptor en menos de 30 días.',
+      transferOutErrorGeneric: 'No pudimos generar el código EPP ahora. Reintenta en un momento.',
+      eppLabel: 'Código EPP',
+      eppCopyCta: 'Copiar código',
+      eppCopiedLabel: 'Copiado',
+      dnsRecordsHeading: 'Registros DNS (solo lectura)',
+      dnsRecordsHelp: 'Estos registros mantienen activo tu dominio personalizado. La edición completa autoservicio está en planes; por ahora contáctanos para cambios.',
+      dunning: {
+        retryHeadline: 'Mantengamos tu espacio Pro activo',
+        retryBody: 'Tu último pago no se procesó. Stripe está reintentando automáticamente — la mayoría se soluciona actualizando tu tarjeta desde el portal de facturación.',
+        graceHeadline: 'Tu Pro termina en {days} días si no podemos cobrar tu tarjeta',
+        graceBody: 'Tu dominio sigue siendo tuyo. Actualiza tu método de pago para conservar tu espacio Pro.',
+        ctaUpdatePayment: 'Actualizar pago',
+      },
+      freeRedirect: 'Estás en el plan gratis. Visita la página de actualización para iniciar una suscripción Pro.',
     },
   },
 };
