@@ -261,6 +261,31 @@ export interface WorkspaceContent {
       };
       provisioning: {
         placeholder: string;
+        /** Phase 13-07 (D-16) — Vercel-style stepped checklist live UX */
+        headline: string;
+        subhead: string;
+        /** Bilingual labels for the 7 PRO_SAGA_STEPS (matches PRO_SAGA_STEPS in services/practikah/pro_saga.py) */
+        steps: {
+          'pro.charge_confirmed': string;
+          'pro.register_domain': string;
+          'pro.write_dns': string;
+          'pro.provision_mailcow_domain': string;
+          'pro.provision_pro_mailbox': string;
+          'pro.attach_saas_hostname': string;
+          'pro.migrate_theme': string;
+        };
+        completedHeadline: string;
+        completedCta: string;
+        /** Phase 13-07 (D-15) — finish-later post-POR retry UX */
+        finishLaterHeadline: string;
+        finishLaterBody: string;
+        /** Phase 13-07 — pre-POR failure UX (Stripe charge succeeded but the
+         * saga aborted before pro.register_domain — card already refunded by
+         * Stripe webhook reconciliation). */
+        failedPreporHeadline: string;
+        failedPreporBody: string;
+        resolving: string;
+        missingSession: string;
       };
       errors: {
         generic: string;
@@ -634,6 +659,30 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         },
         provisioning: {
           placeholder: 'Provisioning your Pro workspace…',
+          headline: 'Setting up your Pro workspace',
+          subhead:
+            "This usually takes about 3 minutes. You can leave this page open or close it — we'll email you the moment it's live.",
+          steps: {
+            'pro.charge_confirmed': 'Payment confirmed',
+            'pro.register_domain': 'Registering your domain',
+            'pro.write_dns': 'Configuring DNS records',
+            'pro.provision_mailcow_domain': 'Setting up your mail domain',
+            'pro.provision_pro_mailbox': 'Creating your custom mailbox',
+            'pro.attach_saas_hostname': 'Issuing SSL certificate',
+            'pro.migrate_theme': 'Migrating your website to your new domain',
+          },
+          completedHeadline: 'Your Pro workspace is live',
+          completedCta: 'Visit my new site',
+          finishLaterHeadline:
+            "Your domain is registered — we're finishing setup",
+          finishLaterBody:
+            "We hit a small snag finishing setup, but your domain is yours and we're retrying automatically. We'll email you the moment it's live (usually within an hour).",
+          failedPreporHeadline: "We couldn't complete your purchase",
+          failedPreporBody:
+            'Your card was not charged. Please try again or contact support if the issue persists.',
+          resolving: 'Resolving your upgrade…',
+          missingSession:
+            'Missing checkout session — please return to the upgrade page.',
         },
         errors: {
           generic: 'Something went wrong starting checkout. Please try again.',
@@ -1028,6 +1077,30 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         },
         provisioning: {
           placeholder: 'Configurando tu espacio Pro…',
+          headline: 'Configurando tu espacio Pro',
+          subhead:
+            'Esto suele tardar unos 3 minutos. Puedes dejar esta página abierta o cerrarla — te avisaremos por correo en cuanto esté lista.',
+          steps: {
+            'pro.charge_confirmed': 'Pago confirmado',
+            'pro.register_domain': 'Registrando tu dominio',
+            'pro.write_dns': 'Configurando registros DNS',
+            'pro.provision_mailcow_domain': 'Configurando tu dominio de correo',
+            'pro.provision_pro_mailbox': 'Creando tu buzón personalizado',
+            'pro.attach_saas_hostname': 'Emitiendo certificado SSL',
+            'pro.migrate_theme': 'Migrando tu sitio al nuevo dominio',
+          },
+          completedHeadline: 'Tu espacio Pro está activo',
+          completedCta: 'Ver mi nuevo sitio',
+          finishLaterHeadline:
+            'Tu dominio está registrado — estamos terminando la configuración',
+          finishLaterBody:
+            'Tuvimos un pequeño contratiempo terminando la configuración, pero tu dominio es tuyo y lo estamos reintentando automáticamente. Te avisaremos por correo en cuanto esté listo (generalmente dentro de una hora).',
+          failedPreporHeadline: 'No pudimos completar tu compra',
+          failedPreporBody:
+            'Tu tarjeta no fue cobrada. Por favor intenta de nuevo o contacta a soporte si el problema persiste.',
+          resolving: 'Resolviendo tu actualización…',
+          missingSession:
+            'Falta la sesión de pago — por favor regresa a la página de actualización.',
         },
         errors: {
           generic: 'Hubo un problema al iniciar el pago. Inténtalo de nuevo.',
