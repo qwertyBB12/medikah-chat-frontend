@@ -32,7 +32,13 @@ export type EngagementEvent =
   | 'preview_visit'
   | 'share_link_copied'
   | 'cta_dismissed'
-  | 'upgrade_interest';
+  | 'upgrade_interest'
+  // Phase 13-04: Mexican physician hit the SAT-blocked notice and asked for a
+  // heads-up when Pro launches in México. Counter lives on
+  // physician_workspace_accounts.engagement_counters (JSONB), same as the
+  // other Phase 12 events. Forwarded via the dedicated
+  // /api/practikah/upgrade/notify-me BFF route.
+  | 'upgrade_sat_notify_me';
 
 // ---------------------------------------------------------------------------
 // Counter shape

@@ -49,6 +49,7 @@ export default async function handler(
     'share_link_copied',
     'cta_dismissed',
     'upgrade_interest',
+    'upgrade_sat_notify_me',
   ];
   if (!event || !VALID_EVENTS.includes(event)) {
     return res.status(400).json({ error: 'Invalid engagement event type' });
