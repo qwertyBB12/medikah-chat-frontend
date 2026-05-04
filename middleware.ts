@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getProRedirect } from './lib/proRedirectLookup';
 
 const APEX = 'medikah.health';
 
@@ -24,7 +25,7 @@ const RESERVED_SUBDOMAINS = new Set([
   '_dmarc', '_domainkey', '_mta-sts', 'mta-sts',
 ]);
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const host = req.headers.get('host') || '';
   const hostname = host.split(':')[0].toLowerCase();
 
@@ -59,6 +60,33 @@ export function middleware(req: NextRequest) {
 
   // Slug must match a safe URL-segment pattern; reject path traversal, special chars, etc. (T-12-04-01, T-12-04-06)
   if (!/^[a-z0-9-]+$/.test(slug)) return NextResponse.next();
+
+  // ── Phase 13 D-24/D-25/D-26: 301 redirect for active Pro physicians ──────
+  //
+  // Runs AFTER the reserved-subdomain check (line 54), the multi-level guard
+  // (line 58), and the URL-segment validator (line 61). At this point ``slug``
+  // is sanitized and never one of the reserved labels (mail, practikah,
+  // klinikah, www, …) — those have already been short-circuited.
+  //
+  // Lookup is edge-friendly: 60s in-memory cache + request coalescing
+  // (lib/proRedirectLookup.ts). On cache miss the helper fetches the
+  // active-Pro redirect map from FastAPI; on any error it returns null and
+  // we fall through to the existing rewrite (fail-open, T-13-08-04).
+  //
+  // The 301 is permanent (D-24): SEO link-equity consolidation, matching
+  // Substack/Webflow/Squarespace pattern. Path + query string preserved.
+  //
+  // Revertibility (D-25 / PRO-17): when the doctor downgrades or cancels,
+  // FastAPI's redirect map drops the slug. Within ≤60s ``getProRedirect``
+  // returns null and the rewrite below resumes serving the Try Pro page.
+  const customDomain = await getProRedirect(slug);
+  if (customDomain) {
+    const target = new URL(
+      req.nextUrl.pathname + req.nextUrl.search,
+      `https://${customDomain}`
+    );
+    return NextResponse.redirect(target, 301);
+  }
 
   // Rewrite to /sites/<slug> tree. Preserves path, query string, and hash.
   // The rewrite is internal — the browser URL stays as <slug>.medikah.health.
