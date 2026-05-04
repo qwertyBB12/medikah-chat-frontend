@@ -25,6 +25,7 @@ import type { Suggestion } from '../../../../lib/domainSuggestions';
 import DomainSearch from './DomainSearch';
 import SATBlockedNotice from './SATBlockedNotice';
 import CheckoutHandoff from './CheckoutHandoff';
+import ProvisioningProgress from './ProvisioningProgress';
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -115,6 +116,9 @@ export default function UpgradeWizard({
   const [chosen, setChosen] = useState<Suggestion | null>(null);
   const [pricing, setPricing] = useState<PricingMatrix | null>(null);
   const [pricingError, setPricingError] = useState<string | null>(null);
+  // Phase 13-07: resolve Stripe session_id → saga run_id for SSE consumer.
+  const [resolvedRunId, setResolvedRunId] = useState<string | null>(null);
+  const [runResolveError, setRunResolveError] = useState<string | null>(null);
 
   // Stripe success_url returns to this page with ?session_id=cs_test_...
   const sessionIdQuery = useMemo(() => {
@@ -159,6 +163,42 @@ export default function UpgradeWizard({
       cancelled = true;
     };
   }, [sessionIdQuery]);
+
+  // Phase 13-07: when the wizard lands in provisioning with a session_id from
+  // the Stripe success_url, resolve the saga run_id via the BFF helper. Owner
+  // check is enforced server-side (T-13-07-04).
+  useEffect(() => {
+    if (step !== 'provisioning') return;
+    if (!sessionIdQuery) return;
+    if (resolvedRunId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch(
+          `/api/practikah/upgrade/run-by-session?session_id=${encodeURIComponent(sessionIdQuery)}`,
+        );
+        if (!r.ok) {
+          if (!cancelled) setRunResolveError(t.upgrade.wizard.errors.generic);
+          return;
+        }
+        const data = (await r.json()) as { run_id?: string };
+        if (cancelled) return;
+        if (data.run_id) setResolvedRunId(data.run_id);
+        else setRunResolveError(t.upgrade.wizard.errors.generic);
+      } catch {
+        if (!cancelled) setRunResolveError(t.upgrade.wizard.errors.network);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    step,
+    sessionIdQuery,
+    resolvedRunId,
+    t.upgrade.wizard.errors.generic,
+    t.upgrade.wizard.errors.network,
+  ]);
 
   // Fetch pricing matrix once we land on plan / domain step.
   useEffect(() => {
@@ -205,19 +245,41 @@ export default function UpgradeWizard({
   // -------------------------------------------------------------------------
 
   if (step === 'provisioning') {
+    const provisioningCopy = t.upgrade.wizard.provisioning;
     return (
       <div className="max-w-3xl mx-auto p-6">
         <h1 className="font-heading uppercase text-3xl tracking-wider text-inst-blue mb-6">
           {t.upgrade.wizard.headline}
         </h1>
-        <div
-          className="bg-linen rounded-md p-6"
-          data-testid="provisioning-placeholder"
-        >
-          <p className="font-body text-body-slate">
-            {t.upgrade.wizard.provisioning.placeholder}
-          </p>
-        </div>
+
+        {!sessionIdQuery ? (
+          <div
+            className="bg-alert-garnet/10 rounded-md p-6"
+            data-testid="provisioning-missing-session"
+          >
+            <p className="font-body text-body-slate">
+              {provisioningCopy.missingSession}
+            </p>
+          </div>
+        ) : runResolveError ? (
+          <div
+            className="bg-alert-garnet/10 rounded-md p-6"
+            data-testid="provisioning-resolve-error"
+          >
+            <p className="font-body text-alert-garnet">{runResolveError}</p>
+          </div>
+        ) : !resolvedRunId ? (
+          <div
+            className="bg-linen rounded-md p-6"
+            data-testid="provisioning-resolving"
+          >
+            <p className="font-body text-body-slate">
+              {provisioningCopy.resolving}
+            </p>
+          </div>
+        ) : (
+          <ProvisioningProgress runId={resolvedRunId} />
+        )}
       </div>
     );
   }
