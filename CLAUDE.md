@@ -16,7 +16,7 @@
 Uses Institutional Navy `#1B2A41` (`inst-blue`) as dominant brand color. Clinical Teal `#2C7A8C` is the accent/CTA color. See parent CLAUDE.md for rationale.
 
 @override typography
-Uses Oswald (`font-heading`) for ALL CAPS display headlines, DM Sans (`font-dm-sans`) for UI labels/buttons, DM Serif (`font-dm-serif`) for accent display, and Mulish (`font-body`) for body text + wordmark. Predates governance layer. Medikah wordmark uses Mulish lowercase per governance.
+Uses **Mulish** (`font-body`) for body text, wordmark, all UI labels/buttons, CTAs, eyebrows, and footers — and **Oswald** (`font-heading`) for ALL CAPS display headlines. These are the only two font families present on the live homepage (verified 2026-05-05 via `getComputedStyle()` on `https://medikah.health`). The Medikah wordmark uses Mulish lowercase per governance. The Tailwind utilities `font-dm-sans` / `font-dm-serif` remain configured as backwards-compat aliases for already-shipped code; new code uses `font-body` (Mulish) for UI labels/buttons and `font-heading` (Oswald) for display.
 
 @override border-radius
 Uses custom radii in `tailwind.config.js`: `rounded-sm` (8px), `rounded-md` (16px), `rounded-lg` (24px), `rounded-xl` (32px). Governance specifies 4px for Medikah.
@@ -196,14 +196,29 @@ Schemas are managed in a separate Sanity Studio (not in this repo).
 
 ### Typography
 
+The live homepage uses exactly two font families. Verified 2026-05-05 via
+`getComputedStyle()` against every text-bearing element on `https://medikah.health` —
+no other family appears in any computed `font-family` value.
+
 | Font | Tailwind Class | Role |
 |------|---------------|------|
-| Mulish | `font-body` | Body text, wordmark |
-| Oswald | `font-heading` | Display headlines, ALL CAPS sections |
-| DM Sans | `font-dm-sans` | UI labels, buttons, auth forms |
-| DM Serif | `font-dm-serif` | Accent display |
+| Mulish | `font-body` | Body text, wordmark, all UI labels, buttons, CTAs, eyebrows, footers |
+| Oswald | `font-heading` | Display headlines (H1, H2) — ALL CAPS only, never body |
 
-Mulish weights: 300, 400, 600, 700, 800, 900.
+Mulish weights: 300, 400, 500, 600, 700, 800, 900. Wordmark = 500 + lowercase + tracking 0.04em.
+Oswald weights: 400, 500, 600, 700. Display headlines = 500 + uppercase + tracking -0.02em + leading 0.9–0.95.
+
+**Legacy aliases (backwards-compat only):** `font-dm-sans` and `font-dm-serif` remain
+configured in `tailwind.config.js` so that already-shipped components continue to
+render. Both DM Sans and DM Serif previously appeared in this Design System table as
+"UI labels" and "Accent display" — that documentation drifted. They no longer appear
+anywhere on the live site. **New code:** use `font-body` (Mulish) for everything that
+isn't a display headline; use `font-heading` (Oswald) for display headlines.
+
+**Source-of-truth ladder for any token question:**
+1. `https://medikah.health` rendered DOM (Playwright `getComputedStyle()`)
+2. `lib/emailChrome.ts` — re-derived from #1 in Plan 13.1-01; canonical token export
+3. Component source (`components/landing/Nav.tsx`, `Hero*.tsx`, `LandingFooter.tsx`, `StaggeredGrid.tsx`)
 
 ### Color Palette
 
