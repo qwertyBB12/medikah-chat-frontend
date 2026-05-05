@@ -69,7 +69,8 @@ export default async function handler(
         // application/json is what Stripe sends; preserve it for FastAPI's request.body() read.
         'Content-Type': req.headers['content-type'] || 'application/json',
       },
-      body: new Uint8Array(rawBody.buffer, rawBody.byteOffset, rawBody.byteLength),
+      // Stripe sends UTF-8 JSON; toString('utf8') is byte-identical so FastAPI HMAC re-verification succeeds.
+      body: rawBody.toString('utf8'),
     });
 
     const text = await upstream.text();
