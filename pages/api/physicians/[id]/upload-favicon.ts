@@ -198,7 +198,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // 8. Dimension check (skip for SVG — intrinsically scalable) and SVG sanitization
     let uploadBuffer = buffer;
-    let contentType = declaredMime;
+    const contentType = declaredMime;
 
     if (declaredMime === 'image/svg+xml') {
       // SVG: sanitize (T-12-05-02)
