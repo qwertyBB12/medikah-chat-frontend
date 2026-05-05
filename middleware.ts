@@ -118,5 +118,5 @@ export const config = {
    * We allow *.xml paths through the matcher so the middleware can decide
    * whether to rewrite (slug subdomain) or pass through (apex).
    */
-  matcher: ['/((?!_next/|api/|favicon.ico|robots.txt|.*\\.(js|css|png|jpg|jpeg|gif|ico|woff|woff2|ttf|svg|webp|map|json|txt)).*)'],
+  matcher: ['/((?!_next/|api/|favicon.ico|robots.txt|.*\\.(?:js|css|png|jpg|jpeg|gif|ico|woff|woff2|ttf|svg|webp|map|json|txt)).*)'],
 };
