@@ -176,7 +176,7 @@ export async function sendPhysicianWelcomeEmail(
 <html lang="${lang}">
 ${emailHead()}
 <body style="margin:0;padding:0;background-color:${tokens.pageBg};font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};">
-${emailHeader({ variant: 'navy', locale: lang, wordmark: 'medikah' })}
+${emailHeader({ variant: 'linen', locale: lang, wordmark: 'medikah' })}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${tokens.pageBg};padding:40px 20px;">
   <tr>
     <td align="center">

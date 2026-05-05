@@ -176,7 +176,7 @@ export async function sendPracikahLiveEmail(
 <html lang="${lang}">
 ${emailHead()}
 <body style="margin:0;padding:0;background-color:${tokens.colors.linen};font-family:${tokens.fonts.body};color:${tokens.colors.bodySlate};">
-${emailHeader({ variant: 'navy', locale: lang, wordmark: 'practikah' })}
+${emailHeader({ variant: 'linen', locale: lang, wordmark: 'practikah' })}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${tokens.colors.linen};padding:40px 20px;">
   <tr>
     <td align="center">
@@ -352,7 +352,7 @@ function renderBrandedEmail(opts: {
 ${emailHead()}
 <body style="margin:0;padding:0;background-color:${tokens.colors.linen};font-family:${tokens.fonts.body};color:${tokens.colors.bodySlate};">
 <span style="display:none!important;visibility:hidden;opacity:0;height:0;width:0;">${opts.preheader}</span>
-${emailHeader({ variant: 'navy', locale, wordmark: 'practikah' })}
+${emailHeader({ variant: 'linen', locale, wordmark: 'practikah' })}
 <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:${tokens.colors.linen};padding:32px 0;">
   <tr><td align="center">
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" class="email-container" style="max-width:600px;background-color:${tokens.colors.white};border-radius:${tokens.radii.md};overflow:hidden;">
