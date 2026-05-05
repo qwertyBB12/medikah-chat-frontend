@@ -71,7 +71,7 @@ export const templates = {
 <html lang="en">
 ${emailHead()}
 <body style="margin:0;padding:0;background-color:${tokens.pageBg};font-family:${tokens.fonts.body};color:${tokens.colors.bodySlate};">
-${emailHeader({ variant: 'navy', locale: 'en', wordmark: 'medikah' })}
+${emailHeader({ variant: 'linen', locale: 'en', wordmark: 'medikah' })}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${tokens.pageBg};padding:40px 20px;">
   <tr>
     <td align="center">
@@ -275,7 +275,7 @@ const physicianConfirmationTemplate = (data: PhysicianEmailData) => {
 <html lang="${lang}">
 ${emailHead()}
 <body style="margin:0;padding:0;background-color:${tokens.pageBg};font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};">
-${emailHeader({ variant: 'navy', locale: lang, wordmark: 'medikah' })}
+${emailHeader({ variant: 'linen', locale: lang, wordmark: 'medikah' })}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${tokens.pageBg};padding:40px 20px;">
   <tr>
     <td align="center">
@@ -538,7 +538,7 @@ const verificationUpdateTemplate = (data: VerificationUpdateEmailData) => {
 <html lang="${lang}">
 ${emailHead()}
 <body style="margin:0;padding:0;background-color:${tokens.pageBg};font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};">
-${emailHeader({ variant: 'navy', locale: lang, wordmark: 'medikah' })}
+${emailHeader({ variant: 'linen', locale: lang, wordmark: 'medikah' })}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${tokens.pageBg};padding:40px 20px;">
   <tr>
     <td align="center">

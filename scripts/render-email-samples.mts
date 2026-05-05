@@ -1,25 +1,26 @@
 /**
- * One-off renderer for Plan 13.1-01 Task 7.
- * Invokes each frontend email template with stub data and writes HTML to
- * .planning/phases/13.1-.../render-samples/. Run with:
- *   npx tsx scripts/render-email-samples.mts
+ * Email-sample renderer — Plan 13.1-01 Task 7 (Option A: pure editorial).
+ * Body content sits directly on the sand-tone page bg between the two wave
+ * dividers — no outer white card. Mirrors the homepage's section architecture.
+ * Inner content blocks (next-steps panels, mailbox card, verified badge)
+ * remain because they're meaningful sub-sections, not chrome.
  *
- * Not part of the production bundle. Reusable for future brand-alignment audits.
+ *   npx tsx scripts/render-email-samples.mts
  */
 
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { templates } from '../lib/email';
-// Direct helper invocation for the patient/physician/verification templates,
-// which are not exported. Stub bodies that exercise the helper exactly as the
-// real templates do.
 import {
   tokens,
   emailHead,
   emailHeader,
   emailFooter,
+  emailEyebrow,
+  emailHeading,
+  emailButton,
+  emailSectionLabel,
 } from '../lib/emailChrome';
-import type { PhysicianProfileData } from '../lib/physicianClient';
 
 const OUT_DIR = resolve(
   process.cwd(),
@@ -32,134 +33,150 @@ const OUT_DIR = resolve(
 mkdirSync(OUT_DIR, { recursive: true });
 
 function write(name: string, html: string) {
-  const path = resolve(OUT_DIR, name);
-  writeFileSync(path, html, 'utf8');
+  writeFileSync(resolve(OUT_DIR, name), html, 'utf8');
   process.stdout.write(`✓ ${name} (${html.length} bytes)\n`);
 }
 
-// ---------- 1. Waitlist confirmation (real template) ----------
-const wl = templates.waitlistConfirmation('demo@medikah.health');
-write('email__waitlistConfirmation__en.html', wl.html);
+const C = tokens.colors;
+const F = tokens.fonts;
+const R = tokens.radii;
 
-// ---------- 2-3. Physician onboarding confirmation (stub via helper) ----------
-function renderPhysicianConfirmationStub(locale: 'en' | 'es'): string {
+// Editorial body shell — content sits directly on sand between waves.
+// Max-width 520px content with 32px side padding gives breathing room.
+function shell(opts: {
+  locale: 'en' | 'es';
+  wordmark?: 'medikah' | 'practikah';
+  bodyHtml: string;
+  variant?: 'navy' | 'linen';
+  headerEyebrow?: string;
+}): string {
+  const variant = opts.variant ?? 'linen';
+  return `<!DOCTYPE html>
+<html lang="${opts.locale}">
+${emailHead()}
+<body style="margin:0;padding:0;background-color:${tokens.pageBg};font-family:${F.body};color:${C.bodySlate};">
+${emailHeader({ variant, locale: opts.locale, wordmark: opts.wordmark ?? 'medikah', eyebrow: opts.headerEyebrow })}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:${tokens.pageBg};">
+  <tr><td align="center" style="padding:48px 32px 56px 32px;">
+    <table role="presentation" class="email-container" width="520" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;">
+      <tr><td>
+        ${opts.bodyHtml}
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+${emailFooter({ locale: opts.locale })}
+</body>
+</html>`;
+}
+
+// ---------- 1. Waitlist ----------
+function renderWaitlist(): string {
+  const body = `${emailSectionLabel({ text: 'Care Without Distance', variant: 'light' })}
+${emailHeading({ text: "YOU'RE ON THE LIST", variant: 'light', size: 38, level: 1 })}
+<p style="font-family:${F.body};font-size:16px;line-height:1.7;color:${C.bodySlate};margin:24px 0 0 0;">
+  Thank you for joining the Medikah waitlist. We're building a platform that connects patients with their physicians wherever care lives — in your language, on your terms.
+</p>
+<p style="font-family:${F.body};font-size:16px;line-height:1.7;color:${C.bodySlate};margin:16px 0 0 0;">
+  We'll notify you at <strong style="color:${C.instBlue};font-weight:700;">demo@medikah.health</strong> when we're ready to welcome you.
+</p>
+<p style="font-family:${F.body};font-size:14px;line-height:1.6;color:${C.textMuted};margin:32px 0 0 0;">
+  Questions? Reach us at <a href="mailto:hello@medikah.health" style="color:${C.teal500};font-weight:600;">hello@medikah.health</a>.
+</p>`;
+  return shell({ locale: 'en', bodyHtml: body });
+}
+write('email__waitlistConfirmation__en.html', renderWaitlist());
+
+// ---------- 2-3. Physician onboarding confirmation ----------
+function renderPhysicianConfirmation(locale: 'en' | 'es'): string {
+  const eyebrow = locale === 'es' ? 'Red de médicos · Activo' : 'Physician Network · Live';
+  const heading = locale === 'es' ? 'TU PERFIL ESTÁ ACTIVO' : 'YOUR PROFILE IS LIVE';
+  const greeting = locale === 'es' ? 'Hola Dr. Hernández,' : 'Hi Dr. Hernandez,';
   const body = locale === 'es'
-    ? `<h2 style="font-family:${tokens.fonts.accent};color:${tokens.colors.instBlue};font-size:24px;font-weight:400;margin:0 0 16px 0;">Hola Dr. Hernández,</h2>
-       <p style="color:${tokens.colors.bodySlate};font-size:16px;line-height:1.7;margin:0 0 16px 0;">Gracias por unirte a Medikah. Tu perfil ahora forma parte de la red de médicos.</p>
-       <p style="color:${tokens.colors.bodySlate};font-size:14px;line-height:1.7;margin:0;">Próximos pasos: verificación de credenciales (48 h), perfil activo, actualizaciones libres en tu panel.</p>
-       <p style="margin-top:24px;"><a href="https://medikah.health/doctors/demo" style="display:inline-block;background-color:${tokens.colors.clinicalTeal};color:${tokens.colors.white};padding:14px 32px;border-radius:${tokens.radii.sm};text-decoration:none;font-weight:600;">Ver Tu Perfil</a></p>`
-    : `<h2 style="font-family:${tokens.fonts.accent};color:${tokens.colors.instBlue};font-size:24px;font-weight:400;margin:0 0 16px 0;">Hi Dr. Hernandez,</h2>
-       <p style="color:${tokens.colors.bodySlate};font-size:16px;line-height:1.7;margin:0 0 16px 0;">Thank you for joining Medikah. You're now part of the physician network.</p>
-       <p style="color:${tokens.colors.bodySlate};font-size:14px;line-height:1.7;margin:0;">What's next: credential verification (48 h), profile goes live, free edits from your dashboard.</p>
-       <p style="margin-top:24px;"><a href="https://medikah.health/doctors/demo" style="display:inline-block;background-color:${tokens.colors.clinicalTeal};color:${tokens.colors.white};padding:14px 32px;border-radius:${tokens.radii.sm};text-decoration:none;font-weight:600;">View Your Profile</a></p>`;
-  return `<!DOCTYPE html>
-<html lang="${locale}">
-${emailHead()}
-<body style="margin:0;padding:0;background-color:${tokens.pageBg};font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};">
-${emailHeader({ variant: 'navy', locale, wordmark: 'medikah' })}
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${tokens.pageBg};padding:40px 20px;">
-  <tr><td align="center">
-    <table role="presentation" class="email-container" width="600" cellpadding="0" cellspacing="0" style="background-color:${tokens.colors.white};border-radius:${tokens.radii.md};overflow:hidden;">
-      <tr><td class="email-pad" style="padding:40px 32px;">${body}</td></tr>
-    </table>
+    ? "Gracias por unirte. Ahora eres parte de la red de médicos llevando coordinación de salud a las Américas."
+    : "Thank you for joining. You're now part of the physician network bringing healthcare coordination to the Americas.";
+  const cta = locale === 'es' ? 'Ver tu perfil' : 'View your profile';
+
+  const bodyHtml = `${emailSectionLabel({ text: eyebrow, variant: 'light' })}
+${emailHeading({ text: heading, variant: 'light', size: 36 })}
+<p style="font-family:${F.body};font-size:16px;font-weight:500;color:${C.deepCharcoal};margin:32px 0 16px 0;">${greeting}</p>
+<p style="font-family:${F.body};font-size:16px;line-height:1.7;color:${C.bodySlate};margin:0 0 32px 0;">${body}</p>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:${C.white};border:1px solid ${C.hairlineDark};border-radius:${R.md};margin:0 0 36px 0;">
+  <tr><td style="padding:24px 28px;">
+    ${emailEyebrow({ text: locale === 'es' ? 'Próximos pasos' : "What's next", variant: 'light', marginBottom: '12px' })}
+    <p style="font-family:${F.body};font-size:14px;line-height:1.7;color:${C.bodySlate};margin:0;">
+      <strong style="color:${C.instBlue};">1. ${locale === 'es' ? 'Verificación (48 h)' : 'Credential verification (48 h)'}</strong><br>
+      <strong style="color:${C.instBlue};">2. ${locale === 'es' ? 'Perfil activo' : 'Profile goes live'}</strong><br>
+      <strong style="color:${C.instBlue};">3. ${locale === 'es' ? 'Ediciones libres' : 'Free edits anytime'}</strong>
+    </p>
   </td></tr>
 </table>
-${emailFooter({ locale })}
-</body>
-</html>`;
-}
-write('email__physicianConfirmation__en.html', renderPhysicianConfirmationStub('en'));
-write('email__physicianConfirmation__es.html', renderPhysicianConfirmationStub('es'));
 
-// ---------- 4. Verification status (stub via helper, navy variant) ----------
-function renderVerificationUpdateStub(): string {
+${emailButton({ label: cta, href: 'https://medikah.health/doctors/demo', variant: 'primary' })}
+`;
+  return shell({ locale, bodyHtml });
+}
+write('email__physicianConfirmation__en.html', renderPhysicianConfirmation('en'));
+write('email__physicianConfirmation__es.html', renderPhysicianConfirmation('es'));
+
+// ---------- 4. Verification status ----------
+function renderVerificationUpdate(): string {
+  const bodyHtml = `${emailSectionLabel({ text: 'Credentials Verified', variant: 'light' })}
+${emailHeading({ text: 'CONGRATULATIONS,\nDR. HERNANDEZ', variant: 'light', size: 36 })}
+<p style="font-family:${F.body};font-size:16px;line-height:1.7;color:${C.bodySlate};margin:32px 0 28px 0;">
+  Your medical credentials have been successfully verified. Your profile now displays the ✓ Verified badge — patients and colleagues can trust your credentials.
+</p>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background-color:${C.tealOverlay8};border-radius:${R.lg};margin:0 0 36px 0;">
+  <tr><td style="padding:14px 22px;">
+    <span style="font-family:${F.body};font-size:13px;font-weight:600;color:${C.teal700};text-transform:uppercase;letter-spacing:0.04em;">✓ Verified</span>
+  </td></tr>
+</table>
+${emailButton({ label: 'View your profile', href: 'https://medikah.health/doctors/demo', variant: 'primary' })}
+`;
+  return shell({ locale: 'en', bodyHtml });
+}
+write('email__verificationUpdate__en.html', renderVerificationUpdate());
+
+// ---------- 5-6. Práctikah workspace welcome ----------
+function renderPraktikahLive(locale: 'en' | 'es'): string {
+  const eyebrow = locale === 'es' ? 'Práctikah · Espacio de trabajo' : 'Práctikah · Workspace';
+  const heading = locale === 'es' ? "TU ESPACIO PROFESIONAL\nESTÁ ACTIVO" : "YOUR PROFESSIONAL\nWORKSPACE IS LIVE";
+  const mailLabel = locale === 'es' ? 'Tu correo profesional' : 'Your professional mailbox';
+  const cta = locale === 'es' ? 'Abrir buzón' : 'Open mailbox';
+
+  const bodyHtml = `${emailSectionLabel({ text: eyebrow, variant: 'light' })}
+${emailHeading({ text: heading, variant: 'light', size: 34 })}
+<p style="font-family:${F.body};font-size:16px;line-height:1.7;color:${C.bodySlate};margin:32px 0 32px 0;">
+  ${locale === 'es'
+    ? 'Práctikah por Medikah — un espacio para tu práctica profesional. Tu buzón profesional está listo, y tu sitio Try Pro está sirviendo en vivo.'
+    : 'Práctikah by Medikah — a home for your professional practice. Your professional mailbox is ready, and your Try Pro site is serving live.'}
+</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:${C.instBlue};background-image:${tokens.gradients.navy};border-radius:${R.lg};margin:0 0 36px 0;">
+  <tr><td style="padding:32px;">
+    <p style="font-family:${F.body};font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.25em;color:${C.teal400};margin:0 0 12px 0;">${mailLabel}</p>
+    <p style="font-family:${F.body};font-size:22px;font-weight:600;color:${C.white};margin:0 0 20px 0;letter-spacing:-0.01em;word-break:break-all;">demo@medikah.health</p>
+    ${emailButton({ label: cta, href: 'https://mail.medikah.health', variant: 'primary' })}
+  </td></tr>
+</table>
+`;
+  return shell({ locale, wordmark: 'practikah', bodyHtml });
+}
+write('email__practikahLive__en.html', renderPraktikahLive('en'));
+write('email__practikahLive__es.html', renderPraktikahLive('es'));
+
+// ---------- 7. Linen header variant smoke test ----------
+function renderLinenVariant(): string {
   const locale: 'en' | 'es' = 'en';
-  const body = `<div style="text-align:center;padding-top:8px;">
-    <span style="display:inline-block;background-color:${tokens.colors.linen};color:${tokens.colors.success};font-family:${tokens.fonts.ui};font-size:16px;font-weight:600;padding:8px 20px;border-radius:${tokens.radii.lg};border:1px solid ${tokens.colors.success};">✓ Verified</span>
-  </div>
-  <h2 style="font-family:${tokens.fonts.accent};color:${tokens.colors.instBlue};font-size:24px;font-weight:400;margin:24px 0 16px 0;text-align:center;">Congratulations, Dr. Hernandez!</h2>
-  <p style="color:${tokens.colors.bodySlate};font-size:16px;line-height:1.7;margin:0 0 16px 0;">Your medical credentials have been successfully verified. Your profile now displays the ✓ Verified badge.</p>
-  <p style="text-align:center;margin-top:24px;"><a href="https://medikah.health/doctors/demo" style="display:inline-block;background-color:${tokens.colors.clinicalTeal};color:${tokens.colors.white};padding:14px 32px;border-radius:${tokens.radii.sm};text-decoration:none;font-weight:600;">View Your Profile</a></p>`;
-  return `<!DOCTYPE html>
-<html lang="${locale}">
-${emailHead()}
-<body style="margin:0;padding:0;background-color:${tokens.pageBg};font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};">
-${emailHeader({ variant: 'navy', locale, wordmark: 'medikah' })}
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${tokens.pageBg};padding:40px 20px;">
-  <tr><td align="center">
-    <table role="presentation" class="email-container" width="600" cellpadding="0" cellspacing="0" style="background-color:${tokens.colors.white};border-radius:${tokens.radii.md};overflow:hidden;">
-      <tr><td class="email-pad" style="padding:40px 32px;">${body}</td></tr>
-    </table>
-  </td></tr>
-</table>
-${emailFooter({ locale })}
-</body>
-</html>`;
+  const bodyHtml = `${emailSectionLabel({ text: 'Editorial · Marketing tone', variant: 'light' })}
+${emailHeading({ text: "THE LINEN MASTHEAD\nIS A SECTION OPENER", variant: 'light', size: 32 })}
+<p style="font-family:${F.body};font-size:16px;line-height:1.7;color:${C.bodySlate};margin:24px 0 0 0;">
+  Same Mulish + Oswald + teal eyebrow language as the navy variant, dressed differently. The linen masthead replaces the lowercase Mulish wordmark with miniaturized Oswald uppercase MEDIKAH — homepage Hero pattern at masthead scale. Use the linen variant for warmer / marketing / section-opening tones; the navy variant for transactional / authoritative tones.
+</p>`;
+  return shell({ locale, variant: 'linen', headerEyebrow: 'Care Without Distance', bodyHtml });
 }
-write('email__verificationUpdate__en.html', renderVerificationUpdateStub());
+write('email__linenHeaderVariant__en.html', renderLinenVariant());
 
-// ---------- 5. Práctikah workspace welcome — linen variant w/ practikah wordmark ----------
-function renderPraktikahLiveStub(locale: 'en' | 'es'): string {
-  const heading = locale === 'es'
-    ? "¡Estás en Práctikah, Dr. Demo!"
-    : "You're on Práctikah, Dr. Demo!";
-  const subheading = locale === 'es'
-    ? "Tu espacio de trabajo profesional ya está configurado."
-    : "Your professional workspace is set up.";
-  const mailboxLabel = locale === 'es' ? "Tu nuevo correo profesional:" : "Your new professional mailbox:";
-  const cta = locale === 'es' ? "Abrir Buzón" : "Open Mailbox";
-  return `<!DOCTYPE html>
-<html lang="${locale}">
-${emailHead()}
-<body style="margin:0;padding:0;background-color:${tokens.colors.linen};font-family:${tokens.fonts.body};color:${tokens.colors.bodySlate};">
-${emailHeader({ variant: 'navy', locale, wordmark: 'practikah' })}
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${tokens.colors.linen};padding:40px 20px;">
-  <tr><td align="center">
-    <table role="presentation" class="email-container" width="600" cellpadding="0" cellspacing="0" style="background-color:${tokens.colors.white};border-radius:${tokens.radii.md};overflow:hidden;">
-      <tr><td class="email-pad" style="padding:40px 40px 24px 40px;text-align:center;">
-        <h1 style="font-family:${tokens.fonts.body};color:${tokens.colors.deepCharcoal};font-size:26px;font-weight:800;margin:0 0 12px 0;">${heading}</h1>
-        <p style="color:${tokens.colors.bodySlate};font-size:16px;line-height:1.7;margin:0;">${subheading}</p>
-      </td></tr>
-      <tr><td class="email-pad" style="padding:0 40px 28px 40px;">
-        <div style="background-color:${tokens.colors.instBlue};border-radius:${tokens.radii.md};padding:28px;text-align:center;">
-          <p style="color:${tokens.colors.creamOnDark};font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 10px 0;">${mailboxLabel}</p>
-          <p style="color:${tokens.colors.clinicalTeal};font-size:20px;font-weight:800;margin:0 0 8px 0;">demo@medikah.health</p>
-          <a href="https://mail.medikah.health" style="display:inline-block;background-color:${tokens.colors.clinicalTeal};color:${tokens.colors.white};padding:14px 32px;border-radius:${tokens.radii.sm};text-decoration:none;font-weight:700;margin-top:16px;">${cta}</a>
-        </div>
-      </td></tr>
-    </table>
-  </td></tr>
-</table>
-${emailFooter({ locale })}
-</body>
-</html>`;
-}
-write('email__practikahLive__en.html', renderPraktikahLiveStub('en'));
-write('email__practikahLive__es.html', renderPraktikahLiveStub('es'));
-
-// ---------- 6. Linen-variant header smoke test (rare layout) ----------
-function renderLinenVariantStub(): string {
-  const locale: 'en' | 'es' = 'en';
-  return `<!DOCTYPE html>
-<html lang="${locale}">
-${emailHead()}
-<body style="margin:0;padding:0;background-color:${tokens.colors.linen};font-family:${tokens.fonts.body};color:${tokens.colors.bodySlate};">
-${emailHeader({ variant: 'linen', locale, wordmark: 'medikah' })}
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${tokens.colors.linen};padding:40px 20px;">
-  <tr><td align="center">
-    <table role="presentation" class="email-container" width="600" cellpadding="0" cellspacing="0" style="background-color:${tokens.colors.white};border-radius:${tokens.radii.md};overflow:hidden;">
-      <tr><td class="email-pad" style="padding:40px 32px;">
-        <h2 style="color:${tokens.colors.deepCharcoal};font-family:${tokens.fonts.body};font-size:22px;font-weight:700;margin:0 0 16px 0;">Linen masthead variant</h2>
-        <p style="color:${tokens.colors.bodySlate};font-size:16px;line-height:1.6;margin:0;">This sample exercises the linen-variant header (navy logo + Mulish lowercase wordmark on warm linen). Used for non-clinical / marketing tone emails. Footer includes the absolute logo URL via the navy footer band's privacy/terms anchors — the gate's <code>medikah.health/logo</code> match comes from <code>emailHeader('navy', ...)</code>; this file routes through the linen variant which references <code>medikah.health/logo-BLU.png</code> (a logo URL).</p>
-      </td></tr>
-    </table>
-  </td></tr>
-</table>
-${emailFooter({ locale })}
-</body>
-</html>`;
-}
-write('email__linenHeaderVariant__en.html', renderLinenVariantStub());
-
-// Suppress unused import warning — kept available for future stub work.
-void ({} as PhysicianProfileData);
+// Real waitlist template (smoke test the production code path)
+const realWl = templates.waitlistConfirmation('demo@medikah.health');
+write('email__waitlistConfirmation_REAL__en.html', realWl.html);
