@@ -69,7 +69,7 @@ export default async function handler(
         // application/json is what Stripe sends; preserve it for FastAPI's request.body() read.
         'Content-Type': req.headers['content-type'] || 'application/json',
       },
-      body: rawBody,
+      body: new Uint8Array(rawBody.buffer, rawBody.byteOffset, rawBody.byteLength),
     });
 
     const text = await upstream.text();
