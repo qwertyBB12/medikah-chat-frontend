@@ -244,7 +244,7 @@ export default function AvailabilityEditor({ physicianId, lang, accessToken }: A
 
   if (loading) {
     return (
-      <div className="bg-white rounded-[12px] border border-border-line shadow-sm p-6">
+      <div className="bg-white rounded-md border border-border-line shadow-sm p-6">
         <div className="flex items-center justify-center py-8">
           <span className="font-dm-sans text-sm text-body-slate">{t.loading}</span>
         </div>
@@ -253,7 +253,7 @@ export default function AvailabilityEditor({ physicianId, lang, accessToken }: A
   }
 
   return (
-    <div className="bg-white rounded-[12px] border border-border-line shadow-sm">
+    <div className="bg-white rounded-md border border-border-line shadow-sm">
       {/* Header */}
       <div className="px-6 pt-6 pb-4">
         <h2 className="font-dm-sans font-semibold text-lg text-deep-charcoal">{t.title}</h2>
@@ -288,7 +288,7 @@ export default function AvailabilityEditor({ physicianId, lang, accessToken }: A
         {schedule.map((day, dayIndex) => (
           <div
             key={day.day}
-            className={`border rounded-[12px] p-4 transition ${
+            className={`border rounded-md p-4 transition ${
               day.enabled
                 ? 'border-clinical-teal/30 bg-white'
                 : 'border-border-line bg-clinical-surface/50'
