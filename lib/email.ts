@@ -1,7 +1,14 @@
 // Email service utility for Medikah
-// Uses Resend for transactional emails
+// Uses Resend for transactional emails. All HTML chrome (head/header/footer)
+// comes from `./emailChrome` so brand tokens stay in one place.
 
 import { PhysicianProfileData } from './physicianClient';
+import {
+  tokens,
+  emailHead,
+  emailHeader,
+  emailFooter,
+} from './emailChrome';
 
 interface EmailOptions {
   to: string;
@@ -60,64 +67,39 @@ export const sendEmail = async (options: EmailOptions): Promise<SendEmailResult>
 export const templates = {
   waitlistConfirmation: (email: string) => ({
     subject: 'Welcome to the Medikah Waitlist',
-    html: `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body style="margin: 0; padding: 0; background-color: #FAFAFB; font-family: 'Mulish', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #FAFAFB; padding: 40px 20px;">
-    <tr>
-      <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden;">
-          <!-- Header - light design with blue accent bar -->
-          <tr>
-            <td style="background-color: #FFFFFF; padding: 32px; text-align: center; border-bottom: 4px solid #1B2A41;">
-              <p style="font-family: 'Mulish', -apple-system, BlinkMacSystemFont, sans-serif; font-size: 32px; font-weight: 800; color: #1B2A41; letter-spacing: -0.01em; margin: 0;">medikah</p>
-            </td>
-          </tr>
-
-          <!-- Body -->
-          <tr>
-            <td style="padding: 40px 32px;">
-              <h2 style="color: #1B2A41; font-size: 20px; margin: 0 0 16px 0;">You're on the list!</h2>
-              <p style="color: #4A5568; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
-                Thank you for joining the Medikah waitlist. We're building a platform that connects patients with healthcare providers across borders, making quality healthcare more accessible.
-              </p>
-              <p style="color: #4A5568; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
-                We'll notify you at <strong>${email}</strong> when we're ready to welcome you to the platform.
-              </p>
-              <p style="color: #4A5568; font-size: 16px; line-height: 1.6; margin: 0;">
-                In the meantime, if you have any questions, feel free to reach out to us at <a href="mailto:hello@medikah.health" style="color: #2C7A8C;">hello@medikah.health</a>.
-              </p>
-            </td>
-          </tr>
-
-          <!-- Footer - light with blue accent -->
-          <tr>
-            <td style="background-color: #F5F7F8; padding: 24px 32px; text-align: center; border-top: 4px solid #1B2A41;">
-              <p style="color: #9CA3AF; font-size: 13px; line-height: 1.5; margin: 0 0 12px 0;">
-                Medikah Corporation · Incorporated in Delaware, USA
-              </p>
-              <p style="font-size: 13px; margin: 0;">
-                <a href="https://medikah.health/privacy" style="color: #1B2A41; text-decoration: none; font-weight: 600;">Privacy Policy</a>
-                <span style="color: #D1D5DB; margin: 0 8px;">|</span>
-                <a href="https://medikah.health/terms" style="color: #1B2A41; text-decoration: none; font-weight: 600;">Terms of Service</a>
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
+    html: `<!DOCTYPE html>
+<html lang="en">
+${emailHead()}
+<body style="margin:0;padding:0;background-color:${tokens.pageBg};font-family:${tokens.fonts.body};color:${tokens.colors.bodySlate};">
+${emailHeader({ variant: 'navy', locale: 'en', wordmark: 'medikah' })}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${tokens.pageBg};padding:40px 20px;">
+  <tr>
+    <td align="center">
+      <table role="presentation" class="email-container" width="600" cellpadding="0" cellspacing="0" style="background-color:${tokens.colors.white};border-radius:${tokens.radii.md};overflow:hidden;">
+        <tr>
+          <td class="email-pad" style="padding:40px 32px;">
+            <h2 style="font-family:${tokens.fonts.body};color:${tokens.colors.deepCharcoal};font-size:22px;font-weight:700;margin:0 0 16px 0;">You're on the list!</h2>
+            <p style="font-family:${tokens.fonts.body};color:${tokens.colors.bodySlate};font-size:16px;line-height:1.6;margin:0 0 24px 0;">
+              Thank you for joining the Medikah waitlist. We're building Care Without Distance — a platform that connects patients with their physicians, no matter where care lives.
+            </p>
+            <p style="font-family:${tokens.fonts.body};color:${tokens.colors.bodySlate};font-size:16px;line-height:1.6;margin:0 0 24px 0;">
+              We'll notify you at <strong style="color:${tokens.colors.instBlue};">${email}</strong> when we're ready to welcome you to the platform.
+            </p>
+            <p style="font-family:${tokens.fonts.body};color:${tokens.colors.bodySlate};font-size:16px;line-height:1.6;margin:0;">
+              Questions? Reach us at <a href="mailto:hello@medikah.health" style="color:${tokens.colors.clinicalTeal};text-decoration:none;font-weight:600;">hello@medikah.health</a>.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+${emailFooter({ locale: 'en' })}
 </body>
-</html>
-    `,
+</html>`,
     text: `You're on the Medikah waitlist!
 
-Thank you for joining. We're building a platform that connects patients with healthcare providers across borders, making quality healthcare more accessible.
+Thank you for joining. We're building Care Without Distance — a platform that connects patients with their physicians, no matter where care lives.
 
 We'll notify you at ${email} when we're ready to welcome you to the platform.
 
@@ -287,179 +269,153 @@ const physicianConfirmationTemplate = (data: PhysicianEmailData) => {
   );
   const languages = formatLanguages(profile.languages);
   const verificationBadge = verificationStatus === 'verified' ? content.verified : content.pending;
-  const verificationColor = verificationStatus === 'verified' ? '#10B981' : '#F59E0B';
+  const verificationColor = verificationStatus === 'verified' ? tokens.colors.success : tokens.colors.warning;
 
-  const html = `
-<!DOCTYPE html>
+  const html = `<!DOCTYPE html>
 <html lang="${lang}">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${content.subject}</title>
-</head>
-<body style="margin: 0; padding: 0; background-color: #FAFAFB; font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #FAFAFB; padding: 40px 20px;">
-    <tr>
-      <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+${emailHead()}
+<body style="margin:0;padding:0;background-color:${tokens.pageBg};font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};">
+${emailHeader({ variant: 'navy', locale: lang, wordmark: 'medikah' })}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${tokens.pageBg};padding:40px 20px;">
+  <tr>
+    <td align="center">
+      <table role="presentation" class="email-container" width="600" cellpadding="0" cellspacing="0" style="background-color:${tokens.colors.white};border-radius:${tokens.radii.md};overflow:hidden;">
 
-          <!-- Header -->
-          <tr>
-            <td style="background: linear-gradient(135deg, #1B2A41 0%, #243447 100%); padding: 32px; text-align: center;">
-              <p style="font-family: 'DM Serif Display', Georgia, serif; font-size: 28px; font-weight: 400; color: #ffffff; letter-spacing: -0.01em; margin: 0;">medikah</p>
-              <p style="font-family: 'DM Sans', sans-serif; font-size: 14px; color: rgba(255,255,255,0.7); margin: 8px 0 0 0;">${lang === 'es' ? 'Red de Médicos' : 'Physician Network'}</p>
-            </td>
-          </tr>
+        <!-- Greeting -->
+        <tr>
+          <td class="email-pad" style="padding:40px 32px 24px 32px;">
+            <h2 style="font-family:${tokens.fonts.accent};color:${tokens.colors.instBlue};font-size:24px;font-weight:400;margin:0 0 16px 0;">${content.greeting}</h2>
+            <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};font-size:16px;line-height:1.7;margin:0;">
+              ${content.thankYou}
+            </p>
+          </td>
+        </tr>
 
-          <!-- Greeting -->
-          <tr>
-            <td style="padding: 40px 32px 24px 32px;">
-              <h2 style="font-family: 'DM Serif Display', Georgia, serif; color: #1B2A41; font-size: 24px; font-weight: 400; margin: 0 0 16px 0;">${content.greeting}</h2>
-              <p style="font-family: 'DM Sans', sans-serif; color: #4A5568; font-size: 16px; line-height: 1.7; margin: 0;">
-                ${content.thankYou}
+        <!-- Profile Summary -->
+        <tr>
+          <td class="email-pad" style="padding:0 32px 32px 32px;">
+            <div style="background-color:${tokens.colors.linen};border-radius:${tokens.radii.sm};padding:24px;border-left:4px solid ${tokens.colors.clinicalTeal};">
+              <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.instBlue};font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 16px 0;">
+                ${content.profileSummary}
               </p>
-            </td>
-          </tr>
 
-          <!-- Profile Summary -->
-          <tr>
-            <td style="padding: 0 32px 32px 32px;">
-              <div style="background-color: #F8FAFC; border-radius: 8px; padding: 24px; border-left: 4px solid #2C7A8C;">
-                <p style="font-family: 'DM Sans', sans-serif; color: #1B2A41; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 16px 0;">
-                  ${content.profileSummary}
-                </p>
-
-                <table width="100%" cellpadding="0" cellspacing="0" style="font-family: 'DM Sans', sans-serif; font-size: 14px;">
-                  <tr>
-                    <td style="color: #6B7280; padding: 8px 0; width: 140px; vertical-align: top;">${content.labels.name}</td>
-                    <td style="color: #1B2A41; padding: 8px 0; font-weight: 500;">${profile.fullName}</td>
-                  </tr>
-                  <tr>
-                    <td style="color: #6B7280; padding: 8px 0; vertical-align: top;">${content.labels.specialty}</td>
-                    <td style="color: #1B2A41; padding: 8px 0; font-weight: 500;">${profile.primarySpecialty || '—'}</td>
-                  </tr>
-                  <tr>
-                    <td style="color: #6B7280; padding: 8px 0; vertical-align: top;">${content.labels.subSpecialties}</td>
-                    <td style="color: #1B2A41; padding: 8px 0;">${subSpecialties}</td>
-                  </tr>
-                  <tr>
-                    <td style="color: #6B7280; padding: 8px 0; vertical-align: top;">${content.labels.credentials}</td>
-                    <td style="color: #1B2A41; padding: 8px 0;">${certifications}</td>
-                  </tr>
-                  <tr>
-                    <td style="color: #6B7280; padding: 8px 0; vertical-align: top;">${content.labels.education}</td>
-                    <td style="color: #1B2A41; padding: 8px 0;">${education}</td>
-                  </tr>
-                  <tr>
-                    <td style="color: #6B7280; padding: 8px 0; vertical-align: top;">${content.labels.publications}</td>
-                    <td style="color: #1B2A41; padding: 8px 0;">${publications}</td>
-                  </tr>
-                  <tr>
-                    <td style="color: #6B7280; padding: 8px 0; vertical-align: top;">${content.labels.currentPractice}</td>
-                    <td style="color: #1B2A41; padding: 8px 0;">${currentPractice}</td>
-                  </tr>
-                  <tr>
-                    <td style="color: #6B7280; padding: 8px 0; vertical-align: top;">${content.labels.availability}</td>
-                    <td style="color: #1B2A41; padding: 8px 0;">${availability}</td>
-                  </tr>
-                  <tr>
-                    <td style="color: #6B7280; padding: 8px 0; vertical-align: top;">${content.labels.languages}</td>
-                    <td style="color: #1B2A41; padding: 8px 0;">${languages}</td>
-                  </tr>
-                  <tr>
-                    <td style="color: #6B7280; padding: 12px 0 0 0; vertical-align: top;">${content.labels.verificationStatus}</td>
-                    <td style="padding: 12px 0 0 0;">
-                      <span style="display: inline-block; background-color: ${verificationColor}20; color: ${verificationColor}; font-size: 13px; font-weight: 600; padding: 4px 12px; border-radius: 20px;">
-                        ${verificationBadge}
-                      </span>
-                    </td>
-                  </tr>
-                </table>
-              </div>
-            </td>
-          </tr>
-
-          <!-- Next Steps -->
-          <tr>
-            <td style="padding: 0 32px 32px 32px;">
-              <h3 style="font-family: 'DM Serif Display', Georgia, serif; color: #1B2A41; font-size: 20px; font-weight: 400; margin: 0 0 20px 0;">${content.nextSteps}</h3>
-
-              <div style="margin-bottom: 20px;">
-                <p style="font-family: 'DM Sans', sans-serif; color: #1B2A41; font-size: 15px; font-weight: 600; margin: 0 0 4px 0;">${content.step1Title}</p>
-                <p style="font-family: 'DM Sans', sans-serif; color: #6B7280; font-size: 14px; line-height: 1.6; margin: 0;">${content.step1Text}</p>
-              </div>
-
-              <div style="margin-bottom: 20px;">
-                <p style="font-family: 'DM Sans', sans-serif; color: #1B2A41; font-size: 15px; font-weight: 600; margin: 0 0 4px 0;">${content.step2Title}</p>
-                <p style="font-family: 'DM Sans', sans-serif; color: #6B7280; font-size: 14px; line-height: 1.6; margin: 0;">${content.step2Text}</p>
-              </div>
-
-              <div style="margin-bottom: 20px;">
-                <p style="font-family: 'DM Sans', sans-serif; color: #1B2A41; font-size: 15px; font-weight: 600; margin: 0 0 4px 0;">${content.step3Title}</p>
-                <p style="font-family: 'DM Sans', sans-serif; color: #6B7280; font-size: 14px; line-height: 1.6; margin: 0;">${content.step3Text}</p>
-              </div>
-
-              <div>
-                <p style="font-family: 'DM Sans', sans-serif; color: #1B2A41; font-size: 15px; font-weight: 600; margin: 0 0 4px 0;">${content.step4Title}</p>
-                <p style="font-family: 'DM Sans', sans-serif; color: #6B7280; font-size: 14px; line-height: 1.6; margin: 0;">${content.step4Text}</p>
-              </div>
-            </td>
-          </tr>
-
-          <!-- CTA Buttons -->
-          <tr>
-            <td style="padding: 0 32px 40px 32px;">
-              <table width="100%" cellpadding="0" cellspacing="0">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-family:${tokens.fonts.ui};font-size:14px;">
                 <tr>
-                  <td align="center" style="padding-bottom: 12px;">
-                    <a href="${baseUrl}/doctors/${physicianId}" style="display: inline-block; background-color: #2C7A8C; color: #ffffff; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; text-decoration: none; padding: 14px 32px; border-radius: 8px;">
-                      ${content.ctaViewProfile}
-                    </a>
-                  </td>
+                  <td style="color:${tokens.colors.bodySlate};padding:8px 0;width:140px;vertical-align:top;">${content.labels.name}</td>
+                  <td style="color:${tokens.colors.instBlue};padding:8px 0;font-weight:500;">${profile.fullName}</td>
                 </tr>
                 <tr>
-                  <td align="center">
-                    <a href="${baseUrl}/doctor/dashboard" style="display: inline-block; color: #1B2A41; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; text-decoration: none; padding: 10px 24px; border: 1px solid #E5E7EB; border-radius: 8px; margin-right: 8px;">
-                      ${content.ctaUpdateAvailability}
-                    </a>
-                    <a href="${baseUrl}/doctor/network" style="display: inline-block; color: #1B2A41; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; text-decoration: none; padding: 10px 24px; border: 1px solid #E5E7EB; border-radius: 8px;">
-                      ${content.ctaJoinCommunity}
-                    </a>
+                  <td style="color:${tokens.colors.bodySlate};padding:8px 0;vertical-align:top;">${content.labels.specialty}</td>
+                  <td style="color:${tokens.colors.instBlue};padding:8px 0;font-weight:500;">${profile.primarySpecialty || '—'}</td>
+                </tr>
+                <tr>
+                  <td style="color:${tokens.colors.bodySlate};padding:8px 0;vertical-align:top;">${content.labels.subSpecialties}</td>
+                  <td style="color:${tokens.colors.instBlue};padding:8px 0;">${subSpecialties}</td>
+                </tr>
+                <tr>
+                  <td style="color:${tokens.colors.bodySlate};padding:8px 0;vertical-align:top;">${content.labels.credentials}</td>
+                  <td style="color:${tokens.colors.instBlue};padding:8px 0;">${certifications}</td>
+                </tr>
+                <tr>
+                  <td style="color:${tokens.colors.bodySlate};padding:8px 0;vertical-align:top;">${content.labels.education}</td>
+                  <td style="color:${tokens.colors.instBlue};padding:8px 0;">${education}</td>
+                </tr>
+                <tr>
+                  <td style="color:${tokens.colors.bodySlate};padding:8px 0;vertical-align:top;">${content.labels.publications}</td>
+                  <td style="color:${tokens.colors.instBlue};padding:8px 0;">${publications}</td>
+                </tr>
+                <tr>
+                  <td style="color:${tokens.colors.bodySlate};padding:8px 0;vertical-align:top;">${content.labels.currentPractice}</td>
+                  <td style="color:${tokens.colors.instBlue};padding:8px 0;">${currentPractice}</td>
+                </tr>
+                <tr>
+                  <td style="color:${tokens.colors.bodySlate};padding:8px 0;vertical-align:top;">${content.labels.availability}</td>
+                  <td style="color:${tokens.colors.instBlue};padding:8px 0;">${availability}</td>
+                </tr>
+                <tr>
+                  <td style="color:${tokens.colors.bodySlate};padding:8px 0;vertical-align:top;">${content.labels.languages}</td>
+                  <td style="color:${tokens.colors.instBlue};padding:8px 0;">${languages}</td>
+                </tr>
+                <tr>
+                  <td style="color:${tokens.colors.bodySlate};padding:12px 0 0 0;vertical-align:top;">${content.labels.verificationStatus}</td>
+                  <td style="padding:12px 0 0 0;">
+                    <span style="display:inline-block;background-color:${tokens.colors.linen};color:${verificationColor};font-size:13px;font-weight:600;padding:4px 12px;border-radius:${tokens.radii.lg};border:1px solid ${verificationColor};">
+                      ${verificationBadge}
+                    </span>
                   </td>
                 </tr>
               </table>
-            </td>
-          </tr>
+            </div>
+          </td>
+        </tr>
 
-          <!-- Closing -->
-          <tr>
-            <td style="padding: 0 32px 32px 32px;">
-              <p style="font-family: 'DM Sans', sans-serif; color: #4A5568; font-size: 15px; line-height: 1.6; margin: 0 0 8px 0;">${content.closing}</p>
-              <p style="font-family: 'DM Sans', sans-serif; color: #1B2A41; font-size: 15px; font-weight: 500; margin: 0;">${content.team}</p>
-            </td>
-          </tr>
+        <!-- Next Steps -->
+        <tr>
+          <td class="email-pad" style="padding:0 32px 32px 32px;">
+            <h3 style="font-family:${tokens.fonts.accent};color:${tokens.colors.instBlue};font-size:20px;font-weight:400;margin:0 0 20px 0;">${content.nextSteps}</h3>
 
-          <!-- Footer -->
-          <tr>
-            <td style="background-color: #F8FAFC; padding: 24px 32px; text-align: center; border-top: 1px solid #E5E7EB;">
-              <p style="font-family: 'DM Sans', sans-serif; color: #9CA3AF; font-size: 12px; line-height: 1.5; margin: 0 0 12px 0;">
-                Medikah Corporation · Incorporated in Delaware, USA
-              </p>
-              <p style="font-family: 'DM Sans', sans-serif; font-size: 12px; margin: 0;">
-                <a href="${baseUrl}/privacy" style="color: #6B7280; text-decoration: none;">Privacy Policy</a>
-                <span style="color: #D1D5DB; margin: 0 8px;">|</span>
-                <a href="${baseUrl}/terms" style="color: #6B7280; text-decoration: none;">Terms of Service</a>
-              </p>
-            </td>
-          </tr>
+            <div style="margin-bottom:20px;">
+              <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.instBlue};font-size:15px;font-weight:600;margin:0 0 4px 0;">${content.step1Title}</p>
+              <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};font-size:14px;line-height:1.6;margin:0;">${content.step1Text}</p>
+            </div>
 
-        </table>
-      </td>
-    </tr>
-  </table>
+            <div style="margin-bottom:20px;">
+              <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.instBlue};font-size:15px;font-weight:600;margin:0 0 4px 0;">${content.step2Title}</p>
+              <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};font-size:14px;line-height:1.6;margin:0;">${content.step2Text}</p>
+            </div>
+
+            <div style="margin-bottom:20px;">
+              <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.instBlue};font-size:15px;font-weight:600;margin:0 0 4px 0;">${content.step3Title}</p>
+              <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};font-size:14px;line-height:1.6;margin:0;">${content.step3Text}</p>
+            </div>
+
+            <div>
+              <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.instBlue};font-size:15px;font-weight:600;margin:0 0 4px 0;">${content.step4Title}</p>
+              <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};font-size:14px;line-height:1.6;margin:0;">${content.step4Text}</p>
+            </div>
+          </td>
+        </tr>
+
+        <!-- CTA Buttons -->
+        <tr>
+          <td class="email-pad" style="padding:0 32px 40px 32px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td align="center" style="padding-bottom:12px;">
+                  <a href="${baseUrl}/doctors/${physicianId}" style="display:inline-block;background-color:${tokens.colors.clinicalTeal};color:${tokens.colors.white};font-family:${tokens.fonts.ui};font-size:14px;font-weight:600;text-decoration:none;padding:14px 32px;border-radius:${tokens.radii.sm};">
+                    ${content.ctaViewProfile}
+                  </a>
+                </td>
+              </tr>
+              <tr>
+                <td align="center">
+                  <a href="${baseUrl}/doctor/dashboard" style="display:inline-block;color:${tokens.colors.instBlue};font-family:${tokens.fonts.ui};font-size:14px;font-weight:500;text-decoration:none;padding:10px 24px;border:1px solid ${tokens.colors.borderLine};border-radius:${tokens.radii.sm};margin-right:8px;">
+                    ${content.ctaUpdateAvailability}
+                  </a>
+                  <a href="${baseUrl}/doctor/network" style="display:inline-block;color:${tokens.colors.instBlue};font-family:${tokens.fonts.ui};font-size:14px;font-weight:500;text-decoration:none;padding:10px 24px;border:1px solid ${tokens.colors.borderLine};border-radius:${tokens.radii.sm};">
+                    ${content.ctaJoinCommunity}
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Closing -->
+        <tr>
+          <td class="email-pad" style="padding:0 32px 32px 32px;">
+            <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};font-size:15px;line-height:1.6;margin:0 0 8px 0;">${content.closing}</p>
+            <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.instBlue};font-size:15px;font-weight:500;margin:0;">${content.team}</p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+${emailFooter({ locale: lang })}
 </body>
-</html>
-  `;
+</html>`;
 
   // Plain text version
   const text = `
@@ -575,101 +531,76 @@ const verificationUpdateTemplate = (data: VerificationUpdateEmailData) => {
   const isVerified = newStatus === 'verified';
   const subject = isVerified ? content.verifiedSubject : content.rejectedSubject;
   const greeting = isVerified ? content.verifiedGreeting : content.rejectedGreeting;
-  const statusColor = isVerified ? '#10B981' : '#EF4444';
+  const statusColor = isVerified ? tokens.colors.success : tokens.colors.error;
   const statusBadge = isVerified ? '✓ Verified' : '✗ Needs Review';
 
-  const html = `
-<!DOCTYPE html>
+  const html = `<!DOCTYPE html>
 <html lang="${lang}">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${subject}</title>
-</head>
-<body style="margin: 0; padding: 0; background-color: #FAFAFB; font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #FAFAFB; padding: 40px 20px;">
-    <tr>
-      <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+${emailHead()}
+<body style="margin:0;padding:0;background-color:${tokens.pageBg};font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};">
+${emailHeader({ variant: 'navy', locale: lang, wordmark: 'medikah' })}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${tokens.pageBg};padding:40px 20px;">
+  <tr>
+    <td align="center">
+      <table role="presentation" class="email-container" width="600" cellpadding="0" cellspacing="0" style="background-color:${tokens.colors.white};border-radius:${tokens.radii.md};overflow:hidden;">
 
-          <!-- Header -->
-          <tr>
-            <td style="background: linear-gradient(135deg, #1B2A41 0%, #243447 100%); padding: 32px; text-align: center;">
-              <p style="font-family: 'DM Serif Display', Georgia, serif; font-size: 28px; font-weight: 400; color: #ffffff; letter-spacing: -0.01em; margin: 0;">medikah</p>
-            </td>
-          </tr>
+        <!-- Status Badge -->
+        <tr>
+          <td class="email-pad" style="padding:32px 32px 0 32px;text-align:center;">
+            <span style="display:inline-block;background-color:${tokens.colors.linen};color:${statusColor};font-family:${tokens.fonts.ui};font-size:16px;font-weight:600;padding:8px 20px;border-radius:${tokens.radii.lg};border:1px solid ${statusColor};">
+              ${statusBadge}
+            </span>
+          </td>
+        </tr>
 
-          <!-- Status Badge -->
-          <tr>
-            <td style="padding: 32px 32px 0 32px; text-align: center;">
-              <span style="display: inline-block; background-color: ${statusColor}20; color: ${statusColor}; font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 600; padding: 8px 20px; border-radius: 24px;">
-                ${statusBadge}
-              </span>
-            </td>
-          </tr>
-
-          <!-- Body -->
-          <tr>
-            <td style="padding: 24px 32px 32px 32px;">
-              <h2 style="font-family: 'DM Serif Display', Georgia, serif; color: #1B2A41; font-size: 24px; font-weight: 400; margin: 0 0 16px 0; text-align: center;">${greeting}</h2>
-              <p style="font-family: 'DM Sans', sans-serif; color: #4A5568; font-size: 16px; line-height: 1.7; margin: 0 0 16px 0;">
-                ${isVerified ? content.verifiedBody : content.rejectedBody}
+        <!-- Body -->
+        <tr>
+          <td class="email-pad" style="padding:24px 32px 32px 32px;">
+            <h2 style="font-family:${tokens.fonts.accent};color:${tokens.colors.instBlue};font-size:24px;font-weight:400;margin:0 0 16px 0;text-align:center;">${greeting}</h2>
+            <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};font-size:16px;line-height:1.7;margin:0 0 16px 0;">
+              ${isVerified ? content.verifiedBody : content.rejectedBody}
+            </p>
+            ${!isVerified ? `
+            <div style="background-color:${tokens.colors.linen};border-radius:${tokens.radii.sm};padding:16px;margin-bottom:16px;border-left:4px solid ${tokens.colors.error};">
+              <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.error};font-size:14px;line-height:1.6;margin:0;">
+                ${content.rejectedReason}
               </p>
-              ${!isVerified ? `
-              <div style="background-color: #FEF2F2; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
-                <p style="font-family: 'DM Sans', sans-serif; color: #991B1B; font-size: 14px; line-height: 1.6; margin: 0;">
-                  ${content.rejectedReason}
-                </p>
-              </div>
-              <p style="font-family: 'DM Sans', sans-serif; color: #4A5568; font-size: 14px; line-height: 1.7; margin: 0; white-space: pre-line;">
-                ${content.rejectedNextSteps}
-              </p>
-              ` : ''}
-            </td>
-          </tr>
+            </div>
+            <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};font-size:14px;line-height:1.7;margin:0;white-space:pre-line;">
+              ${content.rejectedNextSteps}
+            </p>
+            ` : ''}
+          </td>
+        </tr>
 
-          <!-- CTA -->
-          <tr>
-            <td style="padding: 0 32px 32px 32px; text-align: center;">
-              <a href="${baseUrl}/doctors/${physicianId}" style="display: inline-block; background-color: ${isVerified ? '#2C7A8C' : '#1B2A41'}; color: #ffffff; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; text-decoration: none; padding: 14px 32px; border-radius: 8px; margin-right: 8px;">
-                ${content.viewProfile}
-              </a>
-              ${!isVerified ? `
-              <a href="mailto:support@medikah.health" style="display: inline-block; color: #1B2A41; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; text-decoration: none; padding: 14px 24px; border: 1px solid #E5E7EB; border-radius: 8px;">
-                ${content.contactSupport}
-              </a>
-              ` : ''}
-            </td>
-          </tr>
+        <!-- CTA -->
+        <tr>
+          <td class="email-pad" style="padding:0 32px 32px 32px;text-align:center;">
+            <a href="${baseUrl}/doctors/${physicianId}" style="display:inline-block;background-color:${isVerified ? tokens.colors.clinicalTeal : tokens.colors.instBlue};color:${tokens.colors.white};font-family:${tokens.fonts.ui};font-size:14px;font-weight:600;text-decoration:none;padding:14px 32px;border-radius:${tokens.radii.sm};margin-right:8px;">
+              ${content.viewProfile}
+            </a>
+            ${!isVerified ? `
+            <a href="mailto:support@medikah.health" style="display:inline-block;color:${tokens.colors.instBlue};font-family:${tokens.fonts.ui};font-size:14px;font-weight:500;text-decoration:none;padding:14px 24px;border:1px solid ${tokens.colors.borderLine};border-radius:${tokens.radii.sm};">
+              ${content.contactSupport}
+            </a>
+            ` : ''}
+          </td>
+        </tr>
 
-          <!-- Closing -->
-          <tr>
-            <td style="padding: 0 32px 32px 32px; text-align: center;">
-              <p style="font-family: 'DM Sans', sans-serif; color: #6B7280; font-size: 14px; margin: 0;">${content.closing}</p>
-            </td>
-          </tr>
+        <!-- Closing -->
+        <tr>
+          <td class="email-pad" style="padding:0 32px 32px 32px;text-align:center;">
+            <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};font-size:14px;margin:0;">${content.closing}</p>
+          </td>
+        </tr>
 
-          <!-- Footer -->
-          <tr>
-            <td style="background-color: #F8FAFC; padding: 24px 32px; text-align: center; border-top: 1px solid #E5E7EB;">
-              <p style="font-family: 'DM Sans', sans-serif; color: #9CA3AF; font-size: 12px; line-height: 1.5; margin: 0 0 12px 0;">
-                Medikah Corporation · Incorporated in Delaware, USA
-              </p>
-              <p style="font-family: 'DM Sans', sans-serif; font-size: 12px; margin: 0;">
-                <a href="${baseUrl}/privacy" style="color: #6B7280; text-decoration: none;">Privacy Policy</a>
-                <span style="color: #D1D5DB; margin: 0 8px;">|</span>
-                <a href="${baseUrl}/terms" style="color: #6B7280; text-decoration: none;">Terms of Service</a>
-              </p>
-            </td>
-          </tr>
-
-        </table>
-      </td>
-    </tr>
-  </table>
+      </table>
+    </td>
+  </tr>
+</table>
+${emailFooter({ locale: lang })}
 </body>
-</html>
-  `;
+</html>`;
 
   const text = `
 ${greeting}

@@ -1,7 +1,15 @@
 /**
  * Physician email utilities
- * Handles welcome emails, password setup, and other physician communications
+ * Handles welcome emails, password setup, and other physician communications.
+ * Brand chrome (head/header/footer + tokens) comes from `./emailChrome`.
  */
+
+import {
+  tokens,
+  emailHead,
+  emailHeader,
+  emailFooter,
+} from './emailChrome';
 
 interface SendEmailResult {
   success: boolean;
@@ -164,160 +172,131 @@ export async function sendPhysicianWelcomeEmail(
           team: '— The Medikah Team',
         };
 
-  const html = `
-<!DOCTYPE html>
+  const html = `<!DOCTYPE html>
 <html lang="${lang}">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="color-scheme" content="light">
-  <meta name="supported-color-schemes" content="light">
-  <title>${content.subject}</title>
-</head>
-<body style="margin: 0; padding: 0; background-color: #FAFAFB; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #FAFAFB; padding: 40px 20px;">
-    <tr>
-      <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+${emailHead()}
+<body style="margin:0;padding:0;background-color:${tokens.pageBg};font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};">
+${emailHeader({ variant: 'navy', locale: lang, wordmark: 'medikah' })}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${tokens.pageBg};padding:40px 20px;">
+  <tr>
+    <td align="center">
+      <table role="presentation" class="email-container" width="600" cellpadding="0" cellspacing="0" style="background-color:${tokens.colors.white};border-radius:${tokens.radii.md};overflow:hidden;">
 
-          <!-- Header -->
-          <tr>
-            <td style="background-color: #FFFFFF; padding: 32px; text-align: center; border-bottom: 4px solid #1B2A41;">
-              <p style="font-size: 32px; font-weight: 800; color: #1B2A41; letter-spacing: -0.01em; margin: 0;">medikah</p>
-              <p style="font-size: 13px; color: #2C7A8C; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; margin: 12px 0 0 0;">
-                ${lang === 'es' ? 'Red de Médicos' : 'Physician Network'}
+        <!-- Welcome Message -->
+        <tr>
+          <td class="email-pad" style="padding:40px 32px 24px 32px;">
+            <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.clinicalTeal};font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 12px 0;">
+              ${lang === 'es' ? 'Red de Médicos' : 'Physician Network'}
+            </p>
+            <h1 style="font-family:${tokens.fonts.body};color:${tokens.colors.deepCharcoal};font-size:24px;font-weight:700;margin:0 0 16px 0;">${content.greeting}</h1>
+            <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};font-size:16px;line-height:1.7;margin:0;">
+              ${content.intro}
+            </p>
+          </td>
+        </tr>
+
+        <!-- Profile Summary Card -->
+        <tr>
+          <td class="email-pad" style="padding:0 32px 24px 32px;">
+            <div style="background-color:${tokens.colors.linen};border-left:4px solid ${tokens.colors.instBlue};padding:20px 24px;border-radius:${tokens.radii.sm};">
+              <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.instBlue};font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 12px 0;">
+                ${content.profileCreated}
               </p>
-            </td>
-          </tr>
-
-          <!-- Welcome Message -->
-          <tr>
-            <td style="padding: 40px 32px 24px 32px;">
-              <h1 style="color: #1B2A41; font-size: 24px; font-weight: 700; margin: 0 0 16px 0;">${content.greeting}</h1>
-              <p style="color: #4A5568; font-size: 16px; line-height: 1.7; margin: 0;">
-                ${content.intro}
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-family:${tokens.fonts.ui};font-size:15px;">
+                <tr>
+                  <td style="color:${tokens.colors.bodySlate};padding:6px 0;width:100px;">${content.specialty}</td>
+                  <td style="color:${tokens.colors.instBlue};padding:6px 0;font-weight:600;">${primarySpecialty || '—'}</td>
+                </tr>
+                <tr>
+                  <td style="color:${tokens.colors.bodySlate};padding:6px 0;">${content.languagesLabel}</td>
+                  <td style="color:${tokens.colors.instBlue};padding:6px 0;font-weight:600;">${formattedLanguages}</td>
+                </tr>
+              </table>
+              <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};font-size:13px;line-height:1.5;margin:16px 0 0 0;padding-top:12px;border-top:1px solid ${tokens.colors.borderLine};">
+                ${content.verificationNote}
               </p>
-            </td>
-          </tr>
+            </div>
+          </td>
+        </tr>
 
-          <!-- Profile Summary Card -->
-          <tr>
-            <td style="padding: 0 32px 24px 32px;">
-              <div style="background: linear-gradient(135deg, #F8FAFB 0%, #F0F4F5 100%); border-left: 4px solid #1B2A41; padding: 20px 24px; border-radius: 0 8px 8px 0;">
-                <p style="color: #1B2A41; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 12px 0;">
-                  ${content.profileCreated}
-                </p>
-                <table width="100%" cellpadding="0" cellspacing="0" style="font-size: 15px;">
-                  <tr>
-                    <td style="color: #6B7280; padding: 6px 0; width: 100px;">${content.specialty}</td>
-                    <td style="color: #1B2A41; padding: 6px 0; font-weight: 600;">${primarySpecialty || '—'}</td>
-                  </tr>
-                  <tr>
-                    <td style="color: #6B7280; padding: 6px 0;">${content.languagesLabel}</td>
-                    <td style="color: #1B2A41; padding: 6px 0; font-weight: 600;">${formattedLanguages}</td>
-                  </tr>
-                </table>
-                <p style="color: #6B7280; font-size: 13px; line-height: 1.5; margin: 16px 0 0 0; padding-top: 12px; border-top: 1px solid #E5E7EB;">
-                  ${content.verificationNote}
-                </p>
-              </div>
-            </td>
-          </tr>
-
-          <!-- Password Setup Section -->
-          <tr>
-            <td style="padding: 0 32px 32px 32px;">
-              <div style="background-color: #1B2A41; border-radius: 12px; padding: 28px; text-align: center;">
-                <h2 style="color: #ffffff; font-size: 18px; font-weight: 700; margin: 0 0 12px 0;">
-                  ${content.setupPassword}
-                </h2>
-                <p style="color: rgba(255,255,255,0.8); font-size: 14px; line-height: 1.6; margin: 0 0 20px 0;">
-                  ${content.setupPasswordNote}
-                </p>
-                ${
-                  magicLink
-                    ? `
-                <a href="${magicLink}" style="display: inline-block; background-color: #2C7A8C; color: #ffffff; font-size: 16px; font-weight: 700; text-decoration: none; padding: 16px 32px; border-radius: 8px; box-shadow: 0 4px 12px rgba(44,122,140,0.4);">
-                  ${content.setupPasswordButton}
-                </a>
-                `
-                    : `
-                <p style="color: rgba(255,255,255,0.7); font-size: 13px; margin: 0;">
-                  ${content.noMagicLink}
-                </p>
-                `
-                }
-              </div>
-            </td>
-          </tr>
-
-          <!-- What's Next Section -->
-          <tr>
-            <td style="padding: 0 32px 32px 32px;">
-              <h3 style="color: #1B2A41; font-size: 18px; font-weight: 700; margin: 0 0 20px 0;">${content.whatsNext}</h3>
-
-              <div style="margin-bottom: 16px;">
-                <p style="color: #1B2A41; font-size: 15px; font-weight: 600; margin: 0 0 4px 0;">1. ${content.step1}</p>
-                <p style="color: #6B7280; font-size: 14px; line-height: 1.5; margin: 0; padding-left: 20px;">${content.step1Detail}</p>
-              </div>
-
-              <div style="margin-bottom: 16px;">
-                <p style="color: #1B2A41; font-size: 15px; font-weight: 600; margin: 0 0 4px 0;">2. ${content.step2}</p>
-                <p style="color: #6B7280; font-size: 14px; line-height: 1.5; margin: 0; padding-left: 20px;">${content.step2Detail}</p>
-              </div>
-
-              <div>
-                <p style="color: #1B2A41; font-size: 15px; font-weight: 600; margin: 0 0 4px 0;">3. ${content.step3}</p>
-                <p style="color: #6B7280; font-size: 14px; line-height: 1.5; margin: 0; padding-left: 20px;">${content.step3Detail}</p>
-              </div>
-            </td>
-          </tr>
-
-          <!-- Profile Note -->
-          <tr>
-            <td style="padding: 0 32px 32px 32px;">
-              <div style="background-color: #F0FDF4; border-radius: 8px; padding: 16px; border: 1px solid #BBF7D0;">
-                <p style="color: #166534; font-size: 14px; line-height: 1.5; margin: 0;">
-                  ${content.profileNote}
-                </p>
-              </div>
-            </td>
-          </tr>
-
-          <!-- Closing -->
-          <tr>
-            <td style="padding: 0 32px 32px 32px;">
-              <p style="color: #6B7280; font-size: 14px; line-height: 1.6; margin: 0 0 8px 0;">
-                ${content.questions} <a href="mailto:doctors@medikah.health" style="color: #2C7A8C; text-decoration: none; font-weight: 600;">doctors@medikah.health</a>
+        <!-- Password Setup Section -->
+        <tr>
+          <td class="email-pad" style="padding:0 32px 32px 32px;">
+            <div style="background-color:${tokens.colors.instBlue};border-radius:${tokens.radii.md};padding:28px;text-align:center;">
+              <h2 style="font-family:${tokens.fonts.body};color:${tokens.colors.white};font-size:18px;font-weight:700;margin:0 0 12px 0;">
+                ${content.setupPassword}
+              </h2>
+              <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.creamOnDark};font-size:14px;line-height:1.6;margin:0 0 20px 0;">
+                ${content.setupPasswordNote}
               </p>
-              <p style="color: #4A5568; font-size: 15px; margin: 20px 0 4px 0;">${content.closing}</p>
-              <p style="color: #1B2A41; font-size: 15px; font-weight: 700; margin: 0;">${content.team}</p>
-            </td>
-          </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td style="background-color: #F5F7F8; padding: 24px 32px; text-align: center; border-top: 4px solid #1B2A41;">
-              <p style="color: #9CA3AF; font-size: 12px; line-height: 1.5; margin: 0 0 12px 0;">
-                Medikah Corporation · Incorporated in Delaware, USA
+              ${
+                magicLink
+                  ? `
+              <a href="${magicLink}" style="display:inline-block;background-color:${tokens.colors.clinicalTeal};color:${tokens.colors.white};font-family:${tokens.fonts.ui};font-size:16px;font-weight:700;text-decoration:none;padding:16px 32px;border-radius:${tokens.radii.sm};">
+                ${content.setupPasswordButton}
+              </a>
+              `
+                  : `
+              <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.creamOnDark};font-size:13px;margin:0;">
+                ${content.noMagicLink}
               </p>
-              <p style="font-size: 12px; margin: 0;">
-                <a href="${baseUrl}/privacy" style="color: #1B2A41; text-decoration: none; font-weight: 600;">Privacy Policy</a>
-                <span style="color: #D1D5DB; margin: 0 8px;">|</span>
-                <a href="${baseUrl}/terms" style="color: #1B2A41; text-decoration: none; font-weight: 600;">Terms of Service</a>
-                <span style="color: #D1D5DB; margin: 0 8px;">|</span>
-                <a href="mailto:doctors@medikah.health" style="color: #1B2A41; text-decoration: none; font-weight: 600;">Contact</a>
-              </p>
-            </td>
-          </tr>
+              `
+              }
+            </div>
+          </td>
+        </tr>
 
-        </table>
-      </td>
-    </tr>
-  </table>
+        <!-- What's Next Section -->
+        <tr>
+          <td class="email-pad" style="padding:0 32px 32px 32px;">
+            <h3 style="font-family:${tokens.fonts.body};color:${tokens.colors.instBlue};font-size:18px;font-weight:700;margin:0 0 20px 0;">${content.whatsNext}</h3>
+
+            <div style="margin-bottom:16px;">
+              <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.instBlue};font-size:15px;font-weight:600;margin:0 0 4px 0;">1. ${content.step1}</p>
+              <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};font-size:14px;line-height:1.5;margin:0;padding-left:20px;">${content.step1Detail}</p>
+            </div>
+
+            <div style="margin-bottom:16px;">
+              <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.instBlue};font-size:15px;font-weight:600;margin:0 0 4px 0;">2. ${content.step2}</p>
+              <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};font-size:14px;line-height:1.5;margin:0;padding-left:20px;">${content.step2Detail}</p>
+            </div>
+
+            <div>
+              <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.instBlue};font-size:15px;font-weight:600;margin:0 0 4px 0;">3. ${content.step3}</p>
+              <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};font-size:14px;line-height:1.5;margin:0;padding-left:20px;">${content.step3Detail}</p>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Profile Note -->
+        <tr>
+          <td class="email-pad" style="padding:0 32px 32px 32px;">
+            <div style="background-color:${tokens.colors.linen};border-radius:${tokens.radii.sm};padding:16px;border:1px solid ${tokens.colors.borderLine};border-left:4px solid ${tokens.colors.success};">
+              <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.success};font-size:14px;line-height:1.5;margin:0;font-weight:600;">
+                ${content.profileNote}
+              </p>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Closing -->
+        <tr>
+          <td class="email-pad" style="padding:0 32px 32px 32px;">
+            <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};font-size:14px;line-height:1.6;margin:0 0 8px 0;">
+              ${content.questions} <a href="mailto:doctors@medikah.health" style="color:${tokens.colors.clinicalTeal};text-decoration:none;font-weight:600;">doctors@medikah.health</a>
+            </p>
+            <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};font-size:15px;margin:20px 0 4px 0;">${content.closing}</p>
+            <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.instBlue};font-size:15px;font-weight:700;margin:0;">${content.team}</p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+${emailFooter({ locale: lang })}
 </body>
-</html>
-  `.trim();
+</html>`;
 
   const text = `
 ${content.greeting}

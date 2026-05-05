@@ -15,6 +15,13 @@
  *   Sent from the medikah.health verified domain in Resend.
  */
 
+import {
+  tokens,
+  emailHead,
+  emailHeader,
+  emailFooter,
+} from './emailChrome';
+
 interface SendEmailResult {
   success: boolean;
   id?: string;
@@ -167,145 +174,121 @@ export async function sendPracikahLiveEmail(
 
   const html = `<!DOCTYPE html>
 <html lang="${lang}">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="color-scheme" content="light">
-  <meta name="supported-color-schemes" content="light">
-  <title>${content.subject}</title>
-</head>
-<body style="margin: 0; padding: 0; background-color: #F0EAE0; font-family: 'Mulish', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #F0EAE0; padding: 40px 20px;">
-    <tr>
-      <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(27,42,65,0.10);">
+${emailHead()}
+<body style="margin:0;padding:0;background-color:${tokens.colors.linen};font-family:${tokens.fonts.body};color:${tokens.colors.bodySlate};">
+${emailHeader({ variant: 'navy', locale: lang, wordmark: 'practikah' })}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${tokens.colors.linen};padding:40px 20px;">
+  <tr>
+    <td align="center">
+      <table role="presentation" class="email-container" width="600" cellpadding="0" cellspacing="0" style="background-color:${tokens.colors.white};border-radius:${tokens.radii.md};overflow:hidden;">
 
-          <!-- Header: Wordmark + Práctikah subhead -->
-          <tr>
-            <td style="background-color: #1B2A41; padding: 32px; text-align: center;">
-              <p style="font-size: 28px; font-weight: 800; color: #ffffff; letter-spacing: -0.01em; margin: 0; font-family: 'Mulish', sans-serif;">medikah</p>
-              <p style="font-size: 14px; color: #2C7A8C; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; margin: 10px 0 0 0;">
-                Práctikah
+        <!-- Celebratory heading -->
+        <tr>
+          <td class="email-pad" style="padding:40px 40px 24px 40px;text-align:center;">
+            <h1 style="font-family:${tokens.fonts.body};color:${tokens.colors.deepCharcoal};font-size:26px;font-weight:800;margin:0 0 12px 0;line-height:1.2;">
+              ${content.heading}
+            </h1>
+            <p style="font-family:${tokens.fonts.body};color:${tokens.colors.bodySlate};font-size:16px;line-height:1.7;margin:0;">
+              ${content.subheading}
+            </p>
+          </td>
+        </tr>
+
+        <!-- Mailbox address card -->
+        <tr>
+          <td class="email-pad" style="padding:0 40px 28px 40px;">
+            <div style="background-color:${tokens.colors.instBlue};border-radius:${tokens.radii.md};padding:28px;text-align:center;">
+              <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.creamOnDark};font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 10px 0;">
+                ${content.mailboxLabel}
               </p>
-            </td>
-          </tr>
-
-          <!-- Celebratory heading -->
-          <tr>
-            <td style="padding: 40px 40px 24px 40px; text-align: center;">
-              <h1 style="color: #1B2A41; font-size: 26px; font-weight: 800; margin: 0 0 12px 0; line-height: 1.2;">
-                ${content.heading}
-              </h1>
-              <p style="color: #4A5568; font-size: 16px; line-height: 1.7; margin: 0;">
-                ${content.subheading}
+              <p style="font-family:${tokens.fonts.body};color:${tokens.colors.clinicalTeal};font-size:20px;font-weight:800;margin:0 0 8px 0;letter-spacing:-0.01em;word-break:break-all;">
+                ${mailboxAddress}
               </p>
-            </td>
-          </tr>
-
-          <!-- Mailbox address card -->
-          <tr>
-            <td style="padding: 0 40px 28px 40px;">
-              <div style="background: linear-gradient(135deg, #1B2A41 0%, #243659 100%); border-radius: 16px; padding: 28px; text-align: center;">
-                <p style="color: rgba(255,255,255,0.7); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 10px 0;">
-                  ${content.mailboxLabel}
-                </p>
-                <p style="color: #2C7A8C; font-size: 20px; font-weight: 800; margin: 0 0 8px 0; letter-spacing: -0.01em; word-break: break-all;">
-                  ${mailboxAddress}
-                </p>
-                <p style="color: rgba(255,255,255,0.55); font-size: 13px; margin: 0 0 24px 0;">
-                  ${content.mailboxHint}
-                </p>
-                <a href="${mailUrl}"
-                   style="display: inline-block; background-color: #2C7A8C; color: #ffffff; font-size: 15px; font-weight: 700; text-decoration: none; padding: 14px 32px; border-radius: 10px; box-shadow: 0 4px 12px rgba(44,122,140,0.35);">
-                  ${content.openMailboxBtn}
-                </a>
-              </div>
-            </td>
-          </tr>
-
-          <!-- IMAP CTA -->
-          <tr>
-            <td style="padding: 0 40px 28px 40px;">
-              <div style="background-color: #F5F6F8; border-radius: 12px; padding: 24px; border-left: 4px solid #2C7A8C;">
-                <p style="color: #1B2A41; font-size: 15px; font-weight: 700; margin: 0 0 6px 0;">
-                  ${content.imapHeading}
-                </p>
-                <p style="color: #4A5568; font-size: 14px; line-height: 1.6; margin: 0 0 16px 0;">
-                  ${content.imapHint}
-                </p>
-                <a href="${settingsUrl}"
-                   style="display: inline-block; background-color: #1B2A41; color: #ffffff; font-size: 14px; font-weight: 600; text-decoration: none; padding: 12px 24px; border-radius: 8px;">
-                  ${content.imapBtn}
-                </a>
-              </div>
-            </td>
-          </tr>
-
-          <!-- Try Pro preview site CTA -->
-          <tr>
-            <td style="padding: 0 40px 28px 40px;">
-              <div style="background-color: #F0EAE0; border-radius: 12px; padding: 24px; border-left: 4px solid #1B2A41;">
-                <p style="color: #1B2A41; font-size: 15px; font-weight: 700; margin: 0 0 6px 0;">
-                  ${content.previewHeading}
-                </p>
-                <p style="color: #4A5568; font-size: 14px; line-height: 1.6; margin: 0 0 4px 0;">
-                  ${content.previewHint}
-                </p>
-                <p style="color: #2C7A8C; font-size: 13px; margin: 0 0 16px 0; word-break: break-all;">
-                  ${previewUrl}
-                </p>
-                <a href="${previewUrl}"
-                   style="display: inline-block; background-color: #2C7A8C; color: #ffffff; font-size: 14px; font-weight: 600; text-decoration: none; padding: 12px 24px; border-radius: 8px;">
-                  ${content.previewBtn}
-                </a>
-              </div>
-            </td>
-          </tr>
-
-          <!-- Upgrade teaser (non-interstitial per D-20) -->
-          <tr>
-            <td style="padding: 0 40px 32px 40px;">
-              <p style="color: #8A8D91; font-size: 13px; line-height: 1.6; margin: 0; font-style: italic;">
-                ${content.upgradeNote}
+              <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.creamOnDark};font-size:13px;margin:0 0 24px 0;">
+                ${content.mailboxHint}
               </p>
-            </td>
-          </tr>
+              <a href="${mailUrl}"
+                 style="display:inline-block;background-color:${tokens.colors.clinicalTeal};color:${tokens.colors.white};font-family:${tokens.fonts.ui};font-size:15px;font-weight:700;text-decoration:none;padding:14px 32px;border-radius:${tokens.radii.sm};">
+                ${content.openMailboxBtn}
+              </a>
+            </div>
+          </td>
+        </tr>
 
-          <!-- Closing -->
-          <tr>
-            <td style="padding: 0 40px 32px 40px; border-top: 1px solid #E5E7EB;">
-              <p style="color: #4A5568; font-size: 14px; line-height: 1.6; margin: 24px 0 8px 0;">
-                ${content.questions}
-                <a href="mailto:practikah@medikah.health" style="color: #2C7A8C; text-decoration: none; font-weight: 600;">practikah@medikah.health</a>
+        <!-- IMAP CTA -->
+        <tr>
+          <td class="email-pad" style="padding:0 40px 28px 40px;">
+            <div style="background-color:${tokens.colors.linen};border-radius:${tokens.radii.md};padding:24px;border-left:4px solid ${tokens.colors.clinicalTeal};">
+              <p style="font-family:${tokens.fonts.body};color:${tokens.colors.instBlue};font-size:15px;font-weight:700;margin:0 0 6px 0;">
+                ${content.imapHeading}
               </p>
-              <p style="color: #4A5568; font-size: 15px; margin: 16px 0 4px 0;">${content.closing}</p>
-              <p style="color: #1B2A41; font-size: 15px; font-weight: 700; margin: 0;">${content.team}</p>
-            </td>
-          </tr>
+              <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};font-size:14px;line-height:1.6;margin:0 0 16px 0;">
+                ${content.imapHint}
+              </p>
+              <a href="${settingsUrl}"
+                 style="display:inline-block;background-color:${tokens.colors.instBlue};color:${tokens.colors.white};font-family:${tokens.fonts.ui};font-size:14px;font-weight:600;text-decoration:none;padding:12px 24px;border-radius:${tokens.radii.sm};">
+                ${content.imapBtn}
+              </a>
+            </div>
+          </td>
+        </tr>
 
-          <!-- Footer -->
-          <tr>
-            <td style="background-color: #1B2A41; padding: 24px 40px; text-align: center;">
-              <p style="color: rgba(255,255,255,0.9); font-size: 13px; font-weight: 700; letter-spacing: 0.06em; margin: 0 0 10px 0;">
-                ${content.footer}
+        <!-- Try Pro preview site CTA -->
+        <tr>
+          <td class="email-pad" style="padding:0 40px 28px 40px;">
+            <div style="background-color:${tokens.colors.linen};border-radius:${tokens.radii.md};padding:24px;border-left:4px solid ${tokens.colors.instBlue};">
+              <p style="font-family:${tokens.fonts.body};color:${tokens.colors.instBlue};font-size:15px;font-weight:700;margin:0 0 6px 0;">
+                ${content.previewHeading}
               </p>
-              <p style="color: rgba(255,255,255,0.45); font-size: 11px; line-height: 1.6; margin: 0 0 12px 0;">
-                ${content.footerDisclaimer}
+              <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};font-size:14px;line-height:1.6;margin:0 0 4px 0;">
+                ${content.previewHint}
               </p>
-              <p style="font-size: 12px; margin: 0;">
-                <a href="${baseUrl}/privacy" style="color: rgba(255,255,255,0.6); text-decoration: none;">Privacy</a>
-                <span style="color: rgba(255,255,255,0.3); margin: 0 8px;">|</span>
-                <a href="${baseUrl}/terms" style="color: rgba(255,255,255,0.6); text-decoration: none;">Terms</a>
-                <span style="color: rgba(255,255,255,0.3); margin: 0 8px;">|</span>
-                <a href="mailto:practikah@medikah.health" style="color: rgba(255,255,255,0.6); text-decoration: none;">Contact</a>
+              <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.clinicalTeal};font-size:13px;margin:0 0 16px 0;word-break:break-all;">
+                ${previewUrl}
               </p>
-            </td>
-          </tr>
+              <a href="${previewUrl}"
+                 style="display:inline-block;background-color:${tokens.colors.clinicalTeal};color:${tokens.colors.white};font-family:${tokens.fonts.ui};font-size:14px;font-weight:600;text-decoration:none;padding:12px 24px;border-radius:${tokens.radii.sm};">
+                ${content.previewBtn}
+              </a>
+            </div>
+          </td>
+        </tr>
 
-        </table>
-      </td>
-    </tr>
-  </table>
+        <!-- Upgrade teaser (non-interstitial per D-20) -->
+        <tr>
+          <td class="email-pad" style="padding:0 40px 32px 40px;">
+            <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};font-size:13px;line-height:1.6;margin:0;font-style:italic;">
+              ${content.upgradeNote}
+            </p>
+          </td>
+        </tr>
+
+        <!-- Closing -->
+        <tr>
+          <td class="email-pad" style="padding:0 40px 32px 40px;border-top:1px solid ${tokens.colors.borderLine};">
+            <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};font-size:14px;line-height:1.6;margin:24px 0 8px 0;">
+              ${content.questions}
+              <a href="mailto:practikah@medikah.health" style="color:${tokens.colors.clinicalTeal};text-decoration:none;font-weight:600;">practikah@medikah.health</a>
+            </p>
+            <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};font-size:15px;margin:16px 0 4px 0;">${content.closing}</p>
+            <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.instBlue};font-size:15px;font-weight:700;margin:0;">${content.team}</p>
+          </td>
+        </tr>
+
+        <!-- Disclaimer -->
+        <tr>
+          <td class="email-pad" style="background-color:${tokens.colors.linen};padding:20px 40px;text-align:center;">
+            <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};font-size:11px;line-height:1.6;margin:0;">
+              ${content.footerDisclaimer}
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+${emailFooter({ locale: lang })}
 </body>
 </html>`;
 
@@ -358,27 +341,32 @@ function renderBrandedEmail(opts: {
   bodyHtml: string;
   cta?: { label: string; url: string };
   footer: string;
+  locale?: 'en' | 'es';
 }): string {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://medikah.health';
+  const locale = opts.locale ?? 'en';
   const ctaBlock = opts.cta
-    ? `<p style="margin: 24px 0;"><a href="${opts.cta.url}" style="display: inline-block; background-color: #2C7A8C; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 16px; font-family: 'DM Sans', Arial, sans-serif; font-weight: 500;">${opts.cta.label}</a></p>`
+    ? `<p style="margin:24px 0;"><a href="${opts.cta.url}" style="display:inline-block;background-color:${tokens.colors.clinicalTeal};color:${tokens.colors.white};text-decoration:none;padding:14px 28px;border-radius:${tokens.radii.sm};font-family:${tokens.fonts.ui};font-weight:600;">${opts.cta.label}</a></p>`
     : '';
   return `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${opts.heading}</title></head>
-<body style="margin:0;padding:0;background-color:#F5F6F8;font-family:'Mulish',Arial,sans-serif;color:#4A5568;">
+<html lang="${locale}">
+${emailHead()}
+<body style="margin:0;padding:0;background-color:${tokens.colors.linen};font-family:${tokens.fonts.body};color:${tokens.colors.bodySlate};">
 <span style="display:none!important;visibility:hidden;opacity:0;height:0;width:0;">${opts.preheader}</span>
-<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#F5F6F8;padding:32px 0;"><tr><td align="center">
-<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width:600px;background-color:#ffffff;border-radius:16px;overflow:hidden;">
-<tr><td style="background-color:#1B2A41;padding:24px 40px;"><h1 style="color:#ffffff;font-family:'Oswald',Arial,sans-serif;font-size:22px;letter-spacing:0.08em;text-transform:uppercase;margin:0;">Práctikah by Medikah</h1></td></tr>
-<tr><td style="padding:32px 40px;">
-<h2 style="color:#1C1C1E;font-family:'Oswald',Arial,sans-serif;font-size:24px;letter-spacing:0.04em;margin:0 0 16px 0;">${opts.heading}</h2>
-<div style="color:#4A5568;font-size:15px;line-height:1.6;">${opts.bodyHtml}</div>
-${ctaBlock}
-</td></tr>
-<tr><td style="background-color:#1B2A41;padding:24px 40px;text-align:center;">
-<p style="color:rgba(255,255,255,0.9);font-size:13px;font-weight:700;letter-spacing:0.06em;margin:0 0 8px 0;">${opts.footer}</p>
-<p style="font-size:12px;margin:0;"><a href="${baseUrl}/privacy" style="color:rgba(255,255,255,0.6);text-decoration:none;">Privacy</a><span style="color:rgba(255,255,255,0.3);margin:0 8px;">|</span><a href="${baseUrl}/terms" style="color:rgba(255,255,255,0.6);text-decoration:none;">Terms</a><span style="color:rgba(255,255,255,0.3);margin:0 8px;">|</span><a href="mailto:practikah@medikah.health" style="color:rgba(255,255,255,0.6);text-decoration:none;">Contact</a></p>
-</td></tr></table></td></tr></table></body></html>`;
+${emailHeader({ variant: 'navy', locale, wordmark: 'practikah' })}
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:${tokens.colors.linen};padding:32px 0;">
+  <tr><td align="center">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" class="email-container" style="max-width:600px;background-color:${tokens.colors.white};border-radius:${tokens.radii.md};overflow:hidden;">
+      <tr><td class="email-pad" style="padding:32px 40px;">
+        <h2 style="color:${tokens.colors.deepCharcoal};font-family:${tokens.fonts.display};font-size:24px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;margin:0 0 16px 0;">${opts.heading}</h2>
+        <div style="color:${tokens.colors.bodySlate};font-family:${tokens.fonts.body};font-size:15px;line-height:1.6;">${opts.bodyHtml}</div>
+        ${ctaBlock}
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+${emailFooter({ locale })}
+</body>
+</html>`;
 }
 
 // ---------- Pro live (PRO-13) ----------
@@ -427,6 +415,7 @@ export async function sendProLiveEmail(params: SendProLiveEmailParams): Promise<
     bodyHtml: content.body,
     cta: { label: content.cta, url: dashboardUrl },
     footer: content.footer,
+    locale: lang,
   });
   return sendEmail({ to, subject: content.subject, html });
 }
@@ -477,6 +466,7 @@ export async function sendDunningSupplementEmail(
     bodyHtml: content.body,
     cta: { label: content.cta, url: billingUrl },
     footer: content.footer,
+    locale: lang,
   });
   return sendEmail({ to, subject: content.subject, html });
 }
@@ -543,6 +533,7 @@ export async function sendDowngradeNoticeEmail(
     bodyHtml: content.body,
     cta: { label: content.cta, url: billingUrl },
     footer: content.footer,
+    locale: lang,
   });
   return sendEmail({ to, subject: content.subject, html });
 }
@@ -596,6 +587,7 @@ export async function sendEppCodeDeliveryEmail(
     heading: content.heading,
     bodyHtml: content.body,
     footer: content.footer,
+    locale: lang,
   });
   return sendEmail({ to, subject: content.subject, html });
 }
