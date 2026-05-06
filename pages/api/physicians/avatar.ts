@@ -42,10 +42,37 @@ function deriveInitials(name: string | null, email: string): string {
   return (email.substring(0, 2) || '?').toUpperCase();
 }
 
+// CORS — the SOGo post-login chrome at https://mail.practikah.medikah.health
+// fetches this endpoint cross-origin to render avatars. Without these headers
+// Safari/Chrome block the response with `Access-Control-Allow-Origin` errors
+// and the chrome falls back to initials silently. Allowed origins are pinned;
+// we do not echo arbitrary `Origin` headers.
+const ALLOWED_ORIGINS = new Set<string>([
+  'https://mail.practikah.medikah.health',
+  'https://practikah.medikah.health',
+]);
+
+function applyCors(req: NextApiRequest, res: NextApiResponse): void {
+  const origin = typeof req.headers.origin === 'string' ? req.headers.origin : '';
+  if (origin && ALLOWED_ORIGINS.has(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Max-Age', '86400');
+  }
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<AvatarResponse | ErrorResponse>
 ) {
+  applyCors(req, res);
+
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+
   if (req.method !== 'GET') {
     return res.status(405).json({ ok: false, error: 'Method not allowed' });
   }
