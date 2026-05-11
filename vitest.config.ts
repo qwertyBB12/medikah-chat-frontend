@@ -9,6 +9,7 @@ export default defineConfig({
       '__tests__/**/*.test.{ts,tsx}',
       'lib/**/*.test.{ts,tsx}',
       'components/**/*.test.{ts,tsx}',
+      'scripts/**/*.test.{ts,tsx}',
     ],
   },
   oxc: {

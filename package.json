@@ -9,7 +9,8 @@
     "build": "next build",
     "postbuild": "next-sitemap",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "build:sogo-wave": "tsx --tsconfig scripts/tsconfig.json scripts/build-sogo-wave.ts"
   },
   "dependencies": {
     "@sentry/nextjs": "^8.0.0",
