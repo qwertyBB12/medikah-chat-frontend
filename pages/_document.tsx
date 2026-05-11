@@ -1,9 +1,36 @@
 import { Html, Head, Main, NextScript } from 'next/document';
 
+// Plan 20-06: no-flash theme resolver. MUST run before any React render or
+// stylesheet load so <html data-theme="..."> is set on first paint. Resolution
+// rules mirror lib/useThemeMode.ts AND mailcow-config/sogo/custom-sogo.js:65-128
+// so medikah.health and practikah.medikah.health hydrate to the same theme.
+//
+// Read order: localStorage 'medikah_theme' → cookie 'medikah_theme' → matchMedia.
+// Wrapped in try/catch so storage exceptions never block first paint
+// (STRIDE T-20-06-03 mitigation).
+const NO_FLASH_THEME_SCRIPT = `(function(){
+  try {
+    var ls = null;
+    try { ls = localStorage.getItem('medikah_theme'); } catch (e) {}
+    var ckMatch = document.cookie.match(/(?:^|; )medikah_theme=([^;]*)/);
+    var ck = ckMatch ? decodeURIComponent(ckMatch[1]) : null;
+    var raw = (ls === 'light' || ls === 'dark' || ls === 'auto') ? ls
+            : (ck === 'light' || ck === 'dark' || ck === 'auto') ? ck
+            : 'auto';
+    var resolved = raw;
+    if (raw === 'auto') {
+      resolved = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', resolved);
+  } catch (e) {}
+})();`;
+
 export default function Document() {
   return (
     <Html lang="en">
       <Head>
+        {/* MUST be the first child of <Head> — runs before fonts/CSS. Plan 20-06. */}
+        <script dangerouslySetInnerHTML={{ __html: NO_FLASH_THEME_SCRIPT }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500&display=swap" rel="stylesheet" />
