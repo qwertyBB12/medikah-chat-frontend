@@ -2,6 +2,7 @@ import type { GetServerSideProps } from 'next';
 import { useRouter } from 'next/router';
 import { supabaseAdmin } from '../../lib/supabaseServer';
 import { nameToSlug } from '../../lib/slug';
+import { buildOGImageURL, ogBaseURL } from '../../lib/og-meta';
 import ProfileLayout from '../../components/physician/profile/ProfileLayout';
 import ProfileHero from '../../components/physician/profile/ProfileHero';
 import ProfileAbout from '../../components/physician/profile/ProfileAbout';
@@ -82,6 +83,12 @@ export default function PhysicianProfilePage({ physician, website }: PhysicianPr
     || undefined;
 
   const slug = nameToSlug(p.full_name);
+  const ogImage = buildOGImageURL(ogBaseURL(), {
+    surface: 'physician',
+    locale: isEs ? 'es' : 'en',
+    physicianName: `Dr. ${p.full_name}`,
+    physicianSpecialty: p.primary_specialty,
+  });
   const pageTitle = `Dr. ${p.full_name} - ${p.primary_specialty || (isEs ? 'Médico' : 'Physician')} | Medikah`;
   const pageDescription = isEs
     ? `Perfil profesional de Dr. ${p.full_name}${p.primary_specialty ? `, especialista en ${p.primary_specialty}` : ''}. Miembro verificado de la Red de Médicos de Medikah.`
@@ -132,7 +139,7 @@ export default function PhysicianProfilePage({ physician, website }: PhysicianPr
   }
 
   return (
-    <ProfileLayout title={pageTitle} description={pageDescription} jsonLd={jsonLd}>
+    <ProfileLayout title={pageTitle} description={pageDescription} jsonLd={jsonLd} ogImage={ogImage}>
       <ProfileHero
         fullName={p.full_name}
         photoUrl={p.photo_url}
