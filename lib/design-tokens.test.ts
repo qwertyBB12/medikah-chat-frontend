@@ -55,3 +55,32 @@ describe('emailChrome re-export (Plan 20-01 Task 2)', () => {
     expect(hexMatches.length).toBeLessThanOrEqual(5);
   });
 });
+
+describe('design-tokens CJS shim + Tailwind cutover (Plan 20-01 Task 3)', () => {
+  it('Test 1: lib/design-tokens.cjs exists and re-exports anchor values', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const cjs = require('./design-tokens.cjs');
+    expect(cjs.colors.instBlue).toBe('#1B2A41');
+    expect(cjs.colors.teal500).toBe('#2C7A8C');
+  });
+
+  it('Test 2: CJS shim deep-equals the TS source tokens', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const cjs = require('./design-tokens.cjs');
+    // Structural equality — the shim is serialized JSON so reference
+    // identity will not match, but the shape must be byte-identical.
+    expect(cjs).toEqual(JSON.parse(JSON.stringify(tokens)));
+  });
+
+  it('Test 3: Tailwind resolved colors match tokens (no drift)', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const resolveConfig = require('tailwindcss/resolveConfig');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const tailwindConfig = require('../tailwind.config.js');
+    const full = resolveConfig(tailwindConfig);
+    expect(full.theme.colors['clinical-teal'].DEFAULT).toBe(tokens.colors.teal500);
+    expect(full.theme.colors['inst-blue']).toBe(tokens.colors.instBlue);
+    expect(full.theme.colors['linen']).toBe(tokens.colors.linen);
+    expect(full.theme.borderRadius.lg).toBe(tokens.radii.lg);
+  });
+});
