@@ -7,6 +7,10 @@ build/
 # Generated design-token CJS shim (Plan 20-01) — emitted by
 # scripts/build-design-tokens-cjs.ts on every predev/prebuild.
 lib/design-tokens.cjs
+
+# Plan 20-05 audit temp artifacts — read-only outputs from
+# scripts/audit-patient-portal-tokens.ts (regenerable on demand).
+.planning-tmp/
 npm-debug.log*
 pnpm-lock.yaml
 yarn.lock
