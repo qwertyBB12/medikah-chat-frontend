@@ -221,7 +221,7 @@ export default function PatientPortal() {
   // Show loading while checking auth or consent status
   if (status === 'loading' || !session || consentCompleted === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FAFAFB]">
+      <div className="min-h-screen flex items-center justify-center bg-linen-white">
         <div className="flex items-center gap-2 text-body-slate">
           <span className="w-2 h-2 bg-inst-blue/30 rounded-full animate-typingBounce" />
           <span className="w-2 h-2 bg-inst-blue/30 rounded-full animate-typingBounce [animation-delay:0.2s]" />
@@ -305,7 +305,7 @@ export default function PatientPortal() {
                             href={action.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="font-dm-sans inline-flex items-center gap-1 rounded-[10px] bg-clinical-teal px-5 py-2.5 text-xs font-semibold tracking-wide text-white transition-all duration-200 hover:bg-[#2A8DA0] hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(44,122,140,0.3)]"
+                            className="font-dm-sans inline-flex items-center gap-1 rounded-sm bg-clinical-teal px-5 py-2.5 text-xs font-semibold tracking-wide text-white transition-all duration-200 hover:bg-clinical-teal-dark hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(44,122,140,0.3)]"
                           >
                             {action.label}
                           </a>

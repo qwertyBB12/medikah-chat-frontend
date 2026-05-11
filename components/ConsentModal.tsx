@@ -72,7 +72,7 @@ export default function ConsentModal({ userId, lang: initialLang, onComplete }: 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white w-full max-w-3xl max-h-[90vh] rounded-[16px] shadow-2xl flex flex-col overflow-hidden">
+      <div className="bg-white w-full max-w-3xl max-h-[90vh] rounded-md shadow-2xl flex flex-col overflow-hidden">
         {/* Header */}
         <div className="px-6 py-5 border-b border-border-line flex items-center justify-between shrink-0">
           <h2 className="font-dm-serif text-inst-blue text-xl leading-tight pr-4">
@@ -80,7 +80,7 @@ export default function ConsentModal({ userId, lang: initialLang, onComplete }: 
           </h2>
           <button
             onClick={() => { setLang(lang === 'en' ? 'es' : 'en'); setAgreed(false); }}
-            className="font-dm-sans shrink-0 text-xs font-semibold tracking-wide px-3 py-1.5 border border-border-line rounded-[8px] text-body-slate hover:text-inst-blue hover:border-clinical-teal transition"
+            className="font-dm-sans shrink-0 text-xs font-semibold tracking-wide px-3 py-1.5 border border-border-line rounded-sm text-body-slate hover:text-inst-blue hover:border-clinical-teal transition"
           >
             {lang === 'en' ? 'ES' : 'EN'}
           </button>
@@ -88,7 +88,7 @@ export default function ConsentModal({ userId, lang: initialLang, onComplete }: 
 
         {/* Important notice */}
         <div className="px-6 py-3 shrink-0">
-          <p className="font-dm-sans text-xs text-body-slate leading-relaxed bg-clinical-surface border border-border-line rounded-[8px] px-4 py-3">
+          <p className="font-dm-sans text-xs text-body-slate leading-relaxed bg-clinical-surface border border-border-line rounded-sm px-4 py-3">
             {copy.importantNotice}
           </p>
         </div>
@@ -121,7 +121,7 @@ export default function ConsentModal({ userId, lang: initialLang, onComplete }: 
         {/* Footer with recording consent + checkbox + CTA */}
         <div className="px-6 py-4 border-t border-border-line shrink-0 space-y-3">
           {/* Recording consent — always visible */}
-          <div className="bg-clinical-surface border border-border-line rounded-[8px] px-4 py-3">
+          <div className="bg-clinical-surface border border-border-line rounded-sm px-4 py-3">
             <p className="font-dm-sans text-xs text-inst-blue font-semibold mb-2">
               {lang === 'en' ? 'Consultation Recording (Section 14)' : 'Grabación de Consulta (Sección 14)'}
             </p>
@@ -177,7 +177,7 @@ export default function ConsentModal({ userId, lang: initialLang, onComplete }: 
             type="button"
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className={`font-dm-sans w-full py-3.5 rounded-[12px] font-semibold text-sm tracking-wide transition-all duration-200 ${
+            className={`font-dm-sans w-full py-3.5 rounded-md font-semibold text-sm tracking-wide transition-all duration-200 ${
               canSubmit
                 ? 'bg-inst-blue text-white hover:bg-clinical-teal cursor-pointer'
                 : 'bg-inst-blue text-white opacity-40 cursor-not-allowed'
