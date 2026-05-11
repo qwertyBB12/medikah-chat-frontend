@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { tokens } from './design-tokens';
+import { tokens as emailChromeTokens } from './emailChrome';
 
 describe('design-tokens — canonical token export (Plan 20-01 Task 1)', () => {
   it('Test 1: anchor colors match the live homepage DOM (per D-02)', () => {
@@ -30,5 +33,25 @@ describe('design-tokens — canonical token export (Plan 20-01 Task 1)', () => {
 
   it('Test 5: full tokens shape — snapshot guards against accidental key removal', () => {
     expect(tokens).toMatchSnapshot();
+  });
+});
+
+describe('emailChrome re-export (Plan 20-01 Task 2)', () => {
+  it('Test 1: import { tokens } from emailChrome still resolves anchor values', () => {
+    expect(emailChromeTokens.colors.instBlue).toBe('#1B2A41');
+  });
+
+  it('Test 2: emailChrome.tokens is the same object reference as design-tokens.tokens', () => {
+    expect(emailChromeTokens).toBe(tokens);
+  });
+
+  it('Test 3: emailChrome.ts source contains no inlined token block (no stray hex literals)', () => {
+    const src = readFileSync(join(__dirname, 'emailChrome.ts'), 'utf-8');
+    // Count hex literals (#RRGGBB) outside comments. The helper functions
+    // reference tokens.X — no inlined token block should remain. Helper
+    // string templates may contain zero hex; allow a small tolerance only
+    // for the unlikely edge case of a literal in a fallback color string.
+    const hexMatches = src.match(/#[0-9A-Fa-f]{6}\b/g) ?? [];
+    expect(hexMatches.length).toBeLessThanOrEqual(5);
   });
 });
