@@ -1,6 +1,11 @@
 /**
  * Medikah Design System — Clinical Institutional Palette
  * Aligned with the BeNeXT ecosystem. Dressed for the hospital, not the embassy.
+ *
+ * @deprecated Phase 20 introduces lib/design-tokens.ts as the canonical
+ * Medikah design-token authority (per D-05 in 20-CONTEXT.md). This file
+ * remains for backwards compatibility with already-shipped imports.
+ * New code should import from './design-tokens' instead.
  */
 
 export const colors = {

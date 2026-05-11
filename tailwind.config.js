@@ -1,4 +1,11 @@
 /** @type {import('tailwindcss').Config} */
+// Token authority lives in lib/design-tokens.ts (Plan 20-01 / D-05).
+// scripts/build-design-tokens-cjs.ts emits lib/design-tokens.cjs from that
+// TypeScript source on every predev/prebuild — this require pulls the
+// generated shim so Tailwind utility classes can never drift from
+// emailChrome's tokens or the live homepage DOM.
+const tokens = require('./lib/design-tokens.cjs');
+
 module.exports = {
   content: [
     "./pages/**/*.{js,ts,jsx,tsx}",
@@ -9,65 +16,73 @@ module.exports = {
       colors: {
         // Clinical Teal — primary accent/CTA
         'clinical-teal': {
-          DEFAULT: '#2C7A8C',
-          dark: '#236370',
+          DEFAULT: tokens.colors.teal500,
+          dark: tokens.colors.teal600,
         },
         'teal': {
-          700: '#1A5A68',
-          600: '#236B7A',
-          500: '#2C7A8C',
-          400: '#4A9AAC',
-          300: '#7BBFCC',
-          200: '#B5DDE6',
+          700: tokens.colors.teal700,
+          600: tokens.colors.teal600,
+          500: tokens.colors.teal500,
+          400: tokens.colors.teal400,
+          300: tokens.colors.teal300,
+          200: tokens.colors.teal200,
         },
+        // Not in tokens — legacy literal kept to avoid scope creep.
         'steady-teal': '#E8F4F6',
 
         // Institutional Navy — authority/darks
         'warm-gray': {
-          900: '#0D1520',
-          800: '#1B2A41',
-          700: '#243856',
+          900: tokens.colors.navyDeep,
+          800: tokens.colors.instBlue,
+          700: tokens.colors.navyMid,
+          // 600 + 500 + 300 are not in tokens — keep as literals.
           600: '#2E476B',
           500: '#3A5A85',
-          400: '#5A7AAA',
+          400: tokens.colors.navyLight,
           300: '#A8B4C0',
         },
         // inst-blue maps to navy-800
-        'inst-blue': '#1B2A41',
+        'inst-blue': tokens.colors.instBlue,
 
         // Linen — ground
-        'linen': '#F0EAE0',
-        'linen-warm': '#E8E0D5',
-        'linen-light': '#F5F1EA',
-        'linen-white': '#FAF8F4',
+        'linen': tokens.colors.linen,
+        'linen-warm': tokens.colors.linenWarm,
+        'linen-light': tokens.colors.linenLight,
+        'linen-white': tokens.colors.linenWhite,
 
         // Neutrals
-        'deep-charcoal': '#1C1C1E',
-        'body-slate': '#4A5568',
-        'archival-grey': '#8A8D91',
-        'border-line': '#D1D5DB',
+        'deep-charcoal': tokens.colors.deepCharcoal,
+        'body-slate': tokens.colors.bodySlate,
+        'archival-grey': tokens.colors.archivalGrey,
+        'border-line': tokens.colors.borderLine,
+        // Not in tokens — legacy literal.
         'clinical-surface': '#F5F6F8',
 
         // Cream — text on dark
         'cream': {
-          100: '#FFFFFF',
-          300: '#F5F0EA',
-          400: '#EBE4DC',
-          500: '#A8B4C0',
+          100: tokens.colors.white,
+          300: tokens.colors.cream300,
+          400: tokens.colors.cream400,
+          500: tokens.colors.cream500,
         },
 
         // Text semantic
-        'text-primary': '#1C1C1E',
-        'text-secondary': '#4A5568',
-        'text-muted': '#718096',
+        'text-primary': tokens.colors.deepCharcoal,
+        'text-secondary': tokens.colors.bodySlate,
+        'text-muted': tokens.colors.textMuted,
 
         // Semantic
-        'confirm-green': '#2D7D5F',
-        'caution-amber': '#B8860B',
-        'alert-garnet': '#B83D3D',
+        'confirm-green': tokens.colors.success,
+        'caution-amber': tokens.colors.warning,
+        'alert-garnet': tokens.colors.error,
+        // Not in tokens — legacy literal.
         'info-blue': '#3B82B6',
       },
       fontFamily: {
+        // Keep CSS-variable plumbing for next/font (--font-mulish etc.) —
+        // do NOT swap to literal family names; var(--font-X) is what
+        // _app.tsx + next/font wire up. Tokens.fonts are for inline-style
+        // / email contexts where CSS variables don't apply.
         sans: ['var(--font-mulish)', 'sans-serif'],
         body: ['var(--font-mulish)', 'sans-serif'],
         display: ['var(--font-fraunces)', 'Georgia', 'serif'],
@@ -80,12 +95,7 @@ module.exports = {
         heading: ['var(--font-oswald)', 'sans-serif'],
         mono: ['var(--font-mono)', 'monospace'],
       },
-      borderRadius: {
-        sm: '8px',
-        md: '16px',
-        lg: '24px',
-        xl: '32px',
-      },
+      borderRadius: tokens.radii,
       keyframes: {
         fadeIn: {
           "0%": { opacity: "0", transform: "translateY(4px)" },

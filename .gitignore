@@ -3,6 +3,10 @@ node_modules/
 dist/
 build/
 .cache/
+
+# Generated design-token CJS shim (Plan 20-01) — emitted by
+# scripts/build-design-tokens-cjs.ts on every predev/prebuild.
+lib/design-tokens.cjs
 npm-debug.log*
 pnpm-lock.yaml
 yarn.lock
