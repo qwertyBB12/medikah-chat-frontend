@@ -3,11 +3,11 @@ import path from 'path';
 
 export default defineConfig({
   test: {
-    environment: 'node',
+    environment: 'jsdom',
     globals: false,
     include: [
-      '__tests__/**/*.test.ts',
-      'lib/**/*.test.ts',
+      '__tests__/**/*.test.{ts,tsx}',
+      'lib/**/*.test.{ts,tsx}',
       'components/**/*.test.{ts,tsx}',
     ],
   },
