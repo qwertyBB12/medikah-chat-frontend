@@ -7,99 +7,15 @@
 // All HTML uses inline styles (email clients strip <style> + class attributes).
 
 import { LOGO_SRC, LOGO_DARK_SRC } from './assets';
+import { tokens } from './design-tokens';
 
 // ---------------------------------------------------------------------------
-// Locked design tokens — derived from tailwind.config.js + landing components
+// Tokens are the canonical Medikah design tokens. Re-exported here for
+// backwards compatibility with email-template imports. Edit tokens at
+// lib/design-tokens.ts — DO NOT inline literals here.
 // ---------------------------------------------------------------------------
-export const tokens = {
-  colors: {
-    // Navy / warm-gray scale (Hero + Footer + dark surfaces)
-    navyDeep: '#0D1520',         // warm-gray-900 — gradient terminus
-    instBlue: '#1B2A41',         // warm-gray-800 / inst-blue — gradient origin
-    navyMid: '#243856',          // warm-gray-700
-    navyLight: '#5A7AAA',        // warm-gray-400 — rare
-
-    // Teal scale (CTAs, eyebrows, accents) — graduated, not flat
-    teal700: '#1A5A68',
-    teal600: '#236B7A',
-    teal500: '#2C7A8C',          // clinical-teal — primary CTA bg
-    teal400: '#4A9AAC',          // eyebrow on dark, footer accent text
-    teal300: '#7BBFCC',          // hero second-line color
-    teal200: '#B5DDE6',
-
-    // Linen (warm light surfaces)
-    linen: '#F0EAE0',
-    linenWarm: '#E8E0D5',
-    linenLight: '#F5F1EA',
-    linenWhite: '#FAF8F4',
-
-    // Cream (text on dark)
-    white: '#FFFFFF',
-    cream300: '#F5F0EA',         // primary text on navy
-    cream400: '#EBE4DC',         // body text on navy
-    cream500: '#A8B4C0',         // muted text on navy
-
-    // Light-surface text
-    deepCharcoal: '#1C1C1E',     // primary headlines
-    bodySlate: '#4A5568',        // primary body
-    textMuted: '#718096',        // muted body
-    archivalGrey: '#8A8D91',     // very muted
-
-    // Hairlines / borders
-    borderLine: '#D1D5DB',
-    hairlineDark: 'rgba(27,42,65,0.06)',    // navy 6% on light surfaces
-    hairlineLight: 'rgba(255,255,255,0.06)', // white 6% on dark surfaces
-    overlayWhite30: 'rgba(255,255,255,0.30)',
-    overlayWhite50: 'rgba(255,255,255,0.50)',
-    overlayWhite60: 'rgba(255,255,255,0.60)',
-    tealOverlay8: 'rgba(44,122,140,0.08)',   // teal-500 8% — chip bg on light
-    tealOverlay15: 'rgba(44,122,140,0.15)',  // teal-500 15% — chip bg on dark
-
-    // Semantic
-    success: '#2D7D5F',
-    warning: '#B8860B',
-    error: '#B83D3D',
-
-    // Compat aliases (old names → new names) so existing template references
-    // keep working without 50+ site-specific edits. Prefer the canonical
-    // names above for new code.
-    clinicalTeal: '#2C7A8C',     // → teal500
-    creamOnDark: '#F5F0EA',      // → cream300
-  },
-
-  fonts: {
-    // Body, wordmark, buttons, eyebrows, labels, footer — Mulish dominates.
-    body: "'Mulish', -apple-system, 'Segoe UI', Arial, sans-serif",
-    // Display headlines — Oswald, ALL CAPS only. Bad for body copy.
-    heading: "'Oswald', 'Arial Narrow', Arial, sans-serif",
-    // Aliases retained for backwards compatibility — both resolve to body
-    // since DM Sans / DM Serif do not appear on the live homepage.
-    ui: "'Mulish', -apple-system, 'Segoe UI', Arial, sans-serif",
-    accent: "'Mulish', -apple-system, 'Segoe UI', Arial, sans-serif",
-    // Alias: display → heading (Oswald)
-    display: "'Oswald', 'Arial Narrow', Arial, sans-serif",
-  },
-
-  radii: {
-    sm: '8px',
-    md: '16px',
-    lg: '24px',                  // primary — CTAs, chips, cards
-    xl: '32px',                  // footer top corners
-  },
-
-  // Gradients — emit as background-image; Outlook falls back to bg-color
-  gradients: {
-    navy: 'linear-gradient(180deg,#1B2A41 0%,#0D1520 100%)',
-    linenWarm: 'linear-gradient(135deg,#F5F1EA 0%,#E8E0D5 100%)',
-    tealSoft: 'linear-gradient(135deg,#B5DDE6 0%,#E8E0D5 100%)',
-  },
-
-  // Page background — parchment. Mirrors the homepage's StaggeredGrid CARD
-  // surface (#FAF8F4 linen-white), where users actually read text. Cool-cream
-  // for clinical readability while staying on-brand. The header band stays in
-  // warmer linen on the linen variant, creating a tonal step into the body.
-  pageBg: '#FAF8F4',             // linen-white — parchment body
-} as const;
+export { tokens };
+export type { Tokens } from './design-tokens';
 
 // ---------------------------------------------------------------------------
 // Asset URL — always absolute https for email clients
