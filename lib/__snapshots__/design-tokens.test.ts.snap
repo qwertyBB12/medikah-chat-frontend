@@ -1,0 +1,77 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`design-tokens — canonical token export (Plan 20-01 Task 1) > Test 5: full tokens shape — snapshot guards against accidental key removal 1`] = `
+{
+  "colors": {
+    "archivalGrey": "#8A8D91",
+    "bodySlate": "#4A5568",
+    "borderLine": "#D1D5DB",
+    "clinicalTeal": "#2C7A8C",
+    "cream300": "#F5F0EA",
+    "cream400": "#EBE4DC",
+    "cream500": "#A8B4C0",
+    "creamOnDark": "#F5F0EA",
+    "deepCharcoal": "#1C1C1E",
+    "error": "#B83D3D",
+    "hairlineDark": "rgba(27,42,65,0.06)",
+    "hairlineLight": "rgba(255,255,255,0.06)",
+    "instBlue": "#1B2A41",
+    "linen": "#F0EAE0",
+    "linenLight": "#F5F1EA",
+    "linenWarm": "#E8E0D5",
+    "linenWhite": "#FAF8F4",
+    "navyDeep": "#0D1520",
+    "navyLight": "#5A7AAA",
+    "navyMid": "#243856",
+    "overlayWhite30": "rgba(255,255,255,0.30)",
+    "overlayWhite50": "rgba(255,255,255,0.50)",
+    "overlayWhite60": "rgba(255,255,255,0.60)",
+    "success": "#2D7D5F",
+    "teal200": "#B5DDE6",
+    "teal300": "#7BBFCC",
+    "teal400": "#4A9AAC",
+    "teal500": "#2C7A8C",
+    "teal600": "#236B7A",
+    "teal700": "#1A5A68",
+    "tealOverlay15": "rgba(44,122,140,0.15)",
+    "tealOverlay8": "rgba(44,122,140,0.08)",
+    "textMuted": "#718096",
+    "warning": "#B8860B",
+    "white": "#FFFFFF",
+  },
+  "fonts": {
+    "accent": "'Mulish', -apple-system, 'Segoe UI', Arial, sans-serif",
+    "body": "'Mulish', -apple-system, 'Segoe UI', Arial, sans-serif",
+    "display": "'Oswald', 'Arial Narrow', Arial, sans-serif",
+    "heading": "'Oswald', 'Arial Narrow', Arial, sans-serif",
+    "ui": "'Mulish', -apple-system, 'Segoe UI', Arial, sans-serif",
+  },
+  "gradients": {
+    "linenWarm": "linear-gradient(135deg,#F5F1EA 0%,#E8E0D5 100%)",
+    "navy": "linear-gradient(180deg,#1B2A41 0%,#0D1520 100%)",
+    "practikahTeal": "linear-gradient(135deg,#2C7A8C 0%,#4A9AAC 50%,#9DD0DA 100%)",
+    "tealSoft": "linear-gradient(135deg,#B5DDE6 0%,#E8E0D5 100%)",
+  },
+  "motion": {
+    "fadeIn": {
+      "duration": "0.35s",
+      "easing": "ease-out",
+    },
+    "messageAppear": {
+      "duration": "0.4s",
+      "easing": "cubic-bezier(0.4,0,0.2,1)",
+    },
+    "welcomeFade": {
+      "duration": "0.6s",
+      "easing": "cubic-bezier(0.4,0,0.2,1)",
+    },
+  },
+  "pageBg": "#FAF8F4",
+  "radii": {
+    "lg": "24px",
+    "md": "16px",
+    "sm": "8px",
+    "xl": "32px",
+  },
+}
+`;
