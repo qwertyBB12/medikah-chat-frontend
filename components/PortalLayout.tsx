@@ -173,7 +173,7 @@ export default function PortalLayout({
               )}
               <button
                 onClick={onSignOut}
-                className="font-body px-3 py-2 text-xs font-semibold tracking-wide text-white/80 border border-white/20 hover:text-white hover:border-white/30 transition rounded-[8px]"
+                className="font-body px-3 py-2 text-xs font-semibold tracking-wide text-white/80 border border-white/20 hover:text-white hover:border-white/30 transition rounded-sm"
               >
                 Sign out
               </button>
