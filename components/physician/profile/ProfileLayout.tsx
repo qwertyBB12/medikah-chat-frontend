@@ -9,9 +9,10 @@ interface ProfileLayoutProps {
   title: string;
   description: string;
   jsonLd?: Record<string, unknown>;
+  ogImage?: string;
 }
 
-export default function ProfileLayout({ children, title, description, jsonLd }: ProfileLayoutProps) {
+export default function ProfileLayout({ children, title, description, jsonLd, ogImage }: ProfileLayoutProps) {
   const router = useRouter();
   const isEs = router.locale === 'es';
   const [scrolled, setScrolled] = useState(false);
@@ -41,9 +42,17 @@ export default function ProfileLayout({ children, title, description, jsonLd }: 
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         <meta property="og:type" content="profile" />
-        <meta name="twitter:card" content="summary" />
+        {ogImage && (
+          <>
+            <meta property="og:image" content={ogImage} />
+            <meta property="og:image:width" content="1200" />
+            <meta property="og:image:height" content="630" />
+          </>
+        )}
+        <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
         <meta name="twitter:title" content={title} />
         <meta name="twitter:description" content={description} />
+        {ogImage && <meta name="twitter:image" content={ogImage} />}
         {jsonLd && (
           <script
             type="application/ld+json"

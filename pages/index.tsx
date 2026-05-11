@@ -1,5 +1,7 @@
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 import Nav from '../components/landing/Nav';
+import { buildOGImageURL, ogBaseURL } from '../lib/og-meta';
 import Hero from '../components/landing/Hero';
 import CurveDivider from '../components/landing/CurveDivider';
 import HowItWorks from '../components/landing/HowItWorks';
@@ -15,6 +17,9 @@ import Waitlist from '../components/landing/Waitlist';
 import LandingFooter from '../components/landing/LandingFooter';
 
 export default function LandingPage() {
+  const router = useRouter();
+  const locale = router.locale === 'es' ? 'es' : 'en';
+  const ogImage = buildOGImageURL(ogBaseURL(), { surface: 'home', locale });
   return (
     <>
       <Head>
@@ -25,14 +30,14 @@ export default function LandingPage() {
         <meta property="og:url" content="https://medikah.health/" />
         <meta property="og:title" content="Medikah — Care Without Distance" />
         <meta property="og:description" content="Connect with real doctors, in your language, wherever you are. Medikah coordinates healthcare between the US and Mexico with compliance, privacy, and care." />
-        <meta property="og:image" content="https://medikah.health/og-image.png" />
+        <meta property="og:image" content={ogImage} />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta property="og:site_name" content="Medikah" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Medikah — Care Without Distance" />
         <meta name="twitter:description" content="Connect with real doctors, in your language, wherever you are. Medikah coordinates healthcare between the US and Mexico with compliance, privacy, and care." />
-        <meta name="twitter:image" content="https://medikah.health/og-image.png" />
+        <meta name="twitter:image" content={ogImage} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
