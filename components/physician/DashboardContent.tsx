@@ -10,6 +10,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { SupportedLang } from '../../lib/i18n';
 import { useSupabaseToken } from '../../lib/useSupabaseToken';
 import VerificationBadge from './VerificationBadge';
+import { DashboardMasthead } from './DashboardMasthead';
 import ProfileOverview from './ProfileOverview';
 import AIDiagnosisTool from './AIDiagnosisTool';
 import InquiryList from './InquiryList';
@@ -230,7 +231,12 @@ export default function DashboardContent({
   };
 
   return (
-    <div className="px-4 sm:px-6 py-8 max-w-5xl mx-auto space-y-6">
+    <>
+      {/* Phase 20-04 masthead — same language as SOGo (linen letterhead → wave).
+          Per D-07: no structural reorganization here; Hector's declutter pass
+          handles layout changes separately. */}
+      <DashboardMasthead />
+      <div className="px-4 sm:px-6 py-8 max-w-5xl mx-auto space-y-6">
       {/* Row 1: Profile Overview + Verification Status */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Profile Overview */}
@@ -402,6 +408,7 @@ export default function DashboardContent({
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
