@@ -152,13 +152,16 @@ export default function PortalLayout({
             different grammar per surface (sidebar = spine, vertical). */}
         {portal === 'physician' && (
           <svg
-            className="hidden md:block absolute top-0 right-0 h-full w-[120px] pointer-events-none"
-            viewBox="0 0 120 1440"
+            className="hidden md:block absolute top-0 right-0 h-full w-[180px] pointer-events-none"
+            viewBox="0 0 180 1440"
             preserveAspectRatio="none"
             aria-hidden="true"
           >
+            {/* True half-ellipse: rx=180 (full SVG width), ry=720 (half height).
+                Sweep-flag=0 → CCW arc from (180,0) to (180,1440) bulging LEFT
+                through (0,720). Reads as an oval window into the work area. */}
             <path
-              d="M120,0 C0,480 0,960 120,1440 Z"
+              d="M180,0 A 180 720 0 0 0 180 1440 Z"
               fill={tokens.colors.linenLight}
             />
           </svg>
