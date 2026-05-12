@@ -10,7 +10,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { LOGO_SRC } from '../lib/assets';
 import { tokens } from '../lib/design-tokens';
-import { Wave } from './shared/practikah/Wave';
 import ChatInput from './ChatInput';
 import Footer from './Footer';
 
@@ -211,13 +210,28 @@ export default function PortalLayout({
         </header>
 
         {/* Mobile Práctikah wave — horizontal masthead grammar for the mobile
-            physician surface. The desktop sidebar's vertical wave doesn't
-            render on mobile (no sidebar), so the wave shifts to a horizontal
-            band below the top header, mirroring SOGo's masthead vocabulary. */}
+            physician surface. Fill matches the mobile header's horizontal
+            gradient (from-inst-blue → #0D1520) so the wave reads as a
+            continuation of the header, not a separate band. */}
         {portal === 'physician' && (
-          <div className="md:hidden -mt-px" aria-hidden>
-            <Wave variant="darkMobile" />
-          </div>
+          <svg
+            className="md:hidden block -mt-px w-full h-[60px]"
+            viewBox="0 0 1440 60"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+            style={{ display: 'block' }}
+          >
+            <defs>
+              <linearGradient id="mk-mobile-wave-fill" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor={tokens.colors.instBlue} />
+                <stop offset="100%" stopColor="#0D1520" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M0,60 C480,0 960,0 1440,60 L1440,0 L0,0 Z"
+              fill="url(#mk-mobile-wave-fill)"
+            />
+          </svg>
         )}
 
         {/* Main content */}
