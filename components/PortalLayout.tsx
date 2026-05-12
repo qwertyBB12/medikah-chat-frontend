@@ -138,7 +138,7 @@ export default function PortalLayout({
         )}
 
         {/* Sign out */}
-        <div className="px-6 py-6 mt-auto">
+        <div className={`py-6 mt-auto ${portal === 'physician' ? 'pl-6 pr-24' : 'px-6'}`}>
           <button
             onClick={onSignOut}
             className="font-body w-full py-3 text-center text-sm font-medium tracking-wide text-white/60 hover:text-white transition"
