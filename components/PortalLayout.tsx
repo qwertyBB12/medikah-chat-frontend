@@ -10,6 +10,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { LOGO_SRC } from '../lib/assets';
 import { tokens } from '../lib/design-tokens';
+import { Wave } from './shared/practikah/Wave';
 import ChatInput from './ChatInput';
 import Footer from './Footer';
 
@@ -208,6 +209,16 @@ export default function PortalLayout({
             </div>
           </div>
         </header>
+
+        {/* Mobile Práctikah wave — horizontal masthead grammar for the mobile
+            physician surface. The desktop sidebar's vertical wave doesn't
+            render on mobile (no sidebar), so the wave shifts to a horizontal
+            band below the top header, mirroring SOGo's masthead vocabulary. */}
+        {portal === 'physician' && (
+          <div className="md:hidden -mt-px" aria-hidden>
+            <Wave variant="darkMobile" />
+          </div>
+        )}
 
         {/* Main content */}
         <main className="flex-1 overflow-hidden">
