@@ -9,6 +9,7 @@ import { ReactNode, RefObject, KeyboardEvent } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { LOGO_SRC } from '../lib/assets';
+import { tokens } from '../lib/design-tokens';
 import ChatInput from './ChatInput';
 import Footer from './Footer';
 
@@ -94,7 +95,7 @@ export default function PortalLayout({
   return (
     <div className="min-h-screen md:h-screen md:overflow-hidden flex flex-col md:flex-row bg-linen-light text-deep-charcoal">
       {/* Sidebar - Desktop */}
-      <aside className={`hidden md:flex md:flex-col md:w-72 lg:w-80 bg-gradient-to-b ${colors.sidebarGradient} text-white md:sticky md:top-0 md:h-screen md:max-h-screen`}>
+      <aside className={`hidden md:flex md:flex-col md:w-72 lg:w-80 bg-gradient-to-b ${colors.sidebarGradient} text-white md:sticky md:top-0 md:h-screen md:max-h-screen md:relative`}>
         <div className="flex flex-col items-center justify-center py-10 px-6 gap-3">
           <Image
             src={LOGO_SRC}
@@ -142,6 +143,24 @@ export default function PortalLayout({
             Sign out
           </button>
         </div>
+
+        {/* Práctikah vertical wave — physician surface signature.
+            Companion to SOGo's horizontal masthead wave (Plan 20-03):
+            same vocabulary, vertical grammar. Linen-light curve bulges
+            rightward into the seam between navy sidebar and work area. */}
+        {portal === 'physician' && (
+          <svg
+            className="hidden md:block absolute top-0 right-0 h-full w-[80px] pointer-events-none"
+            viewBox="0 0 80 1440"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M0,0 C80,480 80,960 0,1440 L80,1440 L80,0 Z"
+              fill={tokens.colors.linenLight}
+            />
+          </svg>
+        )}
       </aside>
 
       {/* Main content area */}
