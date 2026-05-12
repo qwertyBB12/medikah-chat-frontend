@@ -155,16 +155,17 @@ export default function PortalLayout({
             different grammar per surface (sidebar = spine, vertical). */}
         {portal === 'physician' && (
           <svg
-            className="hidden md:block absolute top-0 right-0 h-full w-[120px] pointer-events-none"
-            viewBox="0 0 120 1440"
+            className="hidden md:block absolute top-0 right-0 h-full w-[80px] pointer-events-none"
+            viewBox="0 0 80 1440"
             preserveAspectRatio="none"
             aria-hidden="true"
           >
             {/* Práctikah vertical lens — single bezier full-height arc, linen
-                bulges left into navy sidebar. Wider sidebar (above) gives the
-                centered text room to breathe; lens never reaches the text. */}
+                bulges left into navy sidebar. Wider sidebar (above) + shallower
+                lens (80px) keeps the curve hugging the right edge well clear
+                of the centered text column. */}
             <path
-              d="M120,0 C0,480 0,960 120,1440 Z"
+              d="M80,0 C0,480 0,960 80,1440 Z"
               fill={tokens.colors.linenLight}
             />
           </svg>
