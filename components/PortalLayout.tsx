@@ -145,18 +145,20 @@ export default function PortalLayout({
         </div>
 
         {/* Práctikah vertical wave — physician surface signature.
-            Companion to SOGo's horizontal masthead wave (Plan 20-03):
-            same vocabulary, vertical grammar. Linen-light curve bulges
-            rightward into the seam between navy sidebar and work area. */}
+            Lens-shaped linen bulge protrudes leftward into the navy sidebar
+            from the right edge — deepest at the middle, zero at top/bottom
+            so logo (top) and sign-out (bottom) sit clear of the curve.
+            Same Wave vocabulary as SOGo's horizontal masthead (Plan 20-03),
+            different grammar per surface (sidebar = spine, vertical). */}
         {portal === 'physician' && (
           <svg
-            className="hidden md:block absolute top-0 right-0 h-full w-[80px] pointer-events-none"
-            viewBox="0 0 80 1440"
+            className="hidden md:block absolute top-0 right-0 h-full w-[120px] pointer-events-none"
+            viewBox="0 0 120 1440"
             preserveAspectRatio="none"
             aria-hidden="true"
           >
             <path
-              d="M0,0 C80,480 80,960 0,1440 L80,1440 L80,0 Z"
+              d="M120,0 C0,480 0,960 120,1440 Z"
               fill={tokens.colors.linenLight}
             />
           </svg>
