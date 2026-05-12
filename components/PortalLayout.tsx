@@ -96,8 +96,9 @@ export default function PortalLayout({
 
   return (
     <div className="min-h-screen md:h-screen md:overflow-hidden flex flex-col md:flex-row bg-linen-light text-deep-charcoal">
-      {/* Sidebar - Desktop */}
-      <aside className={`hidden md:flex md:flex-col md:w-72 lg:w-80 bg-gradient-to-b ${colors.sidebarGradient} text-white md:sticky md:top-0 md:h-screen md:max-h-screen md:relative`}>
+      {/* Sidebar - Desktop. Physician portal uses a wider sidebar to give
+          centered text breathing room from the right-edge vertical wave. */}
+      <aside className={`hidden md:flex md:flex-col ${portal === 'physician' ? 'md:w-96 lg:w-[28rem]' : 'md:w-72 lg:w-80'} bg-gradient-to-b ${colors.sidebarGradient} text-white md:sticky md:top-0 md:h-screen md:max-h-screen md:relative`}>
         <div className="flex flex-col items-center justify-center py-10 px-6 gap-3">
           <Image
             src={LOGO_SRC}
@@ -154,19 +155,16 @@ export default function PortalLayout({
             different grammar per surface (sidebar = spine, vertical). */}
         {portal === 'physician' && (
           <svg
-            className="hidden md:block absolute top-0 right-0 h-full w-[140px] pointer-events-none"
-            viewBox="0 0 140 1440"
+            className="hidden md:block absolute top-0 right-0 h-full w-[120px] pointer-events-none"
+            viewBox="0 0 120 1440"
             preserveAspectRatio="none"
             aria-hidden="true"
           >
-            {/* Práctikah vertical lens — full-height arc from top to bottom of
-                the sidebar, but with control points concentrated near x=140
-                (right edge) at the top/bottom thirds, so the curve hugs the
-                right edge in the logo/subtitle region and the sign-out region,
-                only diving leftward to its apex in the middle third.
-                Two cubic segments joined at the apex (0, 720). */}
+            {/* Práctikah vertical lens — single bezier full-height arc, linen
+                bulges left into navy sidebar. Wider sidebar (above) gives the
+                centered text room to breathe; lens never reaches the text. */}
             <path
-              d="M140,0 C140,360 0,360 0,720 C0,1080 140,1080 140,1440 Z"
+              d="M120,0 C0,480 0,960 120,1440 Z"
               fill={tokens.colors.linenLight}
             />
           </svg>
