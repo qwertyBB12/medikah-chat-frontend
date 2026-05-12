@@ -99,6 +99,8 @@ export default function PortalLayout({
       {/* Sidebar - Desktop. Physician portal uses a wider sidebar to give
           centered text breathing room from the right-edge vertical wave. */}
       <aside className={`hidden md:flex md:flex-col ${portal === 'physician' ? 'md:w-96 lg:w-[28rem]' : 'md:w-72 lg:w-80'} bg-gradient-to-b ${colors.sidebarGradient} text-white md:sticky md:top-0 md:h-screen md:max-h-screen md:relative`}>
+        {/* Physician portal: top spacer to vertically center the logo block on the wave's apex. */}
+        {portal === 'physician' && <div className="flex-1" aria-hidden />}
         <div className="flex flex-col items-center justify-center py-10 px-6 gap-3">
           <Image
             src={LOGO_SRC}
@@ -138,7 +140,7 @@ export default function PortalLayout({
         )}
 
         {/* Sign out */}
-        <div className="px-6 py-6 mt-auto border-t border-white/10">
+        <div className="px-6 py-6 mt-auto">
           <button
             onClick={onSignOut}
             className="font-body w-full py-3 text-center text-sm font-medium tracking-wide text-white/60 hover:text-white transition"
