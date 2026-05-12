@@ -25,7 +25,9 @@ const portalColors: Record<PortalType, {
     accentBorder: 'border-inst-blue',
   },
   physician: {
-    sidebarGradient: 'from-inst-blue to-[#243447]',
+    // Mirrors SOGo's --mk-surface-base → --mk-surface-deep (custom-sogo.js:203-204)
+    // so the physician sidebar reads continuous with Práctikah's mail/contact/calendar rail.
+    sidebarGradient: 'from-inst-blue to-[#0D1520]',
     accentBorder: 'border-inst-blue',
   },
   insurer: {
@@ -152,19 +154,20 @@ export default function PortalLayout({
             different grammar per surface (sidebar = spine, vertical). */}
         {portal === 'physician' && (
           <svg
-            className="hidden md:block absolute top-0 right-[-90px] h-full w-[90px] pointer-events-none"
-            viewBox="0 0 90 1440"
+            className="hidden md:block absolute top-0 right-0 h-full w-[100px] pointer-events-none"
+            viewBox="0 0 100 1440"
             preserveAspectRatio="none"
             aria-hidden="true"
           >
-            {/* Navy tongue protruding RIGHT into the work area.
-                Bezier lens (Hector's preferred shape from prior iteration),
-                bulging out of the sidebar's right edge into the linen area.
-                Position: right:-90px → SVG sits OUTSIDE the sidebar entirely,
-                so no sidebar text/logo is covered. */}
+            {/* Práctikah vertical lens — linen-light bulges LEFT into the navy
+                sidebar from its right edge. Bezier shape (Hector's preferred
+                geometry over the half-ellipse — reads softer, less rectangular).
+                Sidebar middle is empty space (no sidebarContent passed for
+                physician portal), so the lens at apex (y=720) sits clear of
+                logo (top) and sign-out (bottom). */}
             <path
-              d="M0,0 C90,480 90,960 0,1440 Z"
-              fill={tokens.colors.instBlue}
+              d="M100,0 C0,480 0,960 100,1440 Z"
+              fill={tokens.colors.linenLight}
             />
           </svg>
         )}
