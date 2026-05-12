@@ -154,17 +154,16 @@ export default function PortalLayout({
             different grammar per surface (sidebar = spine, vertical). */}
         {portal === 'physician' && (
           <svg
-            className="hidden md:block absolute top-0 right-0 h-full w-[100px] pointer-events-none"
+            className="hidden md:block absolute top-[20%] right-0 h-[60%] w-[100px] pointer-events-none"
             viewBox="0 0 100 1440"
             preserveAspectRatio="none"
             aria-hidden="true"
           >
-            {/* Práctikah vertical lens — linen-light bulges LEFT into the navy
-                sidebar from its right edge. Bezier shape (Hector's preferred
-                geometry over the half-ellipse — reads softer, less rectangular).
-                Sidebar middle is empty space (no sidebarContent passed for
-                physician portal), so the lens at apex (y=720) sits clear of
-                logo (top) and sign-out (bottom). */}
+            {/* Práctikah vertical lens — linen-light "porthole" cut into the
+                navy sidebar's right edge. Confined to the middle 60% of the
+                sidebar (top:20% h:60%) so the top region (logo + wordmark +
+                subtitle) and bottom region (Sign out) are entirely outside
+                the wave geometry — never clipped. */}
             <path
               d="M100,0 C0,480 0,960 100,1440 Z"
               fill={tokens.colors.linenLight}
