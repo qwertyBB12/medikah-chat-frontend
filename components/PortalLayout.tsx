@@ -219,7 +219,6 @@ export default function PortalLayout({
             viewBox="0 0 1440 60"
             preserveAspectRatio="none"
             aria-hidden="true"
-            style={{ display: 'block' }}
           >
             <defs>
               <linearGradient id="mk-mobile-wave-fill" x1="0" y1="0" x2="1" y2="0">
