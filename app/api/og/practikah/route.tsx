@@ -1,31 +1,26 @@
-// Per-request OG renderer for the public homepage.
-// Consumes lib/design-tokens.ts for all colors + typography (DSGN-02).
-// Copy: "Care Without Distance" (CLAUDE.md brand context — never "cross-border").
-// Bilingual: ?lang=es flips to "Cuidado Sin Distancia".
-//
-// Runtime: Next.js edge → Netlify Edge Function via the Next runtime plugin.
-// Note: the plan originally specified `og-edge` (Deno port). No npm package
-// for og-edge exists, and Next's edge API route compilation cannot resolve
-// `https://deno.land/...` URL imports. `@vercel/og` is the working path for
-// Next edge API routes deployed via Netlify's Next runtime — both libraries
-// wrap Satori under the hood with byte-identical JSX→PNG behavior.
+// Parameterized OG renderer for future Práctikah marketing pages (App Router).
+// Migrated from pages/api/og/practikah.tsx in Phase 20.7.1.
 
 import { ImageResponse } from '@vercel/og';
-import { tokens } from '../../../lib/design-tokens';
+import { tokens } from '../../../../lib/design-tokens';
 
-export const config = { runtime: 'edge' };
+export const runtime = 'edge';
 
-export default async function handler(req: Request) {
+const MAX_TITLE = 80;
+const MAX_SUBTITLE = 120;
+const MAX_EYEBROW = 60;
+
+function clamp(input: string | null, max: number): string {
+  if (!input) return '';
+  return input.length > max ? input.slice(0, max) : input;
+}
+
+export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const lang = searchParams.get('lang') === 'es' ? 'es' : 'en';
+  const title = clamp(searchParams.get('title'), MAX_TITLE) || 'Práctikah';
+  const subtitle = clamp(searchParams.get('subtitle'), MAX_SUBTITLE);
+  const eyebrow = clamp(searchParams.get('eyebrow'), MAX_EYEBROW) || 'práctikah · workspace';
 
-  const eyebrow = 'medikah';
-  const headline = lang === 'es' ? 'CUIDADO SIN DISTANCIA' : 'CARE WITHOUT DISTANCE';
-  const subline = lang === 'es'
-    ? 'Coordinación de salud panamericana'
-    : 'Pan-American health coordination';
-
-  // Self-hosted fonts (Pitfall 4): same-origin fetch, no Google CDN at render time.
   const [mulishRegular, mulishSemiBold, oswald] = await Promise.all([
     fetch(new URL('/fonts/Mulish-Regular.woff2', req.url)).then((r) => r.arrayBuffer()),
     fetch(new URL('/fonts/Mulish-SemiBold.woff2', req.url)).then((r) => r.arrayBuffer()),
@@ -48,12 +43,13 @@ export default async function handler(req: Request) {
       >
         <div
           style={{
-            fontSize: 22,
+            fontSize: 20,
             color: tokens.colors.teal400,
             textTransform: 'uppercase',
             letterSpacing: '0.25em',
-            marginBottom: 32,
+            marginBottom: 24,
             fontWeight: 600,
+            display: 'flex',
           }}
         >
           {eyebrow}
@@ -61,26 +57,30 @@ export default async function handler(req: Request) {
         <div
           style={{
             fontFamily: 'Oswald',
-            fontSize: 128,
+            fontSize: 112,
             color: tokens.colors.cream300,
             textTransform: 'uppercase',
             lineHeight: 0.95,
             letterSpacing: '-0.02em',
             fontWeight: 500,
+            display: 'flex',
           }}
         >
-          {headline}
+          {title}
         </div>
-        <div
-          style={{
-            fontSize: 32,
-            color: tokens.colors.cream400,
-            marginTop: 28,
-            fontWeight: 400,
-          }}
-        >
-          {subline}
-        </div>
+        {subtitle && (
+          <div
+            style={{
+              fontSize: 32,
+              color: tokens.colors.cream400,
+              marginTop: 24,
+              fontWeight: 400,
+              display: 'flex',
+            }}
+          >
+            {subtitle}
+          </div>
+        )}
       </div>
     ),
     {

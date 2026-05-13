@@ -1,17 +1,15 @@
-// Per-request OG renderer for /dr/[slug] physician public profiles.
-// Consumes lib/design-tokens.ts (DSGN-02). Reads ?name= and ?specialty= from
-// the query string — these are user-influenced inputs, so we length-limit
-// them (T-20-07-01) and JSX-render (no dangerouslySetInnerHTML, no string
-// concat into HTML).
+// Per-request OG renderer for /dr/[slug] physician public profiles (App Router).
+// Migrated from pages/api/og/physician/[slug].tsx in Phase 20.7.1.
 //
-// The [slug] route param itself is unused inside the renderer (only ?name=
-// drives the visible text); the slug is part of the URL only so the OG image
-// URL has a stable shape that matches /dr/[slug].
+// Reads ?name= and ?specialty= from the query string — these are user-influenced
+// inputs, so we length-limit them (T-20-07-01) and JSX-render (no string concat).
+// The [slug] route param is unused inside the renderer; the slug is part of the
+// URL only so the OG image URL has a stable shape matching /dr/[slug].
 
 import { ImageResponse } from '@vercel/og';
-import { tokens } from '../../../../lib/design-tokens';
+import { tokens } from '../../../../../lib/design-tokens';
 
-export const config = { runtime: 'edge' };
+export const runtime = 'edge';
 
 const MAX_NAME = 80;
 const MAX_SPECIALTY = 80;
@@ -21,7 +19,7 @@ function clamp(input: string | null, max: number): string {
   return input.length > max ? input.slice(0, max) : input;
 }
 
-export default async function handler(req: Request) {
+export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const name = clamp(searchParams.get('name'), MAX_NAME) || 'Medikah Physician';
   const specialty = clamp(searchParams.get('specialty'), MAX_SPECIALTY);
