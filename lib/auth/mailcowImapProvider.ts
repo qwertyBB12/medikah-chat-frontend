@@ -6,7 +6,7 @@
  *   2. supabaseAdmin null-guard             → returns null (fails closed)
  *   3. Source-IP + UA extraction (D-08)
  *   4. Per-IP rate-limit ledger query (D-04, D-05) — 3 failures / 5 min → locked_out
- *   5. TLS-only IMAP probe to imap.medikah.health:993 (D-02)
+ *   5. TLS-only IMAP probe to practikah.medikah.health:993 (D-02)
  *   6. physician_workspace_accounts.mailbox_email → physician_id (D-03)
  *   7. physicians lookup for the D-10 claim snapshot
  *   8. auth_probe_attempts row written on every exit path (T-16-08)
@@ -132,7 +132,7 @@ type ImapProbeResult = { ok: true } | { ok: false; reason: 'bad_password' | 'inf
 
 async function probeImap(email: string, password: string): Promise<ImapProbeResult> {
   const client = new ImapFlow({
-    host: 'imap.medikah.health',
+    host: 'practikah.medikah.health',
     port: 993,
     secure: true, // TLS-only — no STARTTLS, no plaintext fallback
     auth: { user: email, pass: password },
@@ -182,11 +182,16 @@ async function resolvePhysicianByMailbox(
 ): Promise<ProvisionedPhysician | null> {
   if (!supabaseAdmin) return null;
   const lowered = email.toLowerCase();
+  const atIdx = lowered.indexOf('@');
+  if (atIdx <= 0 || atIdx === lowered.length - 1) return null;
+  const localPart = lowered.slice(0, atIdx);
+  const domain = lowered.slice(atIdx + 1);
 
   const { data: account, error: accountErr } = await supabaseAdmin
     .from('physician_workspace_accounts')
     .select('physician_id')
-    .eq('mailbox_email', lowered)
+    .eq('mailbox_local_part', localPart)
+    .eq('mailbox_domain', domain)
     .maybeSingle();
   if (accountErr || !account?.physician_id) {
     return null;
@@ -194,7 +199,7 @@ async function resolvePhysicianByMailbox(
 
   const { data: physician, error: physicianErr } = await supabaseAdmin
     .from('physicians')
-    .select('id, name, email, verification_status')
+    .select('id, name:full_name, email, verification_status')
     .eq('id', account.physician_id)
     .maybeSingle();
   if (physicianErr || !physician?.id) {
@@ -305,7 +310,7 @@ export async function mailcowImapAuthorize(
   if (!probe.ok) {
     if (probe.reason === 'infra_error') {
       console.error('[mailcowImapProvider] IMAP transport failure', {
-        host: 'imap.medikah.health',
+        host: 'practikah.medikah.health',
         port: 993,
         ip: sourceIp,
       });
