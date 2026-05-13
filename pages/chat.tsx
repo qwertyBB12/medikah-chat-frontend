@@ -15,6 +15,7 @@ import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import { FormEvent, useEffect, useState, useRef } from 'react';
 import Splash from '../components/Splash';
+import { MAILCOW_ERROR_COPY } from '../lib/auth/mailcowErrorCopy';
 
 type PortalSelection = 'doctor' | 'patient' | null;
 
@@ -32,6 +33,20 @@ const t = {
     en: 'Credentials not recognized. Please try again.',
     es: 'Credenciales no reconocidas. Intente de nuevo.',
   },
+  // Phase 16 D-12 locked copy — single source of truth lives in
+  // lib/auth/mailcowErrorCopy.ts. The string never reveals which side was wrong;
+  // every failure outcome (bad_password, unknown_user, locked_out, infra_error)
+  // surfaces this exact text.
+  errorMailcow: MAILCOW_ERROR_COPY.errorMailcow,
+  recoveryLink: { en: 'Account recovery', es: 'Recuperación de cuenta' },
+  medikahEmailTab: {
+    en: 'Sign in with Medikah email',
+    es: 'Inicia sesión con correo Medikah',
+  },
+  medikahEmailHint: {
+    en: 'Use your @medikah.health mailbox.',
+    es: 'Usa tu buzón @medikah.health.',
+  },
 } as const;
 
 type Lang = 'en' | 'es';
@@ -45,6 +60,11 @@ export default function ChatPage() {
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Phase 16 — separate Mailcow physician form so the existing patient/legacy
+  // Credentials path stays untouched.
+  const [mailcowEmail, setMailcowEmail] = useState('');
+  const [mailcowPassword, setMailcowPassword] = useState('');
+  const [isMailcowSubmitting, setIsMailcowSubmitting] = useState(false);
   const [showLoginForm, setShowLoginForm] = useState(false);
   const [portalSelection, setPortalSelection] = useState<PortalSelection>(null);
 
@@ -96,6 +116,30 @@ export default function ChatPage() {
     if (result?.error) {
       pendingRedirectRef.current = null;
       setLoginError(t.errorCredentials[lang]);
+      return;
+    }
+  };
+
+  const handleMailcowSignIn = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsMailcowSubmitting(true);
+    setLoginError(null);
+
+    pendingRedirectRef.current = 'doctor';
+
+    const result = await signIn('mailcow-imap', {
+      redirect: false,
+      email: mailcowEmail,
+      password: mailcowPassword,
+    });
+    setIsMailcowSubmitting(false);
+
+    if (!result || result.error) {
+      // D-05 — single locked string on every failure outcome
+      // (bad_password, unknown_user, locked_out, infra_error). No per-outcome
+      // branching in the UI.
+      pendingRedirectRef.current = null;
+      setLoginError(t.errorMailcow[lang]);
       return;
     }
   };
@@ -160,6 +204,59 @@ export default function ChatPage() {
         )}
       </div>
 
+      {/* Phase 16 — Medikah-email (Mailcow IMAP) sign-in. Physician tab only.
+          Added alongside the existing Google/LinkedIn/legacy-Credentials
+          affordances per D-03 two-identity lifecycle; nothing is removed. */}
+      {portalSelection === 'doctor' && (
+        <div className="space-y-3 pt-2">
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px bg-white/10" />
+            <span className="font-body text-[11px] uppercase tracking-wider text-white/50">
+              {t.medikahEmailTab[lang]}
+            </span>
+            <div className="flex-1 h-px bg-white/10" />
+          </div>
+          <p className="font-body text-xs text-white/50">{t.medikahEmailHint[lang]}</p>
+          <form onSubmit={handleMailcowSignIn} className="space-y-3">
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="mailcow-email" className="font-body text-xs uppercase tracking-wider text-white/50">
+                {t.email[lang]}
+              </label>
+              <input
+                id="mailcow-email"
+                type="email"
+                value={mailcowEmail}
+                onChange={(e) => setMailcowEmail(e.target.value)}
+                className="font-body border border-white/20 bg-warm-gray-900/50 px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-clinical-teal rounded-sm"
+                placeholder="you@medikah.health"
+                required
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="mailcow-password" className="font-body text-xs uppercase tracking-wider text-white/50">
+                {t.password[lang]}
+              </label>
+              <input
+                id="mailcow-password"
+                type="password"
+                value={mailcowPassword}
+                onChange={(e) => setMailcowPassword(e.target.value)}
+                className="font-body border border-white/20 bg-warm-gray-900/50 px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-clinical-teal rounded-sm"
+                placeholder="********"
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              className="font-body w-full px-4 py-3 font-semibold tracking-wide text-sm bg-clinical-teal text-white border border-clinical-teal hover:bg-clinical-teal/90 transition rounded-sm disabled:opacity-50"
+              disabled={isMailcowSubmitting}
+            >
+              {isMailcowSubmitting ? t.signingIn[lang] : t.medikahEmailTab[lang]}
+            </button>
+          </form>
+        </div>
+      )}
+
       {/* Divider */}
       <div className="flex items-center gap-3">
         <div className="flex-1 h-px bg-white/10" />
@@ -198,9 +295,21 @@ export default function ChatPage() {
           />
         </div>
         {loginError && (
-          <p className="font-dm-sans text-sm text-alert-garnet bg-alert-garnet/10 border border-alert-garnet/20 px-3 py-2 text-center rounded-sm">
-            {loginError}
-          </p>
+          <div className="space-y-2">
+            <p className="font-dm-sans text-sm text-alert-garnet bg-alert-garnet/10 border border-alert-garnet/20 px-3 py-2 text-center rounded-sm">
+              {loginError}
+            </p>
+            {/* Phase 16 D-13 — placeholder recovery link; real flow ships in
+                Phase 18 (FLOW-01, FLOW-05). */}
+            <div className="text-center">
+              <a
+                href="/auth/recovery"
+                className="font-body text-xs text-white/60 underline hover:text-clinical-teal"
+              >
+                {t.recoveryLink[lang]}
+              </a>
+            </div>
+          </div>
         )}
         <button
           type="submit"
