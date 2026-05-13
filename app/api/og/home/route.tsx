@@ -1,28 +1,26 @@
-// Parameterized OG renderer for future Práctikah marketing pages.
-// Per RESEARCH Open Q #4 — page list isn't firm yet, so this route is
-// parameterized rather than tied to specific marketing slugs. Any future
-// Práctikah page can emit `<meta property="og:image" content=".../api/og/practikah?title=...&subtitle=..." />`
-// and get a brand-consistent card.
+// Per-request OG renderer for the public homepage (App Router).
+// Migrated from pages/api/og/home.tsx in Phase 20.7.1 — @netlify/plugin-nextjs
+// only translates App Router route handlers into Netlify Edge Functions;
+// pages-router edge routes fall back to Node serverless and crash on the Web
+// Request signature. See `.planning/phases/20.../20-07.1-SUMMARY.md`.
+//
+// Copy: "Care Without Distance" (CLAUDE.md brand context — never "cross-border").
+// Bilingual: ?lang=es flips to "Cuidado Sin Distancia".
 
 import { ImageResponse } from '@vercel/og';
-import { tokens } from '../../../lib/design-tokens';
+import { tokens } from '../../../../lib/design-tokens';
 
-export const config = { runtime: 'edge' };
+export const runtime = 'edge';
 
-const MAX_TITLE = 80;
-const MAX_SUBTITLE = 120;
-const MAX_EYEBROW = 60;
-
-function clamp(input: string | null, max: number): string {
-  if (!input) return '';
-  return input.length > max ? input.slice(0, max) : input;
-}
-
-export default async function handler(req: Request) {
+export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const title = clamp(searchParams.get('title'), MAX_TITLE) || 'Práctikah';
-  const subtitle = clamp(searchParams.get('subtitle'), MAX_SUBTITLE);
-  const eyebrow = clamp(searchParams.get('eyebrow'), MAX_EYEBROW) || 'práctikah · workspace';
+  const lang = searchParams.get('lang') === 'es' ? 'es' : 'en';
+
+  const eyebrow = 'medikah';
+  const headline = lang === 'es' ? 'CUIDADO SIN DISTANCIA' : 'CARE WITHOUT DISTANCE';
+  const subline = lang === 'es'
+    ? 'Coordinación de salud panamericana'
+    : 'Pan-American health coordination';
 
   const [mulishRegular, mulishSemiBold, oswald] = await Promise.all([
     fetch(new URL('/fonts/Mulish-Regular.woff2', req.url)).then((r) => r.arrayBuffer()),
@@ -46,13 +44,12 @@ export default async function handler(req: Request) {
       >
         <div
           style={{
-            fontSize: 20,
+            fontSize: 22,
             color: tokens.colors.teal400,
             textTransform: 'uppercase',
             letterSpacing: '0.25em',
-            marginBottom: 24,
+            marginBottom: 32,
             fontWeight: 600,
-            display: 'flex',
           }}
         >
           {eyebrow}
@@ -60,30 +57,26 @@ export default async function handler(req: Request) {
         <div
           style={{
             fontFamily: 'Oswald',
-            fontSize: 112,
+            fontSize: 128,
             color: tokens.colors.cream300,
             textTransform: 'uppercase',
             lineHeight: 0.95,
             letterSpacing: '-0.02em',
             fontWeight: 500,
-            display: 'flex',
           }}
         >
-          {title}
+          {headline}
         </div>
-        {subtitle && (
-          <div
-            style={{
-              fontSize: 32,
-              color: tokens.colors.cream400,
-              marginTop: 24,
-              fontWeight: 400,
-              display: 'flex',
-            }}
-          >
-            {subtitle}
-          </div>
-        )}
+        <div
+          style={{
+            fontSize: 32,
+            color: tokens.colors.cream400,
+            marginTop: 28,
+            fontWeight: 400,
+          }}
+        >
+          {subline}
+        </div>
       </div>
     ),
     {
