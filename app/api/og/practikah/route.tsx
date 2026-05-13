@@ -22,9 +22,9 @@ export async function GET(req: Request) {
   const eyebrow = clamp(searchParams.get('eyebrow'), MAX_EYEBROW) || 'práctikah · workspace';
 
   const [mulishRegular, mulishSemiBold, oswald] = await Promise.all([
-    fetch(new URL('/fonts/Mulish-Regular.woff2', req.url)).then((r) => r.arrayBuffer()),
-    fetch(new URL('/fonts/Mulish-SemiBold.woff2', req.url)).then((r) => r.arrayBuffer()),
-    fetch(new URL('/fonts/Oswald-Medium.woff2', req.url)).then((r) => r.arrayBuffer()),
+    fetch(new URL('/fonts/Mulish-Regular.ttf', req.url)).then((r) => r.arrayBuffer()),
+    fetch(new URL('/fonts/Mulish-SemiBold.ttf', req.url)).then((r) => r.arrayBuffer()),
+    fetch(new URL('/fonts/Oswald-Medium.ttf', req.url)).then((r) => r.arrayBuffer()),
   ]);
 
   return new ImageResponse(
