@@ -5,6 +5,7 @@ import GoogleProvider from 'next-auth/providers/google';
 import LinkedInProvider from 'next-auth/providers/linkedin';
 import { supabase } from '../../../lib/supabase';
 import { detectUserRole, ensureSupabaseUser } from '../../../lib/portalAuth';
+import { mailcowImapAuthorize } from '../../../lib/auth/mailcowImapProvider';
 
 /**
  * NextAuth configuration
@@ -60,6 +61,22 @@ export const authOptions: NextAuthOptions = {
           role,
         };
       }
+    }),
+    CredentialsProvider({
+      id: 'mailcow-imap', // D-01: distinct provider id for the physician Mailcow IMAP path
+      name: 'Medikah email',
+      credentials: {
+        email: { label: 'Email', type: 'text' },
+        password: { label: 'Password', type: 'password' },
+      },
+      async authorize(credentials, req) {
+        // The full IMAP probe + rate-limit + audit pipeline lives in
+        // lib/auth/mailcowImapProvider.ts (Phase 16 Plan 03).
+        return mailcowImapAuthorize(
+          credentials as Record<string, string> | undefined,
+          req as unknown as Parameters<typeof mailcowImapAuthorize>[1],
+        );
+      },
     })
   ],
   callbacks: {
@@ -89,6 +106,23 @@ export const authOptions: NextAuthOptions = {
           token.userId = user.id;
           token.role = user.role || 'patient';
           token.provider = 'credentials';
+        }
+
+        // Phase 16 D-01/D-09/D-10 — mailcow-imap provider: lift the D-10 claim
+        // set off the user object that mailcowImapAuthorize returned onto the JWT.
+        // role is hard-coded 'physician' (Mailcow mailboxes exist only for
+        // physicians; portalAuth.detectUserRole intentionally skipped per
+        // 16-CONTEXT.md <code_context>).
+        if (account?.provider === 'mailcow-imap') {
+          token.userId = user.id;
+          token.role = 'physician';
+          token.provider = 'mailcow-imap';
+          token.mailbox_email = (user as { mailbox_email?: string }).mailbox_email;
+          token.physician_id = (user as { physician_id?: string }).physician_id;
+          token.verification_status = (user as {
+            verification_status?: 'pending' | 'in_review' | 'verified' | 'rejected';
+          }).verification_status;
+          token.workspace_role = (user as { workspace_role?: 'owner' }).workspace_role;
         }
       }
 
@@ -132,10 +166,23 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = token.userId;
         session.user.role = token.role;
-        session.user.provider = token.provider as 'credentials' | 'google' | 'linkedin' | undefined;
+        session.user.provider = token.provider as
+          | 'credentials'
+          | 'google'
+          | 'linkedin'
+          | 'mailcow-imap'
+          | undefined;
 
         if (token.linkedInProfile) {
           session.user.linkedInProfile = token.linkedInProfile;
+        }
+
+        // Phase 16 D-10 — additive lift of mailcow-imap claims onto session.user.
+        if (token.provider === 'mailcow-imap') {
+          session.user.mailbox_email = token.mailbox_email;
+          session.user.physician_id = token.physician_id;
+          session.user.verification_status = token.verification_status;
+          session.user.workspace_role = token.workspace_role;
         }
       }
       return session;
@@ -143,7 +190,30 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/chat',
-  }
+  },
+  // Phase 16 AUTH-08 — scope the session cookie to the parent domain so the
+  // medikah.health JWT is presented on practikah.medikah.health (consumed by
+  // the Plan 13.1-05 nginx auth_request handoff). The existing patient
+  // Credentials sessions also become .medikah.health-scoped as a deliberate
+  // side effect (16-04 must_haves) — NextAuth does not support per-provider
+  // cookie config and no patient surface lives on practikah.medikah.health.
+  cookies: {
+    sessionToken: {
+      name: '__Secure-next-auth.session-token',
+      options: {
+        domain: '.medikah.health',
+        httpOnly: true,
+        secure: true,
+        sameSite: 'lax',
+        path: '/',
+      },
+    },
+  },
+  // ROADMAP Phase 16 Success Criterion 2 — ≤ 1h JWT TTL.
+  session: {
+    strategy: 'jwt',
+    maxAge: 60 * 60,
+  },
 };
 
 export default NextAuth(authOptions);
