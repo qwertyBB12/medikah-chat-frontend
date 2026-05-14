@@ -11,6 +11,7 @@
  */
 
 import Head from 'next/head';
+import Link from 'next/link';
 import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import { FormEvent, useEffect, useState, useRef } from 'react';
@@ -302,12 +303,12 @@ export default function ChatPage() {
             {/* Phase 16 D-13 — placeholder recovery link; real flow ships in
                 Phase 18 (FLOW-01, FLOW-05). */}
             <div className="text-center">
-              <a
+              <Link
                 href="/auth/recovery"
                 className="font-body text-xs text-white/60 underline hover:text-clinical-teal"
               >
                 {t.recoveryLink[lang]}
-              </a>
+              </Link>
             </div>
           </div>
         )}
