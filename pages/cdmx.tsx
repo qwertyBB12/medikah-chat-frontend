@@ -55,25 +55,25 @@ const COPY = {
 // img: drop a file in /public/speakers/ and set the path; until then, initials show.
 // focus/zoom fine-tune face framing inside the circle so all faces match.
 const SPEAKERS: {
-  name: string; img?: string; focus?: string; zoom?: number;
+  name: string; img?: string; bgSize?: string; bgPos?: string;
   role: { es: string[]; en: string[] };
 }[] = [
-  { name: 'Dr. José Luis Aguirre, MD', img: '/speakers/aguirre.jpg', focus: 'center 22%',
+  { name: 'Dr. José Luis Aguirre, MD', img: '/speakers/aguirre.jpg', bgPos: 'center 18%',
     role: { es: ['Cofundador', 'Presidente del Consejo y Director Médico', 'Medikah Health'],
             en: ['Co-founder', 'Board President & Chief Medical Officer', 'Medikah Health'] } },
-  { name: 'Dra. Erika Torres Valdez', img: '/speakers/erika.jpg', focus: 'center 22%',
+  { name: 'Dra. Erika Torres Valdez', img: '/speakers/erika.jpg', bgPos: 'center 20%',
     role: { es: ['Uroginecóloga', 'Experta en IA en medicina', 'Consejos COMEGO y FEMECOG'],
             en: ['Urogynecologist', 'AI-in-medicine expert', 'COMEGO & FEMECOG boards'] } },
-  { name: 'Hector H. Lopez', img: '/speakers/hector-lopez.png', focus: 'center 22%',
+  { name: 'Hector H. Lopez', img: '/speakers/hector-lopez.png', bgPos: 'center 22%',
     role: { es: ['Cofundador', 'CEO', 'Medikah Health'],
             en: ['Co-founder', 'CEO', 'Medikah Health'] } },
-  { name: 'Luis Ignacio López García', img: '/speakers/luis-ignacio.jpg', focus: 'center 20%', zoom: 1.25,
+  { name: 'Luis Ignacio López García', img: '/speakers/luis-ignacio.jpg', bgSize: '150%', bgPos: 'center 18%',
     role: { es: ['Abogado', 'Jones Day', 'Derecho corporativo y M&A'],
             en: ['Attorney', 'Jones Day', 'Corporate Law & M&A'] } },
   { name: 'Maricarmen Flores Soberón',
     role: { es: ['Abogada', 'Compliance y derecho sanitario', 'ex-COFEPRIS'],
             en: ['Attorney', 'Compliance & health law', 'ex-COFEPRIS'] } },
-  { name: 'Luis Gerardo Cárdenas', img: '/speakers/cardenas.webp', focus: 'center 16%', zoom: 1.7,
+  { name: 'Luis Gerardo Cárdenas', img: '/speakers/cardenas.webp', bgSize: '200%', bgPos: 'center 18%',
     role: { es: ['Director Ejecutivo', 'Arkah', 'Tecnología, robótica e IA'],
             en: ['Executive Director', 'Arkah', 'Technology, robotics & AI'] } },
 ];
@@ -238,12 +238,12 @@ export default function CdmxLanding() {
             <div className="mx-auto mt-10 flex max-w-4xl flex-wrap justify-center gap-x-10 gap-y-12">
               {SPEAKERS.map((s) => (
                 <div key={s.name} className="flex w-56 flex-col items-center text-center">
-                  <div className="h-28 w-28 overflow-hidden rounded-full bg-inst-blue shadow-lg ring-2 ring-clinical-teal/30">
-                    {s.img ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={s.img} alt={s.name} className="h-full w-full object-cover"
-                        style={{ objectPosition: s.focus ?? 'center', transform: `scale(${s.zoom ?? 1})` }} />
-                    ) : (
+                  <div
+                    className="h-28 w-28 overflow-hidden rounded-full bg-inst-blue bg-no-repeat shadow-lg ring-2 ring-clinical-teal/30"
+                    style={s.img ? { backgroundImage: `url(${s.img})`, backgroundSize: s.bgSize ?? 'cover', backgroundPosition: s.bgPos ?? 'center 25%' } : undefined}
+                    role="img" aria-label={s.name}
+                  >
+                    {!s.img && (
                       <span className="flex h-full w-full items-center justify-center font-heading text-3xl font-semibold tracking-wide text-teal-300">
                         {initials(s.name)}
                       </span>
