@@ -54,9 +54,9 @@ const COPY = {
 
 // img: drop a file in /public/speakers/ and set the path; until then, initials show.
 const SPEAKERS: { name: string; img?: string; role: { es: string; en: string } }[] = [
-  { name: 'Dr. José Luis Aguirre, MD', role: { es: 'Presidente del Consejo · Medikah Health', en: 'Board President · Medikah Health' } },
-  { name: 'Dra. Erica Torres Valdez',  role: { es: 'Ponente invitada', en: 'Featured speaker' } },
-  { name: 'Hector H. Lopez',           role: { es: 'Fundador · Medikah Health', en: 'Founder · Medikah Health' } },
+  { name: 'Dr. José Luis Aguirre, MD', role: { es: 'Presidente del Consejo y Director Médico · Medikah Health', en: 'Board President & Chief Medical Officer · Medikah Health' } },
+  { name: 'Dra. Erica Torres Valdez',  role: { es: 'Uroginecóloga · Experta en IA en medicina · Consejos COMEGO y FEMECOG', en: 'Urogynecologist · AI-in-medicine expert · COMEGO & FEMECOG boards' } },
+  { name: 'Hector H. Lopez',           role: { es: 'Fundador y CEO · Medikah Health', en: 'Founder & CEO · Medikah Health' } },
 ];
 
 const initials = (n: string) =>
