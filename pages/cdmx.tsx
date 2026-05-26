@@ -4,7 +4,6 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import Nav from '../components/landing/Nav';
 import CurveDivider from '../components/landing/CurveDivider';
-import ChatShowcase from '../components/landing/ChatShowcase';
 import LandingFooter from '../components/landing/LandingFooter';
 
 type Lang = 'es' | 'en';
@@ -59,8 +58,20 @@ const COPY = {
     en: 'Medikah comes to Mexico with AI tools for physicians: everything you need for your practice, and we train you to use it.',
   },
   toolsFree:    { es: 'Y lo mejor: sin costo para ti.', en: 'And the best part: at no cost to you.' },
-  toolsCaption: { es: 'Así viven tus pacientes la experiencia Medikah', en: 'This is the Medikah experience your patients have' },
+  toolsCaption: { es: 'Un vistazo a tu asistente clínico', en: 'A look at your clinical assistant' },
+
+  // doctor-facing chat mock
+  chatHeader:   { es: 'Asistente para médicos', en: 'Physician assistant' },
+  docMsg:       { es: '¿Puedes resumir los estudios de mi paciente y sugerir diagnósticos diferenciales?', en: "Can you summarize my patient's results and suggest differential diagnoses?" },
+  docReply:     { es: 'Claro. Resumí los estudios y preparé tres diagnósticos diferenciales con su evidencia. ¿Genero la nota clínica?', en: 'Of course. I summarized the results and prepared three differential diagnoses with their evidence. Shall I draft the clinical note?' },
+  docToolTitle: { es: 'Diagnósticos diferenciales', en: 'Differential diagnoses' },
+  docDemo:      { es: 'Demostración · herramientas para tu práctica', en: 'Demo · tools for your practice' },
 } as const;
+
+const DOC_DIFFERENTIALS = {
+  es: ['Insuficiencia cardíaca — congruente con disnea y edema', 'Enfermedad renal crónica con sobrecarga de volumen', 'EPOC reagudizado'],
+  en: ['Heart failure — consistent with dyspnea and edema', 'Chronic kidney disease with volume overload', 'COPD exacerbation'],
+};
 
 // img: drop a file in /public/speakers/ and set the path; until then, initials show.
 // focus/zoom fine-tune face framing inside the circle so all faces match.
@@ -302,8 +313,41 @@ export default function CdmxLanding() {
           <p className="mt-10 font-body text-sm uppercase tracking-[0.18em] text-archival-grey">
             {t('toolsCaption')}
           </p>
+
+          {/* doctor ↔ Medikah chat mock (static) */}
+          <div className="mx-auto mt-8 max-w-[520px] overflow-hidden rounded-lg border border-deep-charcoal/10 bg-white text-left shadow-xl">
+            <div className="flex items-center justify-between bg-inst-blue px-5 py-3.5">
+              <span className="font-body text-sm font-medium lowercase tracking-[0.04em] text-white">medikah</span>
+              <span className="font-body text-[0.7rem] uppercase tracking-[0.18em] text-white/55">{t('chatHeader')}</span>
+            </div>
+            <div className="space-y-4 bg-clinical-surface px-5 py-6">
+              <div className="flex justify-end">
+                <div className="max-w-[82%] rounded-lg rounded-br-sm bg-teal-500 px-4 py-3 font-body text-[0.9rem] leading-relaxed text-white">
+                  {t('docMsg')}
+                </div>
+              </div>
+              <div className="flex gap-2.5">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-clinical-teal font-body text-xs font-bold text-white">M</div>
+                <div className="max-w-[82%] rounded-lg rounded-bl-sm bg-inst-blue px-4 py-3 font-body text-[0.9rem] leading-relaxed text-white">
+                  {t('docReply')}
+                  <div className="mt-3 rounded-sm border border-white/10 bg-white/[0.06] p-3.5">
+                    <div className="mb-2 font-body text-[0.7rem] font-semibold uppercase tracking-wider text-teal-300">{t('docToolTitle')}</div>
+                    <ul className="space-y-1.5">
+                      {DOC_DIFFERENTIALS[lang].map((d, i) => (
+                        <li key={i} className="flex items-start gap-2 font-body text-[0.8rem] leading-snug text-white/80">
+                          <span className="mt-1.5 h-[5px] w-[5px] shrink-0 rounded-full bg-teal-400" />{d}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="border-t border-deep-charcoal/[0.06] bg-white py-3 text-center">
+              <span className="font-body text-[0.7rem] uppercase tracking-[0.18em] text-archival-grey">{t('docDemo')}</span>
+            </div>
+          </div>
         </section>
-        <ChatShowcase showHeading={false} />
 
         <LandingFooter />
       </div>
