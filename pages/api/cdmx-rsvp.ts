@@ -8,7 +8,7 @@ import { sendCdmxRsvpConfirmation } from '../../lib/email';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { name, email, profession, locale } = req.body ?? {};
+  const { name, email, profession, pref, locale } = req.body ?? {};
 
   if (!name || !email) {
     return res.status(400).json({ error: 'Name and email are required' });
@@ -22,10 +22,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(500).json({ error: 'Database not configured' });
   }
 
+  // No schema change: fold optional event preference into the profession column.
+  const prof = [profession ? String(profession).trim() : '', pref ? `interés: ${String(pref).trim()}` : '']
+    .filter(Boolean).join(' · ');
   const row = {
     name: String(name).trim(),
     email: String(email).trim().toLowerCase(),
-    profession: profession ? String(profession).trim() : null,
+    profession: prof || null,
     locale: locale === 'en' ? 'en' : 'es',
   };
 

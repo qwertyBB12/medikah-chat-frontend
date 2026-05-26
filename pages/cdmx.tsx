@@ -18,11 +18,14 @@ const COPY = {
     en: 'Care without distance comes to Mexico City. A networking and learning gathering to see what we are building — alongside the community of physicians making it possible.',
   },
   whenLabel: { es: 'Cuándo', en: 'When' },
-  whenVal:   { es: '23 – 25 de junio de 2026 · evento principal la noche del 23', en: 'June 23 – 25, 2026 · main evening event on the 23rd' },
+  whenVal:   { es: '23 – 25 de junio de 2026 · una serie de eventos en CDMX', en: 'June 23 – 25, 2026 · a series of events in Mexico City' },
   whereLabel:{ es: 'Dónde', en: 'Where' },
   whereVal:  { es: 'Ciudad de México · sede por confirmar', en: 'Mexico City · venue to be confirmed' },
   formTitle: { es: 'Confirma tu interés', en: 'Register your interest' },
   formSub:   { es: 'Déjanos tus datos y te enviaremos los detalles del lugar y el horario.', en: 'Leave your details and we will send you the venue and schedule.' },
+  prefLabel: { es: '¿Qué te interesa? (opcional)', en: 'What interests you? (optional)' },
+  prefPh:    { es: 'p. ej. el evento del 23, o todos los días', en: 'e.g. the event on the 23rd, or all days' },
+  pointsNote:{ es: 'Entre más participas en la serie, más puntos acumulas hacia tu certificación en IA.', en: 'The more you take part in the series, the more points toward your AI certification.' },
   name:      { es: 'Nombre', en: 'Name' },
   email:     { es: 'Correo', en: 'Email' },
   profession:{ es: 'Profesión (opcional)', en: 'Profession (optional)' },
@@ -75,22 +78,22 @@ const SPEAKERS: {
   name: string; img?: string; bgSize?: string; bgPos?: string; flags?: string;
   role: { es: string[]; en: string[] };
 }[] = [
-  { name: 'Dr. José Luis Aguirre, MD', img: '/speakers/aguirre.jpg', bgPos: 'center 18%', flags: '🇺🇸 🇲🇽',
+  { name: 'Dr. José Luis Aguirre, MD', img: '/speakers/aguirre.jpg', bgPos: 'center 18%', flags: 'EE.UU. · México',
     role: { es: ['Cofundador', 'Presidente del Consejo', 'y Director Médico', 'Medikah Health'],
             en: ['Co-founder', 'Board President', '& Chief Medical Officer', 'Medikah Health'] } },
-  { name: 'Dra. Erika Torres Valdez, MD', img: '/speakers/erika.jpg', bgPos: 'center 20%', flags: '🇲🇽',
+  { name: 'Dra. Erika Torres Valdez, MD', img: '/speakers/erika.jpg', bgPos: 'center 20%', flags: 'México',
     role: { es: ['Uroginecóloga', 'Experta en IA en medicina', 'Consejos COMEGO y FEMECOG'],
             en: ['Urogynecologist', 'AI-in-medicine expert', 'COMEGO & FEMECOG boards'] } },
-  { name: 'Hector H. Lopez, MA, MPL', img: '/speakers/hector-lopez.png', bgPos: 'center 22%', flags: '🇺🇸',
+  { name: 'Hector H. Lopez, MA, MPL', img: '/speakers/hector-lopez.png', bgPos: 'center 22%', flags: 'EE.UU.',
     role: { es: ['Cofundador', 'CEO', 'Medikah Health'],
             en: ['Co-founder', 'CEO', 'Medikah Health'] } },
-  { name: 'Lic. Luis Ignacio López García, Esq.', img: '/speakers/luis-ignacio.jpg', bgSize: '130%', bgPos: 'center 28%', flags: '🇪🇸 🇲🇽',
+  { name: 'Lic. Luis Ignacio López García, Esq.', img: '/speakers/luis-ignacio.jpg', bgSize: '130%', bgPos: 'center 28%', flags: 'España · México',
     role: { es: ['Abogado', 'Jones Day', 'Derecho corporativo y M&A'],
             en: ['Attorney', 'Jones Day', 'Corporate Law & M&A'] } },
-  { name: 'Lic. Maricarmen Flores Soberón, Esq.', img: '/speakers/maricarmen.png', bgSize: 'cover', bgPos: 'center', flags: '🇲🇽',
+  { name: 'Lic. Maricarmen Flores Soberón, Esq.', img: '/speakers/maricarmen.png', bgSize: 'cover', bgPos: 'center', flags: 'México',
     role: { es: ['Abogada', 'Compliance y derecho sanitario', 'ex-COFEPRIS'],
             en: ['Attorney', 'Compliance & health law', 'ex-COFEPRIS'] } },
-  { name: 'Ing. Luis Gerardo Cárdenas, MPL', img: '/speakers/cardenas.webp', bgSize: '200%', bgPos: 'center 18%', flags: '🇲🇽 🇫🇷',
+  { name: 'Ing. Luis Gerardo Cárdenas, MPL', img: '/speakers/cardenas.webp', bgSize: '200%', bgPos: 'center 18%', flags: 'México · Francia',
     role: { es: ['Director Ejecutivo', 'Arkah', 'Tecnología, robótica e IA'],
             en: ['Executive Director', 'Arkah', 'Technology, robotics & AI'] } },
 ];
@@ -104,6 +107,7 @@ export default function CdmxLanding() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [profession, setProfession] = useState('');
+  const [pref, setPref] = useState('');
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'duplicate' | 'error'>('idle');
   const t = (k: keyof typeof COPY) => COPY[k][lang];
 
@@ -115,7 +119,7 @@ export default function CdmxLanding() {
       const res = await fetch('/api/cdmx-rsvp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), email: email.trim(), profession: profession.trim(), locale: lang }),
+        body: JSON.stringify({ name: name.trim(), email: email.trim(), profession: profession.trim(), pref: pref.trim(), locale: lang }),
       });
       if (res.status === 409) setStatus('duplicate');
       else if (res.ok) setStatus('success');
@@ -212,6 +216,12 @@ export default function CdmxLanding() {
                     <input type="text" value={profession} onChange={(e) => setProfession(e.target.value)} placeholder={t('professionPh')}
                       className="w-full rounded-sm border border-clinical-surface bg-clinical-surface px-4 py-3 font-body text-base text-deep-charcoal outline-none transition-colors placeholder:text-archival-grey/70 focus:border-clinical-teal focus:bg-white" />
                   </div>
+                  <div>
+                    <label className="mb-1.5 block font-body text-xs font-semibold uppercase tracking-wider text-archival-grey">{t('prefLabel')}</label>
+                    <input type="text" value={pref} onChange={(e) => setPref(e.target.value)} placeholder={t('prefPh')}
+                      className="w-full rounded-sm border border-clinical-surface bg-clinical-surface px-4 py-3 font-body text-base text-deep-charcoal outline-none transition-colors placeholder:text-archival-grey/70 focus:border-clinical-teal focus:bg-white" />
+                  </div>
+                  <p className="font-body text-xs leading-relaxed text-clinical-teal">{t('pointsNote')}</p>
                   {status === 'error' && <p className="font-body text-sm text-alert-garnet">{t('error')}</p>}
                   <button type="submit" disabled={status === 'sending'}
                     className="w-full rounded-sm bg-teal-500 px-7 py-3.5 font-body text-sm font-semibold uppercase tracking-wider text-white transition-all duration-200 hover:bg-teal-600 disabled:opacity-60">
@@ -267,7 +277,7 @@ export default function CdmxLanding() {
                     )}
                   </div>
                   <h3 className="mt-5 font-body text-[1.05rem] font-semibold leading-snug text-deep-charcoal">{s.name}</h3>
-                  {s.flags && <div className="mt-1.5 text-base leading-none" aria-hidden>{s.flags}</div>}
+                  {s.flags && <div className="mt-1.5 font-body text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-archival-grey">{s.flags}</div>}
                   <div className="mt-1.5 space-y-0.5">
                     {s.role[lang].map((line, i) => (
                       <p key={i} className={`font-body leading-snug ${i === 0 ? 'text-sm font-semibold text-clinical-teal' : 'text-[0.82rem] text-body-slate'}`}>
@@ -315,14 +325,14 @@ export default function CdmxLanding() {
         </section>
 
         {/* Aguirre video */}
-        <section className="mx-auto max-w-3xl px-6 pb-20 text-center">
+        <section className="mx-auto max-w-3xl px-6 pb-20 pt-12 text-center">
           <p className="font-body text-[0.8rem] font-semibold uppercase tracking-[0.32em] text-clinical-teal">
             {t('videoEyebrow')}
           </p>
           <h2 className="mx-auto mt-4 max-w-2xl font-heading text-2xl font-semibold uppercase leading-tight tracking-wide text-deep-charcoal sm:text-3xl">
             {t('videoTitle')}
           </h2>
-          <div className="mt-8 overflow-hidden rounded-lg bg-inst-blue shadow-xl">
+          <div className="mt-12 overflow-hidden rounded-lg bg-inst-blue shadow-xl">
             {VIDEO_SRC ? (
               <video controls playsInline preload="metadata" className="aspect-video w-full">
                 <source src={VIDEO_SRC} type="video/mp4" />
