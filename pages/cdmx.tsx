@@ -54,12 +54,12 @@ const COPY = {
 
 // img: drop a file in /public/speakers/ and set the path; until then, initials show.
 const SPEAKERS: { name: string; img?: string; role: { es: string; en: string } }[] = [
-  { name: 'Dr. José Luis Aguirre, MD', role: { es: 'Cofundador · Presidente del Consejo y Director Médico · Medikah Health', en: 'Co-founder · Board President & Chief Medical Officer · Medikah Health' } },
-  { name: 'Dra. Erika Torres Valdez',  role: { es: 'Uroginecóloga · Experta en IA en medicina · Consejos COMEGO y FEMECOG', en: 'Urogynecologist · AI-in-medicine expert · COMEGO & FEMECOG boards' } },
+  { name: 'Dr. José Luis Aguirre, MD', img: '/speakers/aguirre.jpg', role: { es: 'Cofundador · Presidente del Consejo y Director Médico · Medikah Health', en: 'Co-founder · Board President & Chief Medical Officer · Medikah Health' } },
+  { name: 'Dra. Erika Torres Valdez',  img: '/speakers/erika.jpg', role: { es: 'Uroginecóloga · Experta en IA en medicina · Consejos COMEGO y FEMECOG', en: 'Urogynecologist · AI-in-medicine expert · COMEGO & FEMECOG boards' } },
   { name: 'Hector H. Lopez',           img: '/speakers/hector-lopez.png', role: { es: 'Fundador y CEO · Medikah Health', en: 'Founder & CEO · Medikah Health' } },
   { name: 'Luis Ignacio López García', img: '/speakers/luis-ignacio.jpg', role: { es: 'Abogado · Jones Day · Derecho corporativo y M&A', en: 'Attorney · Jones Day · Corporate Law & M&A' } },
   { name: 'Maricarmen Flores Soberón', role: { es: 'Compliance y derecho sanitario · ex-COFEPRIS', en: 'Compliance & health law · ex-COFEPRIS' } },
-  { name: 'Luis Gerardo Cárdenas',     role: { es: 'Director Ejecutivo, Arkah · Tecnología, robótica e IA', en: 'Executive Director, Arkah · Technology, robotics & AI' } },
+  { name: 'Luis Gerardo Cárdenas',     img: '/speakers/cardenas.webp', role: { es: 'Director Ejecutivo, Arkah · Tecnología, robótica e IA', en: 'Executive Director, Arkah · Technology, robotics & AI' } },
 ];
 
 const initials = (n: string) =>
