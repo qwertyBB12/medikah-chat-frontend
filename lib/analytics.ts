@@ -27,9 +27,13 @@ export const initGA = (): void => {
   document.head.appendChild(script);
 
   // Initialize dataLayer
+  // NOTE: gtag.js only executes dataLayer entries that are `arguments` objects.
+  // Pushing a plain array (e.g. via rest params) is silently ignored — no hits
+  // are ever sent. Must push the function's own `arguments`.
   window.dataLayer = window.dataLayer || [];
-  window.gtag = function gtag(...args: unknown[]) {
-    window.dataLayer?.push(args);
+  window.gtag = function gtag() {
+    // eslint-disable-next-line prefer-rest-params
+    window.dataLayer?.push(arguments);
   };
   window.gtag('js', new Date());
   window.gtag('config', GA_MEASUREMENT_ID, {
