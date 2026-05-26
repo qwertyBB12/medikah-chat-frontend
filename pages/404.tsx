@@ -1,7 +1,7 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import Image from 'next/image';
-import { LOGO_APP_ICON_SVG } from '../lib/assets';
+import { LOGO_DARK_SRC } from '../lib/assets';
 
 export default function Custom404() {
   return (
@@ -12,11 +12,11 @@ export default function Custom404() {
       </Head>
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#FAFAFB] text-deep-charcoal px-6">
         <Image
-          src={LOGO_APP_ICON_SVG}
+          src={LOGO_DARK_SRC}
           alt="Medikah"
           width={64}
           height={64}
-          className="w-16 h-16 rounded-[14px] mb-6"
+          className="w-16 h-16 mb-6"
         />
         <h1 className="text-inst-blue font-extrabold text-[48px] leading-none mb-2">404</h1>
         <p className="text-body-slate text-lg font-semibold mb-1">Page not found</p>
