@@ -76,8 +76,8 @@ const COPY = {
   videoSoon:    { es: 'Video disponible muy pronto', en: 'Video available very soon' },
 } as const;
 
-// Set to the Bunny CDN URL once jla-md.mp4 is uploaded (e.g. https://<zone>.b-cdn.net/medikah/jla-md.mp4).
-const VIDEO_SRC = '';
+// Served direct from B2 public bucket for launch; front with Bunny CDN later.
+const VIDEO_SRC = 'https://f004.backblazeb2.com/file/medikah-public/jla-md.mp4';
 
 // img: drop a file in /public/speakers/ and set the path; until then, initials show.
 // focus/zoom fine-tune face framing inside the circle so all faces match.
