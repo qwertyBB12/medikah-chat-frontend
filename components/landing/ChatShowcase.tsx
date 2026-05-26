@@ -41,7 +41,7 @@ const CHIPS: Record<Locale, string[]> = {
   es: ['Leve (1\u20133)', 'Moderado (4\u20136)', 'Severo (7\u201310)', 'Sí', 'No', 'Cuéntame más'],
 };
 
-export default function ChatShowcase() {
+export default function ChatShowcase({ showHeading = true }: { showHeading?: boolean } = {}) {
   const router = useRouter();
   const locale = (router.locale || 'en') as Locale;
   const sectionRef = useRef<HTMLElement>(null);
@@ -143,7 +143,8 @@ export default function ChatShowcase() {
 
   return (
     <section ref={sectionRef} className="py-[clamp(4rem,8vh,8rem)] bg-linen-warm" id="chat-section">
-      {/* Header */}
+      {/* Header (optional — hidden when embedded with custom framing, e.g. /cdmx) */}
+      {showHeading && (
       <div className="max-w-[1400px] mx-auto px-[clamp(1.5rem,6vw,6rem)] mb-[clamp(3rem,5vh,4rem)] text-center">
         <div className="font-body text-[0.6875rem] font-medium uppercase tracking-[0.3em] text-teal-500 mb-6">
           {t.eyebrow[locale]}
@@ -155,6 +156,7 @@ export default function ChatShowcase() {
           {t.lead[locale]}
         </p>
       </div>
+      )}
 
       {/* Chat container */}
       <div className="max-w-[500px] mx-auto border border-warm-gray-800/[0.12] rounded-lg overflow-hidden bg-linen-white shadow-[0_16px_64px_rgba(45,43,41,0.12),0_2px_8px_rgba(45,43,41,0.06)] mx-4 sm:mx-auto">
