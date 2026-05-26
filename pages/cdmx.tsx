@@ -39,8 +39,8 @@ const COPY = {
   certBadge:  { es: 'Primicia', en: 'First of its kind' },
   certTitle:  { es: 'La primera certificación en IA médica', en: 'The first AI-in-medicine certification' },
   certBody:   {
-    es: 'Entregaremos el primer certificado del camino hacia la Certificación en Inteligencia Artificial en Medicina, emitida por New eXponential Thought Organization. Son certificaciones acumulables que construyen hacia una certificación profesional.',
-    en: 'We will award the first certificate on the path to Certification in Artificial Intelligence in Medicine, issued by New eXponential Thought Organization. These are stackable certifications that build toward a professional credential.',
+    es: 'Entregaremos el primer certificado del camino hacia la Certificación en Inteligencia Artificial en Medicina, emitida por New eXponential Thought Organization de Estados Unidos. Son certificaciones acumulables que construyen hacia una certificación profesional.',
+    en: 'We will award the first certificate on the path to Certification in Artificial Intelligence in Medicine, issued by New eXponential Thought Organization of the United States. These are stackable certifications that build toward a professional credential.',
   },
   p1t: { es: 'Networking', en: 'Networking' },
   p1b: { es: 'Conecta con médicos, líderes y aliados de toda la región.', en: 'Connect with physicians, leaders, and partners from across the region.' },
@@ -60,30 +60,37 @@ const COPY = {
   },
   toolsFree:    { es: 'Y lo mejor: sin costo para ti.', en: 'And the best part: at no cost to you.' },
   toolsCaption: { es: 'Un vistazo a tu asistente clínico', en: 'A look at your clinical assistant' },
+
+  videoEyebrow: { es: 'En sus palabras', en: 'In his words' },
+  videoTitle:   { es: 'Dr. José Luis Aguirre sobre la IA en la medicina', en: 'Dr. José Luis Aguirre on AI in medicine' },
+  videoSoon:    { es: 'Video disponible muy pronto', en: 'Video available very soon' },
 } as const;
+
+// Set to the Bunny CDN URL once jla-md.mp4 is uploaded (e.g. https://<zone>.b-cdn.net/medikah/jla-md.mp4).
+const VIDEO_SRC = '';
 
 // img: drop a file in /public/speakers/ and set the path; until then, initials show.
 // focus/zoom fine-tune face framing inside the circle so all faces match.
 const SPEAKERS: {
-  name: string; img?: string; bgSize?: string; bgPos?: string;
+  name: string; img?: string; bgSize?: string; bgPos?: string; flags?: string;
   role: { es: string[]; en: string[] };
 }[] = [
-  { name: 'Dr. José Luis Aguirre, MD', img: '/speakers/aguirre.jpg', bgPos: 'center 18%',
+  { name: 'Dr. José Luis Aguirre, MD', img: '/speakers/aguirre.jpg', bgPos: 'center 18%', flags: '🇺🇸 🇲🇽',
     role: { es: ['Cofundador', 'Presidente del Consejo', 'y Director Médico', 'Medikah Health'],
             en: ['Co-founder', 'Board President', '& Chief Medical Officer', 'Medikah Health'] } },
-  { name: 'Dra. Erika Torres Valdez, MD', img: '/speakers/erika.jpg', bgPos: 'center 20%',
+  { name: 'Dra. Erika Torres Valdez, MD', img: '/speakers/erika.jpg', bgPos: 'center 20%', flags: '🇲🇽',
     role: { es: ['Uroginecóloga', 'Experta en IA en medicina', 'Consejos COMEGO y FEMECOG'],
             en: ['Urogynecologist', 'AI-in-medicine expert', 'COMEGO & FEMECOG boards'] } },
-  { name: 'Hector H. Lopez, MA, MPL', img: '/speakers/hector-lopez.png', bgPos: 'center 22%',
+  { name: 'Hector H. Lopez, MA, MPL', img: '/speakers/hector-lopez.png', bgPos: 'center 22%', flags: '🇺🇸',
     role: { es: ['Cofundador', 'CEO', 'Medikah Health'],
             en: ['Co-founder', 'CEO', 'Medikah Health'] } },
-  { name: 'Lic. Luis Ignacio López García, Esq.', img: '/speakers/luis-ignacio.jpg', bgSize: '130%', bgPos: 'center 28%',
+  { name: 'Lic. Luis Ignacio López García, Esq.', img: '/speakers/luis-ignacio.jpg', bgSize: '130%', bgPos: 'center 28%', flags: '🇪🇸 🇲🇽',
     role: { es: ['Abogado', 'Jones Day', 'Derecho corporativo y M&A'],
             en: ['Attorney', 'Jones Day', 'Corporate Law & M&A'] } },
-  { name: 'Lic. Maricarmen Flores Soberón, Esq.', img: '/speakers/maricarmen.png', bgSize: 'cover', bgPos: 'center',
+  { name: 'Lic. Maricarmen Flores Soberón, Esq.', img: '/speakers/maricarmen.png', bgSize: 'cover', bgPos: 'center', flags: '🇲🇽',
     role: { es: ['Abogada', 'Compliance y derecho sanitario', 'ex-COFEPRIS'],
             en: ['Attorney', 'Compliance & health law', 'ex-COFEPRIS'] } },
-  { name: 'Ing. Luis Gerardo Cárdenas, MPL', img: '/speakers/cardenas.webp', bgSize: '200%', bgPos: 'center 18%',
+  { name: 'Ing. Luis Gerardo Cárdenas, MPL', img: '/speakers/cardenas.webp', bgSize: '200%', bgPos: 'center 18%', flags: '🇲🇽 🇫🇷',
     role: { es: ['Director Ejecutivo', 'Arkah', 'Tecnología, robótica e IA'],
             en: ['Executive Director', 'Arkah', 'Technology, robotics & AI'] } },
 ];
@@ -260,6 +267,7 @@ export default function CdmxLanding() {
                     )}
                   </div>
                   <h3 className="mt-5 font-body text-[1.05rem] font-semibold leading-snug text-deep-charcoal">{s.name}</h3>
+                  {s.flags && <div className="mt-1.5 text-base leading-none" aria-hidden>{s.flags}</div>}
                   <div className="mt-1.5 space-y-0.5">
                     {s.role[lang].map((line, i) => (
                       <p key={i} className={`font-body leading-snug ${i === 0 ? 'text-sm font-semibold text-clinical-teal' : 'text-[0.82rem] text-body-slate'}`}>
@@ -304,6 +312,30 @@ export default function CdmxLanding() {
           </p>
 
           <CdmxDoctorChat lang={lang} />
+        </section>
+
+        {/* Aguirre video */}
+        <section className="mx-auto max-w-3xl px-6 pb-20 text-center">
+          <p className="font-body text-[0.8rem] font-semibold uppercase tracking-[0.32em] text-clinical-teal">
+            {t('videoEyebrow')}
+          </p>
+          <h2 className="mx-auto mt-4 max-w-2xl font-heading text-2xl font-semibold uppercase leading-tight tracking-wide text-deep-charcoal sm:text-3xl">
+            {t('videoTitle')}
+          </h2>
+          <div className="mt-8 overflow-hidden rounded-lg bg-inst-blue shadow-xl">
+            {VIDEO_SRC ? (
+              <video controls playsInline preload="metadata" className="aspect-video w-full">
+                <source src={VIDEO_SRC} type="video/mp4" />
+              </video>
+            ) : (
+              <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 text-white/70">
+                <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="9" /><path d="M10 9l5 3-5 3z" fill="currentColor" stroke="none" />
+                </svg>
+                <span className="font-body text-sm uppercase tracking-[0.18em]">{t('videoSoon')}</span>
+              </div>
+            )}
+          </div>
         </section>
 
         <LandingFooter />
