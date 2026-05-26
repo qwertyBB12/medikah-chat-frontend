@@ -109,11 +109,78 @@ Medikah Health
 https://medikah.health
 `,
   }),
+
+  // CDMX launch event RSVP confirmation (Spanish — Mexico City audience)
+  cdmxRsvpConfirmation: (name: string) => ({
+    subject: 'Te esperamos en CDMX — Medikah Health',
+    html: `<!DOCTYPE html>
+<html lang="es">
+${emailHead()}
+<body style="margin:0;padding:0;background-color:${tokens.pageBg};font-family:${tokens.fonts.body};color:${tokens.colors.bodySlate};">
+${emailHeader({ variant: 'navy', locale: 'es', wordmark: 'medikah', eyebrow: 'Ciudad de M&eacute;xico · 23–25 Junio 2026' })}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${tokens.pageBg};padding:40px 20px;">
+  <tr>
+    <td align="center">
+      <table role="presentation" class="email-container" width="600" cellpadding="0" cellspacing="0" style="background-color:${tokens.colors.white};border-radius:${tokens.radii.md};overflow:hidden;">
+        <tr>
+          <td class="email-pad" style="padding:40px 32px;">
+            <h2 style="font-family:${tokens.fonts.body};color:${tokens.colors.deepCharcoal};font-size:22px;font-weight:700;margin:0 0 16px 0;">¡Quedó registrado, ${name}!</h2>
+            <p style="font-family:${tokens.fonts.body};color:${tokens.colors.bodySlate};font-size:16px;line-height:1.6;margin:0 0 24px 0;">
+              Gracias por tu interés. Medikah Health llega a la Ciudad de México, y queremos verte en nuestro encuentro de presentación.
+            </p>
+            <p style="font-family:${tokens.fonts.body};color:${tokens.colors.bodySlate};font-size:16px;line-height:1.6;margin:0 0 24px 0;">
+              <strong style="color:${tokens.colors.instBlue};">Cuándo:</strong> 23 al 25 de junio de 2026 — evento principal la noche del 23.<br/>
+              <strong style="color:${tokens.colors.instBlue};">Dónde:</strong> Ciudad de México — sede por confirmar.
+            </p>
+            <p style="font-family:${tokens.fonts.body};color:${tokens.colors.bodySlate};font-size:16px;line-height:1.6;margin:0 0 24px 0;">
+              Te enviaremos los detalles finales del lugar y el horario conforme se acerque la fecha.
+            </p>
+            <p style="font-family:${tokens.fonts.body};color:${tokens.colors.bodySlate};font-size:16px;line-height:1.6;margin:0;">
+              ¿Preguntas? Escríbenos a <a href="mailto:hello@medikah.health" style="color:${tokens.colors.clinicalTeal};text-decoration:none;font-weight:600;">hello@medikah.health</a>.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+${emailFooter({ locale: 'es' })}
+</body>
+</html>`,
+    text: `¡Quedó registrado, ${name}!
+
+Gracias por tu interés. Medikah Health llega a la Ciudad de México, y queremos verte en nuestro encuentro de presentación.
+
+Cuándo: 23 al 25 de junio de 2026 — evento principal la noche del 23.
+Dónde: Ciudad de México — sede por confirmar.
+
+Te enviaremos los detalles finales del lugar y el horario conforme se acerque la fecha.
+
+¿Preguntas? Escríbenos a hello@medikah.health
+
+Medikah Health
+https://medikah.health
+`,
+  }),
 };
 
 // Send waitlist confirmation
 export const sendWaitlistConfirmation = async (email: string): Promise<SendEmailResult> => {
   const template = templates.waitlistConfirmation(email);
+  return sendEmail({
+    to: email,
+    subject: template.subject,
+    html: template.html,
+    text: template.text,
+  });
+};
+
+// Send CDMX launch event RSVP confirmation (Spanish)
+export const sendCdmxRsvpConfirmation = async (
+  email: string,
+  name: string
+): Promise<SendEmailResult> => {
+  const template = templates.cdmxRsvpConfirmation(name);
   return sendEmail({
     to: email,
     subject: template.subject,
