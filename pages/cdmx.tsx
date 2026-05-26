@@ -1,4 +1,5 @@
 import { FormEvent, useState } from 'react';
+import type { GetServerSideProps } from 'next';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import Nav from '../components/landing/Nav';
@@ -37,8 +38,8 @@ const COPY = {
   certBadge:  { es: 'Primicia', en: 'First of its kind' },
   certTitle:  { es: 'La primera certificación en IA médica', en: 'The first AI-in-medicine certification' },
   certBody:   {
-    es: 'Entregaremos el primer certificado del camino hacia la Certificación en Inteligencia Artificial en Medicina, emitida por New Exponential Thought. Son certificaciones acumulables que construyen hacia una certificación profesional.',
-    en: 'We will award the first certificate on the path to Certification in Artificial Intelligence in Medicine, issued by New Exponential Thought. These are stackable certifications that build toward a professional credential.',
+    es: 'Entregaremos el primer certificado del camino hacia la Certificación en Inteligencia Artificial en Medicina, emitida por New eXponential Thought. Son certificaciones acumulables que construyen hacia una certificación profesional.',
+    en: 'We will award the first certificate on the path to Certification in Artificial Intelligence in Medicine, issued by New eXponential Thought. These are stackable certifications that build toward a professional credential.',
   },
   p1t: { es: 'Networking', en: 'Networking' },
   p1b: { es: 'Conecta con médicos, líderes y aliados de toda la región.', en: 'Connect with physicians, leaders, and partners from across the region.' },
@@ -214,3 +215,14 @@ export default function CdmxLanding() {
     </>
   );
 }
+
+// Default this Mexico City page to Spanish. First-time visitors (no explicit
+// language choice yet) land in Spanish; once they use the Nav EN/ES toggle,
+// Next sets NEXT_LOCALE and we honor it — so English stays reachable.
+export const getServerSideProps: GetServerSideProps = async (ctx) => {
+  const chosen = ctx.req.cookies?.NEXT_LOCALE;
+  if (!chosen && ctx.locale !== 'es') {
+    return { redirect: { destination: '/es/cdmx', permanent: false } };
+  }
+  return { props: {} };
+};
