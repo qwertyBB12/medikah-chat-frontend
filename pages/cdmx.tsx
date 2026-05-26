@@ -235,9 +235,9 @@ export default function CdmxLanding() {
             <p className="font-body text-[0.8rem] font-semibold uppercase tracking-[0.32em] text-clinical-teal">
               {t('speakersEyebrow')}
             </p>
-            <div className="mx-auto mt-10 flex max-w-4xl flex-wrap justify-center gap-x-10 gap-y-12">
+            <div className="mx-auto mt-10 flex max-w-5xl flex-wrap justify-center gap-x-8 gap-y-12">
               {SPEAKERS.map((s) => (
-                <div key={s.name} className="flex w-56 flex-col items-center text-center">
+                <div key={s.name} className="flex w-64 flex-col items-center text-center">
                   <div
                     className="h-28 w-28 overflow-hidden rounded-full bg-inst-blue bg-no-repeat shadow-lg ring-2 ring-clinical-teal/30"
                     style={s.img ? { backgroundImage: `url(${s.img})`, backgroundSize: s.bgSize ?? 'cover', backgroundPosition: s.bgPos ?? 'center 25%' } : undefined}
@@ -249,7 +249,7 @@ export default function CdmxLanding() {
                       </span>
                     )}
                   </div>
-                  <h3 className="mt-5 font-body text-lg font-semibold text-deep-charcoal">{s.name}</h3>
+                  <h3 className="mt-5 font-body text-[1.05rem] font-semibold leading-snug text-deep-charcoal">{s.name}</h3>
                   <div className="mt-1.5 space-y-0.5">
                     {s.role[lang].map((line, i) => (
                       <p key={i} className={`font-body leading-snug ${i === 0 ? 'text-sm font-semibold text-clinical-teal' : 'text-[0.82rem] text-body-slate'}`}>
