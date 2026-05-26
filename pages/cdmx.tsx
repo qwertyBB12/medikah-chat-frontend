@@ -4,6 +4,7 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import Nav from '../components/landing/Nav';
 import CurveDivider from '../components/landing/CurveDivider';
+import ChatShowcase from '../components/landing/ChatShowcase';
 import LandingFooter from '../components/landing/LandingFooter';
 
 type Lang = 'es' | 'en';
@@ -50,6 +51,15 @@ const COPY = {
 
   speakersEyebrow: { es: 'Ponentes', en: 'Speakers' },
   speakersMore:    { es: 'Más ponentes por anunciar', en: 'More speakers to be announced' },
+
+  toolsEyebrow: { es: 'Para médicos', en: 'For physicians' },
+  toolsTitle:   { es: 'Inteligencia artificial para tu práctica', en: 'Artificial intelligence for your practice' },
+  toolsBody:    {
+    es: 'Medikah llega a México con herramientas de inteligencia artificial para médicos: todo lo que necesitas para tu práctica, y te capacitamos en su uso.',
+    en: 'Medikah comes to Mexico with AI tools for physicians: everything you need for your practice, and we train you to use it.',
+  },
+  toolsFree:    { es: 'Y lo mejor: sin costo para ti.', en: 'And the best part: at no cost to you.' },
+  toolsCaption: { es: 'Así viven tus pacientes la experiencia Medikah', en: 'This is the Medikah experience your patients have' },
 } as const;
 
 // img: drop a file in /public/speakers/ and set the path; until then, initials show.
@@ -274,6 +284,26 @@ export default function CdmxLanding() {
             ))}
           </div>
         </section>
+
+        {/* doctor pitch + live app simulation */}
+        <section className="mx-auto max-w-3xl px-6 pb-2 text-center">
+          <p className="font-body text-[0.8rem] font-semibold uppercase tracking-[0.32em] text-clinical-teal">
+            {t('toolsEyebrow')}
+          </p>
+          <h2 className="mt-5 font-heading text-3xl font-semibold uppercase leading-tight tracking-wide text-deep-charcoal sm:text-4xl">
+            {t('toolsTitle')}
+          </h2>
+          <p className="mx-auto mt-5 max-w-2xl font-body text-lg leading-relaxed text-body-slate">
+            {t('toolsBody')}
+          </p>
+          <p className="mt-6 inline-block rounded-sm bg-clinical-teal/12 px-5 py-2.5 font-body text-base font-semibold text-clinical-teal">
+            {t('toolsFree')}
+          </p>
+          <p className="mt-10 font-body text-sm uppercase tracking-[0.18em] text-archival-grey">
+            {t('toolsCaption')}
+          </p>
+        </section>
+        <ChatShowcase showHeading={false} />
 
         <LandingFooter />
       </div>
