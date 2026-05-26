@@ -47,7 +47,20 @@ const COPY = {
   p2b: { es: 'Conversaciones reales sobre la IA en la práctica clínica.', en: 'Real conversations about AI in clinical practice.' },
   p3t: { es: 'Comunidad', en: 'Community' },
   p3b: { es: 'Buena compañía, conversación y los partidos de fondo.', en: 'Great company, conversation, and the matches in the background.' },
+
+  speakersEyebrow: { es: 'Ponentes', en: 'Speakers' },
+  speakersMore:    { es: 'Más ponentes por anunciar', en: 'More speakers to be announced' },
 } as const;
+
+// img: drop a file in /public/speakers/ and set the path; until then, initials show.
+const SPEAKERS: { name: string; img?: string; role: { es: string; en: string } }[] = [
+  { name: 'Dr. José Luis Aguirre, MD', role: { es: 'Presidente del Consejo · Medikah Health', en: 'Board President · Medikah Health' } },
+  { name: 'Dra. Erica Torres Valdez',  role: { es: 'Ponente invitada', en: 'Featured speaker' } },
+  { name: 'Hector H. Lopez',           role: { es: 'Fundador · Medikah Health', en: 'Founder · Medikah Health' } },
+];
+
+const initials = (n: string) =>
+  n.replace(/^Dr[a]?\.\s*/, '').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 
 export default function CdmxLanding() {
   const router = useRouter();
@@ -198,8 +211,34 @@ export default function CdmxLanding() {
             </p>
           </div>
 
+          {/* speakers */}
+          <div className="mt-20 text-center">
+            <p className="font-body text-[0.8rem] font-semibold uppercase tracking-[0.32em] text-clinical-teal">
+              {t('speakersEyebrow')}
+            </p>
+            <div className="mx-auto mt-10 grid max-w-4xl gap-10 sm:grid-cols-3">
+              {SPEAKERS.map((s) => (
+                <div key={s.name} className="flex flex-col items-center">
+                  <div className="h-28 w-28 overflow-hidden rounded-full bg-inst-blue shadow-lg ring-2 ring-clinical-teal/30">
+                    {s.img ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={s.img} alt={s.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="flex h-full w-full items-center justify-center font-heading text-3xl font-semibold tracking-wide text-teal-300">
+                        {initials(s.name)}
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="mt-5 font-body text-lg font-semibold text-deep-charcoal">{s.name}</h3>
+                  <p className="mt-1 font-body text-sm leading-snug text-body-slate">{s.role[lang]}</p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-10 font-body text-sm italic text-archival-grey">{t('speakersMore')}</p>
+          </div>
+
           {/* three pillars */}
-          <div className="mt-14 grid gap-8 sm:grid-cols-3">
+          <div className="mt-20 grid gap-8 sm:grid-cols-3">
             {([['p1t', 'p1b'], ['p2t', 'p2b'], ['p3t', 'p3b']] as const).map(([tt, bb]) => (
               <div key={tt} className="text-center sm:text-left">
                 <div className="mx-auto mb-4 h-px w-10 bg-clinical-teal/50 sm:mx-0" />
