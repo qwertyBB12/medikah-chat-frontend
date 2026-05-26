@@ -57,6 +57,8 @@ const SPEAKERS: { name: string; img?: string; role: { es: string; en: string } }
   { name: 'Dr. José Luis Aguirre, MD', role: { es: 'Cofundador · Presidente del Consejo y Director Médico · Medikah Health', en: 'Co-founder · Board President & Chief Medical Officer · Medikah Health' } },
   { name: 'Dra. Erika Torres Valdez',  role: { es: 'Uroginecóloga · Experta en IA en medicina · Consejos COMEGO y FEMECOG', en: 'Urogynecologist · AI-in-medicine expert · COMEGO & FEMECOG boards' } },
   { name: 'Hector H. Lopez',           role: { es: 'Fundador y CEO · Medikah Health', en: 'Founder & CEO · Medikah Health' } },
+  { name: 'Luis Ignacio López García', role: { es: 'Asesor legal · Jones Day · IA y derecho en medicina', en: 'Legal advisor · Jones Day · AI & law in medicine' } },
+  { name: 'Maricarmen Flores Soberón', role: { es: 'Compliance y derecho sanitario · Socia fundadora, Van Blumen · ex-COFEPRIS', en: 'Compliance & health law · Founding Partner, Van Blumen · ex-COFEPRIS' } },
 ];
 
 const initials = (n: string) =>
