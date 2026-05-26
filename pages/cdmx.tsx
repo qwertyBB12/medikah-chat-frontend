@@ -86,14 +86,14 @@ const SPEAKERS: {
   role: { es: string[]; en: string[] };
 }[] = [
   { name: 'Dr. José Luis Aguirre, MD', img: '/speakers/aguirre.jpg', bgPos: 'center 18%', flags: 'EE.UU. · México',
-    role: { es: ['Cofundador', 'Presidente del Consejo', 'y Director Médico', 'Medikah Health'],
-            en: ['Co-founder', 'Board President', '& Chief Medical Officer', 'Medikah Health'] } },
+    role: { es: ['Presidente del Consejo', 'y Director Médico', 'Medikah Health'],
+            en: ['Board President', '& Chief Medical Officer', 'Medikah Health'] } },
   { name: 'Dra. Erika Torres Valdez, MD', img: '/speakers/erika.jpg', bgPos: 'center 20%', flags: 'México',
     role: { es: ['Uroginecóloga', 'Experta en IA en medicina', 'Consejos COMEGO y FEMECOG'],
             en: ['Urogynecologist', 'AI-in-medicine expert', 'COMEGO & FEMECOG boards'] } },
   { name: 'Hector H. Lopez, MA, MPL', img: '/speakers/hector-lopez.png', bgPos: 'center 22%', flags: 'EE.UU.',
-    role: { es: ['Cofundador', 'CEO', 'Medikah Health'],
-            en: ['Co-founder', 'CEO', 'Medikah Health'] } },
+    role: { es: ['CEO', 'Medikah Health'],
+            en: ['CEO', 'Medikah Health'] } },
   { name: 'Lic. Luis Ignacio López García, Esq.', img: '/speakers/luis-ignacio.jpg', bgSize: '130%', bgPos: 'center 28%', flags: 'España · México',
     role: { es: ['Abogado', 'Jones Day', 'Derecho corporativo y M&A'],
             en: ['Attorney', 'Jones Day', 'Corporate Law & M&A'] } },
