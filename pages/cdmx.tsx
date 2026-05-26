@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react';
 import Head from 'next/head';
 import Nav from '../components/landing/Nav';
+import CurveDivider from '../components/landing/CurveDivider';
 import LandingFooter from '../components/landing/LandingFooter';
 
 type Lang = 'es' | 'en';
@@ -187,7 +188,19 @@ export default function CdmxLanding() {
         </section>
       </main>
 
-      <LandingFooter />
+      {/* arc transition (navy hero → linen) — matches homepage rhythm */}
+      <CurveDivider from="#1B2A41" bg="#F0EAE0" />
+
+      {/* linen band so the dark rounded footer lifts against light, like the homepage */}
+      <div className="bg-linen">
+        <div className="mx-auto max-w-6xl px-6 py-16 text-center">
+          <div className="mx-auto mb-5 h-px w-12 bg-clinical-teal/50" />
+          <p className="font-body text-sm font-medium uppercase tracking-[0.28em] text-body-slate">
+            {lang === 'es' ? 'Salud sin distancia' : 'Care without distance'}
+          </p>
+        </div>
+        <LandingFooter />
+      </div>
     </>
   );
 }
