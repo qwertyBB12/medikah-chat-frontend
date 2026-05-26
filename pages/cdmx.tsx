@@ -59,8 +59,8 @@ const SPEAKERS: {
   role: { es: string[]; en: string[] };
 }[] = [
   { name: 'Dr. José Luis Aguirre, MD', img: '/speakers/aguirre.jpg', bgPos: 'center 18%',
-    role: { es: ['Cofundador', 'Presidente del Consejo y Director Médico', 'Medikah Health'],
-            en: ['Co-founder', 'Board President & Chief Medical Officer', 'Medikah Health'] } },
+    role: { es: ['Cofundador', 'Presidente del Consejo', 'y Director Médico', 'Medikah Health'],
+            en: ['Co-founder', 'Board President', '& Chief Medical Officer', 'Medikah Health'] } },
   { name: 'Dra. Erika Torres Valdez', img: '/speakers/erika.jpg', bgPos: 'center 20%',
     role: { es: ['Uroginecóloga', 'Experta en IA en medicina', 'Consejos COMEGO y FEMECOG'],
             en: ['Urogynecologist', 'AI-in-medicine expert', 'COMEGO & FEMECOG boards'] } },
