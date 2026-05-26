@@ -18,7 +18,7 @@ const COPY = {
     en: 'Care without distance arrives in Mexico. An American company —founded by Latin American and American physicians— is arriving to transform medical practice. Something big is beginning.',
   },
   whenLabel: { es: 'Cuándo', en: 'When' },
-  whenVal:   { es: '23 – 25 de junio · 27 de junio – 1 de julio de 2026 · Ciudad de México', en: 'June 23 – 25 · June 27 – July 1, 2026 · Mexico City' },
+  whenVal:   { es: '23 – 25 de junio de 2026\n27 de junio – 1 de julio de 2026\nCiudad de México', en: 'June 23 – 25, 2026\nJune 27 – July 1, 2026\nMexico City' },
   whereLabel:{ es: 'Dónde', en: 'Where' },
   whereVal:  { es: 'Ciudad de México · sede por confirmar', en: 'Mexico City · venue to be confirmed' },
   formTitle: { es: 'Confirma tu interés', en: 'Register your interest' },
@@ -44,11 +44,11 @@ const COPY = {
 
   // event substance
   expectEyebrow: { es: 'Más que un encuentro', en: 'More than a gathering' },
-  certBadge:  { es: 'Primicia', en: 'First of its kind' },
-  certTitle:  { es: 'La primera certificación en IA médica', en: 'The first AI-in-medicine certification' },
+  certBadge:  { es: 'Primera de su tipo', en: 'First of its kind' },
+  certTitle:  { es: 'Certificación internacional en IA para la medicina', en: 'International certification in AI for medicine' },
   certBody:   {
-    es: 'Entregaremos el primer certificado del camino hacia la Certificación en Inteligencia Artificial en Medicina, emitida por New eXponential Thought Organization de Estados Unidos. Son certificaciones acumulables que construyen hacia una certificación profesional.',
-    en: 'We will award the first certificate on the path to Certification in Artificial Intelligence in Medicine, issued by New eXponential Thought Organization of the United States. These are stackable certifications that build toward a professional credential.',
+    es: 'La primera de su tipo: una certificación internacional en inteligencia artificial aplicada a la medicina, impartida por médicos y expertos en el campo, y certificada por New eXponential Thought Organization de Estados Unidos. Son certificaciones acumulables que construyen hacia una certificación profesional.',
+    en: 'The first of its kind: an international certification in artificial intelligence for medicine, taught by physicians and experts in the field, and certified by New eXponential Thought Organization of the United States. These are stackable certifications that build toward a professional credential.',
   },
   p1t: { es: 'Networking', en: 'Networking' },
   p1b: { es: 'Conecta con médicos, líderes y aliados de toda la región.', en: 'Connect with physicians, leaders, and partners from across the region.' },
@@ -61,7 +61,7 @@ const COPY = {
   speakersMore:    { es: 'Más ponentes por anunciar', en: 'More speakers to be announced' },
 
   toolsEyebrow: { es: 'Para médicos', en: 'For physicians' },
-  toolsTitle:   { es: 'Inteligencia artificial para tu práctica', en: 'Artificial intelligence for your practice' },
+  toolsTitle:   { es: 'Inteligencia artificial para tu práctica y tu vida como médico', en: 'Artificial intelligence for your practice and your life as a physician' },
   toolsBody:    {
     es: 'Medikah llega a México con herramientas de inteligencia artificial para médicos: todo lo que necesitas para tu práctica, y te capacitamos en su uso.',
     en: 'Medikah comes to Mexico with AI tools for physicians: everything you need for your practice, and we train you to use it.',
@@ -166,8 +166,8 @@ export default function CdmxLanding() {
                 {t('eyebrow')}
               </p>
               <h1 className="mt-5">
-                <span className="block font-body text-3xl font-medium lowercase tracking-[0.02em] text-white/90 sm:text-4xl">
-                  {t('h1a')}
+                <span className="block font-body text-3xl font-medium lowercase tracking-[0.02em] text-white sm:text-4xl">
+                  medikah<span className="text-teal-300">.health</span>
                 </span>
                 <span className="mt-1 block font-heading text-5xl font-semibold uppercase leading-[0.95] tracking-[0.01em] text-white sm:text-6xl">
                   {t('h1b')}
@@ -179,7 +179,7 @@ export default function CdmxLanding() {
               <dl className="mt-9 space-y-4">
                 <div className="flex items-baseline gap-4">
                   <dt className="w-16 shrink-0 font-body text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-teal-300">{t('whenLabel')}</dt>
-                  <dd className="font-body text-base text-white/85">{t('whenVal')}</dd>
+                  <dd className="whitespace-pre-line font-body text-base leading-relaxed text-white/85">{t('whenVal')}</dd>
                 </div>
                 <div className="flex items-baseline gap-4">
                   <dt className="w-16 shrink-0 font-body text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-teal-300">{t('whereLabel')}</dt>
