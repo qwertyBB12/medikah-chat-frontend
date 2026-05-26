@@ -53,13 +53,29 @@ const COPY = {
 } as const;
 
 // img: drop a file in /public/speakers/ and set the path; until then, initials show.
-const SPEAKERS: { name: string; img?: string; role: { es: string; en: string } }[] = [
-  { name: 'Dr. José Luis Aguirre, MD', img: '/speakers/aguirre.jpg', role: { es: 'Cofundador · Presidente del Consejo y Director Médico · Medikah Health', en: 'Co-founder · Board President & Chief Medical Officer · Medikah Health' } },
-  { name: 'Dra. Erika Torres Valdez',  img: '/speakers/erika.jpg', role: { es: 'Uroginecóloga · Experta en IA en medicina · Consejos COMEGO y FEMECOG', en: 'Urogynecologist · AI-in-medicine expert · COMEGO & FEMECOG boards' } },
-  { name: 'Hector H. Lopez',           img: '/speakers/hector-lopez.png', role: { es: 'Fundador y CEO · Medikah Health', en: 'Founder & CEO · Medikah Health' } },
-  { name: 'Luis Ignacio López García', img: '/speakers/luis-ignacio.jpg', role: { es: 'Abogado · Jones Day · Derecho corporativo y M&A', en: 'Attorney · Jones Day · Corporate Law & M&A' } },
-  { name: 'Maricarmen Flores Soberón', role: { es: 'Compliance y derecho sanitario · ex-COFEPRIS', en: 'Compliance & health law · ex-COFEPRIS' } },
-  { name: 'Luis Gerardo Cárdenas',     img: '/speakers/cardenas.webp', role: { es: 'Director Ejecutivo, Arkah · Tecnología, robótica e IA', en: 'Executive Director, Arkah · Technology, robotics & AI' } },
+// focus/zoom fine-tune face framing inside the circle so all faces match.
+const SPEAKERS: {
+  name: string; img?: string; focus?: string; zoom?: number;
+  role: { es: string[]; en: string[] };
+}[] = [
+  { name: 'Dr. José Luis Aguirre, MD', img: '/speakers/aguirre.jpg', focus: 'center 22%',
+    role: { es: ['Cofundador', 'Presidente del Consejo y Director Médico', 'Medikah Health'],
+            en: ['Co-founder', 'Board President & Chief Medical Officer', 'Medikah Health'] } },
+  { name: 'Dra. Erika Torres Valdez', img: '/speakers/erika.jpg', focus: 'center 22%',
+    role: { es: ['Uroginecóloga', 'Experta en IA en medicina', 'Consejos COMEGO y FEMECOG'],
+            en: ['Urogynecologist', 'AI-in-medicine expert', 'COMEGO & FEMECOG boards'] } },
+  { name: 'Hector H. Lopez', img: '/speakers/hector-lopez.png', focus: 'center 22%',
+    role: { es: ['Cofundador', 'CEO', 'Medikah Health'],
+            en: ['Co-founder', 'CEO', 'Medikah Health'] } },
+  { name: 'Luis Ignacio López García', img: '/speakers/luis-ignacio.jpg', focus: 'center 20%', zoom: 1.25,
+    role: { es: ['Abogado', 'Jones Day', 'Derecho corporativo y M&A'],
+            en: ['Attorney', 'Jones Day', 'Corporate Law & M&A'] } },
+  { name: 'Maricarmen Flores Soberón',
+    role: { es: ['Abogada', 'Compliance y derecho sanitario', 'ex-COFEPRIS'],
+            en: ['Attorney', 'Compliance & health law', 'ex-COFEPRIS'] } },
+  { name: 'Luis Gerardo Cárdenas', img: '/speakers/cardenas.webp', focus: 'center 16%', zoom: 1.7,
+    role: { es: ['Director Ejecutivo', 'Arkah', 'Tecnología, robótica e IA'],
+            en: ['Executive Director', 'Arkah', 'Technology, robotics & AI'] } },
 ];
 
 const initials = (n: string) =>
@@ -225,7 +241,8 @@ export default function CdmxLanding() {
                   <div className="h-28 w-28 overflow-hidden rounded-full bg-inst-blue shadow-lg ring-2 ring-clinical-teal/30">
                     {s.img ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={s.img} alt={s.name} className="h-full w-full object-cover" />
+                      <img src={s.img} alt={s.name} className="h-full w-full object-cover"
+                        style={{ objectPosition: s.focus ?? 'center', transform: `scale(${s.zoom ?? 1})` }} />
                     ) : (
                       <span className="flex h-full w-full items-center justify-center font-heading text-3xl font-semibold tracking-wide text-teal-300">
                         {initials(s.name)}
@@ -233,7 +250,13 @@ export default function CdmxLanding() {
                     )}
                   </div>
                   <h3 className="mt-5 font-body text-lg font-semibold text-deep-charcoal">{s.name}</h3>
-                  <p className="mt-1 font-body text-sm leading-snug text-body-slate">{s.role[lang]}</p>
+                  <div className="mt-1.5 space-y-0.5">
+                    {s.role[lang].map((line, i) => (
+                      <p key={i} className={`font-body leading-snug ${i === 0 ? 'text-sm font-semibold text-clinical-teal' : 'text-[0.82rem] text-body-slate'}`}>
+                        {line}
+                      </p>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>
