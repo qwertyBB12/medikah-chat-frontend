@@ -70,7 +70,7 @@ const SPEAKERS: {
   { name: 'Luis Ignacio López García', img: '/speakers/luis-ignacio.jpg', bgSize: '150%', bgPos: 'center 18%',
     role: { es: ['Abogado', 'Jones Day', 'Derecho corporativo y M&A'],
             en: ['Attorney', 'Jones Day', 'Corporate Law & M&A'] } },
-  { name: 'Maricarmen Flores Soberón',
+  { name: 'Maricarmen Flores Soberón', img: '/speakers/maricarmen.png', bgPos: 'center 22%',
     role: { es: ['Abogada', 'Compliance y derecho sanitario', 'ex-COFEPRIS'],
             en: ['Attorney', 'Compliance & health law', 'ex-COFEPRIS'] } },
   { name: 'Luis Gerardo Cárdenas', img: '/speakers/cardenas.webp', bgSize: '200%', bgPos: 'center 18%',
