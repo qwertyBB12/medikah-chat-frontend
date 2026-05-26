@@ -54,8 +54,8 @@ const COPY = {
 
 // img: drop a file in /public/speakers/ and set the path; until then, initials show.
 const SPEAKERS: { name: string; img?: string; role: { es: string; en: string } }[] = [
-  { name: 'Dr. José Luis Aguirre, MD', role: { es: 'Presidente del Consejo y Director Médico · Medikah Health', en: 'Board President & Chief Medical Officer · Medikah Health' } },
-  { name: 'Dra. Erica Torres Valdez',  role: { es: 'Uroginecóloga · Experta en IA en medicina · Consejos COMEGO y FEMECOG', en: 'Urogynecologist · AI-in-medicine expert · COMEGO & FEMECOG boards' } },
+  { name: 'Dr. José Luis Aguirre, MD', role: { es: 'Cofundador · Presidente del Consejo y Director Médico · Medikah Health', en: 'Co-founder · Board President & Chief Medical Officer · Medikah Health' } },
+  { name: 'Dra. Erika Torres Valdez',  role: { es: 'Uroginecóloga · Experta en IA en medicina · Consejos COMEGO y FEMECOG', en: 'Urogynecologist · AI-in-medicine expert · COMEGO & FEMECOG boards' } },
   { name: 'Hector H. Lopez',           role: { es: 'Fundador y CEO · Medikah Health', en: 'Founder & CEO · Medikah Health' } },
 ];
 
@@ -216,9 +216,9 @@ export default function CdmxLanding() {
             <p className="font-body text-[0.8rem] font-semibold uppercase tracking-[0.32em] text-clinical-teal">
               {t('speakersEyebrow')}
             </p>
-            <div className="mx-auto mt-10 grid max-w-4xl gap-10 sm:grid-cols-3">
+            <div className="mx-auto mt-10 flex max-w-4xl flex-wrap justify-center gap-x-10 gap-y-12">
               {SPEAKERS.map((s) => (
-                <div key={s.name} className="flex flex-col items-center">
+                <div key={s.name} className="flex w-56 flex-col items-center text-center">
                   <div className="h-28 w-28 overflow-hidden rounded-full bg-inst-blue shadow-lg ring-2 ring-clinical-teal/30">
                     {s.img ? (
                       // eslint-disable-next-line @next/next/no-img-element
