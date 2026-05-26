@@ -10,22 +10,27 @@ import LandingFooter from '../components/landing/LandingFooter';
 type Lang = 'es' | 'en';
 
 const COPY = {
-  eyebrow:   { es: 'Encuentro de presentación · 23–25 Junio 2026', en: 'Launch gathering · June 23–25, 2026' },
-  h1a:       { es: 'medikah health', en: 'medikah health' },
-  h1b:       { es: 'LLEGA A CDMX', en: 'ARRIVES IN MEXICO CITY' },
+  eyebrow:   { es: 'Capacitación y networking · Médicos internacionales', en: 'Training & networking · International physicians' },
+  h1a:       { es: 'medikah.health', en: 'medikah.health' },
+  h1b:       { es: 'LLEGA A MÉXICO', en: 'ARRIVES IN MEXICO' },
   lead:      {
-    es: 'Salud sin distancia llega a la Ciudad de México. Un encuentro de networking y aprendizaje para conocer lo que estamos construyendo — junto a la comunidad de médicos que lo hace posible.',
-    en: 'Care without distance comes to Mexico City. A networking and learning gathering to see what we are building — alongside the community of physicians making it possible.',
+    es: 'Salud sin distancia llega a México. Una compañía estadounidense —fundada por médicos latinoamericanos y estadounidenses— llega para transformar la práctica médica. Algo grande comienza.',
+    en: 'Care without distance arrives in Mexico. An American company —founded by Latin American and American physicians— is arriving to transform medical practice. Something big is beginning.',
   },
   whenLabel: { es: 'Cuándo', en: 'When' },
-  whenVal:   { es: '23 – 25 de junio de 2026 · una serie de eventos en CDMX', en: 'June 23 – 25, 2026 · a series of events in Mexico City' },
+  whenVal:   { es: '23 – 25 de junio · 27 de junio – 1 de julio de 2026 · Ciudad de México', en: 'June 23 – 25 · June 27 – July 1, 2026 · Mexico City' },
   whereLabel:{ es: 'Dónde', en: 'Where' },
   whereVal:  { es: 'Ciudad de México · sede por confirmar', en: 'Mexico City · venue to be confirmed' },
   formTitle: { es: 'Confirma tu interés', en: 'Register your interest' },
   formSub:   { es: 'Déjanos tus datos y te enviaremos los detalles del lugar y el horario.', en: 'Leave your details and we will send you the venue and schedule.' },
-  prefLabel: { es: '¿Qué te interesa? (opcional)', en: 'What interests you? (optional)' },
-  prefPh:    { es: 'p. ej. el evento del 23, o todos los días', en: 'e.g. the event on the 23rd, or all days' },
-  pointsNote:{ es: 'Entre más participas en la serie, más puntos acumulas hacia tu certificación en IA.', en: 'The more you take part in the series, the more points toward your AI certification.' },
+  whatsappLabel: { es: 'WhatsApp (con código de país)', en: 'WhatsApp (with country code)' },
+  whatsappPh:    { es: '+52 55 1234 5678', en: '+52 55 1234 5678' },
+  passNote:      { es: 'Te enviaremos tu pase por WhatsApp.', en: "We'll send your pass via WhatsApp." },
+  datesLabel:    { es: '¿Qué fechas te interesan?', en: 'Which dates work for you?' },
+  dateOpt1:      { es: '23 – 25 de junio', en: 'June 23 – 25' },
+  dateOpt2:      { es: '27 de junio – 1 de julio', en: 'June 27 – July 1' },
+  professionOpt: { es: 'Profesión (opcional)', en: 'Profession (optional)' },
+  pointsNote:    { es: 'Entre más participas, más puntos acumulas hacia tu certificación en IA.', en: 'The more you take part, the more points toward your AI certification.' },
   name:      { es: 'Nombre', en: 'Name' },
   email:     { es: 'Correo', en: 'Email' },
   profession:{ es: 'Profesión (opcional)', en: 'Profession (optional)' },
@@ -106,20 +111,22 @@ export default function CdmxLanding() {
   const lang: Lang = router.locale === 'es' ? 'es' : 'en';
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
   const [profession, setProfession] = useState('');
-  const [pref, setPref] = useState('');
+  const [dates, setDates] = useState<string[]>([]);
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'duplicate' | 'error'>('idle');
   const t = (k: keyof typeof COPY) => COPY[k][lang];
+  const toggleDate = (d: string) => setDates((cur) => cur.includes(d) ? cur.filter((x) => x !== d) : [...cur, d]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !email.trim()) return;
+    if (!name.trim() || !email.trim() || !whatsapp.trim()) return;
     setStatus('sending');
     try {
       const res = await fetch('/api/cdmx-rsvp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), email: email.trim(), profession: profession.trim(), pref: pref.trim(), locale: lang }),
+        body: JSON.stringify({ name: name.trim(), email: email.trim(), whatsapp: whatsapp.trim(), profession: profession.trim(), dates, locale: lang }),
       });
       if (res.status === 409) setStatus('duplicate');
       else if (res.ok) setStatus('success');
@@ -212,14 +219,26 @@ export default function CdmxLanding() {
                       className="w-full rounded-sm border border-clinical-surface bg-clinical-surface px-4 py-3 font-body text-base text-deep-charcoal outline-none transition-colors focus:border-clinical-teal focus:bg-white" />
                   </div>
                   <div>
+                    <label className="mb-1.5 block font-body text-xs font-semibold uppercase tracking-wider text-archival-grey">{t('whatsappLabel')}</label>
+                    <input type="tel" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} required placeholder={t('whatsappPh')}
+                      className="w-full rounded-sm border border-clinical-surface bg-clinical-surface px-4 py-3 font-body text-base text-deep-charcoal outline-none transition-colors placeholder:text-archival-grey/70 focus:border-clinical-teal focus:bg-white" />
+                    <p className="mt-1.5 font-body text-xs text-archival-grey">{t('passNote')}</p>
+                  </div>
+                  <div>
                     <label className="mb-1.5 block font-body text-xs font-semibold uppercase tracking-wider text-archival-grey">{t('profession')}</label>
                     <input type="text" value={profession} onChange={(e) => setProfession(e.target.value)} placeholder={t('professionPh')}
                       className="w-full rounded-sm border border-clinical-surface bg-clinical-surface px-4 py-3 font-body text-base text-deep-charcoal outline-none transition-colors placeholder:text-archival-grey/70 focus:border-clinical-teal focus:bg-white" />
                   </div>
                   <div>
-                    <label className="mb-1.5 block font-body text-xs font-semibold uppercase tracking-wider text-archival-grey">{t('prefLabel')}</label>
-                    <input type="text" value={pref} onChange={(e) => setPref(e.target.value)} placeholder={t('prefPh')}
-                      className="w-full rounded-sm border border-clinical-surface bg-clinical-surface px-4 py-3 font-body text-base text-deep-charcoal outline-none transition-colors placeholder:text-archival-grey/70 focus:border-clinical-teal focus:bg-white" />
+                    <label className="mb-2 block font-body text-xs font-semibold uppercase tracking-wider text-archival-grey">{t('datesLabel')}</label>
+                    <div className="space-y-2">
+                      {([['jun23-25', t('dateOpt1')], ['jun27-jul1', t('dateOpt2')]] as const).map(([val, label]) => (
+                        <label key={val} className="flex cursor-pointer items-center gap-3 rounded-sm border border-clinical-surface bg-clinical-surface px-4 py-3 font-body text-base text-deep-charcoal transition-colors hover:border-clinical-teal/50">
+                          <input type="checkbox" checked={dates.includes(val)} onChange={() => toggleDate(val)} className="h-4 w-4 accent-clinical-teal" />
+                          {label}
+                        </label>
+                      ))}
+                    </div>
                   </div>
                   <p className="font-body text-xs leading-relaxed text-clinical-teal">{t('pointsNote')}</p>
                   {status === 'error' && <p className="font-body text-sm text-alert-garnet">{t('error')}</p>}
