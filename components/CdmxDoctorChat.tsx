@@ -80,7 +80,7 @@ export default function CdmxDoctorChat({ lang }: { lang: Lang }) {
         </div>
 
         {/* fixed screen — scrolls internally */}
-        <div ref={scrollRef} className="h-[600px] space-y-3 overflow-y-auto bg-linen-white px-4 py-5">
+        <div ref={scrollRef} className="h-[680px] space-y-3 overflow-y-auto bg-linen-white px-4 py-5">
           {SCRIPT.slice(0, visible).map((m, i) => (
             m.from === 'doc' ? (
               <div key={i} className="flex justify-end" style={{ animation: 'fadeUp 0.45s ease-out' }}>

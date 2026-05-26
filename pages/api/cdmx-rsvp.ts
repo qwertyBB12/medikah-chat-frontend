@@ -8,7 +8,7 @@ import { sendCdmxRsvpConfirmation } from '../../lib/email';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { name, email, profession, pref, locale } = req.body ?? {};
+  const { name, email, whatsapp, profession, dates, locale } = req.body ?? {};
 
   if (!name || !email) {
     return res.status(400).json({ error: 'Name and email are required' });
@@ -22,9 +22,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(500).json({ error: 'Database not configured' });
   }
 
-  // No schema change: fold optional event preference into the profession column.
-  const prof = [profession ? String(profession).trim() : '', pref ? `interés: ${String(pref).trim()}` : '']
-    .filter(Boolean).join(' · ');
+  // No schema change yet: fold WhatsApp + chosen dates into the profession column.
+  const dateList = Array.isArray(dates) ? dates.join(', ') : '';
+  const prof = [
+    profession ? String(profession).trim() : '',
+    whatsapp ? `WA: ${String(whatsapp).trim()}` : '',
+    dateList ? `fechas: ${dateList}` : '',
+  ].filter(Boolean).join(' · ');
   const row = {
     name: String(name).trim(),
     email: String(email).trim().toLowerCase(),
