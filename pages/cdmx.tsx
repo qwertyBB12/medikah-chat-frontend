@@ -59,6 +59,7 @@ const SPEAKERS: { name: string; img?: string; role: { es: string; en: string } }
   { name: 'Hector H. Lopez',           role: { es: 'Fundador y CEO · Medikah Health', en: 'Founder & CEO · Medikah Health' } },
   { name: 'Luis Ignacio López García', role: { es: 'Abogado · Jones Day · Derecho corporativo y M&A', en: 'Attorney · Jones Day · Corporate Law & M&A' } },
   { name: 'Maricarmen Flores Soberón', role: { es: 'Compliance y derecho sanitario · Socia fundadora, Van Blumen · ex-COFEPRIS', en: 'Compliance & health law · Founding Partner, Van Blumen · ex-COFEPRIS' } },
+  { name: 'Luis Gerardo Cárdenas',     role: { es: 'Director Ejecutivo, ARCA · Tecnología, robótica e IA', en: 'Executive Director, ARCA · Technology, robotics & AI' } },
 ];
 
 const initials = (n: string) =>
