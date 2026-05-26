@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useRef, useState } from 'react';
 import type { GetServerSideProps } from 'next';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
@@ -70,7 +70,9 @@ const COPY = {
   toolsCaption: { es: 'Un vistazo a tu asistente clínico', en: 'A look at your clinical assistant' },
 
   videoEyebrow: { es: 'En sus palabras', en: 'In his words' },
-  videoTitle:   { es: 'Dr. José Luis Aguirre sobre la IA en la medicina', en: 'Dr. José Luis Aguirre on AI in medicine' },
+  videoTitle:   { es: 'Dr. José Luis Aguirre, MD', en: 'Dr. José Luis Aguirre, MD' },
+  videoCred:    { es: 'Geriatric Medicine Fellow, Baylor College of Medicine · Director Médico, Medikah Health', en: 'Geriatric Medicine Fellow, Baylor College of Medicine · Chief Medical Officer, Medikah Health' },
+  videoTopic:   { es: 'Sobre la IA en la medicina', en: 'On AI in medicine' },
   videoSoon:    { es: 'Video disponible muy pronto', en: 'Video available very soon' },
 } as const;
 
@@ -118,6 +120,11 @@ export default function CdmxLanding() {
   const t = (k: keyof typeof COPY) => COPY[k][lang];
   const toggleDate = (d: string) => setDates((cur) => cur.includes(d) ? cur.filter((x) => x !== d) : [...cur, d]);
 
+  // funnel tracking: fire once when a visitor starts the form, and on completion
+  const startedRef = useRef(false);
+  const track = (event: string) => { try { (window as unknown as { gtag?: (...a: unknown[]) => void }).gtag?.('event', event, { page: 'cdmx' }); } catch {} };
+  const onFormStart = () => { if (!startedRef.current) { startedRef.current = true; track('cdmx_rsvp_started'); } };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !whatsapp.trim()) return;
@@ -128,8 +135,8 @@ export default function CdmxLanding() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: name.trim(), email: email.trim(), whatsapp: whatsapp.trim(), profession: profession.trim(), dates, locale: lang }),
       });
-      if (res.status === 409) setStatus('duplicate');
-      else if (res.ok) setStatus('success');
+      if (res.status === 409) { setStatus('duplicate'); track('cdmx_rsvp_completed'); }
+      else if (res.ok) { setStatus('success'); track('cdmx_rsvp_completed'); }
       else setStatus('error');
     } catch {
       setStatus('error');
@@ -203,7 +210,7 @@ export default function CdmxLanding() {
                   </p>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-5">
+                <form onSubmit={handleSubmit} onFocusCapture={onFormStart} className="space-y-5">
                   <div>
                     <h2 className="font-heading text-2xl font-semibold uppercase tracking-wide text-deep-charcoal">{t('formTitle')}</h2>
                     <p className="mt-2 font-body text-sm leading-relaxed text-body-slate">{t('formSub')}</p>
@@ -348,9 +355,11 @@ export default function CdmxLanding() {
           <p className="font-body text-[0.8rem] font-semibold uppercase tracking-[0.32em] text-clinical-teal">
             {t('videoEyebrow')}
           </p>
-          <h2 className="mx-auto mt-4 max-w-2xl font-heading text-2xl font-semibold uppercase leading-tight tracking-wide text-deep-charcoal sm:text-3xl">
+          <h2 className="mx-auto mt-4 font-heading text-2xl font-semibold uppercase leading-tight tracking-wide text-deep-charcoal sm:text-3xl">
             {t('videoTitle')}
           </h2>
+          <p className="mx-auto mt-2 max-w-xl font-body text-sm leading-relaxed text-body-slate">{t('videoCred')}</p>
+          <p className="mt-2 font-body text-base font-semibold text-clinical-teal">{t('videoTopic')}</p>
           <div className="mt-12 overflow-hidden rounded-lg bg-inst-blue shadow-xl">
             {VIDEO_SRC ? (
               <video controls playsInline preload="metadata" className="aspect-video w-full">
