@@ -67,7 +67,7 @@ const SPEAKERS: {
   { name: 'Hector H. Lopez', img: '/speakers/hector-lopez.png', bgPos: 'center 22%',
     role: { es: ['Cofundador', 'CEO', 'Medikah Health'],
             en: ['Co-founder', 'CEO', 'Medikah Health'] } },
-  { name: 'Luis Ignacio López García', img: '/speakers/luis-ignacio.jpg', bgSize: '130%', bgPos: 'center 20%',
+  { name: 'Luis Ignacio López García', img: '/speakers/luis-ignacio.jpg', bgSize: '130%', bgPos: 'center 28%',
     role: { es: ['Abogado', 'Jones Day', 'Derecho corporativo y M&A'],
             en: ['Attorney', 'Jones Day', 'Corporate Law & M&A'] } },
   { name: 'Maricarmen Flores Soberón',
