@@ -1,9 +1,21 @@
-import { Mulish, IBM_Plex_Mono, Fraunces, Instrument_Serif, Inter, Playfair_Display, Source_Sans_3, DM_Serif_Display, DM_Sans } from 'next/font/google';
+import { Mulish, Oswald, IBM_Plex_Mono, Fraunces, Instrument_Serif, Inter, Playfair_Display, Source_Sans_3, DM_Serif_Display, DM_Sans } from 'next/font/google';
 
 export const mulish = Mulish({
   subsets: ['latin'],
   weight: ['300', '400', '500', '600', '700', '800', '900'],
   variable: '--font-mulish',
+  display: 'swap',
+});
+
+// Self-hosted (build-time) replacement for the former runtime Google Fonts
+// <link> in _document. That <link> was a render-blocking third-party dependency
+// placed before the main stylesheet; when fonts.googleapis.com was slow/blocked
+// (common on LatAm networks) it produced serif-fallback headings and unstyled
+// flashes. weight:500 matches the prior `Oswald:wght@500` request exactly.
+export const oswald = Oswald({
+  subsets: ['latin'],
+  weight: ['500'],
+  variable: '--font-oswald',
   display: 'swap',
 });
 

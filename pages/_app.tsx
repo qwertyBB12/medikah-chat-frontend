@@ -3,11 +3,12 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { SessionProvider } from 'next-auth/react';
 import { initGA, pageview } from '../lib/analytics';
-import { mulish, ibmPlexMono, fraunces, instrumentSerif, inter, playfairDisplay, sourceSans3, dmSerifDisplay, dmSans } from '../lib/fonts';
+import { mulish, oswald, ibmPlexMono, fraunces, instrumentSerif, inter, playfairDisplay, sourceSans3, dmSerifDisplay, dmSans } from '../lib/fonts';
 import '../styles/globals.css';
 
 const fontVars = [
   mulish.variable,
+  oswald.variable,
   ibmPlexMono.variable,
   fraunces.variable,
   instrumentSerif.variable,

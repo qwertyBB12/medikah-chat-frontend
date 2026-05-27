@@ -31,9 +31,10 @@ export default function Document() {
       <Head>
         {/* MUST be the first child of <Head> — runs before fonts/CSS. Plan 20-06. */}
         <script dangerouslySetInnerHTML={{ __html: NO_FLASH_THEME_SCRIPT }} />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500&display=swap" rel="stylesheet" />
+        {/* Oswald is now self-hosted at build time via next/font (see lib/fonts.ts).
+            The former render-blocking Google Fonts <link> + preconnects were removed:
+            on slow/blocked LatAm networks they delayed first paint before the main
+            stylesheet and dropped headings to serif fallback. */}
         <link rel="icon" href="/favicon.ico" sizes="48x48" />
         <link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32" />
         <link rel="icon" href="/favicon-16x16.png" type="image/png" sizes="16x16" />
