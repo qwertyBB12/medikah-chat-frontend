@@ -3,9 +3,9 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --font-oswald: 'Oswald', sans-serif;
-  }
+  /* --font-oswald is now provided by next/font (lib/fonts.ts), same as
+     --font-mulish / --font-dm-sans. The former hardcoded 'Oswald' literal here
+     relied on the runtime Google Fonts <link> that was removed. */
 
   html,
   body {
