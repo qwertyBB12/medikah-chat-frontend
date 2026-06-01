@@ -25,7 +25,7 @@ export const colors = {
   // Semantic
   confirmationGreen: '#2D7D5F',
   cautionAmber: '#B8860B',
-  alertGarnet: '#B83D3D',
+  alertGarnet: '#AA3333',
   infoBlue: '#3B82B6',
 
   // Warm accent (patient intake & chat only)

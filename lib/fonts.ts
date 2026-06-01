@@ -1,4 +1,4 @@
-import { Mulish, Oswald, IBM_Plex_Mono, Fraunces, Instrument_Serif, Inter, Playfair_Display, Source_Sans_3, DM_Serif_Display, DM_Sans } from 'next/font/google';
+import { Mulish, IBM_Plex_Mono, Oswald, DM_Serif_Display, DM_Sans } from 'next/font/google';
 
 export const mulish = Mulish({
   subsets: ['latin'],
@@ -16,43 +16,6 @@ export const oswald = Oswald({
   subsets: ['latin'],
   weight: ['500'],
   variable: '--font-oswald',
-  display: 'swap',
-});
-
-export const fraunces = Fraunces({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800', '900'],
-  variable: '--font-fraunces',
-  display: 'swap',
-});
-
-export const instrumentSerif = Instrument_Serif({
-  subsets: ['latin'],
-  weight: ['400'],
-  style: ['normal', 'italic'],
-  variable: '--font-instrument',
-  display: 'swap',
-});
-
-export const inter = Inter({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700', '800'],
-  variable: '--font-inter',
-  display: 'swap',
-});
-
-export const playfairDisplay = Playfair_Display({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800', '900'],
-  style: ['normal', 'italic'],
-  variable: '--font-playfair',
-  display: 'swap',
-});
-
-export const sourceSans3 = Source_Sans_3({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
-  variable: '--font-source',
   display: 'swap',
 });
 
