@@ -1,4 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../auth/[...nextauth]';
 import { supabaseAdmin } from '../../../lib/supabaseServer';
 import { sendPhysicianWelcomeEmail } from '../../../lib/physicianEmail';
 
@@ -24,6 +26,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(500).json({ error: 'Database not configured' });
   }
 
+  // Abuse guard (non-breaking): this endpoint creates an auth user + physician
+  // row and sends a welcome email, so left fully open it enables email-bombing
+  // arbitrary addresses and Resend-quota drain. Onboarding may call it before
+  // the physician has a session, so we do NOT hard-require auth; instead we
+  // require the request to originate from our own site. (A determined attacker
+  // can spoof Origin — a proper per-IP rate limiter is the recommended
+  // fast-follow; this blocks opportunistic bots and cross-site abuse.)
+  const originHeader = (req.headers.origin || req.headers.referer || '') as string;
+  let originHost = '';
+  try {
+    if (originHeader) originHost = new URL(originHeader).host;
+  } catch {
+    originHost = '';
+  }
+  const originAllowed =
+    originHost === 'medikah.health' ||
+    originHost === 'www.medikah.health' ||
+    originHost.endsWith('.netlify.app');
+  if (!originAllowed) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
   try {
     const data = req.body;
 
@@ -32,6 +56,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const email = data.email.toLowerCase();
+
+    // If the caller is authenticated, they may only create their own profile —
+    // a logged-in physician cannot mint accounts for arbitrary addresses.
+    const session = await getServerSession(req, res, authOptions);
+    if (session?.user?.email && session.user.email.toLowerCase() !== email) {
+      return res.status(403).json({ error: 'You can only create your own physician profile' });
+    }
 
     // Convert to snake_case for database
     const dbData = toSnakeCase(data);
