@@ -11,6 +11,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getVerificationStatus, PhysicianVerificationStatus } from '../../../../lib/verification';
+import { getAdminUser } from '../../../../lib/adminAuth';
 
 interface VerificationStatusResponse {
   success: boolean;
@@ -29,6 +30,16 @@ export default async function handler(
       success: false,
       status: null,
       error: `Method ${req.method} not allowed`,
+    });
+  }
+
+  // Admin-only: this exposes per-physician verification detail. Block anon reads.
+  const admin = await getAdminUser(req, res);
+  if (!admin) {
+    return res.status(403).json({
+      success: false,
+      status: null,
+      error: 'Admin access required',
     });
   }
 
