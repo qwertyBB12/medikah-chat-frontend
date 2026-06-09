@@ -14,6 +14,7 @@ import {
   VerifyCredentialsResponse,
   VerificationType,
 } from '../../../../lib/verification';
+import { getAdminUser } from '../../../../lib/adminAuth';
 
 interface RequestBody {
   forceRecheck?: boolean;
@@ -28,6 +29,13 @@ export default async function handler(
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
     return res.status(405).json({ error: `Method ${req.method} not allowed` });
+  }
+
+  // Admin-only: triggering verification runs the expensive 3-tier external
+  // pipeline (COFEPRIS / state boards / LinkedIn). Block anonymous abuse.
+  const admin = await getAdminUser(req, res);
+  if (!admin) {
+    return res.status(403).json({ error: 'Admin access required' });
   }
 
   // Get physician ID from URL
