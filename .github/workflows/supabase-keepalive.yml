@@ -1,0 +1,36 @@
+# Supabase free-tier keep-alive
+#
+# The "Patient Project" Supabase instance auto-pauses after ~7 days of
+# inactivity (caused the 2026-06-09 site-wide outage). Hector's call
+# 2026-06-11: stay on the free tier, keep the project warm instead.
+#
+# This pings /api/physicians/by-slug daily — the handler runs a real
+# SELECT against the physicians table server-side, which counts as
+# project activity. The probe slug never matches, so the expected
+# response is 404 (query ran, no row). Anything other than 404/200
+# means the site or database is unhealthy and the run fails loudly,
+# doubling as an outage canary.
+#
+# Watch ownership: COO desk (kah-operations Paperclip tracker).
+
+name: Supabase keep-alive
+
+on:
+  schedule:
+    - cron: '17 9 * * *' # daily 09:17 UTC (03:17 CDMX)
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Touch the database through the live site
+        run: |
+          code=$(curl -s -o /tmp/body -w '%{http_code}' --max-time 30 \
+            'https://medikah.health/api/physicians/by-slug?slug=supabase-keepalive-probe')
+          echo "HTTP $code"
+          if [ "$code" != "404" ] && [ "$code" != "200" ]; then
+            echo 'Unexpected status — Supabase may be paused or the site is down.'
+            cat /tmp/body
+            exit 1
+          fi
