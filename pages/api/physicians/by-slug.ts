@@ -20,7 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const { data: physicians, error } = await supabaseAdmin
       .from('physicians')
-      .select('full_name, primary_specialty, sub_specialties, board_certifications, licenses, photo_url, linkedin_url, bio, available_days, available_hours, timezone, languages, residency, fellowships, medical_school, graduation_year, publications, verification_status, slug')
+      .select('full_name, primary_specialty, sub_specialties, board_certifications, licenses, photo_url, linkedin_url, bio, available_days, available_hours_start, available_hours_end, timezone, languages, residency, fellowships, medical_school, graduation_year, publications, verification_status, slug')
       .eq('verification_status', 'verified');
 
     if (error) {
@@ -39,9 +39,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const publicFields = [
       'full_name', 'primary_specialty', 'sub_specialties', 'board_certifications',
       'licenses', 'photo_url', 'linkedin_url', 'bio', 'available_days',
-      'available_hours', 'timezone', 'languages', 'residency', 'fellowships',
-      'medical_school', 'graduation_year', 'publications', 'verification_status',
-      'slug',
+      'available_hours_start', 'available_hours_end', 'timezone', 'languages',
+      'residency', 'fellowships', 'medical_school', 'graduation_year',
+      'publications', 'verification_status', 'slug',
     ];
     const sanitized = Object.fromEntries(
       Object.entries(physician).filter(([key]) => publicFields.includes(key))
