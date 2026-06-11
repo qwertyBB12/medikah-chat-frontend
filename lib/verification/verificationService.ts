@@ -10,6 +10,7 @@
 import { supabase } from '../supabase';
 import { PhysicianProfileData, PhysicianLicense } from '../physicianClient';
 import { sendVerificationUpdate } from '../email';
+import { triggerWorkspaceActivation } from '../activationEmail';
 import {
   VerificationResult,
   ManualReviewItem,
@@ -596,6 +597,16 @@ async function updatePhysicianVerificationStatus(
   if (error) {
     console.error('Failed to update physician verification status:', error);
   }
+
+  // Phase 17 FLOW-03: trigger workspace activation email when status flips to 'verified'.
+  // Guarded in try/catch so an email failure does NOT roll back the verification flip.
+  if (dbStatus === 'verified') {
+    try {
+      await triggerWorkspaceActivation(physicianId);
+    } catch (activationErr) {
+      console.error('[verificationService] triggerWorkspaceActivation failed (non-fatal):', activationErr);
+    }
+  }
 }
 
 /**
@@ -694,6 +705,14 @@ export async function approveManualReview(
         }).catch(err => {
           console.error('Failed to send verification email:', err);
         });
+      }
+
+      // Phase 17 FLOW-03: trigger workspace activation email on manual-approve verified flip.
+      // Guarded in try/catch so an email failure does NOT roll back the approval.
+      try {
+        await triggerWorkspaceActivation(review.physician_id);
+      } catch (activationErr) {
+        console.error('[verificationService] triggerWorkspaceActivation failed (non-fatal):', activationErr);
       }
     }
 
