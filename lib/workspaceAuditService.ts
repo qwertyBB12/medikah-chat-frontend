@@ -84,7 +84,9 @@ export type WorkspaceAction =
   | 'pro.upgrade_failed_pre_por'
   | 'pro.upgrade_finish_later'
   | 'phi_warning.overridden'
-  | 'consent.signed';
+  | 'consent.signed'
+  // Phase 17 — workspace activation flow
+  | 'workspace.activation_link_resent';
 
 export type ActorRole = 'physician' | 'admin' | 'system';
 
