@@ -1,0 +1,46 @@
+# Production smoke — daily read-only checks of every public surface.
+#
+# Born 2026-06-11 after the Supabase keep-alive canary caught
+# /api/physicians/by-slug silently 500ing in production (nonexistent
+# column in the select). Hector's directive: this class of silent
+# breakage must not recur. Read-only GETs only — nothing here sends
+# email, writes rows, or touches auth.
+#
+# Watch ownership: COO desk (kah-operations Paperclip tracker).
+
+name: Production smoke
+
+on:
+  schedule:
+    - cron: '47 9 * * *' # daily 09:47 UTC (03:47 CDMX), after keep-alive
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check public surfaces
+        run: |
+          set -u
+          fail=0
+          check() {
+            local name="$1" url="$2" expected="$3"
+            local code
+            code=$(curl -s -o /tmp/body -w '%{http_code}' --max-time 30 "$url")
+            if echo "$expected" | grep -qw "$code"; then
+              echo "OK   $name ($code)"
+            else
+              echo "FAIL $name — got $code, expected one of: $expected"
+              head -c 300 /tmp/body; echo
+              fail=1
+            fi
+          }
+          check "homepage"            'https://medikah.health/'                                            '200'
+          check "cdmx landing"        'https://medikah.health/cdmx'                                        '200'
+          check "chat auth gateway"   'https://medikah.health/chat'                                        '200'
+          check "physician by-slug"   'https://medikah.health/api/physicians/by-slug?slug=smoke-probe'     '404'
+          check "backend health"      'https://api.medikah.health/health'                                  '200'
+          check "sogo login"          'https://practikah.medikah.health/SOGo/'                             '200'
+          check "privacy"             'https://medikah.health/privacy'                                     '200'
+          check "terms"               'https://medikah.health/terms'                                       '200'
+          exit $fail
