@@ -65,21 +65,29 @@ export default async function handler(
       return res.status(410).json({ error: 'Token not found' });
     }
 
+    // consumed_at marks the password step done (set-password consumes the token),
+    // NOT the end of the flow — totp-setup/enroll run AFTER consumption with the
+    // same token. Replay is gated by activation_complete below, expiry by the row.
     const now = new Date();
-    if (tokenRow.consumed_at !== null || new Date(tokenRow.expires_at) <= now) {
+    if (new Date(tokenRow.expires_at) <= now) {
       return res.status(410).json({ error: 'Token has expired or has already been used' });
     }
 
     // --- Confirm workspace account exists and password has been set ---
     const { data: workspace, error: wsError } = await supabaseAdmin
       .from('physician_workspace_accounts')
-      .select('id, mailbox_password_set')
+      .select('id, mailbox_password_set, activation_complete')
       .eq('physician_id', tokenPayload.physician_id)
       .maybeSingle();
 
     if (wsError || !workspace) {
       console.error('[totp-setup] Workspace account not found:', wsError?.message);
       return res.status(404).json({ error: 'Workspace account not found' });
+    }
+
+    if (workspace.activation_complete) {
+      // Activation already finished — a consumed token cannot restart the flow
+      return res.status(410).json({ error: 'Token has expired or has already been used' });
     }
 
     if (!workspace.mailbox_password_set) {
