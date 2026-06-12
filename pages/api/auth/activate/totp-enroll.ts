@@ -88,8 +88,11 @@ export default async function handler(
       return res.status(410).json({ error: 'Token not found' });
     }
 
+    // consumed_at marks the password step done (set-password consumes the token),
+    // NOT the end of the flow — enrollment runs AFTER consumption with the same
+    // token. Replay is gated by activation_complete below, expiry by the row.
     const now = new Date();
-    if (tokenRow.consumed_at !== null || new Date(tokenRow.expires_at) <= now) {
+    if (new Date(tokenRow.expires_at) <= now) {
       return res.status(410).json({ error: 'Token has expired or has already been used' });
     }
 
@@ -103,6 +106,11 @@ export default async function handler(
     if (wsError || !workspace) {
       console.error('[totp-enroll] Workspace account not found:', wsError?.message);
       return res.status(404).json({ error: 'Workspace account not found' });
+    }
+
+    if (workspace.activation_complete) {
+      // Activation already finished — a consumed token cannot re-enroll TOTP
+      return res.status(410).json({ error: 'Token has expired or has already been used' });
     }
 
     // --- Load and decrypt the candidate TOTP secret ---
