@@ -9,7 +9,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const session = await getServerSession(req, res, authOptions);
-  if (!session?.user?.email) {
+  if (!session?.user?.email && !session?.user?.physician_id) {
     return res.status(401).json({ error: 'Authentication required' });
   }
 
@@ -18,13 +18,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const email = session.user.email.toLowerCase();
+    // D-03 two-identity lifecycle: a Mailcow login's session email is the
+    // mailbox address (@medikah.health), which can differ from the email the
+    // physician registered with. Prefer the physician_id claim (set by the
+    // mailcow-imap provider); fall back to email for legacy/social sessions.
+    const physicianIdClaim = session.user.physician_id;
+    const email = session.user.email?.toLowerCase();
 
-    const { data: physician, error } = await supabaseAdmin
+    let query = supabaseAdmin
       .from('physicians')
-      .select('id, verification_status, onboarding_completed_at, consent_signed_at')
-      .eq('email', email)
-      .maybeSingle();
+      .select('id, verification_status, onboarding_completed_at, consent_signed_at');
+    query = physicianIdClaim
+      ? query.eq('id', physicianIdClaim)
+      : query.eq('email', email!);
+    const { data: physician, error } = await query.maybeSingle();
 
     if (error) {
       console.error('Error checking physician status:', error);
