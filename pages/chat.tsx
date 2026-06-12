@@ -51,8 +51,8 @@ const t = {
   // Phase 17 — login-time TOTP second-factor prompt (17-04 gate)
   totpHeading: { en: 'Two-step verification', es: 'Verificación en dos pasos' },
   totpHint: {
-    en: 'Enter the 6-digit code from your authenticator app.',
-    es: 'Ingresa el código de 6 dígitos de tu aplicación de autenticación.',
+    en: 'Enter the 6-digit code from Duo Mobile (or your authenticator app).',
+    es: 'Ingresa el código de 6 dígitos de Duo Mobile (o tu aplicación de autenticación).',
   },
   totpCodeLabel: { en: '6-digit code', es: 'Código de 6 dígitos' },
   totpVerify: { en: 'Verify', es: 'Verificar' },
@@ -168,6 +168,10 @@ export default function ChatPage() {
       setLoginError(t.errorMailcow[lang]);
       return;
     }
+    // Password accepted. The session may come back needs_totp — drop the login
+    // form so the TOTP step (gated on !showLoginForm) can render instead of
+    // silently re-showing this form over the held session.
+    setShowLoginForm(false);
   };
 
   const handleSocialSignIn = (provider: 'google' | 'linkedin') => {
@@ -379,6 +383,11 @@ export default function ChatPage() {
             >
               {isMailcowSubmitting ? t.signingIn[lang] : t.medikahEmailTab[lang]}
             </button>
+            {loginError && (
+              <p className="font-body text-sm text-alert-garnet bg-alert-garnet/10 border border-alert-garnet/20 px-3 py-2 text-center rounded-sm">
+                {loginError}
+              </p>
+            )}
           </form>
         </div>
       )}
