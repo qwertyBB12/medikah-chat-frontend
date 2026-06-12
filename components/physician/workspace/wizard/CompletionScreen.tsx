@@ -210,11 +210,11 @@ export default function CompletionScreen({
           <dl className="mt-3 space-y-2 font-dm-sans text-sm">
             <div className="flex justify-between gap-4">
               <dt className="text-body-slate">IMAP</dt>
-              <dd className="text-deep-charcoal">mail.medikah.health:993</dd>
+              <dd className="text-deep-charcoal">practikah.medikah.health:993</dd>
             </div>
             <div className="flex justify-between gap-4">
               <dt className="text-body-slate">SMTP</dt>
-              <dd className="text-deep-charcoal">mail.medikah.health:465</dd>
+              <dd className="text-deep-charcoal">practikah.medikah.health:465</dd>
             </div>
             <div className="flex justify-between gap-4">
               <dt className="text-body-slate">{lang === 'es' ? 'Usuario' : 'Username'}</dt>
