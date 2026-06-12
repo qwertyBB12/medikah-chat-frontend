@@ -48,6 +48,20 @@ const t = {
     en: 'Use your @medikah.health mailbox.',
     es: 'Usa tu buzón @medikah.health.',
   },
+  // Phase 17 — login-time TOTP second-factor prompt (17-04 gate)
+  totpHeading: { en: 'Two-step verification', es: 'Verificación en dos pasos' },
+  totpHint: {
+    en: 'Enter the 6-digit code from your authenticator app.',
+    es: 'Ingresa el código de 6 dígitos de tu aplicación de autenticación.',
+  },
+  totpCodeLabel: { en: '6-digit code', es: 'Código de 6 dígitos' },
+  totpVerify: { en: 'Verify', es: 'Verificar' },
+  totpVerifying: { en: 'Verifying…', es: 'Verificando…' },
+  totpError: { en: 'Invalid code. Please try again.', es: 'Código no válido. Intenta de nuevo.' },
+  totpReauth: {
+    en: 'Code verified. Please sign in once more to continue.',
+    es: 'Código verificado. Inicia sesión una vez más para continuar.',
+  },
 } as const;
 
 type Lang = 'en' | 'es';
@@ -68,6 +82,10 @@ export default function ChatPage() {
   const [isMailcowSubmitting, setIsMailcowSubmitting] = useState(false);
   const [showLoginForm, setShowLoginForm] = useState(false);
   const [portalSelection, setPortalSelection] = useState<PortalSelection>(null);
+  // Phase 17 — TOTP second-factor step (server returned a needs_totp session)
+  const [totpCode, setTotpCode] = useState('');
+  const [isTotpSubmitting, setIsTotpSubmitting] = useState(false);
+  const [totpError, setTotpError] = useState<string | null>(null);
 
   // Check for role query param (from landing page CTAs)
   const initialRoleRef = useRef(false);
@@ -92,6 +110,13 @@ export default function ChatPage() {
   useEffect(() => {
     if (status === 'loading') return;
     if (session?.user) {
+      // Phase 17 — a needs_totp session is NOT signed in: hold for the TOTP
+      // prompt, never redirect (the claimless session would route to
+      // onboarding as if the physician were a new user).
+      if (session.user.needs_totp) {
+        pendingRedirectRef.current = null;
+        return;
+      }
       if (pendingRedirectRef.current) {
         const redirect = pendingRedirectRef.current === 'doctor' ? '/physicians/onboard' : '/patients';
         pendingRedirectRef.current = null;
@@ -150,8 +175,108 @@ export default function ChatPage() {
     signIn(provider, { callbackUrl });
   };
 
+  // Phase 17 — verify the 6-digit code server-side, then re-invoke signIn.
+  // The provider consults its own login_2fa audit trail (2-minute window) and
+  // returns the full claim set — the client never asserts totp_verified.
+  const handleTotpSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!session?.user?.physician_id) return;
+    setIsTotpSubmitting(true);
+    setTotpError(null);
+
+    const verifyRes = await fetch('/api/auth/activate/totp-verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ physician_id: session.user.physician_id, code: totpCode }),
+    });
+
+    if (!verifyRes.ok) {
+      setIsTotpSubmitting(false);
+      setTotpError(t.totpError[lang]);
+      return;
+    }
+
+    // Code accepted — re-run the credential sign-in so the server can upgrade
+    // the session. Requires the password still in memory; if the page was
+    // reloaded mid-flow, ask for one more sign-in instead.
+    if (!mailcowEmail || !mailcowPassword) {
+      setIsTotpSubmitting(false);
+      setPortalSelection('doctor');
+      setShowLoginForm(true);
+      setLoginError(t.totpReauth[lang]);
+      return;
+    }
+
+    const result = await signIn('mailcow-imap', {
+      redirect: false,
+      email: mailcowEmail,
+      password: mailcowPassword,
+    });
+    setIsTotpSubmitting(false);
+
+    if (!result || result.error) {
+      setTotpError(t.totpError[lang]);
+      return;
+    }
+    // Session refresh with full claims triggers the redirect effect.
+  };
+
+  // Phase 17 — second-factor step: the server returned a needs_totp session
+  // (password verified, TOTP outstanding). Render the code prompt instead of
+  // redirecting. If the page was reloaded mid-flow (no password in memory),
+  // showLoginForm falls through to the regular panel with the reauth message.
+  if (session?.user?.needs_totp && !showLoginForm) {
+    return (
+      <>
+        <Head>
+          <title>Sign in — Medikah</title>
+          <meta name="robots" content="noindex, nofollow" />
+        </Head>
+        <div className="min-h-screen flex items-center justify-center bg-warm-gray-900 px-4">
+          <div className="font-dm-sans bg-warm-gray-900/80 border border-white/10 rounded-sm p-6 space-y-5 text-white w-full max-w-sm">
+            <h3 className="text-base font-semibold tracking-wide">{t.totpHeading[lang]}</h3>
+            <p className="font-body text-xs text-white/50">{t.totpHint[lang]}</p>
+            <form onSubmit={handleTotpSubmit} className="space-y-3">
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="totp-code" className="font-body text-xs uppercase tracking-wider text-white/50">
+                  {t.totpCodeLabel[lang]}
+                </label>
+                <input
+                  id="totp-code"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  pattern="[0-9]{6}"
+                  maxLength={6}
+                  value={totpCode}
+                  onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ''))}
+                  className="font-body border border-white/20 bg-warm-gray-900/50 px-4 py-3 text-white placeholder-white/30 tracking-[0.4em] text-center focus:outline-none focus:border-clinical-teal rounded-sm"
+                  placeholder="000000"
+                  autoFocus
+                  required
+                />
+              </div>
+              {totpError && (
+                <p className="font-dm-sans text-sm text-alert-garnet bg-alert-garnet/10 border border-alert-garnet/20 px-3 py-2 text-center rounded-sm">
+                  {totpError}
+                </p>
+              )}
+              <button
+                type="submit"
+                className="font-body w-full px-4 py-3 font-semibold tracking-wide text-sm bg-clinical-teal text-white border border-clinical-teal hover:bg-clinical-teal/90 transition rounded-sm disabled:opacity-50"
+                disabled={isTotpSubmitting || totpCode.length !== 6}
+              >
+                {isTotpSubmitting ? t.totpVerifying[lang] : t.totpVerify[lang]}
+              </button>
+            </form>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   // Show loading while checking auth or redirecting
-  if (status === 'loading' || session) {
+  if (status === 'loading' || (session && !session.user?.needs_totp)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-warm-gray-900">
         <div className="flex items-center gap-2">

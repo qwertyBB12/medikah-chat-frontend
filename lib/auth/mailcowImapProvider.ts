@@ -229,6 +229,8 @@ export interface MailcowImapAuthorizedUser {
   physician_id: string;
   verification_status: ProvisionedPhysician['verification_status'];
   workspace_role: 'owner';
+  /** Set true only by the server-side recent-2FA audit check (jwt() upgrade path). */
+  totp_verified?: boolean;
 }
 
 /**
@@ -349,6 +351,9 @@ export async function mailcowImapAuthorize(
     .eq('physician_id', physician.id)
     .maybeSingle();
 
+  // Set true only by the case-b recent-2FA audit check below.
+  let totpRecentlyVerified = false;
+
   if (wsAccount !== null && wsAccount !== undefined) {
     // Case a: workspace row exists but activation is not complete.
     if (!wsAccount.activation_complete) {
@@ -360,16 +365,41 @@ export async function mailcowImapAuthorize(
       return null;
     }
 
-    // Case b: fully activated + TOTP enrolled — return sentinel for second-factor prompt.
+    // Case b: fully activated + TOTP enrolled — second-factor required.
+    //
+    // Upgrade path (Phase 17 Plan 06 fix): the jwt() callback's totp_verified
+    // branch was unreachable because authorize() could never return it. The
+    // client's TOTP prompt POSTs /api/auth/activate/totp-verify (which writes
+    // a workspace.login_2fa success audit row server-side), then re-invokes
+    // signIn with the same credentials. Here we consult OUR OWN audit trail —
+    // never a client assertion (T-17-04-03): a successful login_2fa row for
+    // this physician within the last 2 minutes upgrades this sign-in to the
+    // full claim set. Outside that window, return the needs_totp sentinel.
     if (wsAccount.totp_enrolled && wsAccount.totp_secret) {
-      // Do NOT write success ledger row yet — the login is not complete until TOTP is verified.
-      // Do NOT write workspace_audit_log yet — the totp-verify endpoint writes login_2fa on
-      // both success and failure outcomes.
-      return {
-        id: `totp-pending:${physician.id}`,
-        needs_totp: true,
-        physician_id: physician.id,
-      } as unknown as MailcowImapAuthorizedUser;
+      const twoMinAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+      const { data: recent2fa } = await supabaseAdmin
+        .from('workspace_audit_log')
+        .select('id')
+        .eq('physician_id', physician.id)
+        .eq('action', 'workspace.login_2fa')
+        .contains('detail', { outcome: 'success' })
+        .gte('occurred_at', twoMinAgo)
+        .limit(1)
+        .maybeSingle();
+
+      if (!recent2fa) {
+        // Do NOT write success ledger row yet — the login is not complete until TOTP is verified.
+        // Do NOT write workspace_audit_log yet — the totp-verify endpoint writes login_2fa on
+        // both success and failure outcomes.
+        return {
+          id: `totp-pending:${physician.id}`,
+          needs_totp: true,
+          physician_id: physician.id,
+        } as unknown as MailcowImapAuthorizedUser;
+      }
+      // Recent TOTP verification found — fall through to the full-user return
+      // below with totp_verified=true so jwt() takes the upgrade branch.
+      totpRecentlyVerified = true;
     }
     // Case b-miss: activation_complete=true but TOTP not yet enrolled (should not happen
     // in steady state — D-01 requires both gates). Fall through to full-user return;
@@ -400,6 +430,8 @@ export async function mailcowImapAuthorize(
   });
 
   // Step 10 — return D-10 claim set. Not gated on verification_status (D-09).
+  // totp_verified rides along only when the recent-2FA audit check passed
+  // (case b upgrade) so the jwt() callback takes its upgrade branch.
   return {
     id: physician.id,
     name: physician.name ?? email,
@@ -409,5 +441,6 @@ export async function mailcowImapAuthorize(
     physician_id: physician.id,
     verification_status: physician.verification_status,
     workspace_role: 'owner',
+    ...(totpRecentlyVerified ? { totp_verified: true } : {}),
   };
 }
