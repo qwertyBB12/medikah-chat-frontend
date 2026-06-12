@@ -9,6 +9,7 @@ import {
   emailHeader,
   emailFooter,
 } from './emailChrome';
+import { cdmxSessionLabel } from './cdmxSessions';
 
 interface EmailOptions {
   to: string;
@@ -110,14 +111,33 @@ https://medikah.health
 `,
   }),
 
-  // CDMX launch event RSVP confirmation (Spanish — Mexico City audience)
-  cdmxRsvpConfirmation: (name: string) => ({
-    subject: 'Te esperamos en CDMX — Medikah Health',
-    html: `<!DOCTYPE html>
+  // CDMX talk series RSVP confirmation (Spanish — Mexico City audience)
+  cdmxRsvpConfirmation: (name: string, preferredSessions: string[] = []) => {
+    const sessionLines = preferredSessions.map(
+      (id, i) => `${i + 1}. ${cdmxSessionLabel(id, 'es')}`
+    );
+    const sessionsHtml = sessionLines.length
+      ? `
+            <p style="font-family:${tokens.fonts.body};color:${tokens.colors.bodySlate};font-size:16px;line-height:1.6;margin:0 0 8px 0;">
+              <strong style="color:${tokens.colors.instBlue};">Tus sesiones, en orden de preferencia:</strong>
+            </p>
+            <p style="font-family:${tokens.fonts.body};color:${tokens.colors.bodySlate};font-size:16px;line-height:1.8;margin:0 0 24px 0;">
+              ${sessionLines.join('<br/>')}
+            </p>
+            <p style="font-family:${tokens.fonts.body};color:${tokens.colors.bodySlate};font-size:16px;line-height:1.6;margin:0 0 24px 0;">
+              Según la disponibilidad, te asignaremos tu lugar siguiendo tu orden de selección y te lo confirmaremos por WhatsApp y correo.
+            </p>`
+      : `
+            <p style="font-family:${tokens.fonts.body};color:${tokens.colors.bodySlate};font-size:16px;line-height:1.6;margin:0 0 24px 0;">
+              Te confirmaremos tu sesión por WhatsApp y correo conforme se acerque la fecha.
+            </p>`;
+    return {
+      subject: 'Te esperamos en CDMX — Medikah Health',
+      html: `<!DOCTYPE html>
 <html lang="es">
 ${emailHead()}
 <body style="margin:0;padding:0;background-color:${tokens.pageBg};font-family:${tokens.fonts.body};color:${tokens.colors.bodySlate};">
-${emailHeader({ variant: 'navy', locale: 'es', wordmark: 'medikah', eyebrow: 'Ciudad de M&eacute;xico · 23–25 Junio 2026' })}
+${emailHeader({ variant: 'navy', locale: 'es', wordmark: 'medikah', eyebrow: 'Ciudad de M&eacute;xico · 22–30 Junio 2026' })}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${tokens.pageBg};padding:40px 20px;">
   <tr>
     <td align="center">
@@ -126,15 +146,12 @@ ${emailHeader({ variant: 'navy', locale: 'es', wordmark: 'medikah', eyebrow: 'Ci
           <td class="email-pad" style="padding:40px 32px;">
             <h2 style="font-family:${tokens.fonts.body};color:${tokens.colors.deepCharcoal};font-size:22px;font-weight:700;margin:0 0 16px 0;">¡Quedó registrado, ${name}!</h2>
             <p style="font-family:${tokens.fonts.body};color:${tokens.colors.bodySlate};font-size:16px;line-height:1.6;margin:0 0 24px 0;">
-              Gracias por tu interés. Medikah Health llega a la Ciudad de México, y queremos verte en nuestro encuentro de presentación.
+              Gracias por tu interés. Medikah Health llega a la Ciudad de México con sesiones de capacitación en inteligencia artificial para médicos. La participación no tiene costo.
             </p>
             <p style="font-family:${tokens.fonts.body};color:${tokens.colors.bodySlate};font-size:16px;line-height:1.6;margin:0 0 24px 0;">
-              <strong style="color:${tokens.colors.instBlue};">Cuándo:</strong> 23 al 25 de junio de 2026 — evento principal la noche del 23.<br/>
+              <strong style="color:${tokens.colors.instBlue};">Cuándo:</strong> del 22 al 30 de junio de 2026 — tres sesiones por día (9:00, 13:00 y 17:00).<br/>
               <strong style="color:${tokens.colors.instBlue};">Dónde:</strong> Ciudad de México — sede por confirmar.
-            </p>
-            <p style="font-family:${tokens.fonts.body};color:${tokens.colors.bodySlate};font-size:16px;line-height:1.6;margin:0 0 24px 0;">
-              Te enviaremos los detalles finales del lugar y el horario conforme se acerque la fecha.
-            </p>
+            </p>${sessionsHtml}
             <p style="font-family:${tokens.fonts.body};color:${tokens.colors.bodySlate};font-size:16px;line-height:1.6;margin:0;">
               ¿Preguntas? Escríbenos a <a href="mailto:hello@medikah.health" style="color:${tokens.colors.clinicalTeal};text-decoration:none;font-weight:600;">hello@medikah.health</a>.
             </p>
@@ -147,21 +164,26 @@ ${emailHeader({ variant: 'navy', locale: 'es', wordmark: 'medikah', eyebrow: 'Ci
 ${emailFooter({ locale: 'es' })}
 </body>
 </html>`,
-    text: `¡Quedó registrado, ${name}!
+      text: `¡Quedó registrado, ${name}!
 
-Gracias por tu interés. Medikah Health llega a la Ciudad de México, y queremos verte en nuestro encuentro de presentación.
+Gracias por tu interés. Medikah Health llega a la Ciudad de México con sesiones de capacitación en inteligencia artificial para médicos. La participación no tiene costo.
 
-Cuándo: 23 al 25 de junio de 2026 — evento principal la noche del 23.
+Cuándo: del 22 al 30 de junio de 2026 — tres sesiones por día (9:00, 13:00 y 17:00).
 Dónde: Ciudad de México — sede por confirmar.
+${sessionLines.length ? `
+Tus sesiones, en orden de preferencia:
+${sessionLines.join('\n')}
 
-Te enviaremos los detalles finales del lugar y el horario conforme se acerque la fecha.
+Según la disponibilidad, te asignaremos tu lugar siguiendo tu orden de selección y te lo confirmaremos por WhatsApp y correo.` : `
+Te confirmaremos tu sesión por WhatsApp y correo conforme se acerque la fecha.`}
 
 ¿Preguntas? Escríbenos a hello@medikah.health
 
 Medikah Health
 https://medikah.health
 `,
-  }),
+    };
+  },
 };
 
 // Send waitlist confirmation
@@ -178,9 +200,10 @@ export const sendWaitlistConfirmation = async (email: string): Promise<SendEmail
 // Send CDMX launch event RSVP confirmation (Spanish)
 export const sendCdmxRsvpConfirmation = async (
   email: string,
-  name: string
+  name: string,
+  preferredSessions: string[] = []
 ): Promise<SendEmailResult> => {
-  const template = templates.cdmxRsvpConfirmation(name);
+  const template = templates.cdmxRsvpConfirmation(name, preferredSessions);
   return sendEmail({
     to: email,
     subject: template.subject,
