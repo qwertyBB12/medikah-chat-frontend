@@ -1,4 +1,4 @@
-import { FormEvent, useRef, useState } from 'react';
+import { FormEvent, Fragment, useRef, useState } from 'react';
 import type { GetServerSideProps } from 'next';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
@@ -6,6 +6,7 @@ import Nav from '../components/landing/Nav';
 import CurveDivider from '../components/landing/CurveDivider';
 import CdmxDoctorChat from '../components/CdmxDoctorChat';
 import LandingFooter from '../components/landing/LandingFooter';
+import { CDMX_SESSION_DAYS, CDMX_MAX_PREFERENCES, cdmxSessionLabel } from '../lib/cdmxSessions';
 
 type Lang = 'es' | 'en';
 
@@ -18,7 +19,7 @@ const COPY = {
     en: 'Care without distance arrives in Mexico. An American company —founded by Latin American and American physicians— is arriving to transform medical practice. Something big is beginning.',
   },
   whenLabel: { es: 'Cuándo', en: 'When' },
-  whenVal:   { es: '23 – 25 de junio de 2026\n27 de junio – 1 de julio de 2026\nCiudad de México', en: 'June 23 – 25, 2026\nJune 27 – July 1, 2026\nMexico City' },
+  whenVal:   { es: '22 – 30 de junio de 2026\nTres sesiones al día: 9:00, 13:00 y 17:00\nCiudad de México', en: 'June 22 – 30, 2026\nThree sessions daily: 9:00, 13:00 & 17:00\nMexico City' },
   whereLabel:{ es: 'Dónde', en: 'Where' },
   whereVal:  { es: 'Ciudad de México · sede por confirmar', en: 'Mexico City · venue to be confirmed' },
   formTitle: { es: 'Confirma tu interés', en: 'Register your interest' },
@@ -26,9 +27,12 @@ const COPY = {
   whatsappLabel: { es: 'WhatsApp (con código de país)', en: 'WhatsApp (with country code)' },
   whatsappPh:    { es: '+52 55 1234 5678', en: '+52 55 1234 5678' },
   passNote:      { es: 'Te enviaremos tu pase por WhatsApp.', en: "We'll send your pass via WhatsApp." },
-  datesLabel:    { es: '¿Qué fechas te interesan?', en: 'Which dates work for you?' },
-  dateOpt1:      { es: '23 – 25 de junio', en: 'June 23 – 25' },
-  dateOpt2:      { es: '27 de junio – 1 de julio', en: 'June 27 – July 1' },
+  pickerLabel:   { es: 'Elige hasta tres sesiones en orden de preferencia', en: 'Choose up to three sessions in order of preference' },
+  pickerHint:    {
+    es: 'Según la disponibilidad, te asignaremos tu lugar siguiendo tu orden de selección y te lo confirmaremos por WhatsApp y correo.',
+    en: 'Based on availability, you will be placed in your order of preference and we will confirm your seat by WhatsApp and email.',
+  },
+  freeNote:      { es: 'La participación no tiene costo.', en: 'Participation is free of charge.' },
   professionOpt: { es: 'Profesión (opcional)', en: 'Profession (optional)' },
   pointsNote:    { es: 'Entre más participas, más puntos acumulas hacia tu certificación en IA.', en: 'The more you take part, the more points toward your AI certification.' },
   name:      { es: 'Nombre', en: 'Name' },
@@ -115,10 +119,15 @@ export default function CdmxLanding() {
   const [email, setEmail] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [profession, setProfession] = useState('');
-  const [dates, setDates] = useState<string[]>([]);
+  const [sessions, setSessions] = useState<string[]>([]);
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'duplicate' | 'error'>('idle');
   const t = (k: keyof typeof COPY) => COPY[k][lang];
-  const toggleDate = (d: string) => setDates((cur) => cur.includes(d) ? cur.filter((x) => x !== d) : [...cur, d]);
+  // Ordered selection: click order = preference order, capped at 3
+  const toggleSession = (id: string) => setSessions((cur) => {
+    if (cur.includes(id)) return cur.filter((x) => x !== id);
+    if (cur.length >= CDMX_MAX_PREFERENCES) return cur;
+    return [...cur, id];
+  });
 
   // funnel tracking: fire once when a visitor starts the form, and on completion
   const startedRef = useRef(false);
@@ -133,7 +142,7 @@ export default function CdmxLanding() {
       const res = await fetch('/api/cdmx-rsvp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), email: email.trim(), whatsapp: whatsapp.trim(), profession: profession.trim(), dates, locale: lang }),
+        body: JSON.stringify({ name: name.trim(), email: email.trim(), whatsapp: whatsapp.trim(), profession: profession.trim(), sessions, locale: lang }),
       });
       if (res.status === 409) { setStatus('duplicate'); track('cdmx_rsvp_completed'); }
       else if (res.ok) { setStatus('success'); track('cdmx_rsvp_completed'); }
@@ -146,13 +155,13 @@ export default function CdmxLanding() {
   return (
     <>
       <Head>
-        <title>medikah health llega a CDMX — 23–25 Junio 2026</title>
-        <meta name="description" content="Medikah Health llega a la Ciudad de México. Encuentro de networking y aprendizaje, 23–25 de junio de 2026. Primer certificado en IA médica. Confirma tu interés." />
+        <title>medikah health llega a CDMX — 22–30 Junio 2026</title>
+        <meta name="description" content="Medikah Health llega a la Ciudad de México. Sesiones de capacitación y networking, 22 al 30 de junio de 2026 — tres sesiones por día. Primer certificado en IA médica. Confirma tu interés." />
         <link rel="canonical" href="https://medikah.health/cdmx" />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://medikah.health/cdmx" />
         <meta property="og:title" content="medikah health llega a CDMX" />
-        <meta property="og:description" content="Encuentro de networking y aprendizaje · 23–25 de junio de 2026 · Ciudad de México. Primer certificado en IA médica." />
+        <meta property="og:description" content="Sesiones de capacitación y networking · 22–30 de junio de 2026 · Ciudad de México. Primer certificado en IA médica." />
         <meta name="robots" content="index,follow" />
       </Head>
 
@@ -237,15 +246,44 @@ export default function CdmxLanding() {
                       className="w-full rounded-sm border border-clinical-surface bg-clinical-surface px-4 py-3 font-body text-base text-deep-charcoal outline-none transition-colors placeholder:text-archival-grey/70 focus:border-clinical-teal focus:bg-white" />
                   </div>
                   <div>
-                    <label className="mb-2 block font-body text-xs font-semibold uppercase tracking-wider text-archival-grey">{t('datesLabel')}</label>
-                    <div className="space-y-2">
-                      {([['jun23-25', t('dateOpt1')], ['jun27-jul1', t('dateOpt2')]] as const).map(([val, label]) => (
-                        <label key={val} className="flex cursor-pointer items-center gap-3 rounded-sm border border-clinical-surface bg-clinical-surface px-4 py-3 font-body text-base text-deep-charcoal transition-colors hover:border-clinical-teal/50">
-                          <input type="checkbox" checked={dates.includes(val)} onChange={() => toggleDate(val)} className="h-4 w-4 accent-clinical-teal" />
-                          {label}
-                        </label>
+                    <label className="mb-2 block font-body text-xs font-semibold uppercase tracking-wider text-archival-grey">{t('pickerLabel')}</label>
+                    {/* schedule grid: header row of time slots, one row per day */}
+                    <div className="grid grid-cols-[3.5rem_1fr_1fr_1fr] items-center gap-1.5">
+                      <span aria-hidden />
+                      {CDMX_SESSION_DAYS[0].slots.map((s) => (
+                        <span key={s.id} className="text-center font-body text-[0.65rem] font-semibold text-archival-grey">
+                          {s.label.replace(/\s/g, '')}
+                        </span>
+                      ))}
+                      {CDMX_SESSION_DAYS.map((d) => (
+                        <Fragment key={d.id}>
+                          <span className="font-body text-xs font-semibold text-deep-charcoal">
+                            {d.weekday[lang]} {d.dayNum}
+                          </span>
+                          {d.slots.map((s) => {
+                            const idx = sessions.indexOf(s.sessionId);
+                            const selected = idx !== -1;
+                            return (
+                              <button
+                                type="button"
+                                key={s.sessionId}
+                                onClick={() => toggleSession(s.sessionId)}
+                                aria-pressed={selected}
+                                aria-label={cdmxSessionLabel(s.sessionId, lang)}
+                                className={`flex h-9 items-center justify-center rounded-sm border font-body text-sm font-semibold transition-colors ${
+                                  selected
+                                    ? 'border-clinical-teal bg-clinical-teal text-white'
+                                    : 'border-clinical-surface bg-clinical-surface text-archival-grey hover:border-clinical-teal/50'
+                                }`}
+                              >
+                                {selected ? idx + 1 : ''}
+                              </button>
+                            );
+                          })}
+                        </Fragment>
                       ))}
                     </div>
+                    <p className="mt-2.5 font-body text-xs leading-relaxed text-archival-grey">{t('pickerHint')}</p>
                   </div>
                   <p className="font-body text-xs leading-relaxed text-clinical-teal">{t('pointsNote')}</p>
                   {status === 'error' && <p className="font-body text-sm text-alert-garnet">{t('error')}</p>}
@@ -253,6 +291,7 @@ export default function CdmxLanding() {
                     className="w-full rounded-sm bg-teal-500 px-7 py-3.5 font-body text-sm font-semibold uppercase tracking-wider text-white transition-all duration-200 hover:bg-teal-600 disabled:opacity-60">
                     {status === 'sending' ? t('sending') : t('submit')}
                   </button>
+                  <p className="text-center font-body text-sm font-semibold text-clinical-teal">{t('freeNote')}</p>
                 </form>
               )}
             </div>

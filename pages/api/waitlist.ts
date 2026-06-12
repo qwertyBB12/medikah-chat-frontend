@@ -1,11 +1,20 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { supabase } from '../../lib/supabase';
 import { sendWaitlistConfirmation } from '../../lib/email';
+import { checkRateLimit, extractSourceIp } from '../../lib/simpleRateLimit';
 
 const VALID_ROLES = ['patient', 'doctor', 'insurer', 'employer'] as const;
 
+// Rate-limited per IP: each POST sends one Resend email (shared daily quota).
+const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  if (!checkRateLimit('waitlist', extractSourceIp(req), RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS)) {
+    return res.status(429).json({ error: 'Too many requests' });
+  }
 
   const { name, email, role } = req.body ?? {};
 
