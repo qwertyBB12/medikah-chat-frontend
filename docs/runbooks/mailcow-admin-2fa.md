@@ -68,7 +68,19 @@ Run inside the Mailcow MySQL container on the VPS:
 ```bash
 cd /opt/mailcow-dockerized
 docker compose exec -T mysql-mailcow mysql -umailcow -p$(grep ^DBPASS mailcow.conf | cut -d= -f2) mailcow -e \
-  "SELECT username FROM mailbox m LEFT JOIN tfa t ON t.username=m.username WHERE t.username IS NULL AND m.active=1;"
+  "SELECT m.username FROM mailbox m LEFT JOIN tfa t ON t.username=m.username WHERE t.username IS NULL AND m.active=1;"
+```
+
+Note: `m.username` must be qualified — the bare column is ambiguous across the
+join and MySQL rejects it (error 1052). If `sudo` is unavailable for the
+`mailops` user, both steps work without it: `mailcow.conf` is owned by
+`mailops`, and the docker group allows `docker exec` directly:
+
+```bash
+cd /opt/mailcow-dockerized
+DBPASS=$(grep ^DBPASS mailcow.conf | cut -d= -f2)
+docker exec mailcowdockerized-mysql-mailcow-1 mysql -umailcow -p"$DBPASS" mailcow -e \
+  "SELECT m.username FROM mailbox m LEFT JOIN tfa t ON t.username=m.username WHERE t.username IS NULL AND m.active=1;"
 ```
 
 Interpretation:
