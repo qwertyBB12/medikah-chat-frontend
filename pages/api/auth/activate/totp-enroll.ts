@@ -96,7 +96,7 @@ export default async function handler(
     // --- Load physician workspace account ---
     const { data: workspace, error: wsError } = await supabaseAdmin
       .from('physician_workspace_accounts')
-      .select('id, mailbox_password_set, totp_secret, activation_complete, local_part')
+      .select('id, mailbox_password_set, totp_secret, activation_complete, mailbox_local_part')
       .eq('physician_id', tokenPayload.physician_id)
       .maybeSingle();
 
@@ -177,7 +177,7 @@ export default async function handler(
     try {
       await importAvatarToSOGo(
         tokenPayload.physician_id,
-        workspace.local_part as string,
+        workspace.mailbox_local_part as string,
       );
     } catch (avatarErr) {
       // Log avatar import failure to workspace_audit_log (non-blocking)

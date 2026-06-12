@@ -89,7 +89,7 @@ export default async function handler(
     // --- Resolve physician workspace account ---
     const { data: workspace, error: wsError } = await supabaseAdmin
       .from('physician_workspace_accounts')
-      .select('id, local_part')
+      .select('id, mailbox_local_part')
       .eq('physician_id', tokenPayload.physician_id)
       .maybeSingle();
 
@@ -98,7 +98,7 @@ export default async function handler(
       return res.status(404).json({ error: 'Workspace account not found' });
     }
 
-    const localPart = workspace.local_part as string;
+    const localPart = workspace.mailbox_local_part as string;
     const mailboxAddress = `${localPart}@medikah.health`;
 
     // --- Call Mailcow Admin API to set the mailbox password ---
