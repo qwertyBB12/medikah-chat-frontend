@@ -2,7 +2,8 @@
  * Phase 12 Plan 12-01: MailboxTab
  *
  * Workspace sub-tab showing the doctor's Práctikah mailbox address, quota,
- * and an "Open Mailbox" CTA into webmail at mail.medikah.health.
+ * and an "Open Mailbox" CTA into webmail at practikah.medikah.health/SOGo
+ * (mail.medikah.health is NXDOMAIN since the domain restructure).
  *
  * Also surfaces a Change Password inline action that POSTs to
  * /api/practikah/mailbox/change-password (handler ships in 12-03).
@@ -87,7 +88,7 @@ export default function MailboxTab({ physicianId, lang, accessToken }: MailboxTa
         </div>
 
         <a
-          href="https://mail.medikah.health"
+          href="https://practikah.medikah.health/SOGo/"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-block bg-clinical-teal text-white px-6 py-3 rounded-md font-dm-sans font-medium hover:bg-clinical-teal/90 transition-colors"
