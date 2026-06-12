@@ -104,6 +104,22 @@ export default async function handler(
   res.setHeader('X-Auth-Mailbox', (token.mailbox_email as string) ?? '');
   res.setHeader('X-Auth-User', (token.physician_id as string) ?? '');
 
+  // 17-06 fix: trusted-proxy auth covers the SOGo SESSION, but SOGo's IMAP
+  // leg still needs credentials ("no IMAP4 password available" — found live).
+  // Mirror Mailcow's own SSO: return a ready-made Basic Authorization using
+  // the sogo-sso trust password. Dovecot honors that password ONLY when the
+  // IMAP connection originates from the SOGo container (mailcowauth.php
+  // real_rip check), so its exposure here is bounded.
+  const trustPass = process.env.SOGO_SSO_TRUST_PASS;
+  if (trustPass && token.mailbox_email) {
+    const basic = Buffer.from(
+      `${token.mailbox_email as string}:${trustPass}`,
+      'utf8',
+    ).toString('base64');
+    res.setHeader('X-Auth', `Basic ${basic}`);
+    res.setHeader('X-Auth-Type', 'Basic');
+  }
+
   // No body — auth_request only needs the status + headers.
   res.status(200).end();
 }
