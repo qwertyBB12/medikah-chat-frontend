@@ -86,7 +86,9 @@ export type WorkspaceAction =
   | 'phi_warning.overridden'
   | 'consent.signed'
   // Phase 17 — workspace activation flow
-  | 'workspace.activation_link_resent';
+  | 'workspace.activation_link_resent'
+  // Phase 17 Plan 04 — login-time TOTP second factor
+  | 'workspace.login_2fa';
 
 export type ActorRole = 'physician' | 'admin' | 'system';
 
@@ -136,6 +138,7 @@ export interface WorkspaceAuditEvent {
  */
 const SECURITY_RELEVANT_ACTIONS: ReadonlySet<WorkspaceAction> = new Set<WorkspaceAction>([
   'workspace.login',
+  'workspace.login_2fa',
   'workspace.setup_completed',
   'workspace.password_changed',
   'consent.signed',
