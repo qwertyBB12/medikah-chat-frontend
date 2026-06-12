@@ -17,6 +17,8 @@ declare module 'next-auth' {
       physician_id?: string;
       verification_status?: 'pending' | 'in_review' | 'verified' | 'rejected';
       workspace_role?: 'owner';
+      // Phase 17 Plan 04 — TOTP pending flag (set while needs_totp=true on the JWT)
+      needs_totp?: boolean;
     } & DefaultSession['user'];
   }
 
@@ -41,5 +43,10 @@ declare module 'next-auth/jwt' {
     physician_id?: string;
     verification_status?: 'pending' | 'in_review' | 'verified' | 'rejected';
     workspace_role?: 'owner';
+    // Phase 17 Plan 04 — TOTP second-factor gate
+    // needs_totp=true: IMAP succeeded but TOTP not yet verified; no usable session
+    needs_totp?: boolean;
+    // totp_verified=true: totp-verify endpoint confirmed the TOTP code; full claims issued
+    totp_verified?: boolean;
   }
 }

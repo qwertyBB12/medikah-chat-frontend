@@ -114,15 +114,59 @@ export const authOptions: NextAuthOptions = {
         // physicians; portalAuth.detectUserRole intentionally skipped per
         // 16-CONTEXT.md <code_context>).
         if (account?.provider === 'mailcow-imap') {
+          const imapUser = user as {
+            needs_totp?: boolean;
+            totp_verified?: boolean;
+            physician_id?: string;
+            mailbox_email?: string;
+            verification_status?: 'pending' | 'in_review' | 'verified' | 'rejected';
+            workspace_role?: 'owner';
+          };
+
+          // Phase 17 Plan 04 — TOTP second-factor gate (T-17-04-01).
+          // mailcowImapAuthorize() returns a sentinel { id: 'totp-pending:<id>',
+          // needs_totp: true, physician_id } when the physician is enrolled.
+          // The JWT must carry needs_totp=true and physician_id so the client
+          // can call /api/auth/activate/totp-verify, but MUST NOT carry the full
+          // D-10 physician claim set (role/mailbox_email/verification_status)
+          // until TOTP is verified — that would be a 2FA bypass (T-17-04-01).
+          if (imapUser.needs_totp === true) {
+            token.userId = user.id;
+            token.role = 'physician'; // hard-coded; only physicians have Mailcow accounts
+            token.provider = 'mailcow-imap';
+            token.needs_totp = true;
+            token.physician_id = imapUser.physician_id;
+            // Do NOT set mailbox_email, verification_status, workspace_role, totp_verified.
+            // The session callback checks needs_totp before exposing physician claims.
+            return token;
+          }
+
+          // Phase 17 Plan 04 — TOTP upgrade path.
+          // When the totp-verify endpoint re-invokes signIn with totp_verified=true
+          // (via a specially shaped user object returned from authorize()), clear
+          // needs_totp and populate the full D-10 claim set.
+          if (imapUser.totp_verified === true) {
+            token.userId = user.id;
+            token.role = 'physician';
+            token.provider = 'mailcow-imap';
+            token.needs_totp = false;
+            token.totp_verified = true;
+            token.physician_id = imapUser.physician_id;
+            token.mailbox_email = imapUser.mailbox_email;
+            token.verification_status = imapUser.verification_status;
+            token.workspace_role = imapUser.workspace_role;
+            return token;
+          }
+
+          // Standard mailcow-imap path (legacy physicians with no workspace row):
+          // full D-10 claim set, no TOTP gate.
           token.userId = user.id;
           token.role = 'physician';
           token.provider = 'mailcow-imap';
-          token.mailbox_email = (user as { mailbox_email?: string }).mailbox_email;
-          token.physician_id = (user as { physician_id?: string }).physician_id;
-          token.verification_status = (user as {
-            verification_status?: 'pending' | 'in_review' | 'verified' | 'rejected';
-          }).verification_status;
-          token.workspace_role = (user as { workspace_role?: 'owner' }).workspace_role;
+          token.mailbox_email = imapUser.mailbox_email;
+          token.physician_id = imapUser.physician_id;
+          token.verification_status = imapUser.verification_status;
+          token.workspace_role = imapUser.workspace_role;
         }
       }
 
@@ -178,11 +222,26 @@ export const authOptions: NextAuthOptions = {
         }
 
         // Phase 16 D-10 — additive lift of mailcow-imap claims onto session.user.
+        // Phase 17 Plan 04 — gate: do NOT expose physician claims if TOTP is pending.
+        // needs_totp=true means IMAP password was correct but TOTP not yet verified.
+        // Exposing role='physician' + mailbox_email on a needs_totp session would
+        // allow a partial 2FA bypass (T-17-04-01).
         if (token.provider === 'mailcow-imap') {
-          session.user.mailbox_email = token.mailbox_email;
-          session.user.physician_id = token.physician_id;
-          session.user.verification_status = token.verification_status;
-          session.user.workspace_role = token.workspace_role;
+          if (token.needs_totp === true) {
+            // Pending TOTP session — expose only the minimum needed for the TOTP
+            // verification UI: physician_id (to call /api/auth/activate/totp-verify)
+            // and needs_totp flag. Do not expose mailbox_email, verification_status,
+            // workspace_role. Role is set to physician (display purposes only — the
+            // fast-API 'verified_physician' dependency still gates /practikah/* routes).
+            session.user.needs_totp = true;
+            session.user.physician_id = token.physician_id;
+          } else {
+            // Fully authenticated (TOTP verified or legacy no-workspace path).
+            session.user.mailbox_email = token.mailbox_email;
+            session.user.physician_id = token.physician_id;
+            session.user.verification_status = token.verification_status;
+            session.user.workspace_role = token.workspace_role;
+          }
         }
       }
       return session;

@@ -330,6 +330,57 @@ export async function mailcowImapAuthorize(
     return null;
   }
 
+  // Step 6.5 — TOTP second-factor gate (Phase 17 Plan 04, D-01 atomic activation).
+  //
+  // Query physician_workspace_accounts for the TOTP/activation state of this
+  // physician. Three cases:
+  //   a) Row exists, activation_complete=false → physician is mid-activation or
+  //      activation never completed. Return null (infra_error) per Pitfall 1 /
+  //      T-17-04-05 — route back to activation flow, no JWT.
+  //   b) Row exists, activation_complete=true, totp_enrolled=true, totp_secret set →
+  //      IMAP password is correct but we must also verify TOTP. Return a sentinel
+  //      { id: 'totp-pending:<id>', needs_totp: true, physician_id } so the
+  //      NextAuth jwt() callback can gate JWT issuance on TOTP verification.
+  //   c) No row (legacy physician, no workspace account yet) → fall through to the
+  //      existing full-user return. No regression.
+  const { data: wsAccount } = await supabaseAdmin
+    .from('physician_workspace_accounts')
+    .select('activation_complete, totp_enrolled, totp_secret')
+    .eq('physician_id', physician.id)
+    .maybeSingle();
+
+  if (wsAccount !== null && wsAccount !== undefined) {
+    // Case a: workspace row exists but activation is not complete.
+    if (!wsAccount.activation_complete) {
+      console.error(
+        '[mailcowImapProvider] IMAP OK but activation_complete=false — routing to activation flow',
+        { physician_id: physician.id, ip: sourceIp },
+      );
+      await writeProbeAttempt(sourceIp, email, 'infra_error', userAgent);
+      return null;
+    }
+
+    // Case b: fully activated + TOTP enrolled — return sentinel for second-factor prompt.
+    if (wsAccount.totp_enrolled && wsAccount.totp_secret) {
+      // Do NOT write success ledger row yet — the login is not complete until TOTP is verified.
+      // Do NOT write workspace_audit_log yet — the totp-verify endpoint writes login_2fa on
+      // both success and failure outcomes.
+      return {
+        id: `totp-pending:${physician.id}`,
+        needs_totp: true,
+        physician_id: physician.id,
+      } as unknown as MailcowImapAuthorizedUser;
+    }
+    // Case b-miss: activation_complete=true but TOTP not yet enrolled (should not happen
+    // in steady state — D-01 requires both gates). Fall through to full-user return;
+    // the account can still log in so it is not blocked. Log a warning.
+    console.warn(
+      '[mailcowImapProvider] activation_complete=true but totp_enrolled=false — possible partial activation state',
+      { physician_id: physician.id },
+    );
+  }
+  // Case c: wsAccount is null → legacy physician (no workspace row). Fall through.
+
   // Step 8 — success ledger row.
   await writeProbeAttempt(sourceIp, email, 'success', userAgent);
 
