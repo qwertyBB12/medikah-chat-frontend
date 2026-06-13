@@ -162,6 +162,13 @@ export default function CdmxLanding() {
         <meta property="og:url" content="https://medikah.health/cdmx" />
         <meta property="og:title" content="medikah health llega a CDMX" />
         <meta property="og:description" content="Sesiones de capacitación y networking · 22–30 de junio de 2026 · Ciudad de México. Primer certificado en IA médica." />
+        <meta property="og:image" content="https://medikah.health/cdmx-og.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="medikah health llega a CDMX" />
+        <meta name="twitter:description" content="Sesiones de capacitación y networking · 22–30 de junio de 2026 · Ciudad de México. Primer certificado en IA médica." />
+        <meta name="twitter:image" content="https://medikah.health/cdmx-og.png" />
         <meta name="robots" content="index,follow" />
       </Head>
 
