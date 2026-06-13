@@ -11,7 +11,8 @@ import { CDMX_SESSION_DAYS, CDMX_MAX_PREFERENCES, cdmxSessionLabel } from '../li
 type Lang = 'es' | 'en';
 
 const COPY = {
-  eyebrow:   { es: 'Médicos especialistas · Ciudad de México · Mundial 2026', en: 'Specialist physicians · Mexico City · 2026 World Cup' },
+  eyebrowA:  { es: 'Médicos especialistas', en: 'Specialist physicians' },
+  eyebrowB:  { es: 'Ciudad de México · Mundial 2026', en: 'Mexico City · 2026 World Cup' },
   h1a:       { es: 'medikah.health', en: 'medikah.health' },
   h1pull1:   { es: 'La medicina ya cambió.', en: 'Medicine already changed.' },
   h1pull2:   { es: '¿Y su consulta?', en: 'Has your practice?' },
@@ -237,24 +238,24 @@ export default function CdmxLanding() {
           <div className="relative mx-auto grid max-w-6xl items-center gap-14 lg:grid-cols-2">
             {/* left: invitation */}
             <div>
-              <p className="font-body text-[0.8rem] font-semibold uppercase tracking-[0.32em] text-teal-300">
-                {t('eyebrow')}
+              <p className="font-body text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-teal-300 sm:text-[0.8rem] sm:tracking-[0.32em]">
+                {t('eyebrowA')}<span className="hidden sm:inline"> · </span><span className="block sm:inline">{t('eyebrowB')}</span>
               </p>
               <h1 className="mt-5">
-                <span className="block font-heading text-5xl font-semibold uppercase leading-[0.95] tracking-[0.01em] text-white sm:text-6xl">
+                <span className="block font-heading text-4xl font-semibold uppercase leading-[0.98] tracking-[0.01em] text-white sm:text-6xl sm:leading-[0.95]">
                   {t('h1pull1')}
                 </span>
-                <span className="block font-heading text-5xl font-semibold uppercase leading-[0.95] tracking-[0.01em] text-teal-300 sm:text-6xl">
+                <span className="block font-heading text-4xl font-semibold uppercase leading-[0.98] tracking-[0.01em] text-teal-300 sm:text-6xl sm:leading-[0.95]">
                   {t('h1pull2')}
                 </span>
-                <span className="mt-7 block font-body text-2xl font-medium lowercase tracking-[0.02em] text-white sm:text-3xl">
+                <span className="mt-6 block font-body text-xl font-medium lowercase tracking-[0.02em] text-white sm:mt-7 sm:text-3xl">
                   medikah<span className="text-teal-300">.health</span>
                 </span>
-                <span className="mt-1 block font-heading text-base font-medium uppercase tracking-[0.14em] text-white/60 sm:text-lg">
+                <span className="mt-1 block font-heading text-sm font-medium uppercase tracking-[0.14em] text-white/60 sm:text-lg">
                   {t('h1b')}
                 </span>
               </h1>
-              <p className="mt-7 max-w-md font-body text-lg leading-relaxed text-white/80">
+              <p className="mt-6 max-w-md font-body text-base leading-relaxed text-white/80 sm:mt-7 sm:text-lg">
                 {t('lead')}
               </p>
               <dl className="mt-9 space-y-4">
