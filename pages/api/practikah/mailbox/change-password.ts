@@ -19,6 +19,7 @@ import { getServerSession } from 'next-auth';
 import { getToken } from 'next-auth/jwt';
 import { authOptions } from '../../auth/[...nextauth]';
 import { logEvent, extractRequestContext } from '../../../../lib/workspaceAuditService';
+import { checkPassword } from '../../../../lib/passwordPolicy';
 
 const FASTAPI_URL =
   process.env.PRACTIKAH_API_URL ||
@@ -55,12 +56,18 @@ export default async function handler(
     return res.status(401).json({ error: 'Session token unavailable' });
   }
 
-  // 4. Server-side new_password length validation (before forwarding)
+  // 4. Server-side new_password policy validation (before forwarding):
+  //    ≥12 chars + ≥3 of 4 character classes (Phase 17 SC2 / hardening decision 36)
   const body = req.body as ChangePasswordBody;
   const newPassword = body?.new_password ?? '';
-  if (typeof newPassword !== 'string' || newPassword.length < 12) {
+  const pwCheck = checkPassword(typeof newPassword === 'string' ? newPassword : '');
+  if (!pwCheck.valid) {
     return res.status(422).json({
-      error: 'new_password must be at least 12 characters',
+      error:
+        pwCheck.reason === 'needs_mix'
+          ? 'new_password must mix at least 3 of: lowercase, uppercase, number, symbol'
+          : 'new_password must be at least 12 characters',
+      reason: pwCheck.reason,
     });
   }
 

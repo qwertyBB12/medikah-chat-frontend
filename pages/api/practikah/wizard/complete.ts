@@ -22,6 +22,7 @@ import { getServerSession } from 'next-auth';
 import { getToken } from 'next-auth/jwt';
 import { authOptions } from '../../auth/[...nextauth]';
 import { logEvent, extractRequestContext } from '../../../../lib/workspaceAuditService';
+import { checkPassword } from '../../../../lib/passwordPolicy';
 
 const FASTAPI_URL =
   process.env.PRACTIKAH_API_URL ||
@@ -78,9 +79,17 @@ export default async function handler(
     });
   }
 
-  if (typeof mailbox_password !== 'string' || mailbox_password.length < 12) {
+  // Password policy: ≥12 chars + ≥3 of 4 character classes (Phase 17 SC2 / hardening decision 36)
+  const pwCheck = checkPassword(
+    typeof mailbox_password === 'string' ? mailbox_password : '',
+  );
+  if (!pwCheck.valid) {
     return res.status(400).json({
-      error: 'mailbox_password must be at least 12 characters',
+      error:
+        pwCheck.reason === 'needs_mix'
+          ? 'mailbox_password must mix at least 3 of: lowercase, uppercase, number, symbol'
+          : 'mailbox_password must be at least 12 characters',
+      reason: pwCheck.reason,
     });
   }
 

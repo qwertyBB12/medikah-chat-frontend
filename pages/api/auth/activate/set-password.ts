@@ -19,6 +19,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { supabaseAdmin } from '../../../../lib/supabaseServer';
 import { verifyActivationToken, hashToken } from '../../../../lib/auth/activationTokens';
 import { logEvent, extractRequestContext } from '../../../../lib/workspaceAuditService';
+import { checkPassword } from '../../../../lib/passwordPolicy';
 
 export default async function handler(
   req: NextApiRequest,
@@ -40,9 +41,19 @@ export default async function handler(
       return res.status(400).json({ error: 'Token required' });
     }
 
-    // --- Password policy: ≥12 characters (v1.3 security non-negotiable #1) ---
-    if (!password || typeof password !== 'string' || password.length < 12) {
-      return res.status(422).json({ error: 'Password must be at least 12 characters' });
+    // --- Password policy: ≥12 chars + ≥3 of 4 character classes (Phase 17 SC2 / hardening decision 36) ---
+    if (!password || typeof password !== 'string') {
+      return res.status(422).json({ error: 'Password required', reason: 'too_short' });
+    }
+    const pwCheck = checkPassword(password);
+    if (!pwCheck.valid) {
+      return res.status(422).json({
+        error:
+          pwCheck.reason === 'needs_mix'
+            ? 'Password must mix at least 3 of: lowercase, uppercase, number, symbol'
+            : 'Password must be at least 12 characters',
+        reason: pwCheck.reason,
+      });
     }
 
     // --- Re-verify activation token (signature + type claim) ---

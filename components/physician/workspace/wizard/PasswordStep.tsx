@@ -13,6 +13,7 @@
 import { useState } from 'react';
 import type { SupportedLang } from '../../../../lib/i18n';
 import { content as workspaceContent } from '../../../../lib/practikahWorkspaceContent';
+import { checkPassword } from '../../../../lib/passwordPolicy';
 
 interface PasswordStepProps {
   lang: SupportedLang;
@@ -63,8 +64,13 @@ export default function PasswordStep({
   ][strength];
 
   const handleSubmit = () => {
-    if (password.length < 12) {
+    const pwCheck = checkPassword(password);
+    if (pwCheck.reason === 'too_short') {
       setValidationError(t.wizard.password.tooShort);
+      return;
+    }
+    if (pwCheck.reason === 'needs_mix') {
+      setValidationError(t.wizard.password.needsMix);
       return;
     }
     if (password !== confirm) {

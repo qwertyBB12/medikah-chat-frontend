@@ -26,6 +26,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { LOGO_DARK_SRC } from '../../../lib/assets';
+import { checkPassword } from '../../../lib/passwordPolicy';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -50,11 +51,12 @@ const COPY = {
     verifying: 'Verifying your link...',
     // Password step
     passwordHeading: 'Create Your Password',
-    passwordSub: 'Your Práctikah workspace password must be at least 12 characters.',
+    passwordSub: 'At least 12 characters, mixing at least 3 of: lowercase, uppercase, number, symbol.',
     passwordLabel: 'Password',
-    passwordPlaceholder: 'At least 12 characters',
+    passwordPlaceholder: 'At least 12 characters, with a mix',
     passwordSubmit: 'Continue',
     passwordLengthError: 'Password must be at least 12 characters.',
+    passwordMixError: 'Use at least 3 of: lowercase, uppercase, number, symbol.',
     // TOTP step
     totpHeading: 'Set Up Two-Factor Authentication',
     totpSub: 'Scan the QR code with your authenticator app, then enter the 6-digit code.',
@@ -85,11 +87,12 @@ const COPY = {
     verifying: 'Verificando tu enlace...',
     // Password step
     passwordHeading: 'Crea Tu Contraseña',
-    passwordSub: 'Tu contraseña de Práctikah debe tener al menos 12 caracteres.',
+    passwordSub: 'Al menos 12 caracteres, combinando al menos 3 de: minúscula, mayúscula, número, símbolo.',
     passwordLabel: 'Contraseña',
-    passwordPlaceholder: 'Al menos 12 caracteres',
+    passwordPlaceholder: 'Al menos 12 caracteres, combinados',
     passwordSubmit: 'Continuar',
     passwordLengthError: 'La contraseña debe tener al menos 12 caracteres.',
+    passwordMixError: 'Usa al menos 3 de: minúscula, mayúscula, número, símbolo.',
     // TOTP step
     totpHeading: 'Configura la Autenticación de Dos Factores',
     totpSub: 'Escanea el código QR con tu app de autenticación y luego ingresa el código de 6 dígitos.',
@@ -179,8 +182,13 @@ export default function ActivatePage() {
     e.preventDefault();
     setError(null);
 
-    if (password.length < 12) {
+    const pwCheck = checkPassword(password);
+    if (pwCheck.reason === 'too_short') {
       setError(t.passwordLengthError);
+      return;
+    }
+    if (pwCheck.reason === 'needs_mix') {
+      setError(t.passwordMixError);
       return;
     }
 
@@ -196,7 +204,8 @@ export default function ActivatePage() {
         // Advance to TOTP step — on entry, fetch QR code
         await fetchTotpSetup();
       } else if (res.status === 422) {
-        setError(t.passwordLengthError);
+        const body = (await res.json().catch(() => ({}))) as { reason?: string };
+        setError(body.reason === 'needs_mix' ? t.passwordMixError : t.passwordLengthError);
       } else {
         setError(t.genericError);
       }

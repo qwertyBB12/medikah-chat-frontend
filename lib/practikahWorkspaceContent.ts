@@ -160,6 +160,7 @@ export interface WorkspaceContent {
       success: string;
       error: string;
       errorWeak: string;
+      errorNeedsMix: string;
       errorMismatch: string;
       strengthMeter: string;
       strengthWeak: string;
@@ -389,6 +390,7 @@ export interface WorkspaceContent {
       strengthStrong: string;
       mismatch: string;
       tooShort: string;
+      needsMix: string;
       submit: string;
       submitting: string;
       submitError: string;
@@ -602,6 +604,7 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         success: 'Password updated successfully.',
         error: 'Could not update password. Please try again.',
         errorWeak: 'Password must be at least 12 characters.',
+        errorNeedsMix: 'Use at least 3 of: lowercase, uppercase, number, symbol.',
         errorMismatch: 'Passwords do not match.',
         strengthMeter: 'Strength',
         strengthWeak: 'Weak',
@@ -846,6 +849,7 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         strengthStrong: 'Strong',
         mismatch: 'Passwords do not match.',
         tooShort: 'Password must be at least 12 characters.',
+        needsMix: 'Use at least 3 of: lowercase, uppercase, number, symbol.',
         submit: 'Create my mailbox',
         submitting: 'Provisioning...',
         submitError: 'Could not provision your mailbox. Please try again.',
@@ -1053,6 +1057,7 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         success: 'Contraseña actualizada correctamente.',
         error: 'No se pudo actualizar la contraseña. Inténtalo de nuevo.',
         errorWeak: 'La contraseña debe tener al menos 12 caracteres.',
+        errorNeedsMix: 'Usa al menos 3 de: minúscula, mayúscula, número, símbolo.',
         errorMismatch: 'Las contraseñas no coinciden.',
         strengthMeter: 'Seguridad',
         strengthWeak: 'Débil',
@@ -1297,6 +1302,7 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         strengthStrong: 'Fuerte',
         mismatch: 'Las contraseñas no coinciden.',
         tooShort: 'La contraseña debe tener al menos 12 caracteres.',
+        needsMix: 'Usa al menos 3 de: minúscula, mayúscula, número, símbolo.',
         submit: 'Crear mi buzón',
         submitting: 'Creando...',
         submitError: 'No se pudo crear tu buzón. Inténtalo de nuevo.',
