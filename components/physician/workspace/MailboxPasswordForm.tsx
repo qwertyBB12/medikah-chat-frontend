@@ -23,6 +23,7 @@
 import { useState } from 'react';
 import type { SupportedLang } from '../../../lib/i18n';
 import { content as workspaceContent } from '../../../lib/practikahWorkspaceContent';
+import { checkPassword } from '../../../lib/passwordPolicy';
 
 export interface MailboxPasswordFormProps {
   lang: SupportedLang;
@@ -76,9 +77,15 @@ export default function MailboxPasswordForm({
   ][strength];
 
   const handleSubmit = async () => {
-    // Client-side validation
-    if (newPwd.length < 12) {
+    // Client-side validation: ≥12 chars + ≥3 of 4 character classes
+    const pwCheck = checkPassword(newPwd);
+    if (pwCheck.reason === 'too_short') {
       setErrorMsg(pf.errorWeak);
+      setFormState('error');
+      return;
+    }
+    if (pwCheck.reason === 'needs_mix') {
+      setErrorMsg(pf.errorNeedsMix);
       setFormState('error');
       return;
     }
