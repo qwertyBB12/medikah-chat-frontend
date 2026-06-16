@@ -88,7 +88,22 @@ export type WorkspaceAction =
   // Phase 17 — workspace activation flow
   | 'workspace.activation_link_resent'
   // Phase 17 Plan 04 — login-time TOTP second factor
-  | 'workspace.login_2fa';
+  | 'workspace.login_2fa'
+  // Phase 18 — Bootstrap Identity Rationalization & Recovery
+  // Recovery magic-link sent to the bootstrap email on file (D-03, D-05)
+  | 'workspace.recovery_link_sent'
+  // Google re-auth recovery path verified successfully (D-03, D-05)
+  | 'workspace.recovery_google_verified'
+  // New Mailcow password set via recovery flow (D-03, D-04)
+  | 'workspace.recovery_password_changed'
+  // Physician filed a self-service lost-2FA reset request (D-06)
+  | 'workspace.totp_reset_requested'
+  // Admin approved a lost-2FA reset (clears totp_enrolled + totp_secret) (D-06)
+  | 'workspace.totp_reset_approved'
+  // Admin denied a lost-2FA reset request (D-06 — informational only)
+  | 'workspace.totp_reset_denied'
+  // A graduated physician (activation_complete=true) hit the bootstrap demotion wall (D-01)
+  | 'workspace.bootstrap_demotion_hit';
 
 export type ActorRole = 'physician' | 'admin' | 'system';
 
@@ -143,6 +158,16 @@ const SECURITY_RELEVANT_ACTIONS: ReadonlySet<WorkspaceAction> = new Set<Workspac
   'workspace.password_changed',
   'consent.signed',
   'phi_warning.overridden',
+  // Phase 18 — Bootstrap Identity Rationalization & Recovery
+  // All recovery writes and demotion-wall hits are security-relevant (T-18-01-04).
+  // workspace.totp_reset_denied is intentionally excluded — it is informational only
+  // (a denied request does not change any credential state).
+  'workspace.recovery_link_sent',
+  'workspace.recovery_google_verified',
+  'workspace.recovery_password_changed',
+  'workspace.totp_reset_requested',
+  'workspace.totp_reset_approved',
+  'workspace.bootstrap_demotion_hit',
 ]);
 
 // ---------------------------------------------------------------------------
