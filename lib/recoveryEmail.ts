@@ -29,6 +29,7 @@ interface SendEmailResult {
 export interface RecoveryEmailOptions {
   to: string;
   fullName: string;
+  /** Full URL pointing to auth/recovery?token=<signed-jwt> */
   recoveryUrl: string;
   lang?: 'en' | 'es';
 }
