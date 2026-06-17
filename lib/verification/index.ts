@@ -11,8 +11,7 @@ export * from './types';
 export { verifyCedulaMexico, compareCofeprisData, buildMexicoVerificationResult } from './cofepris';
 export { verifyUSAMedicalLicense, compareStateBoardData, buildUSAVerificationResult, getStateBoardUrl } from './usaMedicalBoards';
 
-// Tier 2: Semi-auto
-export { verifyLinkedInProfile, isValidLinkedInUrl, extractLinkedInId, buildLinkedInVerificationResult } from './linkedinVerification';
+// Tier 2: Semi-auto (LinkedIn removed — Phase 18-03, AUTH-04)
 export { verifyGoogleScholar, isValidScholarUrl, extractScholarId, buildScholarVerificationResult } from './scholarVerification';
 
 // Main service

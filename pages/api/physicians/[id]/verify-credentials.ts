@@ -4,7 +4,7 @@
  * Triggers the credential verification process for a physician.
  * Runs through all 3 tiers:
  * - Tier 1: Auto-verify (COFEPRIS, State Medical Boards)
- * - Tier 2: Semi-auto (LinkedIn, Google Scholar)
+ * - Tier 2: Semi-auto (Google Scholar)
  * - Tier 3: Queue for manual review if needed
  */
 
@@ -31,8 +31,8 @@ export default async function handler(
     return res.status(405).json({ error: `Method ${req.method} not allowed` });
   }
 
-  // Admin-only: triggering verification runs the expensive 3-tier external
-  // pipeline (COFEPRIS / state boards / LinkedIn). Block anonymous abuse.
+  // Admin-only: triggering verification runs the external pipeline
+  // (COFEPRIS / state boards / Google Scholar). Block anonymous abuse.
   const admin = await getAdminUser(req, res);
   if (!admin) {
     return res.status(403).json({ error: 'Admin access required' });
@@ -61,7 +61,6 @@ export default async function handler(
       const validTypes: VerificationType[] = [
         'license_mexico',
         'license_usa',
-        'education_linkedin',
         'publications_scholar',
         'professional_presence',
         'board_certification',

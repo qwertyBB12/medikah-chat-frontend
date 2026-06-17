@@ -21,7 +21,6 @@ import {
 } from './types';
 import { verifyCedulaMexico, compareCofeprisData, buildMexicoVerificationResult } from './cofepris';
 import { verifyUSAMedicalLicense, compareStateBoardData, buildUSAVerificationResult, getStateBoardUrl } from './usaMedicalBoards';
-import { verifyLinkedInProfile, buildLinkedInVerificationResult } from './linkedinVerification';
 import { verifyGoogleScholar, buildScholarVerificationResult } from './scholarVerification';
 
 /**
@@ -55,19 +54,7 @@ export async function verifyPhysicianCredentials(
     manualReviewItems.push(...licenseResults.manualReviews);
   }
 
-  // Tier 2: Semi-auto verification
-  if (!specificTypes || specificTypes.includes('education_linkedin')) {
-    if (physician.linkedinUrl) {
-      const linkedinResult = await verifyLinkedIn(physicianId, physician, existingResults, forceRecheck);
-      if (linkedinResult) {
-        results.push(linkedinResult.result);
-        if (linkedinResult.manualReview) {
-          manualReviewItems.push(linkedinResult.manualReview);
-        }
-      }
-    }
-  }
-
+  // Tier 2: Semi-auto verification (LinkedIn tier removed — Phase 18-03, AUTH-04)
   if (!specificTypes || specificTypes.includes('publications_scholar')) {
     if (physician.googleScholarUrl) {
       const scholarResult = await verifyScholar(physicianId, physician, existingResults, forceRecheck);
@@ -353,61 +340,6 @@ function createLicenseManualReview(
     reason: result.notes || `License verification requires manual review`,
     status: 'pending',
   };
-}
-
-/**
- * Verify LinkedIn profile (Tier 2)
- */
-async function verifyLinkedIn(
-  physicianId: string,
-  physician: PhysicianProfileData,
-  existingResults: VerificationResult[],
-  forceRecheck: boolean
-): Promise<{ result: VerificationResult; manualReview?: ManualReviewItem } | null> {
-  if (!physician.linkedinUrl) return null;
-
-  const existing = existingResults.find(r => r.verificationType === 'education_linkedin');
-  if (existing && !forceRecheck && existing.status === 'verified') {
-    return { result: existing };
-  }
-
-  const verificationResult = await verifyLinkedInProfile({
-    linkedinUrl: physician.linkedinUrl,
-    submittedData: {
-      fullName: physician.fullName,
-      medicalSchool: physician.medicalSchool,
-      graduationYear: physician.graduationYear,
-      currentInstitutions: physician.currentInstitutions,
-      primarySpecialty: physician.primarySpecialty,
-    },
-  });
-
-  const result = buildLinkedInVerificationResult(
-    physicianId,
-    physician.linkedinUrl,
-    verificationResult
-  );
-
-  let manualReview: ManualReviewItem | undefined;
-  if (result.status === 'manual_review' && verificationResult.discrepancies.length > 0) {
-    manualReview = {
-      physicianId,
-      reviewType: 'data_discrepancy',
-      priority: 'low',
-      reviewData: {
-        physicianName: physician.fullName,
-        physicianEmail: physician.email,
-        linkedinUrl: physician.linkedinUrl,
-        linkedinData: verificationResult.data,
-        discrepancies: verificationResult.discrepancies,
-        confidence: verificationResult.confidence,
-      },
-      reason: `LinkedIn data has discrepancies with submitted information`,
-      status: 'pending',
-    };
-  }
-
-  return { result, manualReview };
 }
 
 /**
