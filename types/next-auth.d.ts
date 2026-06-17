@@ -6,12 +6,7 @@ declare module 'next-auth' {
     user: {
       id: string;
       role: 'patient' | 'physician' | 'insurer' | 'employer';
-      provider?: 'credentials' | 'google' | 'linkedin' | 'mailcow-imap';
-      linkedInProfile?: {
-        fullName?: string | null;
-        email?: string | null;
-        photoUrl?: string | null;
-      };
+      provider?: 'credentials' | 'google' | 'mailcow-imap';
       // Phase 16 D-10 claims (populated only on mailcow-imap provider path)
       mailbox_email?: string;
       physician_id?: string;
@@ -32,12 +27,7 @@ declare module 'next-auth/jwt' {
   interface JWT {
     role: 'patient' | 'physician' | 'insurer' | 'employer';
     userId: string;
-    provider?: 'credentials' | 'google' | 'linkedin' | 'mailcow-imap';
-    linkedInProfile?: {
-      fullName?: string | null;
-      email?: string | null;
-      photoUrl?: string | null;
-    };
+    provider?: 'credentials' | 'google' | 'mailcow-imap';
     // Phase 16 D-10 claims (populated only on mailcow-imap provider path)
     mailbox_email?: string;
     physician_id?: string;
