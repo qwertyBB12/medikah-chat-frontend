@@ -3,8 +3,70 @@ import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 import { supabase } from '../../../lib/supabase';
+import { supabaseAdmin } from '../../../lib/supabaseServer';
 import { detectUserRole, ensureSupabaseUser } from '../../../lib/portalAuth';
 import { mailcowImapAuthorize } from '../../../lib/auth/mailcowImapProvider';
+import { logEvent } from '../../../lib/workspaceAuditService';
+
+/**
+ * Phase 18 Plan 04 — D-01: Bootstrap-demotion gate helper.
+ *
+ * Queries physician_workspace_accounts.activation_complete for the physician
+ * identified by the given email. Also checks physician_email_aliases so that
+ * a bootstrap alias (gmail, nxtglobal, etc.) correctly resolves to the canonical
+ * physician record.
+ *
+ * Returns the physician_id if the physician is graduated (activation_complete=true),
+ * or null otherwise (including on any DB error — fail-open, never block sign-in).
+ *
+ * Called from jwt() for both the Google and the original-email-password (credentials)
+ * provider branches when the detected role is 'physician'.
+ */
+async function checkBootstrapDemotion(email: string): Promise<string | null> {
+  if (!supabaseAdmin) return null;
+  try {
+    const canonicalEmail = email.toLowerCase();
+
+    // Step 1: Try direct lookup on physicians.email
+    const { data: physician } = await supabaseAdmin
+      .from('physicians')
+      .select('id')
+      .eq('email', canonicalEmail)
+      .maybeSingle();
+
+    let physicianId: string | null = physician?.id ?? null;
+
+    // Step 2: If not found by direct email, try the alias table (D-09 funneling).
+    // A bootstrap email (e.g. hector@benextglobal.com) may map to the canonical
+    // record (hhlopez@gmail.com row). Without this check the demotion gate would
+    // miss aliases and let a graduated physician through on an alias email.
+    if (!physicianId) {
+      const { data: alias } = await supabaseAdmin
+        .from('physician_email_aliases')
+        .select('physician_id')
+        .eq('email', canonicalEmail)
+        .maybeSingle();
+      physicianId = alias?.physician_id ?? null;
+    }
+
+    if (!physicianId) return null;
+
+    // Step 3: Check activation_complete on physician_workspace_accounts
+    const { data: workspace } = await supabaseAdmin
+      .from('physician_workspace_accounts')
+      .select('activation_complete')
+      .eq('physician_id', physicianId)
+      .maybeSingle();
+
+    if (workspace?.activation_complete === true) {
+      return physicianId;
+    }
+    return null;
+  } catch {
+    // Fail open: any DB error must not block sign-in (T-18-04-03).
+    return null;
+  }
+}
 
 /**
  * NextAuth configuration
@@ -187,6 +249,46 @@ export const authOptions: NextAuthOptions = {
           token.userId = token.sub || '';
         }
 
+        // Phase 18 Plan 04 — D-01: Bootstrap-demotion gate (Google path).
+        // A graduated physician (verification_status=verified + activation_complete=true)
+        // signing in via Google is flagged here; /chat renders the demotion wall.
+        // Gate fires ONLY for physicians — patients are unaffected.
+        // Fails open: any DB error does not block sign-in (T-18-04-03).
+        if (token.role === 'physician' && email) {
+          const demotedPhysicianId = await checkBootstrapDemotion(email);
+          if (demotedPhysicianId) {
+            token.bootstrap_demoted = true;
+            // Audit at jwt() time (IP/UA unavailable here; wall-mount POSTs full context)
+            void logEvent({
+              physicianId: demotedPhysicianId,
+              actorRole: 'system',
+              action: 'workspace.bootstrap_demotion_hit',
+              detail: { provider: 'google', trigger: 'jwt_callback' },
+            });
+          }
+        }
+      }
+
+      // Phase 18 Plan 04 — D-01: Bootstrap-demotion gate (credentials / original
+      // email-password path). A graduated physician who still knows their original
+      // Supabase-auth password is equally demoted — the wall applies regardless of
+      // which bootstrap identity they used. This branch fires when account.provider
+      // is 'credentials' and the user object already has a 'physician' role (set
+      // by the authorize() callback that called detectUserRole()).
+      if (account?.provider === 'credentials' && token.role === 'physician') {
+        const credEmail = token.email || user?.email || '';
+        if (credEmail) {
+          const demotedPhysicianId = await checkBootstrapDemotion(credEmail);
+          if (demotedPhysicianId) {
+            token.bootstrap_demoted = true;
+            void logEvent({
+              physicianId: demotedPhysicianId,
+              actorRole: 'system',
+              action: 'workspace.bootstrap_demotion_hit',
+              detail: { provider: 'credentials', trigger: 'jwt_callback' },
+            });
+          }
+        }
       }
 
       return token;
@@ -200,6 +302,13 @@ export const authOptions: NextAuthOptions = {
           | 'google'
           | 'mailcow-imap'
           | undefined;
+
+        // Phase 18 Plan 04 — D-01: Lift bootstrap_demoted flag onto session.user.
+        // The flag is set in jwt() for graduated physicians on Google/credentials paths.
+        // /chat reads this to render the demotion wall instead of routing to dashboard.
+        if (token.bootstrap_demoted === true) {
+          session.user.bootstrap_demoted = true;
+        }
 
         // Phase 16 D-10 — additive lift of mailcow-imap claims onto session.user.
         // Phase 17 Plan 04 — gate: do NOT expose physician claims if TOTP is pending.

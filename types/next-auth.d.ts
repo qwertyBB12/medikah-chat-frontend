@@ -14,6 +14,11 @@ declare module 'next-auth' {
       workspace_role?: 'owner';
       // Phase 17 Plan 04 — TOTP pending flag (set while needs_totp=true on the JWT)
       needs_totp?: boolean;
+      // Phase 18 Plan 04 — D-01 bootstrap-demotion flag.
+      // Set true when a graduated physician (activation_complete=true) signs in
+      // via Google or original email-password. /chat renders the demotion wall;
+      // no dashboard access is granted on this session.
+      bootstrap_demoted?: boolean;
     } & DefaultSession['user'];
   }
 
@@ -38,5 +43,10 @@ declare module 'next-auth/jwt' {
     needs_totp?: boolean;
     // totp_verified=true: totp-verify endpoint confirmed the TOTP code; full claims issued
     totp_verified?: boolean;
+    // Phase 18 Plan 04 — D-01 bootstrap-demotion flag.
+    // Set true when a graduated physician (activation_complete=true) signs in
+    // via Google or original email-password. /chat renders the demotion wall;
+    // no dashboard access is granted on this session.
+    bootstrap_demoted?: boolean;
   }
 }
