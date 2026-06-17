@@ -24,9 +24,6 @@ export interface OnboardingCopy {
   // Phase 1: Identity
   phase1Title: string;
   askFullName: string;
-  askLinkedIn: string;
-  linkedInFound: string;
-  askLinkedInPermission: string;
   askPhotoUpload: string;
   photoUploadHint: string;
 
@@ -151,9 +148,6 @@ export const onboardingCopy: Record<SupportedLang, OnboardingCopy> = {
     // Phase 1: Identity
     phase1Title: 'Let\'s start with who you are',
     askFullName: 'What is your full name, as it appears on your medical license?',
-    askLinkedIn: 'Do you have a LinkedIn profile? It helps me get to know you better and saves you some typing. I can pull in relevant information automatically.',
-    linkedInFound: 'I found your LinkedIn profile. Here\'s what I can import:',
-    askLinkedInPermission: 'May I use this information to pre-fill your profile? You can edit anything afterward.',
     askPhotoUpload: 'Please upload a professional photo. This is how patients and colleagues will recognize you in the network.',
     photoUploadHint: 'A clear headshot in professional attire works best.',
 
@@ -281,9 +275,6 @@ export const onboardingCopy: Record<SupportedLang, OnboardingCopy> = {
     // Phase 1: Identity
     phase1Title: 'Comencemos con quién es usted',
     askFullName: '¿Cuál es su nombre completo, tal como aparece en su licencia médica?',
-    askLinkedIn: '¿Tiene un perfil de LinkedIn? Me ayuda a conocerlo mejor y le ahorra algo de escritura. Puedo extraer información relevante automáticamente.',
-    linkedInFound: 'Encontré su perfil de LinkedIn. Esto es lo que puedo importar:',
-    askLinkedInPermission: '¿Puedo usar esta información para prellenar su perfil? Puede editar cualquier cosa después.',
     askPhotoUpload: 'Por favor suba una foto profesional. Así es como los pacientes y colegas lo reconocerán en la red.',
     photoUploadHint: 'Una foto clara de rostro con vestimenta profesional funciona mejor.',
 

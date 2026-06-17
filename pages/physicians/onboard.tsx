@@ -34,15 +34,6 @@ type Message = {
   isVision?: boolean;
   isSummary?: boolean;
   actions?: { label: string; value: string; type?: 'primary' | 'secondary' | 'skip' | 'toggle'; selected?: boolean }[];
-  showLinkedInConnect?: boolean;
-  linkedInPreview?: {
-    fullName?: string;
-    email?: string;
-    photoUrl?: string;
-    medicalSchool?: string;
-    graduationYear?: number;
-    currentInstitutions?: string[];
-  };
   showPublicationSelector?: {
     publications: Publication[];
     source: PublicationSource;
@@ -51,11 +42,6 @@ type Message = {
   showManualPublicationForm?: boolean;
   showBatchedForm?: 'licensing' | 'specialty' | 'education' | 'presence' | 'narrative';
 };
-
-// Generate a unique session ID (used by PhysicianOnboardingAgent; Plan 18-03 will clean up)
-function generateSessionId(): string {
-  return `onboard_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
-}
 
 // Conversational timing delays (in ms)
 const TYPING_DELAY_BASE = 800; // Base delay before showing message
@@ -81,12 +67,6 @@ export default function PhysicianOnboardingPage() {
   const [agentPhase, setAgentPhase] = useState<string>('briefing');
   const [completedPhysicianId, setCompletedPhysicianId] = useState<string | null>(null);
 
-  // LinkedIn removed as auth provider (Phase 18-02). These remain as props for
-  // PhysicianOnboardingAgent until Plan 18-03 cleans up the onboarding agent itself.
-  const sessionLinkedInData = null;
-  const [sessionId] = useState(() => generateSessionId());
-  const [linkedInData] = useState<Message['linkedInPreview'] | null>(null);
-  const [linkedInConnected] = useState(false);
 
   // Consent modal state
   const [showConsentModal, setShowConsentModal] = useState(false);
@@ -176,8 +156,6 @@ export default function PhysicianOnboardingPage() {
             isVision: message.isVision,
             isSummary: message.isSummary,
             actions: message.actions,
-            showLinkedInConnect: message.showLinkedInConnect,
-            linkedInPreview: message.linkedInPreview,
             showPublicationSelector: message.showPublicationSelector,
             showManualPublicationForm: message.showManualPublicationForm,
             showBatchedForm: message.showBatchedForm,
@@ -239,7 +217,7 @@ export default function PhysicianOnboardingPage() {
     }, 100);
 
     return () => clearInterval(interval);
-  }, [authStatus, linkedInConnected]);
+  }, [authStatus]);
 
   // Append message from agent (with queuing for timing)
   const appendMessage = useCallback((message: OnboardingBotMessage) => {
@@ -667,9 +645,6 @@ export default function PhysicianOnboardingPage() {
         onStateChange={handleStateChange}
         onPhaseChange={handlePhaseChange}
         onProfileReady={handleProfileReady}
-        linkedInData={linkedInConnected && linkedInData ? linkedInData : undefined}
-        sessionId={sessionId}
-        sessionLinkedInData={undefined}
       />
     </>
   );

@@ -21,15 +21,6 @@ type Message = {
   isVision?: boolean;
   isSummary?: boolean;
   actions?: { label: string; value: string; type?: 'primary' | 'secondary' | 'skip' | 'toggle'; selected?: boolean }[];
-  showLinkedInConnect?: boolean;
-  linkedInPreview?: {
-    fullName?: string;
-    email?: string;
-    photoUrl?: string;
-    medicalSchool?: string;
-    graduationYear?: number;
-    currentInstitutions?: string[];
-  };
   showPublicationSelector?: {
     publications: Publication[];
     source: PublicationSource;
@@ -37,11 +28,6 @@ type Message = {
   };
   showManualPublicationForm?: boolean;
 };
-
-// Generate a unique session ID for LinkedIn OAuth
-function generateSessionId(): string {
-  return `onboard_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
-}
 
 export default function PhysicianOnboardingPage() {
   const router = useRouter();
@@ -53,11 +39,6 @@ export default function PhysicianOnboardingPage() {
   const [agentState, setAgentState] = useState<OnboardingAgentState>('idle');
   const [completedPhysicianId, setCompletedPhysicianId] = useState<string | null>(null);
 
-  // LinkedIn removed as auth provider (Phase 18-02). These remain as props for
-  // PhysicianOnboardingAgent and are cleaned up in Plan 18-03.
-  const [sessionId] = useState(() => generateSessionId());
-  const [linkedInData] = useState<Message['linkedInPreview'] | null>(null);
-  const [linkedInConnected] = useState(false);
 
   // Consent modal state
   const [showConsentModal, setShowConsentModal] = useState(false);
@@ -475,8 +456,6 @@ export default function PhysicianOnboardingPage() {
           appendMessage={appendMessage}
           onStateChange={handleStateChange}
           onProfileReady={handleProfileReady}
-          linkedInData={linkedInConnected && linkedInData ? linkedInData : undefined}
-          sessionId={sessionId}
         />
 
         {/* Physician Consent Modal */}
