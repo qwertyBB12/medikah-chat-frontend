@@ -2,7 +2,6 @@ import NextAuth from 'next-auth';
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
-import LinkedInProvider from 'next-auth/providers/linkedin';
 import { supabase } from '../../../lib/supabase';
 import { detectUserRole, ensureSupabaseUser } from '../../../lib/portalAuth';
 import { mailcowImapAuthorize } from '../../../lib/auth/mailcowImapProvider';
@@ -10,9 +9,10 @@ import { mailcowImapAuthorize } from '../../../lib/auth/mailcowImapProvider';
 /**
  * NextAuth configuration
  *
- * Authenticates via Supabase Auth (credentials), Google, or LinkedIn.
+ * Authenticates via Supabase Auth (credentials) or Google.
  * Social login users are synced to Supabase Auth via ensureSupabaseUser.
  * Role detection queries the physicians table to determine if user is a physician.
+ * LinkedIn was removed as an auth provider (Phase 18 Plan 02, decision 40).
  */
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
@@ -20,13 +20,6 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID ?? '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
-    }),
-    LinkedInProvider({
-      clientId: process.env.LINKEDIN_CLIENT_ID ?? '',
-      clientSecret: process.env.LINKEDIN_CLIENT_SECRET ?? '',
-      authorization: {
-        params: { scope: 'openid profile email' },
-      },
     }),
     CredentialsProvider({
       name: 'Credentials',
@@ -82,7 +75,7 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account }) {
       // For social providers, sync to Supabase Auth
-      if (account?.provider === 'google' || account?.provider === 'linkedin') {
+      if (account?.provider === 'google') {
         const email = user.email;
         if (!email) return false;
 
@@ -99,7 +92,7 @@ export const authOptions: NextAuthOptions = {
       }
       return true;
     },
-    async jwt({ token, user, account, profile }) {
+    async jwt({ token, user, account }) {
       if (user) {
         // Credentials flow: user object already has id and role
         if (account?.provider === 'credentials') {
@@ -171,7 +164,7 @@ export const authOptions: NextAuthOptions = {
       }
 
       // Social provider flow
-      if (account && (account.provider === 'google' || account.provider === 'linkedin')) {
+      if (account && account.provider === 'google') {
         const email = token.email || user?.email || '';
         token.provider = account.provider;
 
@@ -194,14 +187,6 @@ export const authOptions: NextAuthOptions = {
           token.userId = token.sub || '';
         }
 
-        // Store LinkedIn profile data
-        if (account.provider === 'linkedin') {
-          token.linkedInProfile = {
-            fullName: (profile as Record<string, unknown>)?.name as string ?? token.name ?? null,
-            email: token.email ?? null,
-            photoUrl: (profile as Record<string, unknown>)?.picture as string ?? token.picture ?? null,
-          };
-        }
       }
 
       return token;
@@ -213,13 +198,8 @@ export const authOptions: NextAuthOptions = {
         session.user.provider = token.provider as
           | 'credentials'
           | 'google'
-          | 'linkedin'
           | 'mailcow-imap'
           | undefined;
-
-        if (token.linkedInProfile) {
-          session.user.linkedInProfile = token.linkedInProfile;
-        }
 
         // Phase 16 D-10 — additive lift of mailcow-imap claims onto session.user.
         // Phase 17 Plan 04 — gate: do NOT expose physician claims if TOTP is pending.

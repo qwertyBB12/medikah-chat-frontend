@@ -16,7 +16,6 @@ import PhysicianOnboardingAgent, {
   OnboardingAgentState,
 } from '../../components/PhysicianOnboardingAgent';
 import OnboardingPhaseIndicator, { mapAgentPhaseToIndicator } from '../../components/physician/OnboardingPhaseIndicator';
-import LinkedInConnectButton, { LinkedInProfilePreview } from '../../components/LinkedInConnectButton';
 import PublicationSelector, { ManualPublicationForm } from '../../components/PublicationSelector';
 import PhysicianConsentModal, { PhysicianConsentData } from '../../components/PhysicianConsentModal';
 import BatchedLicensingForm from '../../components/physician/onboarding/BatchedLicensingForm';
@@ -82,14 +81,12 @@ export default function PhysicianOnboardingPage() {
   const [agentPhase, setAgentPhase] = useState<string>('briefing');
   const [completedPhysicianId, setCompletedPhysicianId] = useState<string | null>(null);
 
-  // LinkedIn data from NextAuth session (social login)
-  const sessionLinkedInData = session?.user?.linkedInProfile ?? null;
-
-  // LinkedIn OAuth state
+  // LinkedIn removed as auth provider (Phase 18-02). These remain as props for
+  // PhysicianOnboardingAgent until Plan 18-03 cleans up the onboarding agent itself.
+  const sessionLinkedInData = null;
   const [sessionId] = useState(() => generateSessionId());
-  const [linkedInData, setLinkedInData] = useState<Message['linkedInPreview'] | null>(null);
-  const [linkedInConnected, setLinkedInConnected] = useState(false);
-  const returningFromLinkedIn = useRef(false);
+  const [linkedInData] = useState<Message['linkedInPreview'] | null>(null);
+  const [linkedInConnected] = useState(false);
 
   // Consent modal state
   const [showConsentModal, setShowConsentModal] = useState(false);
@@ -107,7 +104,6 @@ export default function PhysicianOnboardingPage() {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const hasStarted = useRef(false);
-  const linkedInChecked = useRef(false);
 
   // Auth guard - redirect if not authenticated
   useEffect(() => {
@@ -211,52 +207,6 @@ export default function PhysicianOnboardingPage() {
     }, 0);
   }, [processMessageQueue]);
 
-  // Use LinkedIn data from NextAuth session if available
-  useEffect(() => {
-    if (sessionLinkedInData && !linkedInConnected && !linkedInData) {
-      setLinkedInData({
-        fullName: sessionLinkedInData.fullName ?? undefined,
-        email: sessionLinkedInData.email ?? undefined,
-        photoUrl: sessionLinkedInData.photoUrl ?? undefined,
-      });
-      setLinkedInConnected(true);
-    }
-  }, [sessionLinkedInData, linkedInConnected, linkedInData]);
-
-  // Check for LinkedIn callback params (fallback for custom OAuth flow)
-  useEffect(() => {
-    if (linkedInChecked.current) return;
-    linkedInChecked.current = true;
-
-    // Skip if we already have LinkedIn data from session
-    if (sessionLinkedInData) return;
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const linkedinStatus = urlParams.get('linkedin');
-    const sessionParam = urlParams.get('session');
-
-    if (linkedinStatus === 'connected' && sessionParam) {
-      returningFromLinkedIn.current = true;
-      fetch(`/api/auth/linkedin/profile?session_id=${encodeURIComponent(sessionParam)}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.success && data.mappedData) {
-            setLinkedInData(data.mappedData);
-            setLinkedInConnected(true);
-          } else {
-            returningFromLinkedIn.current = false;
-          }
-          window.history.replaceState({}, '', window.location.pathname);
-        })
-        .catch(err => {
-          console.error('Failed to fetch LinkedIn profile:', err);
-          returningFromLinkedIn.current = false;
-          window.history.replaceState({}, '', window.location.pathname);
-        });
-    } else if (linkedinStatus === 'error') {
-      window.history.replaceState({}, '', window.location.pathname);
-    }
-  }, [sessionLinkedInData]);
 
   // Start the onboarding when page loads — waits for LinkedIn data if returning from OAuth
   useEffect(() => {
@@ -265,11 +215,6 @@ export default function PhysicianOnboardingPage() {
 
     const checkAndStart = () => {
       if (!agentRef.current || hasStarted.current) return false;
-
-      // If returning from LinkedIn OAuth, wait until linkedInData is available
-      if (returningFromLinkedIn.current && !linkedInConnected) {
-        return false;
-      }
 
       hasStarted.current = true;
       setTimeout(() => {
@@ -579,33 +524,6 @@ export default function PhysicianOnboardingPage() {
                       </div>
                     )}
 
-                    {/* LinkedIn Connect Button */}
-                    {message.showLinkedInConnect && !linkedInConnected && (
-                      <div className="mt-4">
-                        <LinkedInConnectButton
-                          sessionId={sessionId}
-                          lang={lang}
-                          disabled={!isAwaitingInput}
-                          onError={(error) => {
-                            messageQueueRef.current.push({ text: error });
-                            processMessageQueue();
-                          }}
-                        />
-                      </div>
-                    )}
-
-                    {/* LinkedIn Profile Preview */}
-                    {message.linkedInPreview && (
-                      <div className="mt-4">
-                        <LinkedInProfilePreview
-                          profile={message.linkedInPreview}
-                          lang={lang}
-                          onConfirm={() => handleActionClick('linkedin_confirm')}
-                          onEdit={() => handleActionClick('linkedin_edit')}
-                        />
-                      </div>
-                    )}
-
                     {/* Publication Selector */}
                     {message.showPublicationSelector && (
                       <div className="mt-4">
@@ -751,11 +669,7 @@ export default function PhysicianOnboardingPage() {
         onProfileReady={handleProfileReady}
         linkedInData={linkedInConnected && linkedInData ? linkedInData : undefined}
         sessionId={sessionId}
-        sessionLinkedInData={sessionLinkedInData ? {
-          fullName: sessionLinkedInData.fullName,
-          email: sessionLinkedInData.email,
-          photoUrl: sessionLinkedInData.photoUrl,
-        } : undefined}
+        sessionLinkedInData={undefined}
       />
     </>
   );

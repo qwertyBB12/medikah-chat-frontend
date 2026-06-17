@@ -8,7 +8,6 @@ import PhysicianOnboardingAgent, {
   OnboardingBotMessage,
   OnboardingAgentState,
 } from '../../components/PhysicianOnboardingAgent';
-import LinkedInConnectButton, { LinkedInProfilePreview } from '../../components/LinkedInConnectButton';
 import PublicationSelector, { ManualPublicationForm } from '../../components/PublicationSelector';
 import PhysicianConsentModal, { PhysicianConsentData } from '../../components/PhysicianConsentModal';
 import { Publication, PublicationSource } from '../../lib/publications';
@@ -54,10 +53,11 @@ export default function PhysicianOnboardingPage() {
   const [agentState, setAgentState] = useState<OnboardingAgentState>('idle');
   const [completedPhysicianId, setCompletedPhysicianId] = useState<string | null>(null);
 
-  // LinkedIn OAuth state
+  // LinkedIn removed as auth provider (Phase 18-02). These remain as props for
+  // PhysicianOnboardingAgent and are cleaned up in Plan 18-03.
   const [sessionId] = useState(() => generateSessionId());
-  const [linkedInData, setLinkedInData] = useState<Message['linkedInPreview'] | null>(null);
-  const [linkedInConnected, setLinkedInConnected] = useState(false);
+  const [linkedInData] = useState<Message['linkedInPreview'] | null>(null);
+  const [linkedInConnected] = useState(false);
 
   // Consent modal state
   const [showConsentModal, setShowConsentModal] = useState(false);
@@ -68,7 +68,6 @@ export default function PhysicianOnboardingPage() {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const hasStarted = useRef(false);
-  const linkedInChecked = useRef(false);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -87,41 +86,6 @@ export default function PhysicianOnboardingPage() {
     adjustTextareaHeight();
   }, [input]);
 
-  // Check for LinkedIn callback params
-  useEffect(() => {
-    if (linkedInChecked.current) return;
-    linkedInChecked.current = true;
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const linkedinStatus = urlParams.get('linkedin');
-    const sessionParam = urlParams.get('session');
-
-    if (linkedinStatus === 'connected' && sessionParam) {
-      // Fetch the LinkedIn profile data
-      fetch(`/api/auth/linkedin/profile?session_id=${encodeURIComponent(sessionParam)}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.success && data.mappedData) {
-            setLinkedInData(data.mappedData);
-            setLinkedInConnected(true);
-
-            // Clean up URL params
-            const newUrl = window.location.pathname;
-            window.history.replaceState({}, '', newUrl);
-          }
-        })
-        .catch(err => {
-          console.error('Failed to fetch LinkedIn profile:', err);
-        });
-    } else if (linkedinStatus === 'error') {
-      const errorMsg = urlParams.get('error');
-      console.error('LinkedIn OAuth error:', errorMsg);
-
-      // Clean up URL params
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, '', newUrl);
-    }
-  }, []);
 
   // Start the onboarding when page loads
   useEffect(() => {
@@ -383,41 +347,6 @@ export default function PhysicianOnboardingPage() {
                             {action.label}
                           </button>
                         ))}
-                      </div>
-                    )}
-
-                    {/* LinkedIn Connect Button */}
-                    {message.showLinkedInConnect && !linkedInConnected && (
-                      <div className="mt-4">
-                        <LinkedInConnectButton
-                          sessionId={sessionId}
-                          lang={lang}
-                          disabled={!isAwaitingInput}
-                          onError={(error) => {
-                            setMessages(prev => [
-                              ...prev,
-                              { sender: 'bot', text: error },
-                            ]);
-                          }}
-                        />
-                      </div>
-                    )}
-
-                    {/* LinkedIn Profile Preview */}
-                    {message.linkedInPreview && (
-                      <div className="mt-4">
-                        <LinkedInProfilePreview
-                          profile={message.linkedInPreview}
-                          lang={lang}
-                          onConfirm={() => {
-                            // Send confirmation to agent
-                            handleActionClick('linkedin_confirm');
-                          }}
-                          onEdit={() => {
-                            // Send edit request to agent
-                            handleActionClick('linkedin_edit');
-                          }}
-                        />
                       </div>
                     )}
 
