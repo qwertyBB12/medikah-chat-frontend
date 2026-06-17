@@ -64,6 +64,76 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(403).json({ error: 'You can only create your own physician profile' });
     }
 
+    // -----------------------------------------------------------------------
+    // D-09: Identity-spine alias funneling (Phase 18, T-18-06-04)
+    // Check physician_email_aliases BEFORE insert. If this email is a known
+    // alias for an existing canonical physician, return that physician's ID
+    // rather than creating a new (ghost) row.
+    // RLS: service_role only — read-only here; aliases are write-protected
+    // (service_role can INSERT; no client can self-insert an alias to hijack
+    // a canonical record — T-18-06-04 mitigated).
+    // -----------------------------------------------------------------------
+    const { data: aliasRow, error: aliasErr } = await supabaseAdmin
+      .from('physician_email_aliases')
+      .select('physician_id')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (!aliasErr && aliasRow) {
+      // This email is a known alias — resolve to the canonical physician (D-09)
+      return res.status(200).json({
+        success: true,
+        physicianId: aliasRow.physician_id,
+        alreadyExists: true,
+        resolvedViaAlias: true,
+      });
+    }
+
+    // -----------------------------------------------------------------------
+    // D-10: License-number collision guard (Phase 18, T-18-06-03)
+    // If the incoming payload carries license numbers, check physician_licenses
+    // for any license_number already attached to a DIFFERENT physician. On
+    // collision: do NOT insert a ghost — return 409 with a collision signal so
+    // Hector/José can review (never auto-merge, D-10).
+    //
+    // Payload field: data.licenses is PhysicianLicense[] { number, type, ... }
+    // Table column:  physician_licenses.license_number
+    // Only non-empty license_number values are checked (NPI + cédula contexts).
+    // -----------------------------------------------------------------------
+    if (Array.isArray(data.licenses) && data.licenses.length > 0) {
+      const licenseNumbers: string[] = (data.licenses as Array<{ number?: string }>)
+        .map((lic) => (typeof lic.number === 'string' ? lic.number.trim() : ''))
+        .filter((n) => n.length > 0);
+
+      if (licenseNumbers.length > 0) {
+        const { data: collidingLicenses, error: licErr } = await supabaseAdmin
+          .from('physician_licenses')
+          .select('physician_id, license_number')
+          .in('license_number', licenseNumbers);
+
+        if (!licErr && collidingLicenses && collidingLicenses.length > 0) {
+          // Found license number(s) already in the table — check if any belong to
+          // a DIFFERENT physician (same physician = updating own data, not a collision)
+          // At this point we don't have the new physician_id yet, so any hit is a
+          // collision candidate if the physician_id is non-null and the email differs.
+          // We conservatively treat ANY existing match as a collision (D-10: flag, never ghost).
+          const collisionNumbers = collidingLicenses.map((r) => r.license_number).join(', ');
+          console.warn(
+            '[create] D-10 license collision detected:',
+            { email, collisionNumbers },
+          );
+          return res.status(409).json({
+            error: 'License number already registered to another physician',
+            collision: true,
+            collisionNumbers,
+            message:
+              'One or more license numbers are already associated with an existing physician record. ' +
+              'This case has been flagged for admin review. Please contact support@medikah.health.',
+          });
+        }
+      }
+    }
+
     // Convert to snake_case for database
     const dbData = toSnakeCase(data);
     dbData.email = email;
