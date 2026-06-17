@@ -52,7 +52,7 @@ type Message = {
   showBatchedForm?: 'licensing' | 'specialty' | 'education' | 'presence' | 'narrative';
 };
 
-// Generate a unique session ID for LinkedIn OAuth
+// Generate a unique session ID (used by PhysicianOnboardingAgent; Plan 18-03 will clean up)
 function generateSessionId(): string {
   return `onboard_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 }
@@ -208,7 +208,7 @@ export default function PhysicianOnboardingPage() {
   }, [processMessageQueue]);
 
 
-  // Start the onboarding when page loads — waits for LinkedIn data if returning from OAuth
+  // Start the onboarding when page loads
   useEffect(() => {
     if (hasStarted.current) return;
     if (authStatus !== 'authenticated') return;
