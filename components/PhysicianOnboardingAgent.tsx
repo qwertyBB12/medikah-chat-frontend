@@ -39,15 +39,6 @@ export interface OnboardingBotMessage {
   text: string;
   actions?: OnboardingAction[];
   isVision?: boolean;
-  showLinkedInConnect?: boolean;
-  linkedInPreview?: {
-    fullName?: string;
-    email?: string;
-    photoUrl?: string;
-    medicalSchool?: string;
-    graduationYear?: number;
-    currentInstitutions?: string[];
-  };
   showPublicationSelector?: {
     publications: import('../lib/publications').Publication[];
     source: import('../lib/publications').PublicationSource;
@@ -76,9 +67,6 @@ type QuestionKey =
   // Identity
   | 'full_name'
   | 'email'
-  | 'has_linkedin'
-  | 'linkedin_url'
-  | 'linkedin_confirm'
   // Specialty (batched form)
   | 'specialty_form'
   // Attestation
@@ -121,77 +109,17 @@ export interface PhysicianOnboardingAgentHandle {
   getLicensedCountryCodes: () => string[];
 }
 
-interface LinkedInImportData {
-  fullName?: string;
-  email?: string;
-  photoUrl?: string;
-  medicalSchool?: string;
-  graduationYear?: number;
-  currentInstitutions?: string[];
-}
-
 interface PhysicianOnboardingAgentProps {
   lang: SupportedLang;
   appendMessage: (message: OnboardingBotMessage) => void;
   onStateChange?: (state: OnboardingAgentState) => void;
   onProfileReady?: (physicianId: string, physicianName: string) => void;
   onPhaseChange?: (phase: string) => void;
-  linkedInData?: LinkedInImportData;
-  sessionId?: string;
-  sessionLinkedInData?: {
-    fullName?: string | null;
-    email?: string | null;
-    photoUrl?: string | null;
-  };
 }
 
 // Validation helpers
 function isValidEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-}
-
-/**
- * Parse a LinkedIn profile URL, accepting various formats.
- * Returns { valid, slug, normalizedUrl } or { valid: false } if invalid.
- */
-function parseLinkedInUrl(raw: string): {
-  valid: boolean;
-  slug?: string;
-  normalizedUrl?: string;
-} {
-  let url = raw.trim();
-  if (!/^https?:\/\//i.test(url)) {
-    url = 'https://' + url;
-  }
-  try {
-    const parsed = new URL(url);
-    const host = parsed.hostname.replace(/^www\./, '');
-    if (host !== 'linkedin.com') return { valid: false };
-    const pathMatch = parsed.pathname.match(/^(?:\/[a-z]{2})?\/in\/([\w-]+)\/?$/i);
-    if (!pathMatch) return { valid: false };
-    const slug = pathMatch[1];
-    return { valid: true, slug, normalizedUrl: `https://www.linkedin.com/in/${slug}` };
-  } catch {
-    return { valid: false };
-  }
-}
-
-/**
- * Attempt to derive a human-readable name from a LinkedIn slug.
- */
-function slugToName(slug: string): string | null {
-  if (/^\d+$/.test(slug) || !slug.includes('-')) return null;
-  const parts = slug.split('-').filter(Boolean);
-  if (parts.length < 2 || parts.length > 6) return null;
-  if (parts.some(p => p.length > 15 || /\d{3,}/.test(p))) return null;
-  return parts
-    .map(p => {
-      if (p.toLowerCase() === 'dr') return 'Dr.';
-      if (p.toLowerCase() === 'md') return 'MD';
-      if (p.toLowerCase() === 'phd') return 'PhD';
-      return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
-    })
-    .join(' ');
 }
 
 /** Country code label map */
@@ -207,10 +135,9 @@ const PhysicianOnboardingAgent = forwardRef<
   PhysicianOnboardingAgentHandle,
   PhysicianOnboardingAgentProps
 >((props, ref) => {
-  const { lang, appendMessage, onStateChange, onProfileReady, onPhaseChange, linkedInData, sessionId, sessionLinkedInData } = props;
+  const { lang, appendMessage, onStateChange, onProfileReady, onPhaseChange } = props;
   const copy = useMemo(() => onboardingCopy[lang], [lang]);
 
-  const linkedInApplied = useRef(false);
   const appendMessageRef = useRef(appendMessage);
   const onStateChangeRef = useRef(onStateChange);
   const onPhaseChangeRef = useRef(onPhaseChange);
@@ -324,46 +251,6 @@ const PhysicianOnboardingAgent = forwardRef<
     setPhase('briefing');
     updateState('briefing');
 
-    // Priority 1: Session-based LinkedIn data (signed in via LinkedIn provider)
-    const effectiveLinkedInData: LinkedInImportData | undefined = sessionLinkedInData
-      ? {
-          fullName: sessionLinkedInData.fullName ?? undefined,
-          email: sessionLinkedInData.email ?? undefined,
-          photoUrl: sessionLinkedInData.photoUrl ?? undefined,
-        }
-      : linkedInData;
-
-    // If LinkedIn data is already available (from session or OAuth callback),
-    // skip full briefing and go straight to LinkedIn confirmation.
-    // Country selection appears AFTER LinkedIn data is confirmed (Pitfall 1 in RESEARCH.md).
-    if (effectiveLinkedInData && !linkedInApplied.current) {
-      linkedInApplied.current = true;
-      const data = dataRef.current;
-
-      if (effectiveLinkedInData.fullName) {
-        data.linkedinUrl = `https://linkedin.com/in/${sessionId || 'profile'}`;
-        data.linkedinImported = true;
-      }
-
-      stableAppendMessage({ text: getTimeBasedGreeting() });
-
-      setTimeout(() => {
-        stableAppendMessage({
-          text: lang === 'en'
-            ? 'Welcome back! We\'ve connected your LinkedIn profile. Please confirm the imported data:'
-            : '\u00a1Bienvenido de nuevo! Hemos conectado tu perfil de LinkedIn. Por favor confirma los datos importados:',
-          linkedInPreview: effectiveLinkedInData,
-        } as OnboardingBotMessage);
-
-        setPhase('identity');
-        setQuestion('linkedin_confirm');
-        updateState('awaiting_user');
-      }, 1200);
-
-      return;
-    }
-
-    // Normal briefing flow
     const messages: Array<{ text: string; isVision?: boolean; delay: number }> = [
       { text: getTimeBasedGreeting(), delay: 0 },
       { text: copy.howAreYou, delay: 1200 },
@@ -377,20 +264,11 @@ const PhysicianOnboardingAgent = forwardRef<
       }, delay);
     });
 
-    // Ask for LinkedIn first
+    // Go directly to country selection
     setTimeout(() => {
-      setPhase('identity');
-      setQuestion('has_linkedin');
-      updateState('awaiting_user');
-      stableAppendMessage({
-        text: copy.askLinkedIn,
-        actions: [
-          { label: copy.yes, value: 'yes', type: 'primary' },
-          { label: copy.no, value: 'no', type: 'secondary' },
-        ],
-      });
+      startCountrySelectionPhase();
     }, 5800);
-  }, [copy, stableAppendMessage, updateState, getTimeBasedGreeting, linkedInData, sessionLinkedInData, lang, sessionId, startCountrySelectionPhase]);
+  }, [copy, stableAppendMessage, updateState, getTimeBasedGreeting, startCountrySelectionPhase]);
 
   const startSpecialtyPhase = useCallback(() => {
     setPhase('specialty');
@@ -620,50 +498,6 @@ const PhysicianOnboardingAgent = forwardRef<
         return true;
       }
 
-      case 'linkedin_url': {
-        if (!input) {
-          setTimeout(() => { askQuestion('full_name', copy.askFullName); }, 500);
-          return true;
-        }
-
-        const parsed = parseLinkedInUrl(input);
-        if (!parsed.valid) {
-          stableAppendMessage({
-            text: lang === 'en'
-              ? 'That doesn\'t look like a valid LinkedIn profile URL. Please enter a URL like: https://linkedin.com/in/your-name'
-              : 'Eso no parece ser una URL de perfil de LinkedIn v\u00e1lida. Por favor ingrese una URL como: https://linkedin.com/in/su-nombre',
-          });
-          return true;
-        }
-
-        data.linkedinUrl = parsed.normalizedUrl;
-        const displayUrl = `linkedin.com/in/${parsed.slug}`;
-        stableAppendMessage({
-          text: lang === 'en'
-            ? `LinkedIn profile linked: ${displayUrl}`
-            : `Perfil de LinkedIn vinculado: ${displayUrl}`,
-        });
-
-        const suggestedName = parsed.slug ? slugToName(parsed.slug) : null;
-
-        setTimeout(() => {
-          if (suggestedName) {
-            askQuestion('full_name',
-              lang === 'en'
-                ? `Based on your LinkedIn, is your name **${suggestedName}**?`
-                : `Seg\u00fan su LinkedIn, \u00bfsu nombre es **${suggestedName}**?`,
-              [
-                { label: lang === 'en' ? 'Yes, that\'s correct' : 'S\u00ed, es correcto', value: `__accept_name__${suggestedName}`, type: 'primary' },
-                { label: lang === 'en' ? 'No, let me type it' : 'No, d\u00e9jeme escribirlo', value: '__reject_name__', type: 'secondary' },
-              ]
-            );
-          } else {
-            askQuestion('full_name', copy.askFullName);
-          }
-        }, 600);
-        return true;
-      }
-
       // Batched form phase — text input not expected
       case 'specialty_form': {
         stableAppendMessage({
@@ -759,117 +593,6 @@ const PhysicianOnboardingAgent = forwardRef<
         return true;
       }
 
-      case 'has_linkedin':
-        if (value === 'yes') {
-          const effectiveData: LinkedInImportData | undefined = sessionLinkedInData
-            ? {
-                fullName: sessionLinkedInData.fullName ?? undefined,
-                email: sessionLinkedInData.email ?? undefined,
-                photoUrl: sessionLinkedInData.photoUrl ?? undefined,
-              }
-            : linkedInData;
-
-          if (effectiveData && !linkedInApplied.current) {
-            linkedInApplied.current = true;
-            stableAppendMessage({
-              text: lang === 'en'
-                ? `Great! We pulled your information from LinkedIn. Please confirm the data below:`
-                : `\u00a1Excelente! Obtuvimos tu informaci\u00f3n de LinkedIn. Por favor confirma los datos a continuaci\u00f3n:`,
-              linkedInPreview: effectiveData,
-            } as OnboardingBotMessage);
-
-            if (effectiveData.fullName) {
-              data.linkedinUrl = `https://linkedin.com/in/${sessionId || 'profile'}`;
-              data.linkedinImported = true;
-            }
-
-            setQuestion('linkedin_confirm');
-            updateState('awaiting_user');
-          } else {
-            stableAppendMessage({
-              text: lang === 'en'
-                ? 'You can connect your LinkedIn account using the button below, or simply paste your LinkedIn profile URL.'
-                : 'Puedes conectar tu cuenta de LinkedIn con el bot\u00f3n de abajo, o simplemente pegar la URL de tu perfil de LinkedIn.',
-              showLinkedInConnect: true,
-            } as OnboardingBotMessage);
-
-            askQuestion('linkedin_url',
-              lang === 'en'
-                ? 'Paste your LinkedIn profile URL here (e.g., https://linkedin.com/in/your-name):'
-                : 'Pega la URL de tu perfil de LinkedIn aqu\u00ed (ej., https://linkedin.com/in/su-nombre):'
-            );
-          }
-        } else {
-          stableAppendMessage({
-            text: lang === 'en'
-              ? 'No problem at all. Let\'s get to know you the old-fashioned way.'
-              : 'No hay problema. Conozc\u00e1mosle de la manera tradicional.',
-          });
-          // Go to country selection first (D-08), then identity
-          setTimeout(() => {
-            startCountrySelectionPhase();
-          }, 800);
-        }
-        return true;
-
-      case 'linkedin_confirm': {
-        const confirmData: LinkedInImportData | undefined = sessionLinkedInData
-          ? {
-              fullName: sessionLinkedInData.fullName ?? undefined,
-              email: sessionLinkedInData.email ?? undefined,
-              photoUrl: sessionLinkedInData.photoUrl ?? undefined,
-            }
-          : linkedInData;
-
-        if (value === 'linkedin_confirm' && confirmData) {
-          if (confirmData.fullName) data.fullName = confirmData.fullName;
-          if (confirmData.email) data.email = confirmData.email;
-          if (confirmData.photoUrl) data.photoUrl = confirmData.photoUrl;
-          if (confirmData.medicalSchool) data.medicalSchool = confirmData.medicalSchool;
-          if (confirmData.graduationYear) data.graduationYear = confirmData.graduationYear;
-          if (confirmData.currentInstitutions) data.currentInstitutions = confirmData.currentInstitutions;
-          data.linkedinImported = true;
-
-          stableAppendMessage({
-            text: lang === 'en'
-              ? `LinkedIn data confirmed!${confirmData.fullName ? ' We\'ve pre-filled your name' : ''}${confirmData.email ? ' and email' : ''}.`
-              : `\u00a1Datos de LinkedIn confirmados!${confirmData.fullName ? ' Hemos pre-llenado tu nombre' : ''}${confirmData.email ? ' y correo' : ''}.`,
-          });
-
-          // After LinkedIn confirm, go to country selection (Pitfall 1 from RESEARCH.md)
-          if (!confirmData.fullName) {
-            setTimeout(() => {
-              askQuestion('full_name', lang === 'en'
-                ? 'What is your full name, as it appears on your medical license? (LinkedIn didn\'t provide this)'
-                : '\u00bfCu\u00e1l es su nombre completo, tal como aparece en su licencia m\u00e9dica? (LinkedIn no proporcion\u00f3 esto)');
-            }, 500);
-          } else if (!confirmData.email) {
-            setTimeout(() => {
-              askQuestion('email', lang === 'en'
-                ? 'What is your professional email address? (LinkedIn didn\'t provide this)'
-                : '\u00bfCu\u00e1l es su correo electr\u00f3nico profesional? (LinkedIn no proporcion\u00f3 esto)');
-            }, 500);
-          } else {
-            // Both name and email are available — go to country selection
-            setTimeout(() => {
-              startCountrySelectionPhase();
-            }, 500);
-          }
-          return true;
-        } else if (value === 'linkedin_edit') {
-          stableAppendMessage({
-            text: lang === 'en'
-              ? 'No problem! Let\'s enter your information manually.'
-              : '\u00a1No hay problema! Ingresemos tu informaci\u00f3n manualmente.',
-          });
-          setTimeout(() => {
-            startCountrySelectionPhase();
-          }, 500);
-          return true;
-        }
-        return true;
-      }
-
       case 'full_name':
         if (value.startsWith('__accept_name__')) {
           const acceptedName = value.replace('__accept_name__', '');
@@ -901,7 +624,7 @@ const PhysicianOnboardingAgent = forwardRef<
   }, [
     question, lang, copy, askQuestion, updateState,
     startCountrySelectionPhase, startSpecialtyPhase, completeOnboarding,
-    linkedInData, sessionLinkedInData, sessionId, stableAppendMessage,
+    stableAppendMessage,
     selectedCountries,
   ]);
 
