@@ -5,7 +5,8 @@
  * - patient → /patients
  * - physician → /physicians/dashboard (if onboarded) or /physicians/onboard
  *
- * Supports Google, LinkedIn, and email/password authentication.
+ * Supports Google and email/password authentication (Phase 18 Plan 02: decision 40 removed
+ * a third social provider that was previously here).
  * Uses the Splash component for consistent dark institutional look.
  * Bilingual: EN/ES detected from router.locale.
  */
@@ -24,7 +25,6 @@ const t = {
   patientSignIn: { en: 'Patient sign in', es: 'Inicio de sesión — Paciente' },
   doctorSignIn: { en: 'Physician sign in', es: 'Inicio de sesión — Médico' },
   continueGoogle: { en: 'Continue with Google', es: 'Continuar con Google' },
-  continueLinkedIn: { en: 'Continue with LinkedIn', es: 'Continuar con LinkedIn' },
   or: { en: 'or sign in with credentials', es: 'o inicie sesión con credenciales' },
   email: { en: 'Email', es: 'Correo electrónico' },
   password: { en: 'Password', es: 'Contraseña' },
@@ -174,7 +174,7 @@ export default function ChatPage() {
     setShowLoginForm(false);
   };
 
-  const handleSocialSignIn = (provider: 'google' | 'linkedin') => {
+  const handleSocialSignIn = (provider: 'google') => {
     const callbackUrl = portalSelection === 'doctor' ? '/physicians/onboard' : '/patients';
     signIn(provider, { callbackUrl });
   };
@@ -319,24 +319,10 @@ export default function ChatPage() {
           {t.continueGoogle[lang]}
         </button>
 
-        {/* LinkedIn — only for physicians */}
-        {portalSelection === 'doctor' && (
-          <button
-            type="button"
-            onClick={() => handleSocialSignIn('linkedin')}
-            className="font-dm-sans w-full flex items-center justify-center gap-3 px-4 py-3 bg-[#0A66C2] text-white text-sm font-semibold tracking-wide rounded-sm hover:bg-[#004182] transition"
-          >
-            <svg className="w-[18px] h-[18px]" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
-            </svg>
-            {t.continueLinkedIn[lang]}
-          </button>
-        )}
       </div>
 
       {/* Phase 16 — Medikah-email (Mailcow IMAP) sign-in. Physician tab only.
-          Added alongside the existing Google/LinkedIn/legacy-Credentials
-          affordances per D-03 two-identity lifecycle; nothing is removed. */}
+          Added per D-03 two-identity lifecycle. */}
       {portalSelection === 'doctor' && (
         <div className="space-y-3 pt-2">
           <div className="flex items-center gap-3">
