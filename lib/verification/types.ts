@@ -5,7 +5,6 @@ export type VerificationTier = 'tier1' | 'tier2' | 'tier3';
 export type VerificationType =
   | 'license_mexico'
   | 'license_usa'
-  | 'education_linkedin'
   | 'publications_scholar'
   | 'professional_presence'
   | 'board_certification'
@@ -16,7 +15,6 @@ export type VerificationStatus = 'pending' | 'verified' | 'failed' | 'manual_rev
 export type VerificationMethod =
   | 'cofepris_api'
   | 'state_medical_board'
-  | 'linkedin_match'
   | 'scholar_fetch'
   | 'manual_review';
 
@@ -109,26 +107,6 @@ export interface StateMedicalBoardResponse {
   specialty?: string;
   state?: string;
   rawResponse?: Record<string, unknown>;
-}
-
-// LinkedIn profile data for verification
-export interface LinkedInVerificationData {
-  profileUrl?: string;
-  fullName?: string;
-  headline?: string;
-  photoUrl?: string;
-  currentPosition?: {
-    title: string;
-    company: string;
-  };
-  education?: Array<{
-    school: string;
-    degree?: string;
-    field?: string;
-    startYear?: number;
-    endYear?: number;
-  }>;
-  rawData?: Record<string, unknown>;
 }
 
 // Google Scholar profile data
