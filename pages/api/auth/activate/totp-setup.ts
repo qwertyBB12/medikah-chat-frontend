@@ -97,7 +97,10 @@ export default async function handler(
     // --- Generate TOTP secret (server-side only, never returned to client) ---
     const rawSecret = generateSecret();
 
-    // Build the otpauth URI — issuer / label per brand spec
+    // Build the otpauth URI — issuer / label per brand spec.
+    // D-15 — label is the full physician email and issuer is the brand string, so the
+    // authenticator shows "Práctikah · Medikah (you@medikah.health)"; the email
+    // qualifier makes any stale duplicate from a prior attempt visually obvious.
     const otpauthUri = generateURI({
       strategy: 'totp',
       label: tokenPayload.email,

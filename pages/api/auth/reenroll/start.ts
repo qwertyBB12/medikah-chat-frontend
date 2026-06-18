@@ -78,6 +78,9 @@ export default async function handler(
     }
 
     // --- Generate candidate secret + QR (mirrors totp-setup; raw secret never leaves) ---
+    // D-15 — label is the FULL lowered email (not the local-part) and issuer is the
+    // brand string, so the authenticator shows "Práctikah · Medikah (you@medikah.health)".
+    // The email qualifier makes any stale duplicate from a prior attempt obvious.
     const rawSecret = generateSecret();
     const otpauthUri = generateURI({
       strategy: 'totp',
