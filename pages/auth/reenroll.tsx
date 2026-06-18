@@ -196,7 +196,10 @@ export default function ReenrollPage() {
       if (res.ok) {
         setStep('done');
         setTimeout(() => {
-          router.push('/chat');
+          // D-17 — carry ?reenrolled=1 so /chat shows a "finish signing in"
+          // continuation banner instead of a blank sign-in. Boolean flag only;
+          // the real gate is the password + the new TOTP on the next login.
+          router.push('/chat?reenrolled=1');
         }, 1500);
       } else if (res.status === 422) {
         setError(t.codeInvalid);
