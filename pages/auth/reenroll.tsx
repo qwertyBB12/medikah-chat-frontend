@@ -62,6 +62,10 @@ const COPY = {
     qrHeading: 'Scan the New QR Code',
     qrSub: 'Scan the QR code with your authenticator app, then enter the 6-digit code.',
     qrRecommendation: 'We recommend Duo Mobile. Authy and Google Authenticator also work.',
+    // D-15 — pre-empt the duplicate-entry wrong-code failure (the #1 cause in the
+    // founder's re-key). Warning copy only — no blocking checkbox (D-15 rejected friction).
+    qrRemoveOld: 'Already have a “Medikah” or “Práctikah” entry from a previous device? Delete it in your authenticator app first, then scan. A leftover entry produces codes that will not work.',
+    qrLabelNote: 'The new entry is labelled with your email, so any stale duplicate is easy to spot.',
     codeLabel: '6-Digit Code',
     codePlaceholder: '000000',
     codeSubmit: 'Verify & Finish',
@@ -94,6 +98,9 @@ const COPY = {
     qrHeading: 'Escanea el Nuevo Código QR',
     qrSub: 'Escanea el código QR con tu app de autenticación y luego ingresa el código de 6 dígitos.',
     qrRecommendation: 'Recomendamos Duo Mobile. Authy y Google Authenticator también funcionan.',
+    // D-15 — espejo en español de la advertencia de entrada duplicada.
+    qrRemoveOld: '¿Ya tienes una entrada de «Medikah» o «Práctikah» de un dispositivo anterior? Elimínala primero en tu app de autenticación y luego escanea. Una entrada vieja genera códigos que no funcionarán.',
+    qrLabelNote: 'La nueva entrada lleva tu correo como etiqueta, así cualquier duplicado viejo es fácil de detectar.',
     codeLabel: 'Código de 6 Dígitos',
     codePlaceholder: '000000',
     codeSubmit: 'Verificar y Finalizar',
@@ -344,6 +351,17 @@ export default function ReenrollPage() {
                   <h2 className="text-xl font-bold text-inst-blue mb-2">{t.qrHeading}</h2>
                   <p className="text-body-slate text-sm mb-2">{t.qrSub}</p>
                   <p className="text-xs text-body-slate/70">{t.qrRecommendation}</p>
+                </div>
+
+                {/* D-15 — remove-stale-entry warning, mirrors the activation page's
+                    caution-amber box verbatim (duplicate authenticator entries were
+                    the #1 wrong-code cause in the founder's re-key). Warning copy
+                    only — no blocking checkbox (D-15 rejected friction). The label
+                    note tells the doctor the new entry is email-qualified, so a
+                    leftover duplicate is visually obvious. */}
+                <div className="mb-6 rounded-lg border border-caution-amber/30 bg-caution-amber/10 px-4 py-3 space-y-2">
+                  <p className="text-xs text-caution-amber leading-relaxed">{t.qrRemoveOld}</p>
+                  <p className="text-xs text-body-slate/70 leading-relaxed">{t.qrLabelNote}</p>
                 </div>
 
                 {/* QR Code */}
