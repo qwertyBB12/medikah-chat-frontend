@@ -160,16 +160,16 @@ The physician must clear the first factor (Mailcow password) BEFORE filing the l
    - Sends admin notification email to `DOCTOR_NOTIFICATION_EMAIL` (hector@medikah.health).
    - Audits `workspace.totp_reset_requested` with `detail.flow = 'lost_2fa'`.
    - Always returns `{filed: true}` — non-enumeration (D-05).
-4. Admin (Hector or José) receives the notification email with a link to `/admin/totp-resets`.
+4. Admin (Hector or José) receives the notification email containing a **signed, single-use, request-id-bound one-tap approve link** (D-14). The link points at `GET /api/admin/totp-reset-approve?token=<signed JWT>` — there is no `/admin/totp-resets` dashboard. The token is type-isolated (`totp_reset_approval`), expires in 30 minutes, and is bound to exactly the reset request that was just filed.
 5. Admin verifies the physician's identity via a secondary channel (phone, in-person at CDMX, etc.).
-6. Admin calls `POST /api/admin/totp-reset-approve` with `{physician_id, action: 'approve'}`:
-   - Requires admin session (getAdminUser → 401 otherwise).
-   - Sets `physician_workspace_accounts.totp_enrolled = false` and `totp_secret = null`.
-   - `activation_complete` is NOT changed (only the 2FA factor resets, not the whole workspace).
-   - Sets the `physician_totp_resets` row `status = 'approved'`, `actioned_by = admin.email`, `actioned_at = now()`.
-   - Audits `workspace.totp_reset_approved` with `detail.approved_by` and `detail.request_id`.
-7. On next login, `mailcowImapProvider.ts` detects `totp_enrolled = false` and routes the physician through the activation TOTP setup step again — the standard TOTP enrollment flow from Plan 17-04.
-8. At CDMX: the doctor is physically present; the admin can approve on-site, hand the doctor a new device, and the doctor re-enrolls immediately.
+6. Admin taps the link → `GET /api/admin/totp-reset-approve`:
+   - Admin-gated (getAdminUser → 401 otherwise) — the one-tap link is STILL admin-authenticated, so a stolen/forwarded link in the hands of a non-admin gets nothing.
+   - Verifies the signed token (invalid/expired → branded "link invalid or expired" page, no change).
+   - Loads the bound `physician_totp_resets` row by the token's `request_id` and requires `status = 'pending'` — this is the **single-use** gate. A re-tapped link finds the row already `'approved'` → "already approved" page, makes NO credential change.
+   - On a valid pending row, runs the same approve body the POST path uses: sets `physician_workspace_accounts.totp_enrolled = false` and `totp_secret = null` (`activation_complete` untouched — only the 2FA factor resets), flips the row to `status = 'approved'` / `actioned_by` / `actioned_at`, and audits `workspace.totp_reset_approved` with `detail.via = 'one_tap_link'` and `detail.request_id`.
+   - (A `POST /api/admin/totp-reset-approve` with `{physician_id, action: 'approve', request_id?}` remains available as the programmatic path and shares the exact same approve body.)
+7. The physician re-enrolls a fresh authenticator at **`/auth/reenroll`** — the isolated, password + admin-approval-gated re-enrollment flow (`POST /api/auth/reenroll/{start,confirm}`). This is NOT the activation TOTP setup step. **`mailcowImapProvider.ts` now FAILS CLOSED on a reset account** (`activation_complete && !totp_enrolled && totp_secret == null` → returns null, audits `totp_reenroll_required`): there is no password-only session post-reset (D-12 invariant). `/auth/reenroll` is the only exit from that state.
+8. At CDMX: the doctor is physically present; the admin can approve on-site by tapping the email link, hand the doctor a new device, and the doctor re-enrolls immediately at `/auth/reenroll`.
 
 ### Deny path
 
