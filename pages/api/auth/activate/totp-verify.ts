@@ -156,8 +156,14 @@ export default async function handler(
     // --- Rate-limit check (T-17-04-02 brute-force protection) ---
     if (sourceIp && (await isRateLimited(sourceIp))) {
       await writeProbeAttempt(sourceIp, null, 'locked_out', userAgent);
-      // Generic 422 — same contract as bad TOTP code (T-17-04-04)
-      return res.status(422).json({ error: 'Invalid code' });
+      // Decision 42b — distinguish a temporary lockout from a wrong code. A 429
+      // tells the physician to WAIT rather than re-key a code that will keep
+      // failing (the exact confusion in the founder's re-key session). This is a
+      // SAME-FACTOR usability split — both cases are the user's own TOTP attempt —
+      // so it never reveals which SIDE (password vs identity) failed and the
+      // Phase 16 D-12 generic-error contract stays intact (T-17-04-04 preserved
+      // for the bad-code path below).
+      return res.status(429).json({ error: 'locked_out' });
     }
 
     // --- Load workspace account ---

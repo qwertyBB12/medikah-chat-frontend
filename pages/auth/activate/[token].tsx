@@ -61,6 +61,8 @@ const COPY = {
     totpHeading: 'Set Up Two-Factor Authentication',
     totpSub: 'Scan the QR code with your authenticator app, then enter the 6-digit code.',
     totpRecommendation: 'We recommend Duo Mobile. Authy and Google Authenticator also work.',
+    // Decision 42a — pre-empt the duplicate-entry wrong-code failure.
+    totpRemoveOld: 'Already have a “Medikah” or “Práctikah” entry from a previous attempt? Delete it in your authenticator app first, then scan. A leftover entry produces codes that will not work.',
     totpCodeLabel: '6-Digit Code',
     totpCodePlaceholder: '000000',
     totpSubmit: 'Verify Code',
@@ -97,6 +99,8 @@ const COPY = {
     totpHeading: 'Configura la Autenticación de Dos Factores',
     totpSub: 'Escanea el código QR con tu app de autenticación y luego ingresa el código de 6 dígitos.',
     totpRecommendation: 'Recomendamos Duo Mobile. Authy y Google Authenticator también funcionan.',
+    // Decision 42a — pre-empt the duplicate-entry wrong-code failure.
+    totpRemoveOld: '¿Ya tienes una entrada de «Medikah» o «Práctikah» de un intento anterior? Elimínala primero en tu app de autenticación y luego escanea. Una entrada vieja genera códigos que no funcionarán.',
     totpCodeLabel: 'Código de 6 Dígitos',
     totpCodePlaceholder: '000000',
     totpSubmit: 'Verificar Código',
@@ -399,6 +403,12 @@ export default function ActivatePage() {
                   <h2 className="text-xl font-bold text-inst-blue mb-2">{t.totpHeading}</h2>
                   <p className="text-body-slate text-sm mb-2">{t.totpSub}</p>
                   <p className="text-xs text-body-slate/70">{t.totpRecommendation}</p>
+                </div>
+
+                {/* Decision 42a — remove-stale-entry warning (duplicate authenticator
+                    entries were the #1 wrong-code cause in the founder's re-key). */}
+                <div className="mb-6 rounded-lg border border-caution-amber/30 bg-caution-amber/10 px-4 py-3">
+                  <p className="text-xs text-caution-amber leading-relaxed">{t.totpRemoveOld}</p>
                 </div>
 
                 {/* QR Code */}

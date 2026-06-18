@@ -60,9 +60,38 @@ const t = {
   totpVerify: { en: 'Verify', es: 'Verificar' },
   totpVerifying: { en: 'Verifying…', es: 'Verificando…' },
   totpError: { en: 'Invalid code. Please try again.', es: 'Código no válido. Intenta de nuevo.' },
+  // Decision 42b — distinct copy for a temporary lockout (429) vs a wrong code (422).
+  // Tells the physician to wait rather than re-key a code that will keep failing.
+  totpLockout: {
+    en: 'Too many attempts. Wait a few minutes, then try again.',
+    es: 'Demasiados intentos. Espera unos minutos e intenta de nuevo.',
+  },
+  // Decision 42c — shown while the second-factor handoff completes, so the screen
+  // reads as progress instead of a silent second sign-in.
+  totpCompleting: {
+    en: 'Verified. Finishing sign-in…',
+    es: 'Verificado. Completando inicio de sesión…',
+  },
   totpReauth: {
-    en: 'Code verified. Please sign in once more to continue.',
-    es: 'Código verificado. Inicia sesión una vez más para continuar.',
+    en: 'Code verified. Enter your password once more to finish.',
+    es: 'Código verificado. Ingresa tu contraseña una vez más para terminar.',
+  },
+  // Phase 18 CARRY-18-B — lost-authenticator affordance on the TOTP sign-in step.
+  lostAuthenticator: { en: 'I lost my authenticator', es: 'Perdí mi autenticador' },
+  lostAuthFiling: { en: 'Filing request…', es: 'Enviando solicitud…' },
+  lostAuthFiled: {
+    en: 'Request filed. Once an administrator approves it, return here and choose “Set up a new authenticator” to finish.',
+    es: 'Solicitud enviada. Cuando un administrador la apruebe, vuelve aquí y elige «Configurar un nuevo autenticador» para terminar.',
+  },
+  // Phase 18 CARRY-18-A — link into the isolated re-enrollment flow (opens only
+  // after an admin has approved the reset and cleared the old 2FA factor).
+  reenrollLink: { en: 'Set up a new authenticator', es: 'Configurar un nuevo autenticador' },
+  // Phase 18 CARRY-18-A — surfaced under a failed physician sign-in so a doctor
+  // whose 2FA was just reset (login now correctly returns no session) still has a
+  // path back in. The /auth/reenroll page self-gates on the post-reset state.
+  reenrollPrompt: {
+    en: 'Authenticator reset? Set up a new one',
+    es: '¿Restablecieron tu autenticador? Configura uno nuevo',
   },
   // Phase 18 Plan 04 — D-01: Demotion wall copy.
   // A graduated physician (workspace activated) who signs in via Google or original
@@ -108,6 +137,11 @@ export default function ChatPage() {
   const [totpCode, setTotpCode] = useState('');
   const [isTotpSubmitting, setIsTotpSubmitting] = useState(false);
   const [totpError, setTotpError] = useState<string | null>(null);
+  // Decision 42c — true while the post-verify second-factor handoff runs.
+  const [isTotpCompleting, setIsTotpCompleting] = useState(false);
+  // Phase 18 CARRY-18-B — lost-authenticator self-file state.
+  const [isFilingLostAuth, setIsFilingLostAuth] = useState(false);
+  const [lostAuthFiled, setLostAuthFiled] = useState(false);
   // Phase 18 Plan 04 — D-01: demotion wall state.
   // True when session.user.bootstrap_demoted=true (server set in jwt() callback).
   const [showDemotionWall, setShowDemotionWall] = useState(false);
@@ -253,13 +287,15 @@ export default function ChatPage() {
 
     if (!verifyRes.ok) {
       setIsTotpSubmitting(false);
-      setTotpError(t.totpError[lang]);
+      // Decision 42b — a 429 is a temporary lockout, not a wrong code. Tell the
+      // physician to wait instead of re-keying a code that will keep failing.
+      setTotpError(verifyRes.status === 429 ? t.totpLockout[lang] : t.totpError[lang]);
       return;
     }
 
-    // Code accepted — re-run the credential sign-in so the server can upgrade
-    // the session. Requires the password still in memory; if the page was
-    // reloaded mid-flow, ask for one more sign-in instead.
+    // Code accepted — re-run the credential sign-in so the server can upgrade the
+    // session. Requires the password still in memory; if the page was reloaded
+    // mid-flow we no longer hold it, so route to a focused password re-entry.
     if (!mailcowEmail || !mailcowPassword) {
       setIsTotpSubmitting(false);
       setPortalSelection('doctor');
@@ -268,18 +304,38 @@ export default function ChatPage() {
       return;
     }
 
+    // Decision 42c — surface the handoff as progress ("Finishing sign-in…")
+    // rather than a silent second sign-in.
+    setIsTotpCompleting(true);
     const result = await signIn('mailcow-imap', {
       redirect: false,
       email: mailcowEmail,
       password: mailcowPassword,
     });
     setIsTotpSubmitting(false);
+    setIsTotpCompleting(false);
 
     if (!result || result.error) {
       setTotpError(t.totpError[lang]);
       return;
     }
     // Session refresh with full claims triggers the redirect effect.
+  };
+
+  // Phase 18 CARRY-18-B — self-file a lost-authenticator request from the TOTP
+  // step. The needs_totp session proves the first factor (password) was already
+  // cleared, which is exactly D-06's precondition. The endpoint is non-enumerating
+  // and returns a neutral { filed: true } on every path.
+  const handleLostAuthenticator = async () => {
+    setIsFilingLostAuth(true);
+    try {
+      await fetch('/api/auth/recovery/lost-2fa-request', { method: 'POST' });
+    } catch {
+      // Non-enumerating: show the same neutral confirmation even on network error.
+    } finally {
+      setIsFilingLostAuth(false);
+      setLostAuthFiled(true);
+    }
   };
 
   // Phase 18 Plan 04 — D-01: Bootstrap-demotion wall.
@@ -418,9 +474,39 @@ export default function ChatPage() {
                 className="font-body w-full px-4 py-3 font-semibold tracking-wide text-sm bg-clinical-teal text-white border border-clinical-teal hover:bg-clinical-teal/90 transition rounded-sm disabled:opacity-50"
                 disabled={isTotpSubmitting || totpCode.length !== 6}
               >
-                {isTotpSubmitting ? t.totpVerifying[lang] : t.totpVerify[lang]}
+                {isTotpCompleting
+                  ? t.totpCompleting[lang]
+                  : isTotpSubmitting
+                    ? t.totpVerifying[lang]
+                    : t.totpVerify[lang]}
               </button>
             </form>
+
+            {/* Phase 18 CARRY-18-B — lost-authenticator affordance. */}
+            <div className="pt-1 border-t border-white/10 text-center">
+              {lostAuthFiled ? (
+                <div className="space-y-2 pt-3">
+                  <p className="font-body text-xs text-white/60 leading-relaxed">
+                    {t.lostAuthFiled[lang]}
+                  </p>
+                  <Link
+                    href="/auth/reenroll"
+                    className="font-body inline-block text-xs text-clinical-teal underline hover:text-clinical-teal/80"
+                  >
+                    {t.reenrollLink[lang]}
+                  </Link>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleLostAuthenticator}
+                  disabled={isFilingLostAuth}
+                  className="font-body pt-3 text-xs text-white/40 underline hover:text-white/70 transition disabled:opacity-50"
+                >
+                  {isFilingLostAuth ? t.lostAuthFiling[lang] : t.lostAuthenticator[lang]}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </>
@@ -499,9 +585,20 @@ export default function ChatPage() {
               {isMailcowSubmitting ? t.signingIn[lang] : t.medikahEmailTab[lang]}
             </button>
             {loginError && (
-              <p className="font-body text-sm text-alert-garnet bg-alert-garnet/10 border border-alert-garnet/20 px-3 py-2 text-center rounded-sm">
-                {loginError}
-              </p>
+              <>
+                <p className="font-body text-sm text-alert-garnet bg-alert-garnet/10 border border-alert-garnet/20 px-3 py-2 text-center rounded-sm">
+                  {loginError}
+                </p>
+                {/* Phase 18 CARRY-18-A — re-enroll path for a post-reset doctor. */}
+                <div className="text-center pt-2">
+                  <Link
+                    href="/auth/reenroll"
+                    className="font-body text-xs text-white/40 underline hover:text-clinical-teal transition"
+                  >
+                    {t.reenrollPrompt[lang]}
+                  </Link>
+                </div>
+              </>
             )}
           </form>
           {/* Google demoted to small "recover access" link on graduated devices */}
@@ -586,9 +683,20 @@ export default function ChatPage() {
               {isMailcowSubmitting ? t.signingIn[lang] : t.medikahEmailTab[lang]}
             </button>
             {loginError && (
-              <p className="font-body text-sm text-alert-garnet bg-alert-garnet/10 border border-alert-garnet/20 px-3 py-2 text-center rounded-sm">
-                {loginError}
-              </p>
+              <>
+                <p className="font-body text-sm text-alert-garnet bg-alert-garnet/10 border border-alert-garnet/20 px-3 py-2 text-center rounded-sm">
+                  {loginError}
+                </p>
+                {/* Phase 18 CARRY-18-A — re-enroll path for a post-reset doctor. */}
+                <div className="text-center pt-2">
+                  <Link
+                    href="/auth/reenroll"
+                    className="font-body text-xs text-white/40 underline hover:text-clinical-teal transition"
+                  >
+                    {t.reenrollPrompt[lang]}
+                  </Link>
+                </div>
+              </>
             )}
           </form>
         </div>
