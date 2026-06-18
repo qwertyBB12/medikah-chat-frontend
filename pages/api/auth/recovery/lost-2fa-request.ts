@@ -18,11 +18,13 @@
  *   - Every step is audit-logged in workspace_audit_log (workspace.totp_reset_requested).
  */
 
+import crypto from 'crypto';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../[...nextauth]';
 import { supabaseAdmin } from '../../../../lib/supabaseServer';
 import { logEvent, extractRequestContext } from '../../../../lib/workspaceAuditService';
+import { signTotpResetApprovalToken } from '../../../../lib/auth/totpResetApprovalTokens';
 
 // ---------------------------------------------------------------------------
 // Rate limit: 1 request per 5 minutes per physician (in-process, burst guard)
@@ -131,16 +133,19 @@ export default async function handler(
       .maybeSingle();
 
     if (!existingRequest) {
-      // Insert a new pending reset request
-      const { error: insertErr } = await supabaseAdmin
+      // Insert a new pending reset request — return the new row id so we can bind
+      // the signed one-tap approve link to exactly this request (D-14).
+      const { data: reset, error: insertErr } = await supabaseAdmin
         .from('physician_totp_resets')
         .insert({
           physician_id: physician.id,
           status: 'pending',
-        });
+        })
+        .select('id')
+        .single();
 
-      if (insertErr) {
-        console.error('[lost-2fa-request] failed to insert reset request:', insertErr.message);
+      if (insertErr || !reset) {
+        console.error('[lost-2fa-request] failed to insert reset request:', insertErr?.message);
         // Return neutral regardless — non-enumeration (D-05)
         return res.status(200).json(NEUTRAL);
       }
@@ -152,7 +157,17 @@ export default async function handler(
         const adminEmail =
           process.env.DOCTOR_NOTIFICATION_EMAIL || 'hector@medikah.health';
         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://medikah.health';
-        const approveUrl = `${baseUrl}/admin/totp-resets`;
+
+        // D-14: mint a signed, single-use, request-id-bound one-tap approve link.
+        // The link is admin-authenticated at consume time (GET → getAdminUser) and
+        // works exactly once (the bound reset row must still be status='pending').
+        // The raw token is NEVER console-logged.
+        const approveToken = await signTotpResetApprovalToken({
+          physician_id: physician.id,
+          request_id: reset.id,
+          jti: crypto.randomUUID(),
+        });
+        const approveUrl = `${baseUrl}/api/admin/totp-reset-approve?token=${approveToken}`;
 
         const { Resend } = await import('resend');
         const resend = new Resend(process.env.RESEND_API_KEY);
@@ -165,8 +180,9 @@ export default async function handler(
             '<p><strong>A physician has filed a lost-2FA reset request.</strong></p>',
             `<p><strong>Physician email:</strong> ${physician.email}</p>`,
             `<p><strong>Physician ID:</strong> ${physician.id}</p>`,
-            '<p>To approve or deny this request, visit the admin panel:</p>',
-            `<p><a href="${approveUrl}">${approveUrl}</a></p>`,
+            '<p>If you have verified this physician&rsquo;s identity, approve the reset with one tap:</p>',
+            `<p><a href="${approveUrl}" style="display:inline-block;background-color:#2C7A8C;color:#ffffff;font-weight:700;text-decoration:none;padding:12px 24px;border-radius:8px;">Approve 2FA reset</a></p>`,
+            '<p style="color:#8A8D91;font-size:12px;">This link is signed, single-use, and expires in 30 minutes. It only works while you are signed in as an administrator.</p>',
             '<p style="color:#B83D3D;"><strong>Security note:</strong> "I lost my 2FA" is a common attacker claim. ',
             'Verify the physician\'s identity via a secondary channel before approving.</p>',
             '<p><em>This message was sent by the Práctikah security system.</em></p>',
