@@ -75,8 +75,19 @@ const t = {
     es: 'Verificado. Completando inicio de sesión…',
   },
   totpReauth: {
-    en: 'Code verified. Enter your password once more to finish.',
-    es: 'Código verificado. Ingresa tu contraseña una vez más para terminar.',
+    en: 'Code verified — enter your password once to finish.',
+    es: 'Código verificado — ingresa tu contraseña una vez para terminar.',
+  },
+  // D-17 — submit label on the focused in-context password re-entry. Reads as
+  // "finish", never "sign in", so the screen feels like continuation.
+  totpReauthSubmit: { en: 'Finish sign-in', es: 'Completar inicio de sesión' },
+  totpReauthFinishing: { en: 'Finishing…', es: 'Completando…' },
+  // D-17 — continuation banner after a fresh re-enrollment (?reenrolled=1). The
+  // copy is a static bilingual string gated on the flag, never the param value
+  // (T-18-08-03 — the param is treated as a boolean only, never interpolated).
+  reenrolledBanner: {
+    en: 'Authenticator set up — sign in to finish.',
+    es: 'Autenticador configurado — inicia sesión para terminar.',
   },
   // Phase 18 CARRY-18-B — lost-authenticator affordance on the TOTP sign-in step.
   lostAuthenticator: { en: 'I lost my authenticator', es: 'Perdí mi autenticador' },
@@ -154,6 +165,17 @@ export default function ChatPage() {
   const [lockoutSeconds, setLockoutSeconds] = useState<number | null>(null);
   // Decision 42c — true while the post-verify second-factor handoff runs.
   const [isTotpCompleting, setIsTotpCompleting] = useState(false);
+  // D-17 — when the code verified but the password is no longer in memory (page
+  // reloaded mid-flow), we show a focused single-field password re-entry IN the
+  // TOTP step rather than bouncing to the full role-selection panel. The screen
+  // keeps reading as "finishing", not "starting over".
+  const [needsReauth, setNeedsReauth] = useState(false);
+  const [reauthPassword, setReauthPassword] = useState('');
+  const [isReauthSubmitting, setIsReauthSubmitting] = useState(false);
+  // D-17 — true when the doctor just completed re-enrollment and was redirected
+  // back to /chat with ?reenrolled=1. Drives a one-line continuation banner so
+  // the doctor understands they are finishing, not repeating.
+  const [showReenrolledBanner, setShowReenrolledBanner] = useState(false);
   // Phase 18 CARRY-18-B — lost-authenticator self-file state.
   const [isFilingLostAuth, setIsFilingLostAuth] = useState(false);
   const [lostAuthFiled, setLostAuthFiled] = useState(false);
@@ -173,6 +195,16 @@ export default function ChatPage() {
     initialRoleRef.current = true;
     const urlParams = new URLSearchParams(window.location.search);
     const role = urlParams.get('role');
+    // D-17 — a doctor returning from a completed re-enrollment carries ?reenrolled=1.
+    // Treat it strictly as a boolean flag (T-18-08-03): open the physician sign-in
+    // form and show the continuation banner so the screen reads as "finishing".
+    const reenrolled = urlParams.get('reenrolled') === '1';
+    if (reenrolled) {
+      setShowReenrolledBanner(true);
+      setPortalSelection('doctor');
+      setShowLoginForm(true);
+      return;
+    }
     if (role === 'physician' || role === 'doctor') {
       setPortalSelection('doctor');
       setShowLoginForm(true);
@@ -348,12 +380,13 @@ export default function ChatPage() {
 
     // Code accepted — re-run the credential sign-in so the server can upgrade the
     // session. Requires the password still in memory; if the page was reloaded
-    // mid-flow we no longer hold it, so route to a focused password re-entry.
-    if (!mailcowEmail || !mailcowPassword) {
+    // mid-flow we no longer hold it. D-17 — instead of bouncing to the full
+    // role-selection panel (which reads as "starting over"), stay on the TOTP
+    // step and reveal a single focused password field in-context. The screen
+    // still reads as "finishing".
+    if (!mailcowPassword) {
       setIsTotpSubmitting(false);
-      setPortalSelection('doctor');
-      setShowLoginForm(true);
-      setLoginError(t.totpReauth[lang]);
+      setNeedsReauth(true);
       return;
     }
 
@@ -373,6 +406,35 @@ export default function ChatPage() {
       return;
     }
     // Session refresh with full claims triggers the redirect effect.
+  };
+
+  // D-17 — focused in-context password re-entry after a mid-flow reload. The
+  // code already verified; we only need the password (the email is recovered
+  // from the held needs_totp session's mailbox_email claim, or the value the
+  // doctor typed). On submit we re-invoke signIn directly — no role reset, no
+  // return to the full panel — so the flow reads as "finishing", not "starting
+  // over". Auth invariant unchanged: this still routes through the provider,
+  // which returns the full claim set for the now-verified second factor.
+  const handleReauthSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const reauthEmail = mailcowEmail || session?.user?.mailbox_email || '';
+    if (!reauthEmail || !reauthPassword) return;
+    setIsReauthSubmitting(true);
+    setIsTotpCompleting(true);
+    const result = await signIn('mailcow-imap', {
+      redirect: false,
+      email: reauthEmail,
+      password: reauthPassword,
+    });
+    setIsReauthSubmitting(false);
+    setIsTotpCompleting(false);
+    if (!result || result.error) {
+      setTotpError(t.totpError[lang]);
+      return;
+    }
+    // Full-claim session refresh triggers the redirect effect.
+    setNeedsReauth(false);
+    setReauthPassword('');
   };
 
   // Phase 18 CARRY-18-B — self-file a lost-authenticator request from the TOTP
@@ -496,6 +558,50 @@ export default function ChatPage() {
         <div className="min-h-screen flex items-center justify-center bg-warm-gray-900 px-4">
           <div className="font-dm-sans bg-warm-gray-900/80 border border-white/10 rounded-sm p-6 space-y-5 text-white w-full max-w-sm">
             <h3 className="text-base font-semibold tracking-wide">{t.totpHeading[lang]}</h3>
+            {/* D-17 — after a mid-flow reload the code is verified but the password
+                is no longer in memory. Show a single focused password field in
+                this same step (no bounce to the full panel); the screen keeps
+                reading as "finishing", not "starting over". */}
+            {needsReauth ? (
+              <div className="space-y-4">
+                <p className="font-body text-sm text-confirm-green bg-confirm-green/10 border border-confirm-green/20 px-3 py-2 text-center rounded-sm">
+                  {t.totpReauth[lang]}
+                </p>
+                <form onSubmit={handleReauthSubmit} className="space-y-3">
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="reauth-password" className="font-body text-xs uppercase tracking-wider text-white/50">
+                      {t.password[lang]}
+                    </label>
+                    <input
+                      id="reauth-password"
+                      type="password"
+                      autoComplete="current-password"
+                      value={reauthPassword}
+                      onChange={(e) => setReauthPassword(e.target.value)}
+                      className="font-body border border-white/20 bg-warm-gray-900/50 px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-clinical-teal rounded-sm"
+                      placeholder="********"
+                      autoFocus
+                      required
+                    />
+                  </div>
+                  {totpError && (
+                    <p className="font-dm-sans text-sm text-alert-garnet bg-alert-garnet/10 border border-alert-garnet/20 px-3 py-2 text-center rounded-sm">
+                      {totpError}
+                    </p>
+                  )}
+                  <button
+                    type="submit"
+                    className="font-body w-full px-4 py-3 font-semibold tracking-wide text-sm bg-clinical-teal text-white border border-clinical-teal hover:bg-clinical-teal/90 transition rounded-sm disabled:opacity-50"
+                    disabled={isReauthSubmitting || reauthPassword.length === 0}
+                  >
+                    {isReauthSubmitting || isTotpCompleting
+                      ? t.totpReauthFinishing[lang]
+                      : t.totpReauthSubmit[lang]}
+                  </button>
+                </form>
+              </div>
+            ) : (
+            <>
             <p className="font-body text-xs text-white/50">{t.totpHint[lang]}</p>
             <form onSubmit={handleTotpSubmit} className="space-y-3">
               <div className="flex flex-col gap-1.5">
@@ -547,6 +653,8 @@ export default function ChatPage() {
                     : t.totpVerify[lang]}
               </button>
             </form>
+            </>
+            )}
 
             {/* Phase 18 CARRY-18-B — lost-authenticator affordance. */}
             <div className="pt-1 border-t border-white/10 text-center">
@@ -600,6 +708,15 @@ export default function ChatPage() {
 
   const loginPanel = showLoginForm ? (
     <div className="font-dm-sans bg-warm-gray-900/80 rounded-sm p-6 space-y-5 text-white mb-8">
+      {/* D-17 — continuation banner after a fresh re-enrollment (?reenrolled=1).
+          Reads as "finish signing in", not a blank restart. Purely informational
+          (T-18-08-04): the real gate is the IMAP password + the new TOTP on this
+          next login; the banner grants no access. */}
+      {showReenrolledBanner && (
+        <p className="font-body text-sm text-confirm-green bg-confirm-green/10 border border-confirm-green/20 px-3 py-2 text-center rounded-sm">
+          {t.reenrolledBanner[lang]}
+        </p>
+      )}
       <h3 className="text-base font-semibold tracking-wide">
         {heading}
       </h3>
