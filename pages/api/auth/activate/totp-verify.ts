@@ -79,12 +79,26 @@ function extractSourceIp(req: NextApiRequest): string | null {
 // Rate-limit check against auth_probe_attempts (Phase 16-03 pattern)
 // ---------------------------------------------------------------------------
 
-async function isRateLimited(sourceIp: string): Promise<boolean> {
-  if (!supabaseAdmin) return false;
-  const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();
+// Decision 42b / D-16 — the lockout check now ALSO derives how long the physician
+// must wait, so the client can render a live countdown instead of an open-ended
+// "wait a few minutes". The window is the existing rate-limit window: a lockout
+// clears once the EARLIEST failing attempt inside the trailing 5-minute window
+// ages out, i.e. (earliest_failure_at + RATE_LIMIT_WINDOW_MS) − now. This is a
+// pure read of the same ledger that already enforces the limit server-side; it
+// does not widen the attempt budget (T-18-08-02 accept).
+type RateLimitState = { limited: boolean; retryAfterSeconds: number };
+
+// Floor on the disclosed wait so we never hand the client a 0/negative value
+// during the boundary tick (keeps the countdown sane and the button disabled).
+const MIN_RETRY_AFTER_SECONDS = 1;
+
+async function checkRateLimit(sourceIp: string): Promise<RateLimitState> {
+  if (!supabaseAdmin) return { limited: false, retryAfterSeconds: 0 };
+  const now = Date.now();
+  const windowStart = new Date(now - RATE_LIMIT_WINDOW_MS).toISOString();
   const { data: recent, error } = await supabaseAdmin
     .from('auth_probe_attempts')
-    .select('id, outcome')
+    .select('id, outcome, attempted_at')
     .eq('source_ip', sourceIp)
     .gte('attempted_at', windowStart)
     .order('attempted_at', { ascending: false })
@@ -93,11 +107,26 @@ async function isRateLimited(sourceIp: string): Promise<boolean> {
   if (error) {
     console.error('[totp-verify] rate-limit query failed', error.message);
     // Fall through on DB error — do not block legitimate users on Supabase outage.
-    return false;
+    return { limited: false, retryAfterSeconds: 0 };
   }
 
-  const failures = (recent ?? []).filter((r: { outcome: string }) => r.outcome !== 'success').length;
-  return failures >= RATE_LIMIT_MAX_FAILURES;
+  const failures = (recent ?? []).filter(
+    (r: { outcome: string }) => r.outcome !== 'success',
+  );
+  if (failures.length < RATE_LIMIT_MAX_FAILURES) {
+    return { limited: false, retryAfterSeconds: 0 };
+  }
+
+  // Remaining wait = (earliest failing attempt in window + window) − now.
+  // `failures` is ordered newest-first; the last element is the earliest.
+  const earliestFailure = failures[failures.length - 1] as { attempted_at: string };
+  const earliestMs = new Date(earliestFailure.attempted_at).getTime();
+  const remainingMs = earliestMs + RATE_LIMIT_WINDOW_MS - now;
+  const retryAfterSeconds = Math.max(
+    MIN_RETRY_AFTER_SECONDS,
+    Math.ceil(remainingMs / 1000),
+  );
+  return { limited: true, retryAfterSeconds };
 }
 
 async function writeProbeAttempt(
@@ -154,16 +183,25 @@ export default async function handler(
     }
 
     // --- Rate-limit check (T-17-04-02 brute-force protection) ---
-    if (sourceIp && (await isRateLimited(sourceIp))) {
-      await writeProbeAttempt(sourceIp, null, 'locked_out', userAgent);
-      // Decision 42b — distinguish a temporary lockout from a wrong code. A 429
-      // tells the physician to WAIT rather than re-key a code that will keep
-      // failing (the exact confusion in the founder's re-key session). This is a
-      // SAME-FACTOR usability split — both cases are the user's own TOTP attempt —
-      // so it never reveals which SIDE (password vs identity) failed and the
-      // Phase 16 D-12 generic-error contract stays intact (T-17-04-04 preserved
-      // for the bad-code path below).
-      return res.status(429).json({ error: 'locked_out' });
+    if (sourceIp) {
+      const rate = await checkRateLimit(sourceIp);
+      if (rate.limited) {
+        await writeProbeAttempt(sourceIp, null, 'locked_out', userAgent);
+        // Decision 42b / D-16 — distinguish a temporary lockout from a wrong code.
+        // A 429 tells the physician to WAIT rather than re-key a code that will
+        // keep failing (the exact confusion in the founder's re-key session), and
+        // now carries the remaining wait so the client can render a live MM:SS
+        // countdown (Retry-After header + retry_after_seconds JSON). This is a
+        // SAME-FACTOR usability split — both cases are the user's own TOTP attempt
+        // — so it never reveals which SIDE (password vs identity) failed and the
+        // Phase 16 D-12 generic-error contract stays intact (T-17-04-04 preserved
+        // for the bad-code path below). Disclosing the wait does not widen the
+        // attempt budget (T-18-08-02 accept).
+        res.setHeader('Retry-After', String(rate.retryAfterSeconds));
+        return res
+          .status(429)
+          .json({ error: 'locked_out', retry_after_seconds: rate.retryAfterSeconds });
+      }
     }
 
     // --- Load workspace account ---

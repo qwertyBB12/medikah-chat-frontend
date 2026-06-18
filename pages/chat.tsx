@@ -59,12 +59,14 @@ const t = {
   totpCodeLabel: { en: '6-digit code', es: 'Código de 6 dígitos' },
   totpVerify: { en: 'Verify', es: 'Verificar' },
   totpVerifying: { en: 'Verifying…', es: 'Verificando…' },
-  totpError: { en: 'Invalid code. Please try again.', es: 'Código no válido. Intenta de nuevo.' },
-  // Decision 42b — distinct copy for a temporary lockout (429) vs a wrong code (422).
-  // Tells the physician to wait rather than re-key a code that will keep failing.
+  totpError: { en: 'That code didn’t match — check your authenticator app.', es: 'Ese código no coincide — revisa tu app de autenticación.' },
+  // Decision 42b / D-16 — distinct copy for a temporary lockout (429) vs a wrong
+  // code (422). Tells the physician to wait rather than re-key a code that will
+  // keep failing, and interpolates a live MM:SS countdown ({time}) of the
+  // server-derived remaining wait so the screen reads as "wait", not "broken".
   totpLockout: {
-    en: 'Too many attempts. Wait a few minutes, then try again.',
-    es: 'Demasiados intentos. Espera unos minutos e intenta de nuevo.',
+    en: 'Too many attempts — try again in {time}.',
+    es: 'Demasiados intentos — vuelve a intentar en {time}.',
   },
   // Decision 42c — shown while the second-factor handoff completes, so the screen
   // reads as progress instead of a silent second sign-in.
@@ -117,6 +119,14 @@ const t = {
 
 type Lang = 'en' | 'es';
 
+// D-16 — render a remaining-seconds value as MM:SS for the lockout countdown.
+function formatCountdown(totalSeconds: number): string {
+  const safe = Math.max(0, Math.floor(totalSeconds));
+  const minutes = Math.floor(safe / 60);
+  const seconds = safe % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
 export default function ChatPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -137,6 +147,11 @@ export default function ChatPage() {
   const [totpCode, setTotpCode] = useState('');
   const [isTotpSubmitting, setIsTotpSubmitting] = useState(false);
   const [totpError, setTotpError] = useState<string | null>(null);
+  // Decision 42b / D-16 — when the verify endpoint returns 429, we hold the
+  // server-derived remaining wait here and tick it down so the lockout shows a
+  // live MM:SS countdown and the verify button re-enables at zero. null = not
+  // locked out (a 422 wrong-code state, which shows totpError instead).
+  const [lockoutSeconds, setLockoutSeconds] = useState<number | null>(null);
   // Decision 42c — true while the post-verify second-factor handoff runs.
   const [isTotpCompleting, setIsTotpCompleting] = useState(false);
   // Phase 18 CARRY-18-B — lost-authenticator self-file state.
@@ -176,6 +191,22 @@ export default function ChatPage() {
       .some((c) => c.trim().startsWith('mk_physician_graduated='));
     setIsGraduatedDevice(graduated);
   }, []);
+
+  // Decision 42b / D-16 — tick the lockout countdown down once per second while a
+  // lockout is in effect; clear it (re-enabling the verify button) at zero. The
+  // interval is the only timer; editing the code also clears the lockout (below).
+  useEffect(() => {
+    if (lockoutSeconds === null) return;
+    if (lockoutSeconds <= 0) {
+      setLockoutSeconds(null);
+      setTotpError(null);
+      return;
+    }
+    const interval = setInterval(() => {
+      setLockoutSeconds((prev) => (prev === null ? null : prev - 1));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [lockoutSeconds]);
 
   // Track the portal selection for redirect after session updates
   const pendingRedirectRef = useRef<PortalSelection>(null);
@@ -287,9 +318,31 @@ export default function ChatPage() {
 
     if (!verifyRes.ok) {
       setIsTotpSubmitting(false);
-      // Decision 42b — a 429 is a temporary lockout, not a wrong code. Tell the
-      // physician to wait instead of re-keying a code that will keep failing.
-      setTotpError(verifyRes.status === 429 ? t.totpLockout[lang] : t.totpError[lang]);
+      // Decision 42b / D-16 — a 429 is a temporary lockout, not a wrong code. A
+      // wrong code (422) tells the doctor to check their app; a lockout (429)
+      // starts a live MM:SS countdown of the server-derived remaining wait and
+      // re-enables the button at zero. Read retry_after_seconds, then fall back
+      // to the Retry-After header, then to 300 (the 5-min window) if absent.
+      if (verifyRes.status === 429) {
+        let seconds = 300;
+        try {
+          const body = (await verifyRes.json()) as { retry_after_seconds?: number };
+          if (typeof body.retry_after_seconds === 'number' && body.retry_after_seconds > 0) {
+            seconds = body.retry_after_seconds;
+          } else {
+            const header = Number(verifyRes.headers.get('Retry-After'));
+            if (Number.isFinite(header) && header > 0) seconds = header;
+          }
+        } catch {
+          const header = Number(verifyRes.headers.get('Retry-After'));
+          if (Number.isFinite(header) && header > 0) seconds = header;
+        }
+        setLockoutSeconds(seconds);
+        setTotpError(null);
+      } else {
+        setLockoutSeconds(null);
+        setTotpError(t.totpError[lang]);
+      }
       return;
     }
 
@@ -457,22 +510,35 @@ export default function ChatPage() {
                   pattern="[0-9]{6}"
                   maxLength={6}
                   value={totpCode}
-                  onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ''))}
+                  onChange={(e) => {
+                    setTotpCode(e.target.value.replace(/\D/g, ''));
+                    // D-16 — editing the code clears any lockout countdown so the
+                    // doctor isn't stuck staring at a stale timer once they retry.
+                    if (lockoutSeconds !== null) setLockoutSeconds(null);
+                    if (totpError) setTotpError(null);
+                  }}
                   className="font-body border border-white/20 bg-warm-gray-900/50 px-4 py-3 text-white placeholder-white/30 tracking-[0.4em] text-center focus:outline-none focus:border-clinical-teal rounded-sm"
                   placeholder="000000"
                   autoFocus
                   required
                 />
               </div>
-              {totpError && (
+              {/* D-16 — DISTINCT states: a lockout (429) shows a live MM:SS
+                  countdown of the remaining wait; a wrong code (422) shows the
+                  "check your authenticator app" copy. Both on brand (alert-garnet). */}
+              {lockoutSeconds !== null ? (
+                <p className="font-dm-sans text-sm text-alert-garnet bg-alert-garnet/10 border border-alert-garnet/20 px-3 py-2 text-center rounded-sm">
+                  {t.totpLockout[lang].replace('{time}', formatCountdown(lockoutSeconds))}
+                </p>
+              ) : totpError ? (
                 <p className="font-dm-sans text-sm text-alert-garnet bg-alert-garnet/10 border border-alert-garnet/20 px-3 py-2 text-center rounded-sm">
                   {totpError}
                 </p>
-              )}
+              ) : null}
               <button
                 type="submit"
                 className="font-body w-full px-4 py-3 font-semibold tracking-wide text-sm bg-clinical-teal text-white border border-clinical-teal hover:bg-clinical-teal/90 transition rounded-sm disabled:opacity-50"
-                disabled={isTotpSubmitting || totpCode.length !== 6}
+                disabled={isTotpSubmitting || totpCode.length !== 6 || lockoutSeconds !== null}
               >
                 {isTotpCompleting
                   ? t.totpCompleting[lang]
