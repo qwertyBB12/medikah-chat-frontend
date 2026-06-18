@@ -37,3 +37,7 @@ test-results/
 # Supabase CLI local artifacts
 supabase/.gitignore
 supabase/config.toml
+
+# Accidental GSD planning cruft (canonical .planning lives in the superrepo)
+.planning/
+.planning-scratch/

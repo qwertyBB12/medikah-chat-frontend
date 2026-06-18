@@ -74,20 +74,27 @@ export default async function handler(
   try {
     // --- D-06: require a physician-identifying session (first factor cleared) ---
     // An anonymous caller cannot file a 2FA reset — we don't know who they are.
-    // A valid mailcow-imap or credentials session proves the first factor was cleared.
+    // Two valid session shapes prove the first factor was cleared:
+    //   - a needs_totp session (mailcow IMAP password verified, second factor
+    //     outstanding) — carries physician_id but NO email. THIS is the realistic
+    //     lost-authenticator caller: the doctor is stuck on the TOTP step having
+    //     just passed their password (CARRY-18-B).
+    //   - a fully-authenticated session carrying an email (e.g. credentials/Google
+    //     bootstrap recovery surface).
+    // Anonymous callers get a neutral filed:true with NO row written (T-18-06-02).
     const session = await getServerSession(req, res, authOptions);
-    if (!session?.user?.email) {
+    const sessionPhysicianId = session?.user?.physician_id ?? null;
+    const sessionEmail = session?.user?.email ? session.user.email.toLowerCase() : null;
+    if (!sessionPhysicianId && !sessionEmail) {
       // Anonymous caller — return neutral with no row written (T-18-06-02)
       return res.status(200).json(NEUTRAL);
     }
 
-    // --- Resolve the physician by session email ---
-    const sessionEmail = session.user.email.toLowerCase();
-    const { data: physician, error: physicianErr } = await supabaseAdmin
-      .from('physicians')
-      .select('id, email')
-      .eq('email', sessionEmail)
-      .maybeSingle();
+    // --- Resolve the physician by physician_id (needs_totp) or session email ---
+    const basePhysicianQuery = supabaseAdmin.from('physicians').select('id, email');
+    const { data: physician, error: physicianErr } = sessionPhysicianId
+      ? await basePhysicianQuery.eq('id', sessionPhysicianId).maybeSingle()
+      : await basePhysicianQuery.eq('email', sessionEmail as string).maybeSingle();
 
     if (physicianErr || !physician) {
       // Not a known physician session — return neutral (non-enumeration)
@@ -181,7 +188,7 @@ export default async function handler(
       detail: {
         flow: 'lost_2fa',
         idempotent: Boolean(existingRequest),
-        sessionProvider: session.user.provider ?? 'unknown',
+        sessionProvider: session?.user?.provider ?? 'unknown',
       },
       ipAddress,
       userAgent,

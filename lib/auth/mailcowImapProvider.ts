@@ -400,14 +400,43 @@ export async function mailcowImapAuthorize(
       // Recent TOTP verification found — fall through to the full-user return
       // below with totp_verified=true so jwt() takes the upgrade branch.
       totpRecentlyVerified = true;
+    } else {
+      // Case b-miss (Phase 18 CARRY-18-A — the no-2FA hole close): the account is
+      // activation_complete=true but totp_enrolled=false. In steady state this is
+      // EXACTLY the post-reset state written by /api/admin/totp-reset-approve
+      // (totp_enrolled=false, totp_secret=null, activation_complete left true).
+      //
+      // The prior implementation logged a warning and fell THROUGH to the full
+      // claim-set return below — i.e. it granted a complete, no-second-factor
+      // session to an account whose 2FA had just been revoked. That defeats the
+      // SC5 re-enroll guarantee and is a 2FA bypass. We now FAIL CLOSED: no JWT is
+      // issued. The physician must re-enroll a fresh authenticator via the
+      // isolated /auth/reenroll flow (which the admin reset opened by clearing
+      // totp_enrolled). The /chat error surface offers the re-enroll affordance.
+      //
+      // Scope note (blast radius): this branch only fires when totp_enrolled=false
+      // on an activated account. Normal logins (totp_enrolled=true) never reach it.
+      console.warn(
+        '[mailcowImapProvider] activation_complete=true but totp_enrolled=false — TOTP re-enrollment required; refusing session (CARRY-18-A)',
+        { physician_id: physician.id },
+      );
+      await writeProbeAttempt(sourceIp, email, 'infra_error', userAgent);
+      await logEvent({
+        physicianId: physician.id,
+        actorId: physician.id,
+        actorRole: 'physician',
+        action: 'workspace.login',
+        detail: {
+          outcome: 'totp_reenroll_required',
+          attempted_email: email,
+          provider: 'mailcow-imap',
+          note: 'password correct but 2FA not enrolled (post-reset) — no session issued; re-enroll required',
+        },
+        ipAddress: sourceIp ?? undefined,
+        userAgent,
+      });
+      return null;
     }
-    // Case b-miss: activation_complete=true but TOTP not yet enrolled (should not happen
-    // in steady state — D-01 requires both gates). Fall through to full-user return;
-    // the account can still log in so it is not blocked. Log a warning.
-    console.warn(
-      '[mailcowImapProvider] activation_complete=true but totp_enrolled=false — possible partial activation state',
-      { physician_id: physician.id },
-    );
   }
   // Case c: wsAccount is null → legacy physician (no workspace row). Fall through.
 
