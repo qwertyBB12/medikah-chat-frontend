@@ -19,12 +19,16 @@ export async function getAdminUser(
   res: NextApiResponse
 ): Promise<AdminUser | null> {
   const session = await getServerSession(req, res, authOptions);
-  if (!session?.user?.email || !supabaseAdmin) return null;
+  // Workspace (mailcow-imap) sessions carry mailbox_email, not email — fall back to it
+  // so an admin signed in via their Medikah workspace login is recognized. A needs_totp
+  // (half-logged-in) session has neither field, so it still returns null.
+  const adminEmail = session?.user?.email ?? session?.user?.mailbox_email;
+  if (!adminEmail || !supabaseAdmin) return null;
 
   const { data } = await supabaseAdmin
     .from('admin_users')
     .select('*')
-    .eq('email', session.user.email.toLowerCase())
+    .eq('email', adminEmail.toLowerCase())
     .maybeSingle();
 
   if (!data) return null;
@@ -39,12 +43,16 @@ export async function getAdminFromContext(
   ctx: GetServerSidePropsContext
 ): Promise<AdminUser | null> {
   const session = await getServerSession(ctx.req, ctx.res, authOptions);
-  if (!session?.user?.email || !supabaseAdmin) return null;
+  // Workspace (mailcow-imap) sessions carry mailbox_email, not email — fall back to it
+  // so an admin signed in via their Medikah workspace login is recognized. A needs_totp
+  // (half-logged-in) session has neither field, so it still returns null.
+  const adminEmail = session?.user?.email ?? session?.user?.mailbox_email;
+  if (!adminEmail || !supabaseAdmin) return null;
 
   const { data } = await supabaseAdmin
     .from('admin_users')
     .select('*')
-    .eq('email', session.user.email.toLowerCase())
+    .eq('email', adminEmail.toLowerCase())
     .maybeSingle();
 
   if (!data) return null;
