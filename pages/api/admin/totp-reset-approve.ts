@@ -32,6 +32,7 @@ import { getAdminUser, type AdminUser } from '../../../lib/adminAuth';
 import { supabaseAdmin } from '../../../lib/supabaseServer';
 import { logEvent, extractRequestContext } from '../../../lib/workspaceAuditService';
 import { verifyTotpResetApprovalToken } from '../../../lib/auth/totpResetApprovalTokens';
+import { bumpSessionEpoch } from '../../../lib/auth/sessionRevocation';
 
 // ---------------------------------------------------------------------------
 // Shared approve body — POST and GET both call this so they cannot drift (D-14).
@@ -83,6 +84,12 @@ async function applyApproval(ctx: ApprovalContext): Promise<{ ok: boolean }> {
     // TOTP was already cleared — log and continue (the critical step is done).
     console.error('[totp-reset-approve] TOTP cleared but status update failed — check audit log');
   }
+
+  // Phase 21 — kill any live session for this physician. Resetting the 2FA factor
+  // must not leave an old, still-valid copied token able to reach webmail; bump
+  // the revocation watermark so sso-verify rejects it on its next request.
+  // Best-effort (never throws) — the credential reset above is the primary guard.
+  await bumpSessionEpoch(ctx.physicianId);
 
   // Step 3: Audit (T-18-06-06).
   await logEvent({
