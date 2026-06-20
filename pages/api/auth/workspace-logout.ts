@@ -13,10 +13,11 @@
  *   4. hands off to the nginx /practikah-logout route which kills the SOGo
  *      server-side session + cookie and lands the user on /chat.
  *
- * Hardened per the 2026-06-20 security panel (ship-now scope). KNOWN RESIDUAL:
- * the NextAuth session is a stateless JWT — clearing the cookie does not revoke
- * a *copied* token before its exp (≤1h). The authoritative fix (server-side
- * revocation epoch checked in sso-verify) is the next task; see 21-CONTEXT.md.
+ * Hardened per the 2026-06-20 security panel. Phase 21 server-side revocation:
+ * this route now also bumps the physician's session_epoch (see
+ * lib/auth/sessionRevocation.ts), so a *copied* token — which the cookie clear
+ * alone cannot reach — is rejected by the SSO gate (sso-verify) on its next
+ * request, across every device, not just this browser.
  *
  * Open-redirect guard: the redirect target is a module constant and is NEVER
  * read from req.query (no callbackUrl).
@@ -25,6 +26,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getToken } from 'next-auth/jwt';
 import { logEvent } from '../../../lib/workspaceAuditService';
+import { bumpSessionEpoch } from '../../../lib/auth/sessionRevocation';
 
 // Constant. Do NOT make this user-controllable (no req.query.callbackUrl).
 const SOGO_LOGOUT = 'https://practikah.medikah.health/practikah-logout';
@@ -52,6 +54,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     const physicianId = (token?.physician_id as string | undefined) ?? undefined;
     if (physicianId) {
+      // Phase 21 — advance the revocation watermark BEFORE the cookie clear.
+      // This is the cross-device kill: every outstanding copy of this physician's
+      // token is rejected by sso-verify on its next request. Awaited but
+      // best-effort (the helper never throws) — sign-out proceeds regardless.
+      await bumpSessionEpoch(physicianId);
+
       const xff = req.headers['x-forwarded-for'];
       const ipAddress =
         (Array.isArray(xff) ? xff[0] : xff)?.split(',')[0]?.trim() ||

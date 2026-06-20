@@ -7,6 +7,7 @@ import { supabaseAdmin } from '../../../lib/supabaseServer';
 import { detectUserRole, ensureSupabaseUser } from '../../../lib/portalAuth';
 import { mailcowImapAuthorize } from '../../../lib/auth/mailcowImapProvider';
 import { logEvent } from '../../../lib/workspaceAuditService';
+import { nowEpochSeconds } from '../../../lib/auth/sessionRevocation';
 
 /**
  * Phase 18 Plan 04 — D-01: Bootstrap-demotion gate helper.
@@ -156,6 +157,14 @@ export const authOptions: NextAuthOptions = {
     },
     async jwt({ token, user, account }) {
       if (user) {
+        // Phase 21 — pin the session issue time at sign-in (epoch seconds). The
+        // SSO gate (sso-verify) compares this against the physician's
+        // session_epoch watermark to revoke copied tokens. Set on EVERY sign-in
+        // branch (incl. the needs_totp / totp_verified early returns below) and
+        // never refreshed on subsequent requests — `user` is truthy only at
+        // genuine sign-in, so a re-encode on a normal request preserves it.
+        token.session_iat = nowEpochSeconds();
+
         // Credentials flow: user object already has id and role
         if (account?.provider === 'credentials') {
           token.userId = user.id;
