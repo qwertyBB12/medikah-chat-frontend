@@ -46,10 +46,12 @@ const TOTP_DEFAULTS = {
   digits: 6,
 };
 
-// ±3 steps = ±210s. TEMPORARY widening for CDMX onsite enrollment 2026-06-22
-// (drifted doctor phones lock out at the venue). REVERT to 2 (±150s) after the event.
-// NEVER tighten to 0 (Pitfall 5 / T-17-04-02 clock skew).
-const EPOCH_TOLERANCE = 3; // CDMX-temp; revert to 2 after 2026-06-22
+// Clock-skew tolerance, in 30s TOTP steps. ±3 steps ≈ ±90s of device-clock skew
+// (the verify loop below sweeps d = -EPOCH_TOLERANCE..+EPOCH_TOLERANCE). Generous
+// for CDMX onsite enrollment 2026-06-22 (drifted doctor phones). NEVER set to 0
+// (Pitfall 5 / T-17-04-02 clock skew). NOTE: this only takes effect because the
+// verification sweeps the window manually — otplib's own option is a no-op (v13).
+const EPOCH_TOLERANCE = 3;
 
 // Rate-limit window: 3 failures in 5 minutes → locked_out (Phase 16 pattern).
 const RATE_LIMIT_WINDOW_MS = 5 * 60_000;
@@ -247,19 +249,31 @@ export default async function handler(
       return res.status(500).json({ error: 'Internal error' });
     }
 
-    // --- Verify the submitted TOTP code (±1 window — Pitfall 5: never tighten) ---
-    const verifyResult = verifySync({
-      ...TOTP_DEFAULTS,
-      epoch: Math.floor(Date.now() / 1000),
-      secret: rawSecret,
-      token: code,
-      epochTolerance: EPOCH_TOLERANCE,
-    });
-
-    const isValid =
-      typeof verifyResult === 'object'
-        ? (verifyResult as { valid: boolean }).valid
-        : Boolean(verifyResult);
+    // --- Verify the submitted TOTP code across a ±EPOCH_TOLERANCE step window ---
+    // CRITICAL: otplib v13's verifySync does NOT honor any window/tolerance option
+    // (epochTolerance/window/delta/tolerance are ALL silently ignored — verified
+    // empirically against otplib@13.4.1). Passing epochTolerance gave ZERO real
+    // tolerance: only a code matching the EXACT current 30s step validated, so any
+    // sub-minute device-clock skew or a code entered near the step boundary failed
+    // a legitimate login. That intermittently bit real users and would lock out
+    // drifted phones at CDMX. We therefore sweep the window ourselves: the code is
+    // valid if it matches server time within ±EPOCH_TOLERANCE steps (±N×30s).
+    // NEVER collapse this back to a single call (T-17-04-02 / Pitfall 5).
+    const nowEpoch = Math.floor(Date.now() / 1000);
+    let isValid = false;
+    for (let d = -EPOCH_TOLERANCE; d <= EPOCH_TOLERANCE; d++) {
+      const r = verifySync({
+        ...TOTP_DEFAULTS,
+        epoch: nowEpoch + d * TOTP_DEFAULTS.period,
+        secret: rawSecret,
+        token: code,
+      });
+      const ok = typeof r === 'object' ? (r as { valid: boolean }).valid : Boolean(r);
+      if (ok) {
+        isValid = true;
+        break;
+      }
+    }
 
     if (!isValid) {
       // Rate-limit ledger: record failure (feeds into isRateLimited window above)
