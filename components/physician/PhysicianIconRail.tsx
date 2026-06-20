@@ -2,39 +2,49 @@
  * PhysicianIconRail — Phase 21 cross-surface steady-state navigation.
  *
  * One identical five-icon rail (Mail · Contacts · Calendar · Dashboard · Power)
- * rendered top-right on every physician surface so jumping between the dashboard
- * and the Práctikah workspace feels like one product.
+ * rendered top-right on every physician steady-state surface so jumping between
+ * the dashboard and the Práctikah workspace feels like one product.
  *
  * - Inline at >=960px (matches the SOGo collapse breakpoint); folds into a
- *   waffle dropdown below that (NAV-02).
+ *   disclosure dropdown below that (NAV-02).
  * - Active surface = filled teal-tint pill + 2px masthead underline, declared
- *   per-surface by the caller (NAV-03 — URL-derived at each surface).
+ *   per-surface by the caller (NAV-03 — URL-derived at each surface), with
+ *   aria-current on every active item.
  * - `tone="dark"` = navy ink for light/linen backgrounds (desktop top bar);
  *   `tone="light"` = white ink for navy backgrounds (mobile header).
  * - Hovering a workspace icon pre-warms the cross-origin handoff with a
- *   one-time <link rel="preconnect"> (FLOW-04).
- *
- * Destinations live in DESTINATIONS (one map). Mail/Contacts/Calendar point at
- * the verified-good webmail base; per-module SOGo deep-links are a follow-up
- * pending a live route probe (see 21-CONTEXT.md D-21-03).
+ *   one-time credentialed <link rel="preconnect"> (FLOW-04).
+ * - Mail/Contacts/Calendar deep-link to the matching SOGo module using the
+ *   signed-in physician's mailbox login (session.user.mailbox_email); they fall
+ *   back to the SOGo base when no mailbox email is on the session.
  */
 
 import Link from 'next/link';
-import { useState, type ReactElement } from 'react';
+import { useState, useEffect, useRef, type ReactElement } from 'react';
+import { useSession } from 'next-auth/react';
 
 export type RailSurface = 'mail' | 'contacts' | 'calendar' | 'dashboard';
 
 const WORKSPACE_ORIGIN = 'https://practikah.medikah.health';
-const WORKSPACE_URL = `${WORKSPACE_ORIGIN}/SOGo/`;
+const WORKSPACE_BASE = `${WORKSPACE_ORIGIN}/SOGo/`;
 
-// Single source for where each icon goes. Upgrading Mail/Contacts/Calendar to
-// per-module SOGo deep-links is a one-line change here once routes are verified.
-const DESTINATIONS: Record<RailSurface, { href: string; external: boolean }> = {
-  mail: { href: WORKSPACE_URL, external: true },
-  contacts: { href: WORKSPACE_URL, external: true },
-  calendar: { href: WORKSPACE_URL, external: true },
-  dashboard: { href: '/physicians/dashboard', external: false },
-};
+// Per-module SOGo URL from the physician's mailbox login. Mirrors the relative
+// module hrefs SOGo's own masthead uses (../Mail, ../Contacts, ../Calendar from
+// /SOGo/so/<login>/...). SOGo carries the login literally (unencoded @). Falls
+// back to the SOGo base when the mailbox email isn't known.
+function sogoModuleUrl(email: string | undefined, mod: 'Mail' | 'Contacts' | 'Calendar') {
+  if (!email) return WORKSPACE_BASE;
+  return `${WORKSPACE_ORIGIN}/SOGo/so/${email}/${mod}`;
+}
+
+function buildDestinations(email: string | undefined): Record<RailSurface, { href: string; external: boolean }> {
+  return {
+    mail: { href: sogoModuleUrl(email, 'Mail'), external: true },
+    contacts: { href: sogoModuleUrl(email, 'Contacts'), external: true },
+    calendar: { href: sogoModuleUrl(email, 'Calendar'), external: true },
+    dashboard: { href: '/physicians/dashboard', external: false },
+  };
+}
 
 const LABELS: Record<RailSurface | 'power', { en: string; es: string }> = {
   mail: { en: 'Mail', es: 'Correo' },
@@ -44,9 +54,10 @@ const LABELS: Record<RailSurface | 'power', { en: string; es: string }> = {
   power: { en: 'Sign out', es: 'Cerrar sesión' },
 };
 
+const NEW_TAB_HINT = { en: ' (opens in a new tab)', es: ' (se abre en una pestaña nueva)' };
 const ORDER: RailSurface[] = ['mail', 'contacts', 'calendar', 'dashboard'];
 
-// --- Inline SVG icons (20x20, currentColor, 1.75 stroke) -------------------
+// --- Inline SVG icons (currentColor, 1.75 stroke) --------------------------
 type IconProps = { className?: string };
 const stroke = {
   fill: 'none',
@@ -116,7 +127,9 @@ const ICONS: Record<RailSurface | 'power', (p: IconProps) => ReactElement> = {
   power: PowerIcon,
 };
 
-// --- preconnect-on-hover (one-time) ----------------------------------------
+// --- preconnect-on-hover (one-time, credentialed) --------------------------
+// Default (credentialed) mode so the warmed socket is reusable by the actual
+// cookie-bearing SOGo navigation — anonymous/CORS mode would not be reused.
 let preconnected = false;
 function warmWorkspace() {
   if (preconnected || typeof document === 'undefined') return;
@@ -124,7 +137,6 @@ function warmWorkspace() {
   const l = document.createElement('link');
   l.rel = 'preconnect';
   l.href = WORKSPACE_ORIGIN;
-  l.crossOrigin = '';
   document.head.appendChild(l);
 }
 
@@ -144,6 +156,8 @@ const TONE = {
   },
 } as const;
 
+let railSeq = 0;
+
 interface PhysicianIconRailProps {
   active?: RailSurface | null;
   tone?: 'light' | 'dark';
@@ -151,7 +165,7 @@ interface PhysicianIconRailProps {
   onSignOut: () => void;
   className?: string;
   /**
-   * 'auto' (default): inline icons >=960px, waffle dropdown below.
+   * 'auto' (default): inline icons >=960px, disclosure dropdown below.
    * 'inline': always render the inline icon row (for embedding inside an
    * already-open container like the homepage mobile menu).
    */
@@ -167,9 +181,27 @@ export default function PhysicianIconRail({
   layout = 'auto',
 }: PhysicianIconRailProps) {
   const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelIdRef = useRef<string>('');
+  if (!panelIdRef.current) panelIdRef.current = `mk-rail-menu-${++railSeq}`;
+
+  const { data: session } = useSession();
+  const workspaceEmail = session?.user?.mailbox_email;
+  const DESTINATIONS = buildDestinations(workspaceEmail);
   const palette = TONE[tone];
-  const inlineWrapCls = layout === 'inline' ? 'flex items-center gap-1' : 'hidden min-[960px]:flex items-center gap-1';
-  const waffleWrapCls = layout === 'inline' ? 'hidden' : 'relative min-[960px]:hidden';
+
+  // Escape closes the dropdown and returns focus to the trigger.
+  useEffect(() => {
+    if (!open) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open]);
 
   function itemClasses(isActive: boolean) {
     return `relative flex items-center justify-center w-10 h-10 rounded-md transition-colors duration-200 ${
@@ -200,7 +232,8 @@ export default function PhysicianIconRail({
           href={dest.href}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label={label}
+          aria-label={label + NEW_TAB_HINT[lang]}
+          aria-current={isActive ? 'page' : undefined}
           title={label}
           onMouseEnter={warmWorkspace}
           className={itemClasses(isActive)}
@@ -219,7 +252,7 @@ export default function PhysicianIconRail({
   return (
     <nav className={`flex items-center ${className}`} aria-label={lang === 'es' ? 'Navegación del espacio de trabajo' : 'Workspace navigation'}>
       {/* Inline rail — >=960px (or always, when layout="inline") */}
-      <div className={inlineWrapCls}>
+      <div className={layout === 'inline' ? 'flex items-center gap-1' : 'hidden min-[960px]:flex items-center gap-1'}>
         {ORDER.map((surface) => (
           <InlineItem key={surface} surface={surface} />
         ))}
@@ -229,14 +262,15 @@ export default function PhysicianIconRail({
         </button>
       </div>
 
-      {/* Waffle — <960px (hidden when layout="inline") */}
-      <div className={waffleWrapCls}>
+      {/* Disclosure dropdown — <960px (hidden when layout="inline") */}
+      <div className={layout === 'inline' ? 'hidden' : 'relative min-[960px]:hidden'}>
         <button
+          ref={triggerRef}
           type="button"
           onClick={() => setOpen((v) => !v)}
           onMouseEnter={warmWorkspace}
           aria-expanded={open}
-          aria-haspopup="menu"
+          aria-controls={panelIdRef.current}
           aria-label={lang === 'es' ? 'Menú' : 'Menu'}
           className={`flex items-center justify-center w-10 h-10 rounded-md transition-colors duration-200 ${palette.waffleBtn}`}
         >
@@ -248,7 +282,8 @@ export default function PhysicianIconRail({
             {/* click-away */}
             <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden="true" />
             <div
-              role="menu"
+              id={panelIdRef.current}
+              aria-label={lang === 'es' ? 'Navegación del espacio de trabajo' : 'Workspace navigation'}
               className="absolute right-0 mt-2 z-50 w-52 rounded-md bg-linen-white shadow-lg ring-1 ring-warm-gray-800/10 py-1.5"
             >
               {ORDER.map((surface) => {
@@ -272,7 +307,8 @@ export default function PhysicianIconRail({
                     href={dest.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    role="menuitem"
+                    aria-label={label + NEW_TAB_HINT[lang]}
+                    aria-current={isActive ? 'page' : undefined}
                     onMouseEnter={warmWorkspace}
                     onClick={() => setOpen(false)}
                     className={rowCls}
@@ -280,7 +316,7 @@ export default function PhysicianIconRail({
                     {row}
                   </a>
                 ) : (
-                  <Link key={surface} href={dest.href} role="menuitem" aria-current={isActive ? 'page' : undefined} onClick={() => setOpen(false)} className={rowCls}>
+                  <Link key={surface} href={dest.href} aria-current={isActive ? 'page' : undefined} onClick={() => setOpen(false)} className={rowCls}>
                     {row}
                   </Link>
                 );
@@ -288,7 +324,6 @@ export default function PhysicianIconRail({
               <div className="my-1 h-px bg-warm-gray-800/10" aria-hidden="true" />
               <button
                 type="button"
-                role="menuitem"
                 onClick={() => {
                   setOpen(false);
                   onSignOut();
