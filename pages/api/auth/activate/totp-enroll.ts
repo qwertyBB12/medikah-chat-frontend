@@ -38,8 +38,10 @@ const TOTP_DEFAULTS = {
   digits: 6,
 };
 
-// epochTolerance: ±1 step = 90s total. NEVER tighten to 0 (Pitfall 5).
-const EPOCH_TOLERANCE = 1;
+// epochTolerance: ±3 steps = ±210s. TEMPORARY widening for CDMX onsite enrollment
+// 2026-06-22 (drifted doctor phones lock out at the venue). REVERT to 2 (±150s) after
+// the event. NEVER tighten to 0 (Pitfall 5).
+const EPOCH_TOLERANCE = 3; // CDMX-temp; revert to 2 after 2026-06-22
 
 export default async function handler(
   req: NextApiRequest,
