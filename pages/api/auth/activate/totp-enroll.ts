@@ -129,18 +129,25 @@ export default async function handler(
       return res.status(500).json({ error: 'Internal error' });
     }
 
-    // --- Verify the submitted TOTP code (±1 window — Pitfall 5: never tighten) ---
-    const verifyResult = verifySync({
-      ...TOTP_DEFAULTS,
-      epoch: Math.floor(Date.now() / 1000),
-      secret: rawSecret,
-      token: code,
-      epochTolerance: EPOCH_TOLERANCE,
-    });
-
-    const isValid = typeof verifyResult === 'object'
-      ? (verifyResult as { valid: boolean }).valid
-      : Boolean(verifyResult);
+    // --- Verify across a ±EPOCH_TOLERANCE step window (otplib v13 window no-op) ---
+    // otplib@13.4.1 verifySync silently ignores epochTolerance/window/etc., giving
+    // ZERO real tolerance — drifted phones fail to ENROLL. Sweep the window
+    // ourselves. See totp-verify.ts for the full incident note. Keep in sync.
+    const nowEpoch = Math.floor(Date.now() / 1000);
+    let isValid = false;
+    for (let d = -EPOCH_TOLERANCE; d <= EPOCH_TOLERANCE; d++) {
+      const r = verifySync({
+        ...TOTP_DEFAULTS,
+        epoch: nowEpoch + d * TOTP_DEFAULTS.period,
+        secret: rawSecret,
+        token: code,
+      });
+      const ok = typeof r === 'object' ? (r as { valid: boolean }).valid : Boolean(r);
+      if (ok) {
+        isValid = true;
+        break;
+      }
+    }
 
     if (!isValid) {
       // Generic message — no information leak about which side failed (Phase 16-02 rule)
