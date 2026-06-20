@@ -6,7 +6,7 @@
  */
 
 import Head from 'next/head';
-import { useSession, signOut } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import PortalLayout from '../../components/PortalLayout';
@@ -113,7 +113,7 @@ export default function PhysicianDashboard() {
 
       <PortalLayout
         portal="physician"
-        onSignOut={() => signOut({ callbackUrl: '/chat' })}
+        onSignOut={() => { window.location.href = '/api/auth/workspace-logout'; }}
         headerTitle={lang === 'en' ? 'Dashboard' : 'Panel'}
         activeSurface="dashboard"
         lang={lang}

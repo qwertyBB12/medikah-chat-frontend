@@ -42,6 +42,17 @@ const nextConfig = {
           },
         ],
       },
+      {
+        // Phase 21 — authenticated physician surfaces hold PHI-adjacent data
+        // (inquiries, profile). no-store evicts bfcache/back-button so a prior
+        // physician's dashboard can't be restored after sign-out on a shared
+        // device. Static assets live under /_next and are unaffected.
+        source: '/physicians/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate, max-age=0' },
+          { key: 'Pragma', value: 'no-cache' },
+        ],
+      },
     ];
   },
 };

@@ -54,7 +54,6 @@ const LABELS: Record<RailSurface | 'power', { en: string; es: string }> = {
   power: { en: 'Sign out', es: 'Cerrar sesión' },
 };
 
-const NEW_TAB_HINT = { en: ' (opens in a new tab)', es: ' (se abre en una pestaña nueva)' };
 const ORDER: RailSurface[] = ['mail', 'contacts', 'calendar', 'dashboard'];
 
 // --- Inline SVG icons (currentColor, 1.75 stroke) --------------------------
@@ -230,9 +229,7 @@ export default function PhysicianIconRail({
       return (
         <a
           href={dest.href}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={label + NEW_TAB_HINT[lang]}
+          aria-label={label}
           aria-current={isActive ? 'page' : undefined}
           title={label}
           onMouseEnter={warmWorkspace}
@@ -305,9 +302,7 @@ export default function PhysicianIconRail({
                   <a
                     key={surface}
                     href={dest.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={label + NEW_TAB_HINT[lang]}
+                    aria-label={label}
                     aria-current={isActive ? 'page' : undefined}
                     onMouseEnter={warmWorkspace}
                     onClick={() => setOpen(false)}
