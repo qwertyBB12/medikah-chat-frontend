@@ -35,6 +35,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getToken } from 'next-auth/jwt';
+import { isSessionRevoked } from '../../../lib/auth/sessionRevocation';
 
 /**
  * Parse a raw Cookie header string into a key→value map.
@@ -95,6 +96,22 @@ export default async function handler(
   ) {
     // D-08: nginx @sogo_fallback intercepts 401 and shows SOGo login form.
     // No body — auth_request only inspects the status code.
+    res.status(401).end();
+    return;
+  }
+
+  // Phase 21 — server-side JWT revocation. The signature/role/verified checks
+  // above all pass for a *copied* token until its exp (≤1h); this is the only
+  // gate that can kill it before then. A token whose pinned session_iat predates
+  // the physician's session_epoch (bumped on logout / admin 2FA reset) is
+  // rejected → nginx @sogo_fallback shows the SOGo login form (D-08). FAILS OPEN
+  // on DB error so a Supabase blip can't lock the cohort out of webmail.
+  if (
+    await isSessionRevoked(
+      token.physician_id as string | undefined,
+      token.session_iat as number | undefined,
+    )
+  ) {
     res.status(401).end();
     return;
   }
