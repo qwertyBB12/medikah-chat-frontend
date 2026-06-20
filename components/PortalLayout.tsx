@@ -65,6 +65,13 @@ interface PortalLayoutProps {
   activeSurface?: RailSurface | null;
   /** Phase 21: locale for the icon-rail labels (physician portal). */
   lang?: 'en' | 'es';
+  /**
+   * Phase 21: opt this surface into the steady-state workspace icon rail.
+   * Only a physician who already has a provisioned workspace (the dashboard)
+   * should show Mail/Contacts/Calendar — NOT onboarding, where no mailbox
+   * exists yet. Defaults false so a surface must explicitly opt in.
+   */
+  showWorkspaceRail?: boolean;
 }
 
 const portalLabels: Record<PortalType, { title: string; subtitle: string }> = {
@@ -97,7 +104,9 @@ export default function PortalLayout({
   headerTitle,
   activeSurface = null,
   lang = 'en',
+  showWorkspaceRail = false,
 }: PortalLayoutProps) {
+  const railOn = portal === 'physician' && showWorkspaceRail;
   const labels = portalLabels[portal];
   const colors = portalColors[portal];
 
@@ -197,7 +206,7 @@ export default function PortalLayout({
                 medikah
               </span>
             </Link>
-            {portal === 'physician' ? (
+            {railOn ? (
               /* Phase 21: steady-state icon rail (waffle on mobile), white ink on the navy header. */
               <PhysicianIconRail active={activeSurface} tone="light" lang={lang} onSignOut={onSignOut} />
             ) : (
@@ -247,8 +256,9 @@ export default function PortalLayout({
 
         {/* Desktop top chrome bar — physician steady-state icon rail (Phase 21).
             Sticky above the internally-scrolling content so the rail stays put.
-            headerTitle (previously a dead prop) anchors the left. */}
-        {portal === 'physician' && (
+            headerTitle anchors the left (physician workspace surfaces only;
+            still unused by patient/insurer/employer). */}
+        {railOn && (
           <header className="hidden md:flex items-center justify-between shrink-0 h-16 px-8 bg-linen-light border-b border-warm-gray-800/[0.06]">
             {headerTitle ? (
               <span className="font-body text-sm font-semibold tracking-[0.1em] uppercase text-body-slate">

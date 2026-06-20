@@ -117,6 +117,7 @@ export default function PhysicianDashboard() {
         headerTitle={lang === 'en' ? 'Dashboard' : 'Panel'}
         activeSurface="dashboard"
         lang={lang}
+        showWorkspaceRail
       >
         <div className="h-full overflow-y-auto">
           <DashboardContent
