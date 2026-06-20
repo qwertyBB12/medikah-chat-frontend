@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
+import { useSession, signOut } from 'next-auth/react';
+import PhysicianIconRail from '../physician/PhysicianIconRail';
 
 const LINKS = [
   { label: { en: 'Patients', es: 'Pacientes' }, href: '#patients' },
@@ -16,6 +18,10 @@ export default function Nav() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const router = useRouter();
   const locale = (router.locale || 'en') as 'en' | 'es';
+  const { data: session } = useSession();
+  // Phase 21: a signed-in physician visiting the marketing homepage gets the
+  // same steady-state rail as the dashboard/workspace (NAV-01 homepage surface).
+  const isPhysician = session?.user?.role === 'physician';
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 80);
@@ -58,19 +64,29 @@ export default function Nav() {
 
         {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-[clamp(1.5rem,3vw,3rem)]">
-          {LINKS.map((link) => (
-            <Link
-              key={link.label.en}
-              href={link.href}
-              className={`font-body text-[0.75rem] font-medium uppercase tracking-[0.1em] transition-colors duration-400 ${
-                scrolled
-                  ? 'text-text-muted hover:text-deep-charcoal'
-                  : 'text-white/60 hover:text-white'
-              }`}
-            >
-              {link.label[locale]}
-            </Link>
-          ))}
+          {/* Signed-out / non-physician: marketing links. Signed-in physician: steady-state rail. */}
+          {!isPhysician &&
+            LINKS.map((link) => (
+              <Link
+                key={link.label.en}
+                href={link.href}
+                className={`font-body text-[0.75rem] font-medium uppercase tracking-[0.1em] transition-colors duration-400 ${
+                  scrolled
+                    ? 'text-text-muted hover:text-deep-charcoal'
+                    : 'text-white/60 hover:text-white'
+                }`}
+              >
+                {link.label[locale]}
+              </Link>
+            ))}
+
+          {isPhysician && (
+            <PhysicianIconRail
+              tone={scrolled ? 'dark' : 'light'}
+              lang={locale}
+              onSignOut={() => signOut({ callbackUrl: '/chat' })}
+            />
+          )}
 
           {/* Language toggle */}
           <div className={`flex rounded-sm overflow-hidden border transition-colors duration-400 ${
@@ -124,16 +140,29 @@ export default function Nav() {
       {/* Mobile menu */}
       {mobileOpen && (
         <div className="md:hidden bg-linen border-t border-warm-gray-300/20 shadow-lg px-6 py-6 space-y-4">
-          {LINKS.map((link) => (
-            <Link
-              key={link.label.en}
-              href={link.href}
-              onClick={() => setMobileOpen(false)}
-              className="block font-body text-sm font-medium text-deep-charcoal hover:text-teal-500 transition-colors"
-            >
-              {link.label[locale]}
-            </Link>
-          ))}
+          {!isPhysician &&
+            LINKS.map((link) => (
+              <Link
+                key={link.label.en}
+                href={link.href}
+                onClick={() => setMobileOpen(false)}
+                className="block font-body text-sm font-medium text-deep-charcoal hover:text-teal-500 transition-colors"
+              >
+                {link.label[locale]}
+              </Link>
+            ))}
+
+          {isPhysician && (
+            <PhysicianIconRail
+              layout="inline"
+              tone="dark"
+              lang={locale}
+              onSignOut={() => {
+                setMobileOpen(false);
+                signOut({ callbackUrl: '/chat' });
+              }}
+            />
+          )}
 
           {/* Mobile language toggle */}
           <div className="flex rounded-sm overflow-hidden border border-warm-gray-800/15 w-fit mt-2">

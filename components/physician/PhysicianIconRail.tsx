@@ -150,6 +150,12 @@ interface PhysicianIconRailProps {
   lang?: 'en' | 'es';
   onSignOut: () => void;
   className?: string;
+  /**
+   * 'auto' (default): inline icons >=960px, waffle dropdown below.
+   * 'inline': always render the inline icon row (for embedding inside an
+   * already-open container like the homepage mobile menu).
+   */
+  layout?: 'auto' | 'inline';
 }
 
 export default function PhysicianIconRail({
@@ -158,9 +164,12 @@ export default function PhysicianIconRail({
   lang = 'en',
   onSignOut,
   className = '',
+  layout = 'auto',
 }: PhysicianIconRailProps) {
   const [open, setOpen] = useState(false);
   const palette = TONE[tone];
+  const inlineWrapCls = layout === 'inline' ? 'flex items-center gap-1' : 'hidden min-[960px]:flex items-center gap-1';
+  const waffleWrapCls = layout === 'inline' ? 'hidden' : 'relative min-[960px]:hidden';
 
   function itemClasses(isActive: boolean) {
     return `relative flex items-center justify-center w-10 h-10 rounded-md transition-colors duration-200 ${
@@ -209,8 +218,8 @@ export default function PhysicianIconRail({
 
   return (
     <nav className={`flex items-center ${className}`} aria-label={lang === 'es' ? 'Navegación del espacio de trabajo' : 'Workspace navigation'}>
-      {/* Inline rail — >=960px */}
-      <div className="hidden min-[960px]:flex items-center gap-1">
+      {/* Inline rail — >=960px (or always, when layout="inline") */}
+      <div className={inlineWrapCls}>
         {ORDER.map((surface) => (
           <InlineItem key={surface} surface={surface} />
         ))}
@@ -220,8 +229,8 @@ export default function PhysicianIconRail({
         </button>
       </div>
 
-      {/* Waffle — <960px */}
-      <div className="relative min-[960px]:hidden">
+      {/* Waffle — <960px (hidden when layout="inline") */}
+      <div className={waffleWrapCls}>
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
