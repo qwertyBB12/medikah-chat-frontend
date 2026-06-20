@@ -46,8 +46,10 @@ const TOTP_DEFAULTS = {
   digits: 6,
 };
 
-// ±1 step = 90s total. NEVER tighten to 0 (Pitfall 5 / T-17-04-02 clock skew).
-const EPOCH_TOLERANCE = 1;
+// ±3 steps = ±210s. TEMPORARY widening for CDMX onsite enrollment 2026-06-22
+// (drifted doctor phones lock out at the venue). REVERT to 2 (±150s) after the event.
+// NEVER tighten to 0 (Pitfall 5 / T-17-04-02 clock skew).
+const EPOCH_TOLERANCE = 3; // CDMX-temp; revert to 2 after 2026-06-22
 
 // Rate-limit window: 3 failures in 5 minutes → locked_out (Phase 16 pattern).
 const RATE_LIMIT_WINDOW_MS = 5 * 60_000;
