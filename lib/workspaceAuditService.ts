@@ -103,7 +103,10 @@ export type WorkspaceAction =
   // Admin denied a lost-2FA reset request (D-06 — informational only)
   | 'workspace.totp_reset_denied'
   // A graduated physician (activation_complete=true) hit the bootstrap demotion wall (D-01)
-  | 'workspace.bootstrap_demotion_hit';
+  | 'workspace.bootstrap_demotion_hit'
+  // Phase 21 — unified cross-surface sign-out (clears the NextAuth parent-domain
+  // session + hands off to the SOGo logout). Security-relevant: IP/UA captured.
+  | 'workspace.logout';
 
 export type ActorRole = 'physician' | 'admin' | 'system';
 
@@ -168,6 +171,8 @@ const SECURITY_RELEVANT_ACTIONS: ReadonlySet<WorkspaceAction> = new Set<Workspac
   'workspace.totp_reset_requested',
   'workspace.totp_reset_approved',
   'workspace.bootstrap_demotion_hit',
+  // Phase 21 — sign-out is a security event (HIPAA 164.312(b) login/logout parity)
+  'workspace.logout',
 ]);
 
 // ---------------------------------------------------------------------------

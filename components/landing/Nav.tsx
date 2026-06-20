@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
-import { useSession, signOut } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import PhysicianIconRail from '../physician/PhysicianIconRail';
 
 const LINKS = [
@@ -84,7 +84,7 @@ export default function Nav() {
             <PhysicianIconRail
               tone={scrolled ? 'dark' : 'light'}
               lang={locale}
-              onSignOut={() => signOut({ callbackUrl: '/chat' })}
+              onSignOut={() => { window.location.href = '/api/auth/workspace-logout'; }}
             />
           )}
 
@@ -159,7 +159,7 @@ export default function Nav() {
               lang={locale}
               onSignOut={() => {
                 setMobileOpen(false);
-                signOut({ callbackUrl: '/chat' });
+                window.location.href = '/api/auth/workspace-logout';
               }}
             />
           )}
