@@ -108,17 +108,23 @@ export default async function handler(
       return res.status(500).json({ error: 'Internal error' });
     }
 
-    const verifyResult = verifySync({
-      ...TOTP_DEFAULTS,
-      epoch: Math.floor(Date.now() / 1000),
-      secret: rawSecret,
-      token: code,
-      epochTolerance: EPOCH_TOLERANCE,
-    });
-    const isValid =
-      typeof verifyResult === 'object'
-        ? (verifyResult as { valid: boolean }).valid
-        : Boolean(verifyResult);
+    // Sweep a ±EPOCH_TOLERANCE step window — otplib v13 verifySync silently
+    // ignores epochTolerance (ZERO real tolerance otherwise). See totp-verify.ts.
+    const nowEpoch = Math.floor(Date.now() / 1000);
+    let isValid = false;
+    for (let d = -EPOCH_TOLERANCE; d <= EPOCH_TOLERANCE; d++) {
+      const r = verifySync({
+        ...TOTP_DEFAULTS,
+        epoch: nowEpoch + d * TOTP_DEFAULTS.period,
+        secret: rawSecret,
+        token: code,
+      });
+      const ok = typeof r === 'object' ? (r as { valid: boolean }).valid : Boolean(r);
+      if (ok) {
+        isValid = true;
+        break;
+      }
+    }
 
     if (!isValid) {
       await writeReenrollProbe(sourceIp, lowered, 'bad_password', userAgent);
