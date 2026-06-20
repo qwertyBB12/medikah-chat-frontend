@@ -1,0 +1,40 @@
+# CDMX RSVP health — frequent read-only watch of the registration intake.
+#
+# The CDMX launch (Mon 2026-06-22) runs over a weekend when nobody is watching
+# the dashboard. If RSVP intake silently breaks — the 2026-06-09 Supabase
+# free-tier auto-pause class, or a /api/cdmx-rsvp regression — this catches it
+# within ~30 min and fails loud, which GitHub turns into a notification to the
+# repo owner (same alert path as supabase-keepalive / production-smoke).
+#
+# Probe returns COUNTS/STATUS ONLY (no PII). Read-only — writes nothing.
+#
+# Post-event: relax the cron to hourly/daily or disable.
+# Watch ownership: COO desk (kah-operations Paperclip tracker).
+
+name: CDMX RSVP health
+
+on:
+  schedule:
+    - cron: '*/30 * * * *' # every 30 min during the launch window
+  workflow_dispatch:
+
+jobs:
+  rsvp-health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe RSVP intake (counts/status only)
+        run: |
+          set -u
+          code=$(curl -s -o /tmp/body -w '%{http_code}' --max-time 30 \
+            'https://medikah.health/api/cdmx-rsvp-health')
+          echo "HTTP $code"
+          cat /tmp/body; echo
+          if [ "$code" != "200" ]; then
+            echo 'FAIL — RSVP health probe non-200; intake or DB may be down.'
+            exit 1
+          fi
+          if ! grep -q '"ok":true' /tmp/body; then
+            echo 'FAIL — probe returned 200 but ok!=true; intake unhealthy.'
+            exit 1
+          fi
+          echo 'OK — RSVP intake healthy.'
