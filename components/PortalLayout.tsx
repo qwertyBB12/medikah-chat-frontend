@@ -12,6 +12,7 @@ import { LOGO_SRC } from '../lib/assets';
 import { tokens } from '../lib/design-tokens';
 import ChatInput from './ChatInput';
 import Footer from './Footer';
+import PhysicianIconRail, { RailSurface } from './physician/PhysicianIconRail';
 
 export type PortalType = 'patient' | 'physician' | 'insurer' | 'employer';
 
@@ -60,6 +61,10 @@ interface PortalLayoutProps {
   showChatInput?: boolean;
   chatInputProps?: ChatInputConfig;
   headerTitle?: string;
+  /** Phase 21: which surface the steady-state icon rail marks active (physician portal). */
+  activeSurface?: RailSurface | null;
+  /** Phase 21: locale for the icon-rail labels (physician portal). */
+  lang?: 'en' | 'es';
 }
 
 const portalLabels: Record<PortalType, { title: string; subtitle: string }> = {
@@ -90,6 +95,8 @@ export default function PortalLayout({
   showChatInput = false,
   chatInputProps,
   headerTitle,
+  activeSurface = null,
+  lang = 'en',
 }: PortalLayoutProps) {
   const labels = portalLabels[portal];
   const colors = portalColors[portal];
@@ -190,22 +197,27 @@ export default function PortalLayout({
                 medikah
               </span>
             </Link>
-            <div className="flex items-center gap-3">
-              {onNewChat && (
+            {portal === 'physician' ? (
+              /* Phase 21: steady-state icon rail (waffle on mobile), white ink on the navy header. */
+              <PhysicianIconRail active={activeSurface} tone="light" lang={lang} onSignOut={onSignOut} />
+            ) : (
+              <div className="flex items-center gap-3">
+                {onNewChat && (
+                  <button
+                    onClick={onNewChat}
+                    className="font-body px-3 py-2 text-xs font-semibold tracking-wide text-white/70 hover:text-white transition"
+                  >
+                    New chat
+                  </button>
+                )}
                 <button
-                  onClick={onNewChat}
-                  className="font-body px-3 py-2 text-xs font-semibold tracking-wide text-white/70 hover:text-white transition"
+                  onClick={onSignOut}
+                  className="font-body px-3 py-2 text-xs font-semibold tracking-wide text-white/80 border border-white/20 hover:text-white hover:border-white/30 transition rounded-sm"
                 >
-                  New chat
+                  Sign out
                 </button>
-              )}
-              <button
-                onClick={onSignOut}
-                className="font-body px-3 py-2 text-xs font-semibold tracking-wide text-white/80 border border-white/20 hover:text-white hover:border-white/30 transition rounded-sm"
-              >
-                Sign out
-              </button>
-            </div>
+              </div>
+            )}
           </div>
         </header>
 
@@ -231,6 +243,22 @@ export default function PortalLayout({
               fill="url(#mk-mobile-wave-fill)"
             />
           </svg>
+        )}
+
+        {/* Desktop top chrome bar — physician steady-state icon rail (Phase 21).
+            Sticky above the internally-scrolling content so the rail stays put.
+            headerTitle (previously a dead prop) anchors the left. */}
+        {portal === 'physician' && (
+          <header className="hidden md:flex items-center justify-between shrink-0 h-16 px-8 bg-linen-light border-b border-warm-gray-800/[0.06]">
+            {headerTitle ? (
+              <span className="font-body text-sm font-semibold tracking-[0.1em] uppercase text-body-slate">
+                {headerTitle}
+              </span>
+            ) : (
+              <span />
+            )}
+            <PhysicianIconRail active={activeSurface} tone="dark" lang={lang} onSignOut={onSignOut} />
+          </header>
         )}
 
         {/* Main content */}

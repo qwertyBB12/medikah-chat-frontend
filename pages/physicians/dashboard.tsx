@@ -115,6 +115,8 @@ export default function PhysicianDashboard() {
         portal="physician"
         onSignOut={() => signOut({ callbackUrl: '/chat' })}
         headerTitle={lang === 'en' ? 'Dashboard' : 'Panel'}
+        activeSurface="dashboard"
+        lang={lang}
       >
         <div className="h-full overflow-y-auto">
           <DashboardContent
