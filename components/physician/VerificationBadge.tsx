@@ -19,38 +19,42 @@ const statusConfig: Record<string, {
   en: string;
   es: string;
 }> = {
+  // Brand semantic palette (5-zone alert tokens) — matches ProfileOverview's
+  // completeness bar + DashboardContent status bar so the whole card speaks ONE
+  // palette (UI/UX review 2026-06-22, fix #2). bg/border are low-opacity tints
+  // of the same token; text + dot are full strength.
   pending: {
-    color: 'text-amber-700',
-    bgColor: 'bg-amber-50',
-    borderColor: 'border-amber-200',
+    color: 'text-caution-amber',
+    bgColor: 'bg-caution-amber/10',
+    borderColor: 'border-caution-amber/20',
     en: 'Pending Review',
     es: 'Revisión Pendiente',
   },
   under_review: {
-    color: 'text-blue-700',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-200',
+    color: 'text-info-blue',
+    bgColor: 'bg-info-blue/10',
+    borderColor: 'border-info-blue/20',
     en: 'Under Review',
     es: 'En Revisión',
   },
   verified: {
-    color: 'text-emerald-700',
-    bgColor: 'bg-emerald-50',
-    borderColor: 'border-emerald-200',
+    color: 'text-confirm-green',
+    bgColor: 'bg-confirm-green/10',
+    borderColor: 'border-confirm-green/20',
     en: 'Verified',
     es: 'Verificado',
   },
   rejected: {
-    color: 'text-red-700',
-    bgColor: 'bg-red-50',
-    borderColor: 'border-red-200',
+    color: 'text-alert-garnet',
+    bgColor: 'bg-alert-garnet/10',
+    borderColor: 'border-alert-garnet/20',
     en: 'Action Required',
     es: 'Acción Requerida',
   },
   expired: {
-    color: 'text-gray-700',
-    bgColor: 'bg-gray-50',
-    borderColor: 'border-gray-200',
+    color: 'text-archival-grey',
+    bgColor: 'bg-archival-grey/10',
+    borderColor: 'border-archival-grey/20',
     en: 'Expired',
     es: 'Expirado',
   },
@@ -82,11 +86,11 @@ export default function VerificationBadge({
       <span
         className={`
           w-1.5 h-1.5 rounded-full mr-1.5
-          ${normalizedStatus === 'verified' ? 'bg-emerald-500' : ''}
-          ${normalizedStatus === 'pending' ? 'bg-amber-500' : ''}
-          ${normalizedStatus === 'under_review' ? 'bg-blue-500' : ''}
-          ${normalizedStatus === 'rejected' ? 'bg-red-500' : ''}
-          ${normalizedStatus === 'expired' ? 'bg-gray-500' : ''}
+          ${normalizedStatus === 'verified' ? 'bg-confirm-green' : ''}
+          ${normalizedStatus === 'pending' ? 'bg-caution-amber' : ''}
+          ${normalizedStatus === 'under_review' ? 'bg-info-blue' : ''}
+          ${normalizedStatus === 'rejected' ? 'bg-alert-garnet' : ''}
+          ${normalizedStatus === 'expired' ? 'bg-archival-grey' : ''}
         `}
       />
       {lang === 'en' ? config.en : config.es}

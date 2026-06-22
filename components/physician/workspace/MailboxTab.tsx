@@ -57,7 +57,7 @@ export default function MailboxTab({ physicianId, lang, accessToken }: MailboxTa
   return (
     <div className="space-y-6">
       {/* Card 1: Mailbox address + quota + Open Mailbox CTA */}
-      <div className="bg-linen-white rounded-[12px] border border-warm-gray-800/[0.06] p-6 shadow-sm">
+      <div className="bg-linen-white rounded-md border border-warm-gray-800/[0.06] p-6 shadow-sm">
         <h2 className="font-body font-semibold text-lg text-deep-charcoal mb-1">
           {t.mailbox.cardTitle}
         </h2>
@@ -98,7 +98,7 @@ export default function MailboxTab({ physicianId, lang, accessToken }: MailboxTa
       </div>
 
       {/* Card 2: Change Password — uses shared MailboxPasswordForm */}
-      <div className="bg-linen-white rounded-[12px] border border-warm-gray-800/[0.06] p-6 shadow-sm">
+      <div className="bg-linen-white rounded-md border border-warm-gray-800/[0.06] p-6 shadow-sm">
         <h2 className="font-body font-semibold text-lg text-deep-charcoal mb-1">
           {t.mailbox.changePasswordCardTitle}
         </h2>

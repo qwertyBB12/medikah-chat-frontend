@@ -92,7 +92,7 @@ export default function ProfileEditor({ physicianId, lang }: ProfileEditorProps)
 
   if (loading) {
     return (
-      <div className="bg-white rounded-[12px] border border-border-line shadow-sm p-6">
+      <div className="bg-white rounded-md border border-border-line shadow-sm p-6">
         <div className="flex items-center justify-center py-8">
           <span className="font-dm-sans text-sm text-body-slate">{t.loading}</span>
         </div>
@@ -102,7 +102,7 @@ export default function ProfileEditor({ physicianId, lang }: ProfileEditorProps)
 
   if (error || !profile) {
     return (
-      <div className="bg-white rounded-[12px] border border-border-line shadow-sm p-6">
+      <div className="bg-white rounded-md border border-border-line shadow-sm p-6">
         <div className="flex items-center justify-center py-8">
           <span className="font-dm-sans text-sm text-alert-garnet">{t.errorLoading}</span>
         </div>
@@ -111,7 +111,7 @@ export default function ProfileEditor({ physicianId, lang }: ProfileEditorProps)
   }
 
   return (
-    <div id="profile-editor" className="bg-white rounded-[12px] border border-border-line shadow-sm">
+    <div id="profile-editor" className="bg-white rounded-md border border-border-line shadow-sm">
       {/* Header */}
       <div className="px-6 pt-6 pb-4 border-b border-border-line">
         <h2 className="font-dm-sans font-semibold text-lg text-deep-charcoal">{t.title}</h2>

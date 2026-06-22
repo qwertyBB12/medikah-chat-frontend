@@ -142,7 +142,7 @@ export default function AIDiagnosisTool({ lang, accessToken }: AIDiagnosisToolPr
   };
 
   return (
-    <div className="bg-white rounded-[12px] border border-border-line shadow-sm">
+    <div className="bg-white rounded-md border border-border-line shadow-sm">
       {/* Header with disclaimer */}
       <div className="px-6 pt-6 pb-4">
         <h2 className="font-dm-sans font-semibold text-lg text-deep-charcoal">{t.title}</h2>
@@ -244,7 +244,7 @@ export default function AIDiagnosisTool({ lang, accessToken }: AIDiagnosisToolPr
                     return (
                       <div
                         key={i}
-                        className="border border-border-line rounded-[12px] p-4"
+                        className="border border-border-line rounded-md p-4"
                       >
                         <div className="flex items-start justify-between gap-2 mb-2">
                           <h4 className="font-dm-sans font-semibold text-deep-charcoal">
@@ -275,7 +275,7 @@ export default function AIDiagnosisTool({ lang, accessToken }: AIDiagnosisToolPr
 
             {/* Red Flags */}
             {currentResult.red_flags.length > 0 && (
-              <div className="bg-alert-garnet/5 border border-alert-garnet/20 rounded-[12px] p-4">
+              <div className="bg-alert-garnet/5 border border-alert-garnet/20 rounded-md p-4">
                 <h3 className="font-dm-sans font-semibold text-sm text-alert-garnet mb-2">
                   {t.redFlags}
                 </h3>

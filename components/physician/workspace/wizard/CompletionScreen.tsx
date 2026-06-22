@@ -139,7 +139,7 @@ export default function CompletionScreen({
           href="https://mail.medikah.health"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex flex-col items-start p-5 bg-linen-white rounded-[12px] border border-warm-gray-800/[0.06] shadow-sm hover:border-clinical-teal/30 hover:shadow-md transition-all group"
+          className="flex flex-col items-start p-5 bg-linen-white rounded-md border border-warm-gray-800/[0.06] shadow-sm hover:border-clinical-teal/30 hover:shadow-md transition-all group"
         >
           {/* Mail icon */}
           <div className="w-10 h-10 rounded-md bg-clinical-teal/10 flex items-center justify-center mb-3">
@@ -161,7 +161,7 @@ export default function CompletionScreen({
           href={`/dr/${slug}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex flex-col items-start p-5 bg-linen-white rounded-[12px] border border-warm-gray-800/[0.06] shadow-sm hover:border-clinical-teal/30 hover:shadow-md transition-all group"
+          className="flex flex-col items-start p-5 bg-linen-white rounded-md border border-warm-gray-800/[0.06] shadow-sm hover:border-clinical-teal/30 hover:shadow-md transition-all group"
         >
           {/* Person icon */}
           <div className="w-10 h-10 rounded-md bg-inst-blue/10 flex items-center justify-center mb-3">
@@ -183,7 +183,7 @@ export default function CompletionScreen({
           type="button"
           onClick={handleTryProPreview}
           disabled={tryProLoading}
-          className="flex flex-col items-start p-5 bg-linen-white rounded-[12px] border border-warm-gray-800/[0.06] shadow-sm hover:border-clinical-teal/30 hover:shadow-md transition-all group disabled:opacity-60 text-left"
+          className="flex flex-col items-start p-5 bg-linen-white rounded-md border border-warm-gray-800/[0.06] shadow-sm hover:border-clinical-teal/30 hover:shadow-md transition-all group disabled:opacity-60 text-left"
         >
           {/* Globe icon */}
           <div className="w-10 h-10 rounded-md bg-confirm-green/10 flex items-center justify-center mb-3">
@@ -202,7 +202,7 @@ export default function CompletionScreen({
       </div>
 
       {/* IMAP credentials accordion */}
-      <div className="bg-linen-white rounded-[12px] border border-warm-gray-800/[0.06] p-4">
+      <div className="bg-linen-white rounded-md border border-warm-gray-800/[0.06] p-4">
         <details>
           <summary className="font-dm-sans text-sm font-medium text-inst-blue cursor-pointer">
             {t.wizard.completion.imapAccordionTitle}

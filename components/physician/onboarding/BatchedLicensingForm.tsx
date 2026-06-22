@@ -106,7 +106,7 @@ export default function BatchedLicensingForm({
   }, [licenses, onSubmit, labels]);
 
   return (
-    <div className="bg-white border-l-4 border-clinical-teal rounded-[12px] shadow-[0_1px_3px_rgba(27,42,65,0.06),0_8px_24px_rgba(27,42,65,0.04)] p-6 my-4">
+    <div className="bg-white border-l-4 border-clinical-teal rounded-md shadow-[0_1px_3px_rgba(27,42,65,0.06),0_8px_24px_rgba(27,42,65,0.04)] p-6 my-4">
       <h3 className="font-mulish font-bold text-lg text-deep-charcoal mb-1">
         {labels.licensingTitle}
       </h3>
