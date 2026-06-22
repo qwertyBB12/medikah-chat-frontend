@@ -40,7 +40,7 @@ const COPY = {
   whenLabel: { es: 'Cuándo', en: 'When' },
   whenVal:   { es: '22 – 30 de junio de 2026\nTres sesiones al día: 9:00, 13:00 y 17:00\nCiudad de México', en: 'June 22 – 30, 2026\nThree sessions daily: 9:00, 13:00 & 17:00\nMexico City' },
   whereLabel:{ es: 'Dónde', en: 'Where' },
-  whereVal:  { es: 'Ciudad de México · sede por confirmar', en: 'Mexico City · venue to be confirmed' },
+  whereVal:  { es: 'Chez Vous #TimeCafé (Parque Hundido) · Av. Insurgentes Sur 1188, Del Valle, CDMX', en: 'Chez Vous #TimeCafé (Parque Hundido) · Insurgentes Sur 1188, Del Valle, Mexico City' },
   formTitle: { es: 'Confirme su interés', en: 'Register your interest' },
   formSub:   { es: 'Déjenos sus datos y le enviaremos los detalles del lugar y el horario.', en: 'Leave your details and we will send you the venue and schedule.' },
   whatsappLabel: { es: 'WhatsApp (con código de país)', en: 'WhatsApp (with country code)' },
