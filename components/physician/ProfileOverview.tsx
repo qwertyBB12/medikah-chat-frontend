@@ -8,6 +8,7 @@
 import { useState } from 'react';
 import { SupportedLang } from '../../lib/i18n';
 import { nameToSlug } from '../../lib/slug';
+import { PHYSICIAN_INQUIRIES_OPEN } from '../../lib/featureFlags';
 import VerificationBadge from './VerificationBadge';
 import type { MissingItem } from '../../lib/completenessService';
 
@@ -120,17 +121,21 @@ export default function ProfileOverview(props: ProfileOverviewProps) {
         </div>
       </div>
 
-      {/* Quick stats */}
-      <div className="grid grid-cols-2 gap-3 mt-5">
-        <div className="bg-linen-light rounded-lg p-3 text-center">
-          <p className="font-body text-2xl font-bold text-inst-blue">{inquiryCount}</p>
-          <p className="font-body text-xs text-body-slate">{t.pendingInquiries}</p>
+      {/* Quick stats — patient-pipeline counts (inquiries + appointments).
+          Hidden for the physicians-only soft launch; no live patient pipeline
+          yet (see PHYSICIAN_INQUIRIES_OPEN in lib/featureFlags.ts). */}
+      {PHYSICIAN_INQUIRIES_OPEN && (
+        <div className="grid grid-cols-2 gap-3 mt-5">
+          <div className="bg-linen-light rounded-lg p-3 text-center">
+            <p className="font-body text-2xl font-bold text-inst-blue">{inquiryCount}</p>
+            <p className="font-body text-xs text-body-slate">{t.pendingInquiries}</p>
+          </div>
+          <div className="bg-linen-light rounded-lg p-3 text-center">
+            <p className="font-body text-2xl font-bold text-clinical-teal">{upcomingAppointments}</p>
+            <p className="font-body text-xs text-body-slate">{t.upcomingAppts}</p>
+          </div>
         </div>
-        <div className="bg-linen-light rounded-lg p-3 text-center">
-          <p className="font-body text-2xl font-bold text-clinical-teal">{upcomingAppointments}</p>
-          <p className="font-body text-xs text-body-slate">{t.upcomingAppts}</p>
-        </div>
-      </div>
+      )}
 
       {/* Profile completeness */}
       <div className="mt-5">
