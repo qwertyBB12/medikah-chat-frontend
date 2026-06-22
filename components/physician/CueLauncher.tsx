@@ -20,15 +20,19 @@
  * Usage:
  *   <CueLauncher tone="dark" lang="en" />
  *
- * tone="dark"  → white mark (for navy/dark rail backgrounds)
- * tone="light" → navy mark (for linen/light rail backgrounds)
+ * `tone` matches PhysicianIconRail's TONE convention — it describes the INK, not
+ * the background (the rail passes its own tone straight through):
+ *   tone="dark"  → navy mark  (dark ink, for LIGHT/linen rail surfaces)
+ *   tone="light" → white mark (light ink, for DARK/navy rail surfaces)
+ * Must stay aligned with TONE[] in PhysicianIconRail.tsx (see cueGlyphSrc).
  */
 
 import Image from 'next/image';
-import { LOGO_SRC, LOGO_DARK_SRC } from '../../lib/assets';
+import { cueGlyphSrc } from '../../lib/assets';
 
 export interface CueLauncherProps {
-  /** Match the rail's tone: 'dark' = white glyph, 'light' = navy glyph */
+  /** Match the rail's tone (ink, not background): 'dark' = navy glyph for a light
+   *  surface, 'light' = white glyph for a dark surface. */
   tone?: 'dark' | 'light';
   /** Bilingual label for aria / title */
   lang?: 'en' | 'es';
@@ -51,7 +55,7 @@ export default function CueLauncher({
   onOpen,
   className = '',
 }: CueLauncherProps) {
-  const logoSrc = tone === 'light' ? LOGO_DARK_SRC : LOGO_SRC;
+  const logoSrc = cueGlyphSrc(tone);
   const label = ARIA_LABEL[lang];
 
   function handleActivate(e: React.MouseEvent | React.KeyboardEvent) {
