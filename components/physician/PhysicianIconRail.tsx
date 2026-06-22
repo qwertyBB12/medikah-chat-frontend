@@ -259,7 +259,12 @@ export default function PhysicianIconRail({
             so it groups with workspace navigation rather than the sign-out control.
             Click handler is a stub (Phase 23 wires the summoned surface). */}
         <CueLauncher tone={tone} lang={lang} />
-        <span className={`mx-1 h-5 w-px ${tone === 'light' ? 'bg-white/20' : 'bg-warm-gray-800/15'}`} aria-hidden="true" />
+        {/* Group boundary between the nav cluster (…Dashboard·Cue) and the
+            destructive Power control. Deliberately weighted — full item height
+            (h-10) + wider gap (mx-2) + raised opacity — so the identity→alert
+            seam reads pre-attentively on both navy and linen, mitigating a
+            Cue-breath-drawn mis-saccade onto sign-out (UIUX review 2026-06-22). */}
+        <span className={`mx-2 h-10 w-px ${tone === 'light' ? 'bg-white/30' : 'bg-warm-gray-800/25'}`} aria-hidden="true" />
         <button type="button" onClick={onSignOut} aria-label={LABELS.power[lang]} title={LABELS.power[lang]} className={itemClasses(false)}>
           <PowerIcon />
         </button>
