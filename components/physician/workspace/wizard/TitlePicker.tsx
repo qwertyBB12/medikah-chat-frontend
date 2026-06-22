@@ -28,7 +28,7 @@ export default function TitlePicker({ lang, onSubmit }: TitlePickerProps) {
   ];
 
   return (
-    <div className="bg-white border-l-4 border-clinical-teal rounded-[12px] shadow-[0_1px_3px_rgba(27,42,65,0.06),0_8px_24px_rgba(27,42,65,0.04)] p-6 my-4">
+    <div className="bg-white border-l-4 border-clinical-teal rounded-md shadow-[0_1px_3px_rgba(27,42,65,0.06),0_8px_24px_rgba(27,42,65,0.04)] p-6 my-4">
       <h3 className="font-body font-bold text-lg text-deep-charcoal mb-1">
         {t.wizard.title.cardTitle}
       </h3>
@@ -50,7 +50,7 @@ export default function TitlePicker({ lang, onSubmit }: TitlePickerProps) {
               type="button"
               onClick={() => setSelected(value)}
               aria-pressed={isSelected}
-              className={`flex flex-col items-center justify-center px-4 py-5 rounded-[12px] border-2 transition-all ${
+              className={`flex flex-col items-center justify-center px-4 py-5 rounded-md border-2 transition-all ${
                 isSelected
                   ? 'bg-clinical-teal text-white border-clinical-teal shadow-md'
                   : 'bg-linen text-body-slate border-transparent hover:bg-linen-white hover:border-clinical-teal/30'

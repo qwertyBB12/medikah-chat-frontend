@@ -65,7 +65,7 @@ export default function CalendarTab({ physicianId, lang, accessToken }: Calendar
   return (
     <div className="space-y-6">
       {/* Card 1: CalDAV URL + copy button */}
-      <div className="bg-linen-white rounded-[12px] border border-warm-gray-800/[0.06] p-6 shadow-sm">
+      <div className="bg-linen-white rounded-md border border-warm-gray-800/[0.06] p-6 shadow-sm">
         <h2 className="font-body font-semibold text-lg text-deep-charcoal mb-1">
           {t.calendar.cardTitle}
         </h2>
@@ -90,7 +90,7 @@ export default function CalendarTab({ physicianId, lang, accessToken }: Calendar
       </div>
 
       {/* Card 2: Subscribe instructions (Apple / Google / Outlook) */}
-      <div className="bg-linen-white rounded-[12px] border border-warm-gray-800/[0.06] p-6 shadow-sm">
+      <div className="bg-linen-white rounded-md border border-warm-gray-800/[0.06] p-6 shadow-sm">
         <h2 className="font-body font-semibold text-lg text-deep-charcoal mb-4">
           {t.calendar.instructionsTitle}
         </h2>
@@ -123,7 +123,7 @@ export default function CalendarTab({ physicianId, lang, accessToken }: Calendar
       </div>
 
       {/* Card 3: Embedded read-only iframe preview (SOGo) — Full features ship in Phase 14 (CAL-01..13). */}
-      <div className="bg-linen-white rounded-[12px] border border-warm-gray-800/[0.06] p-6 shadow-sm">
+      <div className="bg-linen-white rounded-md border border-warm-gray-800/[0.06] p-6 shadow-sm">
         <h2 className="font-body font-semibold text-lg text-deep-charcoal mb-3">
           {t.calendar.previewTitle}
         </h2>

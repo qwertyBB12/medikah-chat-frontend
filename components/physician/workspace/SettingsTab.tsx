@@ -125,7 +125,7 @@ export default function SettingsTab({ physicianId, lang, accessToken }: Settings
   return (
     <div className="space-y-6">
       {/* Section 1: Mailbox password change */}
-      <div className="bg-white rounded-[12px] border border-warm-gray-800/[0.06] p-6 shadow-sm">
+      <div className="bg-white rounded-md border border-warm-gray-800/[0.06] p-6 shadow-sm">
         <h2 className="font-body font-semibold text-lg text-deep-charcoal mb-1">
           {t.mailbox.changePasswordCardTitle}
         </h2>
@@ -136,7 +136,7 @@ export default function SettingsTab({ physicianId, lang, accessToken }: Settings
       </div>
 
       {/* Section 2: IMAP credentials accordion */}
-      <div className="bg-white rounded-[12px] border border-warm-gray-800/[0.06] p-6 shadow-sm">
+      <div className="bg-white rounded-md border border-warm-gray-800/[0.06] p-6 shadow-sm">
         <h2 className="font-body font-semibold text-lg text-deep-charcoal mb-1">
           {t.settings.imap.title}
         </h2>
@@ -235,7 +235,7 @@ export default function SettingsTab({ physicianId, lang, accessToken }: Settings
       </div>
 
       {/* Section 3: Auto-configure iPhone */}
-      <div className="bg-white rounded-[12px] border border-warm-gray-800/[0.06] p-6 shadow-sm">
+      <div className="bg-white rounded-md border border-warm-gray-800/[0.06] p-6 shadow-sm">
         <h2 className="font-body font-semibold text-lg text-deep-charcoal mb-1">
           {t.settings.mobileconfigCard.title}
         </h2>
@@ -253,7 +253,7 @@ export default function SettingsTab({ physicianId, lang, accessToken }: Settings
       </div>
 
       {/* Section 4: Two-factor authentication status */}
-      <div className="bg-white rounded-[12px] border border-warm-gray-800/[0.06] p-6 shadow-sm">
+      <div className="bg-white rounded-md border border-warm-gray-800/[0.06] p-6 shadow-sm">
         <h2 className="font-body font-semibold text-lg text-deep-charcoal mb-2">
           {t.settings.tfaCard.title}
         </h2>

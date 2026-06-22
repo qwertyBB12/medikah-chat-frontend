@@ -213,7 +213,7 @@ export default function InquiryList({ physicianId, lang, accessToken }: InquiryL
   ];
 
   return (
-    <div className="bg-white rounded-[12px] border border-border-line shadow-sm">
+    <div className="bg-white rounded-md border border-border-line shadow-sm">
       {/* Header */}
       <div className="px-6 pt-6 pb-4">
         <h2 className="font-dm-sans font-semibold text-lg text-deep-charcoal">
@@ -273,7 +273,7 @@ export default function InquiryList({ physicianId, lang, accessToken }: InquiryL
               return (
                 <div
                   key={inq.inquiry_id}
-                  className="border border-border-line rounded-[12px] p-4 hover:border-clinical-teal/30 transition"
+                  className="border border-border-line rounded-md p-4 hover:border-clinical-teal/30 transition"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                     <div className="flex-1 min-w-0">
@@ -362,7 +362,7 @@ export default function InquiryList({ physicianId, lang, accessToken }: InquiryL
       {/* Decline Modal */}
       {declineModalId && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-[12px] shadow-xl w-full max-w-md p-6">
+          <div className="bg-white rounded-md shadow-xl w-full max-w-md p-6">
             <h3 className="font-dm-sans font-semibold text-lg text-deep-charcoal mb-4">
               {t.declineTitle}
             </h3>

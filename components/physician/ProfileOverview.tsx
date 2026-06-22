@@ -82,7 +82,7 @@ export default function ProfileOverview(props: ProfileOverviewProps) {
   const [imgError, setImgError] = useState(false);
 
   return (
-    <div className="bg-linen-white rounded-[12px] border border-warm-gray-800/[0.06] shadow-sm p-6">
+    <div className="bg-linen-white rounded-md border border-warm-gray-800/[0.06] shadow-sm p-6">
       <div className="flex items-start gap-4">
         {/* Avatar */}
         <div className="shrink-0">

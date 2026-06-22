@@ -250,7 +250,7 @@ export default function DashboardContent({
         />
 
         {/* Verification Status Card */}
-        <div className="bg-linen-white rounded-[12px] border border-warm-gray-800/[0.06] p-6 shadow-sm">
+        <div className="bg-linen-white rounded-md border border-warm-gray-800/[0.06] p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-body font-semibold text-lg text-deep-charcoal">
               {t.statusCard.title}
@@ -272,12 +272,12 @@ export default function DashboardContent({
               <div
                 className={`h-full rounded-full transition-all duration-500 ${
                   normalizedStatus === 'verified'
-                    ? 'w-full bg-emerald-500'
+                    ? 'w-full bg-confirm-green'
                     : normalizedStatus === 'under_review'
-                    ? 'w-2/3 bg-blue-500'
+                    ? 'w-2/3 bg-info-blue'
                     : normalizedStatus === 'rejected'
-                    ? 'w-1/3 bg-red-500'
-                    : 'w-1/3 bg-amber-500'
+                    ? 'w-1/3 bg-alert-garnet'
+                    : 'w-1/3 bg-caution-amber'
                 }`}
               />
             </div>
@@ -389,7 +389,7 @@ export default function DashboardContent({
       )}
 
       {/* Network Card - Full width */}
-      <div className="bg-gradient-to-br from-inst-blue to-[#243447] rounded-[12px] p-6 text-white shadow-lg">
+      <div className="bg-gradient-to-br from-inst-blue to-[#243447] rounded-md p-6 text-white shadow-lg">
         <h2 className="font-body font-semibold text-lg mb-3">
           {t.networkCard.title}
         </h2>

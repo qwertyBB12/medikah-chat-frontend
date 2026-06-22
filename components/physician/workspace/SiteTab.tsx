@@ -271,7 +271,7 @@ export default function SiteTab({ physicianId, lang, accessToken, physicianFullN
   if (!themeClaimed) {
     return (
       <div className="space-y-6">
-        <div className="bg-linen rounded-[12px] border border-warm-gray-800/[0.06] p-8 shadow-sm text-center">
+        <div className="bg-linen rounded-md border border-warm-gray-800/[0.06] p-8 shadow-sm text-center">
           {/* Hero illustration placeholder */}
           <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-clinical-teal/10 flex items-center justify-center">
             <svg viewBox="0 0 40 40" fill="none" className="w-10 h-10">
@@ -333,7 +333,7 @@ export default function SiteTab({ physicianId, lang, accessToken, physicianFullN
       )}
 
       {/* Card: Site preview + actions */}
-      <div className="bg-linen rounded-[12px] border border-warm-gray-800/[0.06] p-6 shadow-sm">
+      <div className="bg-linen rounded-md border border-warm-gray-800/[0.06] p-6 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-4">
           <div>
             <h2 className="font-body font-semibold text-lg text-deep-charcoal mb-1">
