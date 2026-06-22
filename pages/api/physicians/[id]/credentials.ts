@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]';
 import { supabaseAdmin } from '../../../../lib/supabaseServer';
+import { sessionOwnsPhysician } from '../../../../lib/physicianAuthz';
 import type {
   SaveCredentialPayload,
   DeleteCredentialPayload,
@@ -159,7 +160,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(403).json({ error: 'Forbidden' });
   }
 
-  if (physician.email !== session.user.email.toLowerCase()) {
+  if (!sessionOwnsPhysician(session, physician, physicianId)) {
     return res.status(403).json({ error: 'Forbidden' });
   }
 
