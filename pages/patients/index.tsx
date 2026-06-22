@@ -19,6 +19,7 @@ import ChatSchedulerAgent, {
 } from '../../components/ChatSchedulerAgent';
 import { hasValidConsent } from '../../lib/consent';
 import { SupportedLang } from '../../lib/i18n';
+import { PATIENT_PORTAL_OPEN } from '../../lib/featureFlags';
 
 interface ChatResponse {
   ok?: boolean;
@@ -35,6 +36,17 @@ type Message = {
   text: string;
   actions?: SchedulerAction[];
 };
+
+// Physicians-only phase: hard-gate the patient portal SERVER-SIDE. Even an
+// authenticated patient session never renders the portal — it redirects to the
+// terminal /patients-coming-soon page (no /chat ⇄ /patients loop). Flip
+// featureFlags.PATIENT_PORTAL_OPEN + deploy to re-open.
+export async function getServerSideProps() {
+  if (!PATIENT_PORTAL_OPEN) {
+    return { redirect: { destination: '/patients-coming-soon', permanent: false } };
+  }
+  return { props: {} };
+}
 
 export default function PatientPortal() {
   const { data: session, status } = useSession();
