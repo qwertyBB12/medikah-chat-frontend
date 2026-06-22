@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]';
 import { supabaseAdmin } from '../../../../lib/supabaseServer';
+import { sessionOwnsPhysician } from '../../../../lib/physicianAuthz';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -33,8 +34,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ error: 'Physician not found' });
     }
 
-    // Verify the session email matches the physician's email
-    if (physician.email.toLowerCase() !== session.user.email.toLowerCase()) {
+    // Ownership: canonical physician_id claim, with legacy email fallback (see physicianAuthz)
+    if (!sessionOwnsPhysician(session, physician, id)) {
       return res.status(403).json({ error: 'Not authorized to view this profile' });
     }
 
