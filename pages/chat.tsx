@@ -20,6 +20,7 @@ import { FormEvent, useEffect, useState, useRef } from 'react';
 import Splash from '../components/Splash';
 import { MAILCOW_ERROR_COPY } from '../lib/auth/mailcowErrorCopy';
 import { LOGO_DARK_SRC } from '../lib/assets';
+import { PATIENT_PORTAL_OPEN } from '../lib/featureFlags';
 
 type PortalSelection = 'doctor' | 'patient' | null;
 
@@ -208,7 +209,8 @@ export default function ChatPage() {
     if (role === 'physician' || role === 'doctor') {
       setPortalSelection('doctor');
       setShowLoginForm(true);
-    } else if (role === 'patient') {
+    } else if (role === 'patient' && PATIENT_PORTAL_OPEN) {
+      // Physicians-only phase: ignore ?role=patient deep-links.
       setPortalSelection('patient');
       setShowLoginForm(true);
     }
@@ -267,12 +269,17 @@ export default function ChatPage() {
       }
 
       if (pendingRedirectRef.current) {
-        const redirect = pendingRedirectRef.current === 'doctor' ? '/physicians/onboard' : '/patients';
+        const redirect = pendingRedirectRef.current === 'doctor'
+          ? '/physicians/onboard'
+          : PATIENT_PORTAL_OPEN ? '/patients' : '/patients-coming-soon';
         pendingRedirectRef.current = null;
         router.replace(redirect);
       } else {
         const role = session.user.role || 'patient';
-        const redirect = role === 'physician' ? '/physicians' : `/${role}s`;
+        let redirect: string;
+        if (role === 'physician') redirect = '/physicians';
+        else if (role === 'patient' && !PATIENT_PORTAL_OPEN) redirect = '/patients-coming-soon';
+        else redirect = `/${role}s`;
         router.replace(redirect);
       }
     }
@@ -962,11 +969,11 @@ export default function ChatPage() {
           setShowLoginForm(true);
           setLoginError(null);
         }}
-        onPatientLogin={() => {
+        onPatientLogin={PATIENT_PORTAL_OPEN ? () => {
           setPortalSelection('patient');
           setShowLoginForm(true);
           setLoginError(null);
-        }}
+        } : undefined}
         loginPanel={loginPanel}
       />
     </>

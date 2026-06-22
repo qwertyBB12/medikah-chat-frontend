@@ -14,10 +14,12 @@ export default function Splash({
   onPatientLogin,
   loginPanel,
 }: SplashProps) {
+  // Only render a portal button when a handler is supplied. Omitting
+  // onPatientLogin (physicians-only phase) hides the Patient option cleanly.
   const portals = [
     { label: 'Patient', onClick: onPatientLogin },
     { label: 'Doctor', onClick: onDoctorLogin },
-  ];
+  ].filter((p): p is { label: string; onClick: () => void } => Boolean(p.onClick));
 
   return (
     <div
