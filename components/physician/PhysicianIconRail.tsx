@@ -22,6 +22,7 @@
 import Link from 'next/link';
 import { useState, useEffect, useRef, type ReactElement } from 'react';
 import { useSession } from 'next-auth/react';
+import CueLauncher from './CueLauncher';
 
 export type RailSurface = 'mail' | 'contacts' | 'calendar' | 'dashboard';
 
@@ -253,6 +254,11 @@ export default function PhysicianIconRail({
         {ORDER.map((surface) => (
           <InlineItem key={surface} surface={surface} />
         ))}
+        {/* Phase 22 (PRES-01/02): Cue launcher — bare glyph at consistent anchor.
+            Mounted right of the navigation icons, left of the divider+power pair,
+            so it groups with workspace navigation rather than the sign-out control.
+            Click handler is a stub (Phase 23 wires the summoned surface). */}
+        <CueLauncher tone={tone} lang={lang} />
         <span className={`mx-1 h-5 w-px ${tone === 'light' ? 'bg-white/20' : 'bg-warm-gray-800/15'}`} aria-hidden="true" />
         <button type="button" onClick={onSignOut} aria-label={LABELS.power[lang]} title={LABELS.power[lang]} className={itemClasses(false)}>
           <PowerIcon />
@@ -316,6 +322,13 @@ export default function PhysicianIconRail({
                   </Link>
                 );
               })}
+              <div className="my-1 h-px bg-warm-gray-800/10" aria-hidden="true" />
+              {/* Phase 22 (PRES-01/02): Cue launcher row in the mobile dropdown —
+                  consistent anchor mirrors the inline rail position. */}
+              <div className="flex items-center gap-3 px-4 py-1.5">
+                <CueLauncher tone="dark" lang={lang} />
+                <span className="text-sm font-body text-body-slate">Cue</span>
+              </div>
               <div className="my-1 h-px bg-warm-gray-800/10" aria-hidden="true" />
               <button
                 type="button"
