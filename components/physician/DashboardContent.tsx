@@ -20,6 +20,7 @@ import USCredentialSection from './credentials/USCredentialSection';
 import MXCredentialSection from './credentials/MXCredentialSection';
 import ContactInfoSection from './ContactInfoSection';
 import WorkspaceTabContainer from './workspace/WorkspaceTabContainer';
+import { PHYSICIAN_INQUIRIES_OPEN, AI_DIAGNOSIS_IN_DASH } from '../../lib/featureFlags';
 import { computeCompleteness } from '../../lib/completenessService';
 import type { CompletenessResult } from '../../lib/completenessService';
 import { getContactInfo } from '../../lib/contactClient';
@@ -292,8 +293,10 @@ export default function DashboardContent({
         </div>
       </div>
 
-      {/* Row 2: AI Diagnosis Tool - Full width */}
-      <AIDiagnosisTool lang={lang} accessToken={accessToken} />
+      {/* Row 2: AI Diagnosis Tool - Full width
+          Hidden for soft launch; being repositioned as a Cue feature in the
+          upcoming Cue phases (see AI_DIAGNOSIS_IN_DASH in lib/featureFlags.ts). */}
+      {AI_DIAGNOSIS_IN_DASH && <AIDiagnosisTool lang={lang} accessToken={accessToken} />}
 
       {/* Row 2.5: Contact & Practice Info — shared section above credentials (D-05) */}
       {physicianId && (
@@ -361,8 +364,10 @@ export default function DashboardContent({
         </div>
       )}
 
-      {/* Row 4: Inquiry List - Full width */}
-      {physicianId && <InquiryList physicianId={physicianId} lang={lang} accessToken={accessToken} />}
+      {/* Row 4: Inquiry List - Full width
+          Hidden for the physicians-only soft launch (no live patient pipeline
+          yet; see PHYSICIAN_INQUIRIES_OPEN in lib/featureFlags.ts). */}
+      {PHYSICIAN_INQUIRIES_OPEN && physicianId && <InquiryList physicianId={physicianId} lang={lang} accessToken={accessToken} />}
 
       {/* Row 5: Availability Editor - Full width */}
       {physicianId && <AvailabilityEditor physicianId={physicianId} lang={lang} accessToken={accessToken} />}
