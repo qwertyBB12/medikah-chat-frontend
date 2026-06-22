@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]';
 import { supabaseAdmin } from '../../../../lib/supabaseServer';
+import { sessionOwnsPhysician } from '../../../../lib/physicianAuthz';
 
 // Map camelCase request fields to snake_case DB columns
 const FIELD_MAP: Record<string, string> = {
@@ -53,7 +54,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ error: 'Physician not found' });
     }
 
-    if (physician.email.toLowerCase() !== session.user.email.toLowerCase()) {
+    if (!sessionOwnsPhysician(session, physician, id)) {
       return res.status(403).json({ error: 'Not authorized to update this profile' });
     }
 
