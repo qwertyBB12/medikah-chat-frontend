@@ -272,7 +272,7 @@ export default function SettingsTab({ physicianId, lang, accessToken }: Settings
           {t.settings.tfaCard.promptOnLogin}
         </p>
         <a
-          href="https://mail.medikah.health"
+          href="https://practikah.medikah.health"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-block font-dm-sans text-sm text-clinical-teal hover:text-clinical-teal/80 transition-colors"

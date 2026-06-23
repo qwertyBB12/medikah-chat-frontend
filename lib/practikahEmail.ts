@@ -107,7 +107,7 @@ async function sendEmail(options: {
  *
  * The email includes:
  *   - Celebratory headline: "You're on Práctikah, Dr. {lastName}!"
- *   - Mailbox address card with Open Mailbox CTA (→ mail.medikah.health)
+ *   - Mailbox address card with Open Mailbox CTA (→ practikah.medikah.health)
  *   - IMAP setup link (→ dashboard Settings tab)
  *   - Try Pro preview site link (→ {slug}.medikah.health)
  *   - Bilingual footer with Care Without Distance tagline
@@ -120,7 +120,7 @@ export async function sendPracikahLiveEmail(
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://medikah.health';
   const previewUrl = `https://${slug}.medikah.health`;
   const settingsUrl = `${baseUrl}/physicians/dashboard/workspace?tab=settings`;
-  const mailUrl = 'https://mail.medikah.health';
+  const mailUrl = 'https://practikah.medikah.health';
 
   // Bilingual content map (EN/ES)
   const content =

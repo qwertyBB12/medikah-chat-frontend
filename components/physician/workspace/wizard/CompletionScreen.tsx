@@ -136,7 +136,7 @@ export default function CompletionScreen({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* CTA 1: Open Mailbox */}
         <a
-          href="https://mail.medikah.health"
+          href="https://practikah.medikah.health"
           target="_blank"
           rel="noopener noreferrer"
           className="flex flex-col items-start p-5 bg-linen-white rounded-md border border-warm-gray-800/[0.06] shadow-sm hover:border-clinical-teal/30 hover:shadow-md transition-all group"
