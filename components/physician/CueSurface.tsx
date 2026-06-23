@@ -33,6 +33,8 @@
 
 import { useRef, useEffect, useState, useCallback } from 'react';
 import CueActionCard from './CueActionCard';
+import CueOrb from './CueOrb';
+import { VoiceStateMachine, type OrbState } from '../../lib/cue/stateMachine';
 
 // ─── Props ───────────────────────────────────────────────────────────────────
 
@@ -144,6 +146,11 @@ const LABELS = {
     blockedResult: (uid: string) => `Time blocked. (ref ${uid})`,
     clearResult: (deleted: number, kept: number) =>
       `${deleted} removed, ${kept} kept.`,
+    micStart: 'Hold to speak',
+    micStop: 'Stop',
+    listening: 'Listening…',
+    transcribing: 'Transcribing…',
+    voiceUnsupported: 'Voice input is not available in this browser — type instead.',
   },
   es: {
     placeholder: 'Pregúntale a Cue sobre tu calendario…',
@@ -157,6 +164,11 @@ const LABELS = {
     blockedResult: (uid: string) => `Horario bloqueado. (ref ${uid})`,
     clearResult: (deleted: number, kept: number) =>
       `${deleted} eliminados, ${kept} conservados.`,
+    micStart: 'Mantén para hablar',
+    micStop: 'Detener',
+    listening: 'Escuchando…',
+    transcribing: 'Transcribiendo…',
+    voiceUnsupported: 'La entrada de voz no está disponible en este navegador — escribe.',
   },
 } as const;
 
@@ -186,10 +198,50 @@ export default function CueSurface({
 
   const labels = LABELS[locale];
 
+  // ── Voice round-trip state (Plan 23-06 — PRES-03 voice-first, VOICE-05/08) ──
+  // The five-state orb FSM drives the orb visual. Mic capture posts to the
+  // /api/cue/transcribe BFF (auth-correct same-origin hop — see the route file),
+  // feeds the transcript into the SAME /api/cue/chat path as text, then optionally
+  // speaks the reply via the /api/cue/tts BFF. Text stays the always-on fallback.
+  const smRef = useRef<VoiceStateMachine | null>(null);
+  if (smRef.current === null) smRef.current = new VoiceStateMachine();
+  const [orbState, setOrbState] = useState<OrbState>('idle');
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<BlobPart[]>([]);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const audioElRef = useRef<HTMLAudioElement | null>(null);
+
+  // Voice is available only when the browser exposes getUserMedia + MediaRecorder
+  // (jsdom/test + older browsers fall through to text-only — graceful degrade).
+  const voiceSupported =
+    typeof navigator !== 'undefined' &&
+    !!navigator.mediaDevices &&
+    typeof navigator.mediaDevices.getUserMedia === 'function' &&
+    typeof window !== 'undefined' &&
+    typeof window.MediaRecorder !== 'undefined';
+
+  // Drive orbState from the FSM (single source of truth for the orb visual).
+  useEffect(() => {
+    const sm = smRef.current!;
+    setOrbState(sm.state);
+    const unsub = sm.subscribeOrbEvents((p) => setOrbState(p.state));
+    return unsub;
+  }, []);
+
   // ── Open / Close lifecycle ───────────────────────────────────────────────
 
   useEffect(() => {
     if (!isOpen) {
+      // Stop any in-flight mic/audio and reset the orb when the surface closes.
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
+      mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
+      mediaStreamRef.current = null;
+      setIsRecording(false);
+      audioElRef.current?.pause();
+      smRef.current?.reset();
       // Return focus to whatever had it before we opened
       if (prevFocusRef.current) {
         (prevFocusRef.current as HTMLElement).focus?.();
@@ -234,13 +286,12 @@ export default function CueSurface({
     }
   }
 
-  // ── Text submit → /cue/chat ──────────────────────────────────────────────
+  // ── Core chat turn (shared by text + voice) → /api/cue/chat ──────────────
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const message = inputValue.trim();
-    if (!message || isLoading) return;
-
+  async function sendChatMessage(
+    message: string,
+    opts?: { speak?: boolean },
+  ): Promise<void> {
     setIsLoading(true);
     setResponse(null);
     setErrorMsg(null);
@@ -252,7 +303,8 @@ export default function CueSurface({
       // NextAuth session cookie and forwards the NextAuth HS256 JWT that the
       // FastAPI cue gate (authenticated_physician) verifies. Posting straight to
       // FastAPI with the Supabase token 401'd; the browser never touches FastAPI
-      // directly (D-04) — same BFF pattern as the confirm-write proxy.
+      // directly (D-04) — same BFF pattern as the confirm-write proxy. The voice
+      // path (transcribe/tts) uses the same BFF hop for the same reason.
       const res = await fetch('/api/cue/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -286,12 +338,33 @@ export default function CueSurface({
       } else {
         setResponse({ title: 'Cue', summary: text });
       }
-      setInputValue('');
+
+      // Voice path: speak the reasoning text. A voice-initiated block/clear is
+      // NEVER auto-executed and NEVER spoken as a fait accompli — it still
+      // surfaces the D-03 confirm card and requires the explicit Confirm tap, so
+      // we only speak when there is no pending confirm (D-03 voice parity).
+      if (opts?.speak && text.trim() && !pc) {
+        void speakReply(text);
+      } else if (opts?.speak) {
+        // Nothing to speak (confirm card or empty) → return the orb to rest.
+        smRef.current?.send('stop');
+      }
     } catch {
       setErrorMsg(labels.error);
+      smRef.current?.send('error'); // surface failure on the orb (→ idle)
     } finally {
       setIsLoading(false);
     }
+  }
+
+  // ── Text submit → shared chat turn ───────────────────────────────────────
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const message = inputValue.trim();
+    if (!message || isLoading) return;
+    setInputValue('');
+    await sendChatMessage(message);
   }
 
   // ── Confirm → POST /api/cue/calendar/confirm-write (the sole mutation path) ──
@@ -357,6 +430,126 @@ export default function CueSurface({
   function handleCancelWrite() {
     setPendingConfirm(null);
     idempotencyTokenRef.current = null;
+  }
+
+  // ── Mic capture (tap to start, tap to stop) → /api/cue/transcribe BFF ─────
+  // Tap-to-talk via the browser-native MediaRecorder (NO new npm dep — T-23-06-SC).
+  // The deliberately-slowed sobremesa VAD cadence (lib/cue/sobremesaConfig.ts) is
+  // the tuning source of truth for a future automatic end-of-turn; v1 ends the
+  // turn on the explicit second tap.
+
+  function stopTracks(): void {
+    mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
+    mediaStreamRef.current = null;
+  }
+
+  async function startRecording(): Promise<void> {
+    if (!voiceSupported || isRecording || isLoading) return;
+    const sm = smRef.current!;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+      audioChunksRef.current = [];
+      const recorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
+      recorder.ondataavailable = (ev) => {
+        if (ev.data && ev.data.size > 0) audioChunksRef.current.push(ev.data);
+      };
+      recorder.onstop = () => {
+        void handleRecordingStop(recorder.mimeType);
+      };
+      recorder.start();
+      setIsRecording(true);
+      sm.send('start'); // idle → listening
+    } catch {
+      setErrorMsg(labels.voiceUnsupported);
+      stopTracks();
+    }
+  }
+
+  function stopRecording(): void {
+    if (!isRecording) return;
+    const recorder = mediaRecorderRef.current;
+    setIsRecording(false);
+    if (recorder && recorder.state !== 'inactive') {
+      recorder.stop(); // fires onstop → handleRecordingStop
+    }
+  }
+
+  function toggleMic(): void {
+    if (isRecording) stopRecording();
+    else void startRecording();
+  }
+
+  async function handleRecordingStop(mimeType: string): Promise<void> {
+    const sm = smRef.current!;
+    stopTracks();
+    const chunks = audioChunksRef.current;
+    audioChunksRef.current = [];
+    if (chunks.length === 0) {
+      sm.send('stop'); // listening → idle (nothing captured)
+      return;
+    }
+    sm.send('speech-ended'); // listening → thinking
+    const blob = new Blob(chunks, { type: mimeType || 'audio/webm' });
+    try {
+      // Post audio to the same-origin BFF (auth-correct hop; the absolute backend
+      // target ${NEXT_PUBLIC_API_URL}/cue/transcribe lives in the BFF route file).
+      const res = await fetch('/api/cue/transcribe', {
+        method: 'POST',
+        headers: { 'Content-Type': blob.type || 'audio/webm', 'X-Locale': locale },
+        body: blob,
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()) as { transcript?: string; language?: string };
+      const transcript = (data.transcript || '').trim();
+      if (!transcript) {
+        sm.send('stop');
+        return;
+      }
+      // Feed the transcript into the SAME /api/cue/chat path as text, and speak
+      // the reply (sendChatMessage drives the FSM thinking → speaking → idle).
+      await sendChatMessage(transcript, { speak: true });
+    } catch {
+      setErrorMsg(labels.error);
+      sm.send('error'); // → idle
+    }
+  }
+
+  // ── Speak Cue's reply via /api/cue/tts BFF (voice path only; best-effort) ──
+  async function speakReply(text: string): Promise<void> {
+    const sm = smRef.current;
+    try {
+      const res = await fetch('/api/cue/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, locale }),
+      });
+      if (!res.ok) {
+        sm?.send('stop'); // TTS unavailable — the carded text is already shown.
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = audioElRef.current ?? new Audio();
+      audioElRef.current = audio;
+      audio.src = url;
+      sm?.send('response-started'); // thinking → speaking
+      const finish = () => {
+        URL.revokeObjectURL(url);
+        sm?.send('stop'); // speaking → idle (tap-to-talk: one turn at a time)
+      };
+      audio.onended = finish;
+      audio.onerror = finish;
+      // play() returns a Promise in browsers (undefined in some test envs) —
+      // guard so a non-Promise return doesn't throw; onended drives the FSM.
+      const playback = audio.play() as Promise<void> | undefined;
+      if (playback && typeof playback.then === 'function') {
+        playback.catch(finish); // autoplay blocked → degrade to text
+      }
+    } catch {
+      sm?.send('stop');
+    }
   }
 
   // ── Render ───────────────────────────────────────────────────────────────
@@ -475,8 +668,55 @@ export default function CueSurface({
           outline-offset: 2px;
         }
 
+        .mk-cue-orb-wrap {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 4px 0 2px;
+        }
+
         .mk-cue-response-area {
           min-height: 0;
+        }
+
+        /* Mic button — ≥44px tap target (PRES-05). Teal when armed/recording. */
+        .mk-cue-mic {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 44px;
+          height: 44px;
+          border-radius: 16px;
+          border: 1.5px solid rgba(27, 42, 65, 0.18);
+          background: #ffffff;
+          color: #2C7A8C; /* clinical-teal */
+          cursor: pointer;
+          flex-shrink: 0;
+          transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+        }
+
+        .mk-cue-mic:hover:not(:disabled),
+        .mk-cue-mic:focus-visible {
+          border-color: #2C7A8C;
+          background: rgba(44, 122, 140, 0.08);
+          outline: none;
+        }
+
+        .mk-cue-mic--on {
+          background: #2C7A8C;
+          border-color: #2C7A8C;
+          color: #ffffff;
+          animation: mk-cue-mic-pulse 1.4s ease-in-out infinite;
+        }
+
+        .mk-cue-mic:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        @keyframes mk-cue-mic-pulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(44, 122, 140, 0.35); }
+          50%      { box-shadow: 0 0 0 6px rgba(44, 122, 140, 0); }
         }
 
         .mk-cue-loading {
@@ -551,11 +791,12 @@ export default function CueSurface({
           cursor: not-allowed;
         }
 
-        /* prefers-reduced-motion: disable entrance + breath animations */
+        /* prefers-reduced-motion: disable entrance + breath + mic animations */
         @media (prefers-reduced-motion: reduce) {
           .mk-cue-entrance,
           .mk-cue-dialog,
-          .mk-cue-scrim {
+          .mk-cue-scrim,
+          .mk-cue-mic--on {
             animation: none;
           }
         }
@@ -593,8 +834,17 @@ export default function CueSurface({
               </button>
             </header>
 
+            {/* Orb — voice-first, mark-anchored (D-04 / PRES-03). Driven by the
+                five-state FSM; breathes at rest, pulses while listening/speaking. */}
+            <div className="mk-cue-orb-wrap">
+              <CueOrb state={orbState} tone="dark" size={88} />
+            </div>
+
             {/* Response area */}
             <div className="mk-cue-response-area" aria-live="polite" aria-atomic="true">
+              {isRecording && (
+                <p className="mk-cue-loading">{labels.listening}</p>
+              )}
               {isLoading && (
                 <p className="mk-cue-loading">{labels.loading}</p>
               )}
@@ -631,8 +881,36 @@ export default function CueSurface({
               )}
             </div>
 
-            {/* Text input form */}
+            {/* Text input form — text is the always-on fallback; the mic adds the
+                voice round-trip when the browser supports it (graceful degrade). */}
             <form className="mk-cue-form" onSubmit={handleSubmit}>
+              {voiceSupported && (
+                <button
+                  type="button"
+                  className={`mk-cue-mic${isRecording ? ' mk-cue-mic--on' : ''}`}
+                  onClick={toggleMic}
+                  disabled={isLoading}
+                  aria-label={isRecording ? labels.micStop : labels.micStart}
+                  aria-pressed={isRecording}
+                  title={isRecording ? labels.micStop : labels.micStart}
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="20"
+                    height="20"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <rect x="9" y="3" width="6" height="11" rx="3" />
+                    <path d="M5 11a7 7 0 0 0 14 0" />
+                    <line x1="12" y1="18" x2="12" y2="21" />
+                  </svg>
+                </button>
+              )}
               <input
                 ref={inputRef}
                 type="text"
