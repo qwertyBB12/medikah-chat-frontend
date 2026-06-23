@@ -194,6 +194,18 @@ export interface WorkspaceContent {
     };
   };
   tryProContact: TryProContactContent;
+  /** Phase 23 (PRES-03 / VOICE-08): Cue surface bilingual labels.
+   *  cue.confirmLabel / cue.cancelLabel are used in CueActionCard.
+   *  cue.surfacePlaceholder / cue.surfaceClose are for CueSurface chrome.
+   */
+  cue: {
+    confirmLabel: string;
+    cancelLabel: string;
+    surfacePlaceholder: string;
+    surfaceClose: string;
+    surfaceLoading: string;
+    surfaceError: string;
+  };
   /** Upgrade CTA banner + upgrade placeholder page strings (Phase 12-07 / D-20 / FREE-08)
    *
    * Phase 13-04 extends this namespace with `search` for the DomainSearch +
@@ -551,7 +563,7 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
       subscribeOutlook: 'Outlook Mobile',
       cardTitle: 'Your Práctikah Calendar',
       instructionsTitle: 'Subscribe on your device',
-      appleSteps: 'On iPhone: Settings → Calendar → Accounts → Add Account → Other → Add CalDAV Account. Server: mail.medikah.health. Username: your mailbox address. Password: your mailbox password.',
+      appleSteps: 'On iPhone: Settings → Calendar → Accounts → Add Account → Other → Add CalDAV Account. Server: practikah.medikah.health. Username: your mailbox address. Password: your mailbox password.',
       googleSteps: 'Open Google Calendar settings → Add calendar → From URL → paste the CalDAV URL above. (Read-only on Google Calendar; full sync requires Apple Calendar or Outlook.)',
       outlookSteps: 'On Outlook Mobile: Settings → Add Mail Account → Add Email Account → Advanced → IMAP. The same credentials surface your calendar via CalDAV in supported clients.',
       previewTitle: 'Your calendar (read-only preview)',
@@ -811,6 +823,15 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         message: 800,
       },
     },
+    /** Phase 23 (PRES-03 / VOICE-08): Cue surface strings — EN */
+    cue: {
+      confirmLabel: 'Confirm',
+      cancelLabel: 'Cancel',
+      surfacePlaceholder: 'Ask Cue anything about your calendar…',
+      surfaceClose: 'Close',
+      surfaceLoading: 'Cue is thinking…',
+      surfaceError: 'Something went wrong. Please try again.',
+    },
     wizard: {
       progress: 'Step {n} of 3',
       title: {
@@ -1004,7 +1025,7 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
       subscribeOutlook: 'Outlook Móvil',
       cardTitle: 'Tu Calendario Práctikah',
       instructionsTitle: 'Suscríbete en tu dispositivo',
-      appleSteps: 'En iPhone: Configuración → Calendario → Cuentas → Añadir cuenta → Otra → Añadir cuenta CalDAV. Servidor: mail.medikah.health. Usuario: tu dirección de correo. Contraseña: la del buzón.',
+      appleSteps: 'En iPhone: Configuración → Calendario → Cuentas → Añadir cuenta → Otra → Añadir cuenta CalDAV. Servidor: practikah.medikah.health. Usuario: tu dirección de correo. Contraseña: la del buzón.',
       googleSteps: 'Abre Configuración de Google Calendar → Añadir calendario → Desde URL → pega la URL de CalDAV. (Solo lectura en Google Calendar; sincronización completa en Apple Calendar u Outlook.)',
       outlookSteps: 'En Outlook Móvil: Configuración → Añadir cuenta de correo → Avanzado → IMAP. Las mismas credenciales muestran tu calendario por CalDAV en clientes compatibles.',
       previewTitle: 'Tu calendario (vista previa de solo lectura)',
@@ -1263,6 +1284,15 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         subject: 120,
         message: 800,
       },
+    },
+    /** Phase 23 (PRES-03 / VOICE-08): Cue surface strings — ES */
+    cue: {
+      confirmLabel: 'Confirmar',
+      cancelLabel: 'Cancelar',
+      surfacePlaceholder: 'Pregúntale a Cue sobre tu calendario…',
+      surfaceClose: 'Cerrar',
+      surfaceLoading: 'Cue está pensando…',
+      surfaceError: 'Algo salió mal. Inténtalo de nuevo.',
     },
     wizard: {
       progress: 'Paso {n} de 3',

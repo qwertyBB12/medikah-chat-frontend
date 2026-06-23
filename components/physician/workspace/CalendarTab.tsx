@@ -49,8 +49,10 @@ export default function CalendarTab({ physicianId, lang, accessToken }: Calendar
 
   // Derive SOGo CalDAV URL. local_part is the SOGo username.
   const localPart = status?.mailbox_local_part || 'you';
-  const caldavUrl = `https://mail.medikah.health/SOGo/dav/${localPart}/Calendar/personal/`;
-  const previewSrc = `https://mail.medikah.health/SOGo/so/${localPart}/Calendar/personal/view`;
+  // HANDS-06: migrated off the fragile mail-CNAME to the
+  // practikah.medikah.health apex (direct A record + trusted Let's Encrypt cert).
+  const caldavUrl = `https://practikah.medikah.health/SOGo/dav/${localPart}/Calendar/personal/`;
+  const previewSrc = `https://practikah.medikah.health/SOGo/so/${localPart}/Calendar/personal/view`;
 
   const copyUrl = async () => {
     try {
