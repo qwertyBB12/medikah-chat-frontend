@@ -335,3 +335,118 @@ describe('CueSurface — D-03 sentinel split + confirm card', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
+
+// ─── Voice round-trip (Plan 23-06 — PRES-03 / VOICE-08) ───────────────────────
+
+describe('CueSurface — voice round-trip (mic → transcribe → chat → tts)', () => {
+  /** Minimal MediaRecorder fake: stop() emits one chunk then fires onstop. */
+  class FakeMediaRecorder {
+    state = 'inactive';
+    mimeType = 'audio/webm';
+    ondataavailable: ((e: { data: Blob }) => void) | null = null;
+    onstop: (() => void) | null = null;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    constructor(_stream: MediaStream) {}
+    start() {
+      this.state = 'recording';
+    }
+    stop() {
+      this.state = 'inactive';
+      this.ondataavailable?.({ data: new Blob(['audio'], { type: 'audio/webm' }) });
+      this.onstop?.();
+    }
+  }
+
+  beforeEach(() => {
+    stubReducedMotion(false);
+    // getUserMedia + MediaRecorder make voiceSupported true.
+    Object.defineProperty(navigator, 'mediaDevices', {
+      configurable: true,
+      value: {
+        getUserMedia: vi.fn().mockResolvedValue({
+          getTracks: () => [{ stop: vi.fn() }],
+        }),
+      },
+    });
+    vi.stubGlobal('MediaRecorder', FakeMediaRecorder);
+    // Audio + object URL shims (jsdom implements neither play() nor createObjectURL).
+    vi.stubGlobal(
+      'Audio',
+      class {
+        src = '';
+        onended: (() => void) | null = null;
+        onerror: (() => void) | null = null;
+        play() {
+          return Promise.resolve();
+        }
+        pause() {}
+      },
+    );
+    if (!('createObjectURL' in URL)) {
+      (URL as unknown as { createObjectURL: () => string }).createObjectURL = () => 'blob:x';
+      (URL as unknown as { revokeObjectURL: () => void }).revokeObjectURL = () => {};
+    } else {
+      vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:x');
+      vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    }
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it('a full voice turn calls /api/cue/transcribe → /api/cue/chat → /api/cue/tts in order', async () => {
+    const fetchMock = vi
+      .fn()
+      // 1) transcribe → transcript
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ transcript: 'what is my day', language: 'en' }),
+      })
+      // 2) chat → plain reply (no confirm card → speak it)
+      .mockResolvedValueOnce({
+        ok: true,
+        text: async () => 'Your day is clear.',
+      })
+      // 3) tts → audio blob
+      .mockResolvedValueOnce({
+        ok: true,
+        blob: async () => new Blob(['mp3'], { type: 'audio/mpeg' }),
+      });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<CueSurface isOpen onClose={vi.fn()} accessToken="tok" locale="en" />);
+
+    // The mic button is present (voiceSupported true via stubs).
+    const mic = screen.getByLabelText('Hold to speak');
+    fireEvent.click(mic); // start recording (idle → listening)
+    // Stop → emits a chunk → transcribe → chat → tts.
+    const micStop = await screen.findByLabelText('Stop');
+    fireEvent.click(micStop);
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/cue/transcribe');
+    expect(fetchMock.mock.calls[1][0]).toBe('/api/cue/chat');
+    expect(fetchMock.mock.calls[2][0]).toBe('/api/cue/tts');
+
+    // The transcript was fed into the chat turn body.
+    const chatBody = JSON.parse(fetchMock.mock.calls[1][1].body);
+    expect(chatBody.message).toBe('what is my day');
+  });
+
+  it('degrades gracefully: with no MediaRecorder support the mic button is absent', () => {
+    vi.unstubAllGlobals();
+    Object.defineProperty(navigator, 'mediaDevices', {
+      configurable: true,
+      value: undefined,
+    });
+    render(<CueSurface isOpen onClose={vi.fn()} accessToken="tok" locale="en" />);
+    expect(screen.queryByLabelText('Hold to speak')).toBeNull();
+    // Text input remains the fallback.
+    expect(screen.getByRole('textbox')).toBeTruthy();
+  });
+});
