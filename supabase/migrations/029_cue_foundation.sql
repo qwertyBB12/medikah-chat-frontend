@@ -34,7 +34,9 @@
 -- Migration number rationale: 029 is next-sequential after 028_session_revocation.
 --   Phase 26's CERT-07 (029_credit_hours.sql) and INTEL-02 (030_cue_product_signals.sql)
 --   were planner-reserved, but Cue ships BEFORE the credit path per Hector's order
---   (Phases 22–25 precede Phase 26). Those Phase-26 files SHIFT to 030/031 when written.
+--   (Phases 22–25 precede Phase 26). Update (2026-06-23): CERT-07 shipped early as
+--   030_credit_hours.sql (applied); Phase 23 hands takes 031_cue_hands.sql (ships first),
+--   so INTEL-02 SHIFTS to 032_cue_product_signals.sql when written.
 --   See .planning/cue-port/MIGRATION-NUMBERING-DECISION.md for the full record.
 -- =====================================================
 
