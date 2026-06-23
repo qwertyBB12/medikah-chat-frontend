@@ -78,13 +78,14 @@ COMMENT ON COLUMN physician_workspace_accounts.cue_app_passwd_id IS
 --     {deleted: N, skipped: M} — for a successful clear_range
 --   No patient names, no message bodies, no health data.
 --
--- physicians.id is TEXT (see 027_identity_spine.sql), so FK is TEXT here too.
+-- physicians.id is UUID (002_physicians.sql; the 027 identity spine and the applied
+-- 029_cue_foundation.sql both type physician_id as UUID), so FK is UUID here too.
 
 CREATE TABLE IF NOT EXISTS cue_write_idempotency (
   -- FK to the canonical physician record (027 identity spine).
   -- ON DELETE CASCADE: if the physician is deleted, their dedup rows go too.
   -- These are transient operation receipts, not audit data — cascade is correct.
-  physician_id        TEXT        NOT NULL REFERENCES physicians(id) ON DELETE CASCADE,
+  physician_id        UUID        NOT NULL REFERENCES physicians(id) ON DELETE CASCADE,
 
   -- Client-supplied token (UUID recommended; validated at the route layer).
   -- Scoped per physician — not globally unique.
