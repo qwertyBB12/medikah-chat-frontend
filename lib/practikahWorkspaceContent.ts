@@ -205,6 +205,15 @@ export interface WorkspaceContent {
     surfaceClose: string;
     surfaceLoading: string;
     surfaceError: string;
+    /** Phase 23 Plan 23-04 (HANDS-09): Disconnect Cue section in SettingsTab. */
+    disconnectTitle: string;
+    disconnectSubtitle: string;
+    disconnectButton: string;
+    disconnectDone: string;
+    disconnectError: string;
+    /** Phase 23 Plan 23-04 (D-03): block/clear confirm-card copy. */
+    confirmBlockTitle: string;
+    confirmClearTitle: string;
   };
   /** Upgrade CTA banner + upgrade placeholder page strings (Phase 12-07 / D-20 / FREE-08)
    *
@@ -831,6 +840,14 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
       surfaceClose: 'Close',
       surfaceLoading: 'Cue is thinking…',
       surfaceError: 'Something went wrong. Please try again.',
+      disconnectTitle: 'Disconnect Cue',
+      disconnectSubtitle:
+        'Revoke Cue’s access to your calendar and inbox. This removes only Cue’s app password — your mailbox login is untouched. You can reconnect any time.',
+      disconnectButton: 'Disconnect Cue',
+      disconnectDone: 'Cue disconnected.',
+      disconnectError: 'Could not disconnect Cue. Please try again.',
+      confirmBlockTitle: 'Block this time?',
+      confirmClearTitle: 'Clear Cue blocks?',
     },
     wizard: {
       progress: 'Step {n} of 3',
@@ -1293,6 +1310,14 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
       surfaceClose: 'Cerrar',
       surfaceLoading: 'Cue está pensando…',
       surfaceError: 'Algo salió mal. Inténtalo de nuevo.',
+      disconnectTitle: 'Desconectar Cue',
+      disconnectSubtitle:
+        'Revoca el acceso de Cue a tu calendario y bandeja. Esto elimina solo la contraseña de aplicación de Cue — tu acceso al buzón no se toca. Puedes reconectar cuando quieras.',
+      disconnectButton: 'Desconectar Cue',
+      disconnectDone: 'Cue desconectado.',
+      disconnectError: 'No se pudo desconectar Cue. Inténtalo de nuevo.',
+      confirmBlockTitle: '¿Bloquear este horario?',
+      confirmClearTitle: '¿Liberar los bloques de Cue?',
     },
     wizard: {
       progress: 'Paso {n} de 3',

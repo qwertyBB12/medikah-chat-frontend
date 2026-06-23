@@ -16,8 +16,8 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
-import CueSurface from './CueSurface';
+import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
+import CueSurface, { splitCueStream } from './CueSurface';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -173,5 +173,160 @@ describe('CueSurface — PRES-03 / PRES-05 accessibility contract', () => {
     // At minimum a form submit control must exist
     const buttons = screen.getAllByRole('button');
     expect(buttons.length).toBeGreaterThan(0);
+  });
+});
+
+// ─── D-03 confirm-before-write (Plan 23-04) ───────────────────────────────────
+
+describe('CueSurface — D-03 sentinel split + confirm card', () => {
+  beforeEach(() => {
+    stubReducedMotion(false);
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
+
+  const SENTINEL = '\x1e';
+
+  it('splitCueStream: returns null pendingConfirm for a plain-text body', () => {
+    const { text, pendingConfirm } = splitCueStream('Just my schedule for Monday.');
+    expect(text).toBe('Just my schedule for Monday.');
+    expect(pendingConfirm).toBeNull();
+  });
+
+  it('splitCueStream: parses pending_confirm from the U+001E sentinel line', () => {
+    const body =
+      'Reasoning text' +
+      SENTINEL +
+      JSON.stringify({
+        pending_confirm: {
+          kind: 'confirm',
+          action: 'block',
+          title: 'Blocked by Cue',
+          summary: 'Block 14:00–16:00?',
+          start_iso: '2026-07-01T14:00:00+00:00',
+          end_iso: '2026-07-01T16:00:00+00:00',
+        },
+      }) +
+      '\n';
+    const { text, pendingConfirm } = splitCueStream(body);
+    expect(text).toBe('Reasoning text');
+    expect(pendingConfirm).not.toBeNull();
+    expect(pendingConfirm?.kind).toBe('confirm');
+    expect(pendingConfirm?.action).toBe('block');
+  });
+
+  it('splitCueStream: a prose body that merely says "confirm" yields no card', () => {
+    // The confirm card must be keyed off the sentinel payload, NEVER off prose
+    // (T-23-04-09). A model sentence containing the word "confirm" must NOT
+    // produce a pendingConfirm.
+    const { pendingConfirm } = splitCueStream(
+      'I will confirm your block once you approve it.'
+    );
+    expect(pendingConfirm).toBeNull();
+  });
+
+  it('renders a Confirm/Cancel card off the parsed sentinel and POSTs to confirm-write on Confirm', async () => {
+    const blockBody =
+      '' +
+      SENTINEL +
+      JSON.stringify({
+        pending_confirm: {
+          kind: 'confirm',
+          action: 'block',
+          title: 'Blocked by Cue',
+          summary: 'Block 14:00–16:00 on 2026-07-01?',
+          start_iso: '2026-07-01T14:00:00+00:00',
+          end_iso: '2026-07-01T16:00:00+00:00',
+        },
+      }) +
+      '\n';
+
+    const fetchMock = vi
+      .fn()
+      // 1st call: /cue/chat → returns the sentinel body
+      .mockResolvedValueOnce({
+        ok: true,
+        text: async () => blockBody,
+      })
+      // 2nd call: /api/cue/calendar/confirm-write → returns the write result
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ blocked: true, uid: 'cue-fixed-uid-1' }),
+        text: async () => '',
+      });
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal('crypto', { randomUUID: () => 'tok-fixed-uuid' });
+
+    render(
+      <CueSurface isOpen onClose={vi.fn()} accessToken="tok" locale="en" />
+    );
+
+    // Submit a message → triggers /cue/chat
+    const input = screen.getByRole('textbox');
+    fireEvent.change(input, { target: { value: 'block 2-4pm tomorrow' } });
+    const form = input.closest('form') as HTMLFormElement;
+    fireEvent.submit(form);
+
+    // The confirm card appears (off the parsed payload).
+    const confirmBtn = await screen.findByText('Confirm');
+    expect(confirmBtn).toBeTruthy();
+    expect(screen.getByText('Cancel')).toBeTruthy();
+
+    // Click Confirm → POSTs to /api/cue/calendar/confirm-write.
+    fireEvent.click(confirmBtn);
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+    const secondCall = fetchMock.mock.calls[1];
+    expect(secondCall[0]).toBe('/api/cue/calendar/confirm-write');
+    const sentBody = JSON.parse(secondCall[1].body);
+    expect(sentBody.action).toBe('block');
+    expect(sentBody.idempotency_token).toBe('tok-fixed-uuid');
+    expect(sentBody.start_iso).toBe('2026-07-01T14:00:00+00:00');
+  });
+
+  it('Cancel dismisses the card and writes nothing', async () => {
+    const clearBody =
+      '' +
+      SENTINEL +
+      JSON.stringify({
+        pending_confirm: {
+          kind: 'confirm',
+          action: 'clear',
+          title: '',
+          summary: 'Clear Cue blocks 09:00–17:00?',
+          start_iso: '2026-07-01T09:00:00+00:00',
+          end_iso: '2026-07-01T17:00:00+00:00',
+        },
+      }) +
+      '\n';
+
+    const fetchMock = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      text: async () => clearBody,
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal('crypto', { randomUUID: () => 'tok-clear-uuid' });
+
+    render(
+      <CueSurface isOpen onClose={vi.fn()} accessToken="tok" locale="en" />
+    );
+
+    const input = screen.getByRole('textbox');
+    fireEvent.change(input, { target: { value: 'clear my morning' } });
+    fireEvent.submit(input.closest('form') as HTMLFormElement);
+
+    const cancelBtn = await screen.findByText('Cancel');
+    fireEvent.click(cancelBtn);
+
+    // Card is gone and NO write call was made (only the initial /cue/chat).
+    await waitFor(() => {
+      expect(screen.queryByText('Cancel')).toBeNull();
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

@@ -81,6 +81,11 @@ export default function SettingsTab({ physicianId, lang, accessToken }: Settings
   // Upgrade CTA banner dismiss state
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
+  // Disconnect Cue (HANDS-09) state
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [disconnectDone, setDisconnectDone] = useState(false);
+  const [disconnectError, setDisconnectError] = useState(false);
+
   useEffect(() => {
     if (!physicianId || !accessToken) return;
     (async () => {
@@ -117,6 +122,36 @@ export default function SettingsTab({ physicianId, lang, accessToken }: Settings
       setImapError(true);
     } finally {
       setImapLoading(false);
+    }
+  };
+
+  /**
+   * Disconnect Cue (HANDS-09): a single DELETE that revokes the Cue app-passwd
+   * without touching the doctor's mailbox login. Forwards only the bearer token
+   * via the /api/cue/credential proxy (never the service-role key).
+   */
+  const handleDisconnectCue = async () => {
+    if (isDisconnecting) return;
+    setIsDisconnecting(true);
+    setDisconnectError(false);
+    setDisconnectDone(false);
+    try {
+      const res = await fetch('/api/cue/credential', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+      });
+      if (res.ok) {
+        setDisconnectDone(true);
+      } else {
+        setDisconnectError(true);
+      }
+    } catch {
+      setDisconnectError(true);
+    } finally {
+      setIsDisconnecting(false);
     }
   };
 
@@ -279,6 +314,34 @@ export default function SettingsTab({ physicianId, lang, accessToken }: Settings
         >
           {t.settings.tfaCard.openMailboxPrompt} →
         </a>
+      </div>
+
+      {/* Section 5: Disconnect Cue (HANDS-09) — revoke the Cue credential */}
+      <div className="bg-white rounded-md border border-warm-gray-800/[0.06] p-6 shadow-sm">
+        <h2 className="font-body font-semibold text-lg text-deep-charcoal mb-1">
+          {t.cue.disconnectTitle}
+        </h2>
+        <p className="font-body text-sm text-body-slate mb-4">
+          {t.cue.disconnectSubtitle}
+        </p>
+        <button
+          type="button"
+          onClick={handleDisconnectCue}
+          disabled={isDisconnecting}
+          className="inline-block bg-alert-garnet text-white px-4 py-2 rounded-md font-dm-sans text-sm font-medium hover:bg-alert-garnet/90 transition-colors disabled:opacity-60"
+        >
+          {t.cue.disconnectButton}
+        </button>
+        {disconnectDone && (
+          <p className="font-body text-sm text-confirm-green mt-3">
+            {t.cue.disconnectDone}
+          </p>
+        )}
+        {disconnectError && (
+          <p className="font-body text-sm text-alert-garnet mt-3">
+            {t.cue.disconnectError}
+          </p>
+        )}
       </div>
 
       {/* Engagement-gated upgrade CTA banner (D-20 / WSPC-07) — at bottom of Settings tab */}

@@ -18,7 +18,13 @@
  *   - Text submit POSTs to /cue/chat with the workspace bearer token
  *     (token in Authorization header only — T-23-03-02 mitigation)
  *   - Responses render as CueActionCard components, NEVER chat bubbles (D-04)
- *   - Confirm/Cancel in CueActionCard are INERT in this plan (wired in 23-04)
+ *   - Confirm-before-write (D-03 / Plan 23-04): the /cue/chat stream is split on
+ *     the U+001E (RS) sentinel — the text before it is the reasoning prose; the
+ *     JSON after it carries pending_confirm. When pending_confirm.kind==='confirm'
+ *     a Confirm/Cancel CueActionCard is rendered. The confirm card is keyed ONLY
+ *     off the parsed pending_confirm payload — NEVER off model prose (T-23-04-09).
+ *     Confirm → POST /api/cue/calendar/confirm-write (the sole mutation path; the
+ *     model loop never writes). Cancel → dismiss, no write.
  *   - Scrim: rgba(27,42,65,0.72) + backdrop-filter blur; solid-color fallback
  *     for Safari/SOGo compositor (T-23-03-03 mitigation)
  */
@@ -78,6 +84,51 @@ interface CueResponse {
   items?: string[];
 }
 
+/**
+ * The {kind:'confirm', ...} payload surfaced by run_cue_turn and emitted on the
+ * /cue/chat stream as the U+001E sentinel line (D-03 / Plan 23-04 canonical
+ * contract). The confirm card is keyed off THIS — never off model prose.
+ */
+export interface CuePendingConfirm {
+  kind: 'confirm';
+  action: 'block' | 'clear';
+  title: string;
+  summary: string;
+  start_iso: string;
+  end_iso: string;
+}
+
+/** U+001E (RECORD SEPARATOR) — the canonical pending_confirm sentinel byte. */
+const PENDING_CONFIRM_SENTINEL = '\x1e';
+
+/**
+ * Split a /cue/chat response body on the pending_confirm sentinel.
+ * Everything BEFORE the first sentinel is the reasoning text; the JSON line
+ * AFTER it (if present) carries { pending_confirm }. Returns null pending_confirm
+ * when no sentinel is present (Phase-22 plain-text path, byte-identical).
+ */
+export function splitCueStream(body: string): {
+  text: string;
+  pendingConfirm: CuePendingConfirm | null;
+} {
+  const idx = body.indexOf(PENDING_CONFIRM_SENTINEL);
+  if (idx === -1) {
+    return { text: body, pendingConfirm: null };
+  }
+  const text = body.slice(0, idx);
+  const rest = body.slice(idx + 1).trim();
+  try {
+    const parsed = JSON.parse(rest) as { pending_confirm?: CuePendingConfirm };
+    const pc = parsed?.pending_confirm ?? null;
+    return {
+      text,
+      pendingConfirm: pc && pc.kind === 'confirm' ? pc : null,
+    };
+  } catch {
+    return { text, pendingConfirm: null };
+  }
+}
+
 // ─── Labels ──────────────────────────────────────────────────────────────────
 
 const LABELS = {
@@ -87,6 +138,12 @@ const LABELS = {
     close: 'Close',
     loading: 'Cue is thinking…',
     error: 'Something went wrong. Please try again.',
+    confirmTitleBlock: 'Block this time?',
+    confirmTitleClear: 'Clear Cue blocks?',
+    resultTitle: 'Done',
+    blockedResult: (uid: string) => `Time blocked. (ref ${uid})`,
+    clearResult: (deleted: number, kept: number) =>
+      `${deleted} removed, ${kept} kept.`,
   },
   es: {
     placeholder: 'Pregúntale a Cue sobre tu calendario…',
@@ -94,6 +151,12 @@ const LABELS = {
     close: 'Cerrar',
     loading: 'Cue está pensando…',
     error: 'Algo salió mal. Inténtalo de nuevo.',
+    confirmTitleBlock: '¿Bloquear este horario?',
+    confirmTitleClear: '¿Liberar los bloques de Cue?',
+    resultTitle: 'Listo',
+    blockedResult: (uid: string) => `Horario bloqueado. (ref ${uid})`,
+    clearResult: (deleted: number, kept: number) =>
+      `${deleted} eliminados, ${kept} conservados.`,
   },
 } as const;
 
@@ -113,6 +176,13 @@ export default function CueSurface({
   const [isLoading, setIsLoading] = useState(false);
   const [response, setResponse] = useState<CueResponse | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  // D-03 confirm card state (Plan 23-04). pendingConfirm is keyed off the parsed
+  // sentinel payload only — never off model prose.
+  const [pendingConfirm, setPendingConfirm] = useState<CuePendingConfirm | null>(null);
+  const [isWriting, setIsWriting] = useState(false);
+  // A fresh idempotency token is generated per proposal and reused across retries
+  // of the SAME proposal, so a double-click cannot double-write (HANDS-04).
+  const idempotencyTokenRef = useRef<string | null>(null);
 
   const labels = LABELS[locale];
 
@@ -174,6 +244,8 @@ export default function CueSurface({
     setIsLoading(true);
     setResponse(null);
     setErrorMsg(null);
+    setPendingConfirm(null);
+    idempotencyTokenRef.current = null;
 
     try {
       const apiUrl = typeof window !== 'undefined'
@@ -194,18 +266,100 @@ export default function CueSurface({
         throw new Error(`HTTP ${res.status}`);
       }
 
-      // Read the streaming plain-text response (Phase 22 StreamingResponse shape)
-      const text = await res.text();
-      setResponse({
-        title: locale === 'es' ? 'Cue' : 'Cue',
-        summary: text,
-      });
+      // Read the response and split on the U+001E pending_confirm sentinel
+      // (D-03 / Plan 23-04). Text before the sentinel is reasoning prose; the
+      // JSON after it carries pending_confirm. The confirm card is keyed ONLY
+      // off the parsed payload — never off prose (T-23-04-09).
+      const body = await res.text();
+      const { text, pendingConfirm: pc } = splitCueStream(body);
+
+      if (pc && pc.kind === 'confirm') {
+        // Fresh idempotency token per proposal; reused across retries so a
+        // double-click cannot double-write (HANDS-04).
+        idempotencyTokenRef.current =
+          typeof crypto !== 'undefined' && 'randomUUID' in crypto
+            ? crypto.randomUUID()
+            : `cue-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        setPendingConfirm(pc);
+        // Show the reasoning text too, if any (no Confirm/Cancel on this card —
+        // the confirm affordance lives on the dedicated CuePendingConfirm card).
+        if (text.trim()) {
+          setResponse({ title: 'Cue', summary: text });
+        }
+      } else {
+        setResponse({ title: 'Cue', summary: text });
+      }
       setInputValue('');
     } catch {
       setErrorMsg(labels.error);
     } finally {
       setIsLoading(false);
     }
+  }
+
+  // ── Confirm → POST /api/cue/calendar/confirm-write (the sole mutation path) ──
+
+  async function handleConfirmWrite() {
+    if (!pendingConfirm || isWriting) return;
+    const token = idempotencyTokenRef.current;
+    if (!token) return;
+
+    setIsWriting(true);
+    setErrorMsg(null);
+    try {
+      const res = await fetch('/api/cue/calendar/confirm-write', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+        body: JSON.stringify({
+          action: pendingConfirm.action,
+          start_iso: pendingConfirm.start_iso,
+          end_iso: pendingConfirm.end_iso,
+          title: pendingConfirm.title || undefined,
+          idempotency_token: token, // reused across retries of THIS proposal
+          locale,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+
+      const result = (await res.json()) as {
+        blocked?: boolean;
+        uid?: string;
+        deleted?: number;
+        skipped?: number;
+      };
+
+      // Surface the write result as a follow-up card.
+      if (pendingConfirm.action === 'block') {
+        setResponse({
+          title: labels.resultTitle,
+          summary: labels.blockedResult(result.uid ?? ''),
+        });
+      } else {
+        setResponse({
+          title: labels.resultTitle,
+          summary: labels.clearResult(result.deleted ?? 0, result.skipped ?? 0),
+        });
+      }
+      // Dismiss the confirm card (the write is done).
+      setPendingConfirm(null);
+    } catch {
+      setErrorMsg(labels.error);
+    } finally {
+      setIsWriting(false);
+    }
+  }
+
+  // ── Cancel → dismiss the confirm card, NO write (D-03) ──────────────────────
+
+  function handleCancelWrite() {
+    setPendingConfirm(null);
+    idempotencyTokenRef.current = null;
   }
 
   // ── Render ───────────────────────────────────────────────────────────────
@@ -450,15 +604,32 @@ export default function CueSurface({
               {errorMsg && (
                 <p className="mk-cue-error">{errorMsg}</p>
               )}
+              {/* Reasoning / result card — never carries Confirm/Cancel. */}
               {response && !isLoading && (
                 <CueActionCard
                   title={response.title}
                   summary={response.summary}
                   items={response.items}
                   locale={locale}
-                  // Confirm/Cancel stay INERT in this plan (wired in 23-04)
                   onConfirm={undefined}
                   onCancel={undefined}
+                />
+              )}
+              {/* D-03 confirm card — rendered ONLY off the parsed pending_confirm
+                  payload (kind==='confirm'), never off model prose (T-23-04-09).
+                  Confirm POSTs to /api/cue/calendar/confirm-write; Cancel writes
+                  nothing. */}
+              {pendingConfirm && pendingConfirm.kind === 'confirm' && !isLoading && (
+                <CueActionCard
+                  title={
+                    pendingConfirm.action === 'block'
+                      ? labels.confirmTitleBlock
+                      : labels.confirmTitleClear
+                  }
+                  summary={pendingConfirm.summary}
+                  locale={locale}
+                  onConfirm={handleConfirmWrite}
+                  onCancel={handleCancelWrite}
                 />
               )}
             </div>
