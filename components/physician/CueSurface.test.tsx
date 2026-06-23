@@ -281,6 +281,11 @@ describe('CueSurface — D-03 sentinel split + confirm card', () => {
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledTimes(2);
     });
+    // The chat call routes through the same-origin BFF proxy (NextAuth-JWT auth),
+    // never straight to FastAPI with a Supabase token (would 401 in prod).
+    const firstCall = fetchMock.mock.calls[0];
+    expect(firstCall[0]).toBe('/api/cue/chat');
+
     const secondCall = fetchMock.mock.calls[1];
     expect(secondCall[0]).toBe('/api/cue/calendar/confirm-write');
     const sentBody = JSON.parse(secondCall[1].body);

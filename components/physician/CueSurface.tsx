@@ -248,17 +248,14 @@ export default function CueSurface({
     idempotencyTokenRef.current = null;
 
     try {
-      const apiUrl = typeof window !== 'undefined'
-        ? (process.env.NEXT_PUBLIC_API_URL || '')
-        : '';
-
-      const res = await fetch(`${apiUrl}/cue/chat`, {
+      // Route through the same-origin BFF proxy (/api/cue/chat): it reads the
+      // NextAuth session cookie and forwards the NextAuth HS256 JWT that the
+      // FastAPI cue gate (authenticated_physician) verifies. Posting straight to
+      // FastAPI with the Supabase token 401'd; the browser never touches FastAPI
+      // directly (D-04) — same BFF pattern as the confirm-write proxy.
+      const res = await fetch('/api/cue/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // Bearer token in Authorization header only — T-23-03-02 mitigation
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message, locale }),
       });
 
