@@ -46,12 +46,8 @@ const TOTP_DEFAULTS = {
   digits: 6,
 };
 
-// Clock-skew tolerance, in 30s TOTP steps. ±3 steps ≈ ±90s of device-clock skew
-// (the verify loop below sweeps d = -EPOCH_TOLERANCE..+EPOCH_TOLERANCE). Generous
-// for CDMX onsite enrollment 2026-06-22 (drifted doctor phones). NEVER set to 0
-// (Pitfall 5 / T-17-04-02 clock skew). NOTE: this only takes effect because the
-// verification sweeps the window manually — otplib's own option is a no-op (v13).
-const EPOCH_TOLERANCE = 3;
+// epochTolerance: ±2 steps = ±150s. NEVER tighten to 0 (Pitfall 5 / T-17-04-02 / clock skew).
+const EPOCH_TOLERANCE = 2;
 
 // Rate-limit window: 3 failures in 5 minutes → locked_out (Phase 16 pattern).
 const RATE_LIMIT_WINDOW_MS = 5 * 60_000;
