@@ -12,10 +12,10 @@
  *   - Hover/focus states add a soft teal glow — reads as interactive.
  *   - Tap target ≥ 44 × 44 px (accessibility requirement, PRES-05 partial).
  *
- * Phase 22 scope — LAUNCHER ONLY:
- *   The click handler is a no-op placeholder. The summoned centered voice-first
+ * Phase 22 scope — LAUNCHER ONLY. Phase 23 update:
+ *   The click handler now dispatches the medikah:cue:open CustomEvent that
+ *   PortalLayout's CueSurface listens for. The summoned centered voice-first
  *   surface (PRES-03 / PRES-04 / PRES-05 / PRES-06) ships in Phase 23.
- *   TODO (Phase 23): Replace `onOpen` stub with the surface summon logic.
  *
  * Usage:
  *   <CueLauncher tone="dark" lang="en" />
@@ -64,8 +64,10 @@ export default function CueLauncher({
     if (onOpen) {
       onOpen();
     }
-    // TODO (Phase 23): open the centered Cue stage surface here.
-    // The summoned surface (PRES-03..06) is not built yet.
+    // Phase 23 (PRES-03): dispatch the namespaced CustomEvent that CueSurface
+    // (mounted in PortalLayout) listens for. The SAME event name is used by the
+    // SOGo injection in Plan 23-06 — do NOT rename this string.
+    window.dispatchEvent(new CustomEvent('medikah:cue:open'));
   }
 
   return (

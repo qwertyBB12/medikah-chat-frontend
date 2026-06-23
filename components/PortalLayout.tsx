@@ -13,6 +13,9 @@ import { tokens } from '../lib/design-tokens';
 import ChatInput from './ChatInput';
 import Footer from './Footer';
 import PhysicianIconRail, { RailSurface } from './physician/PhysicianIconRail';
+import CueSurface from './physician/CueSurface';
+import { useCueSurface } from '../lib/cue/surface';
+import { useSupabaseToken } from '../lib/useSupabaseToken';
 
 export type PortalType = 'patient' | 'physician' | 'insurer' | 'employer';
 
@@ -109,6 +112,12 @@ export default function PortalLayout({
   const railOn = portal === 'physician' && showWorkspaceRail;
   const labels = portalLabels[portal];
   const colors = portalColors[portal];
+
+  // Phase 23 (PRES-03): CueSurface open state + workspace bearer token.
+  // The surface is mounted once here, at the layout level, and opens on the
+  // medikah:cue:open CustomEvent dispatched by CueLauncher or the SOGo injection.
+  const { isOpen: isCueOpen, close: closeCue } = useCueSurface();
+  const accessToken = useSupabaseToken();
 
   return (
     <div className="min-h-screen md:h-screen md:overflow-hidden flex flex-col md:flex-row bg-linen-light text-deep-charcoal">
@@ -292,6 +301,17 @@ export default function PortalLayout({
 
         <Footer />
       </div>
+
+      {/* Phase 23 (PRES-03): CueSurface — mounted once at layout level.
+          Opens on the medikah:cue:open CustomEvent (dispatched by CueLauncher)
+          or Cmd+K (handled by useCueSurface in lib/cue/surface.ts).
+          NOT mounted in DashboardContent — the layout owns the rail + the surface. */}
+      <CueSurface
+        isOpen={isCueOpen}
+        onClose={closeCue}
+        accessToken={accessToken}
+        locale={lang === 'es' ? 'es' : 'en'}
+      />
     </div>
   );
 }
