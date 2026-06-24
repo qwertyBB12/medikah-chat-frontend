@@ -21,6 +21,7 @@ describe('mintCueBackendToken', () => {
       userId: 'auth-user-1',
       role: 'physician',
       email: 'doc@medikah.health',
+      physicianId: 'phys-uuid-1',
     });
     // It is a 3-part JWS (NOT a 5-part JWE) with alg HS256.
     expect(jws.split('.')).toHaveLength(3);
@@ -33,6 +34,7 @@ describe('mintCueBackendToken', () => {
     expect(payload.userId).toBe('auth-user-1');
     expect(payload.role).toBe('physician');
     expect(payload.email).toBe('doc@medikah.health');
+    expect(payload.physician_id).toBe('phys-uuid-1'); // canonical key for the backend lookup
     expect(typeof payload.exp).toBe('number'); // short expiry present
   });
 

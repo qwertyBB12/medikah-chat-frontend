@@ -86,6 +86,7 @@ export default async function handler(
       userId: String(token.userId),
       role: String(token.role),
       email: session.user.email,
+      physicianId: token.physician_id ? String(token.physician_id) : undefined,
     });
   } catch {
     res.status(503).json({ error: 'Auth not configured' });

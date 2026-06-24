@@ -29,6 +29,13 @@ export interface CueBackendClaims {
   userId: string;
   role: string;
   email: string;
+  /**
+   * Canonical physician id (the `physician_id` session claim — same key Fix A
+   * uses). When present, the backend cue gate resolves the physician by
+   * `physicians.id == physician_id` instead of `auth_user_id == userId`
+   * (the latter can be unlinked → 403 "No physician profile linked").
+   */
+  physicianId?: string;
 }
 
 /**
@@ -45,6 +52,7 @@ export async function mintCueBackendToken(claims: CueBackendClaims): Promise<str
     userId: claims.userId,
     role: claims.role,
     email: claims.email,
+    ...(claims.physicianId ? { physician_id: claims.physicianId } : {}),
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
