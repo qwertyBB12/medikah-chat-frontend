@@ -8,6 +8,6 @@ describe('encodeWAV', () => {
     expect(blob.type).toBe('audio/wav');
     expect(blob.size).toBe(44 + samples.length * 2); // header + PCM16
     const header = new Uint8Array(await blob.slice(0, 4).arrayBuffer());
-    expect(String.fromCharCode(...header)).toBe('RIFF');
+    expect(Array.from(header).map((b) => String.fromCharCode(b)).join('')).toBe('RIFF');
   });
 });
