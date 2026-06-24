@@ -10,7 +10,7 @@
  * browser never touches FastAPI directly (Phase 11 D-04); this mirrors the
  * confirm-write / credential BFF proxies added in Plan 23-04.
  *
- * Body shape forwarded verbatim: { message, locale }. The upstream /cue/chat is a
+ * Body shape forwarded verbatim: { messages, locale, opening? }. The upstream /cue/chat is a
  * text/plain StreamingResponse whose body may carry the \x1e pending_confirm
  * sentinel (D-03). CueSurface buffers the body (res.text()) and splits on the
  * sentinel, so this proxy buffers too and returns the body byte-for-byte
