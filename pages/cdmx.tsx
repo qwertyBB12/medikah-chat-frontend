@@ -1,4 +1,4 @@
-import { FormEvent, Fragment, useRef, useState } from 'react';
+import { FormEvent, useRef, useState } from 'react';
 import type { GetServerSideProps } from 'next';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
@@ -6,7 +6,6 @@ import Nav from '../components/landing/Nav';
 import CurveDivider from '../components/landing/CurveDivider';
 import CdmxDoctorChat from '../components/CdmxDoctorChat';
 import LandingFooter from '../components/landing/LandingFooter';
-import { CDMX_SESSION_DAYS, CDMX_MAX_PREFERENCES, cdmxSessionLabel } from '../lib/cdmxSessions';
 
 type Lang = 'es' | 'en';
 
@@ -34,22 +33,21 @@ const COPY = {
     en: 'If artificial intelligence is already part of your questions about the future of your practice,',
   },
   thresholdClose2: {
-    es: 'esta sesión es para usted.',
-    en: 'this session is for you.',
+    es: 'estas sesiones son para usted.',
+    en: 'these sessions are for you.',
   },
   whenLabel: { es: 'Cuándo', en: 'When' },
-  whenVal:   { es: '22 – 30 de junio de 2026\nTres sesiones al día: 9:00, 13:00 y 17:00\nCiudad de México', en: 'June 22 – 30, 2026\nThree sessions daily: 9:00, 13:00 & 17:00\nMexico City' },
+  whenVal:   { es: 'Domingo 28 y lunes 29 de junio de 2026\nDos sesiones, de 9:00 a 11:00 h\nCiudad de México', en: 'Sunday June 28 & Monday June 29, 2026\nTwo sessions, 9:00–11:00\nMexico City' },
   whereLabel:{ es: 'Dónde', en: 'Where' },
   whereVal:  { es: 'Chez Vous #TimeCafé (Parque Hundido) · Av. Insurgentes Sur 1188, Del Valle, CDMX', en: 'Chez Vous #TimeCafé (Parque Hundido) · Insurgentes Sur 1188, Del Valle, Mexico City' },
   formTitle: { es: 'Confirme su interés', en: 'Register your interest' },
-  formSub:   { es: 'Déjenos sus datos y le enviaremos los detalles del lugar y el horario.', en: 'Leave your details and we will send you the venue and schedule.' },
+  formSub:   { es: 'Déjenos sus datos y le confirmamos los detalles por WhatsApp y correo.', en: 'Leave your details and we will confirm the details by WhatsApp and email.' },
   whatsappLabel: { es: 'WhatsApp (con código de país)', en: 'WhatsApp (with country code)' },
   whatsappPh:    { es: '+52 55 1234 5678', en: '+52 55 1234 5678' },
   passNote:      { es: 'Le enviaremos su pase por WhatsApp.', en: "We'll send your pass via WhatsApp." },
-  pickerLabel:   { es: 'Elija hasta tres sesiones en orden de preferencia', en: 'Choose up to three sessions in order of preference' },
-  pickerHint:    {
-    es: 'Según la disponibilidad, le asignaremos su lugar siguiendo su orden de selección y se lo confirmaremos por WhatsApp y correo.',
-    en: 'Based on availability, you will be placed in your order of preference and we will confirm your seat by WhatsApp and email.',
+  seriesNote:    {
+    es: 'Son dos sesiones que se complementan, el domingo 28 y el lunes 29 de junio, de 9:00 a 11:00. Lo ideal es acompañarnos en ambas.',
+    en: 'Two sessions that build on each other, Sunday the 28th and Monday the 29th, 9:00–11:00. Ideally, join us for both.',
   },
   cohortNote:    { es: 'Cada sesión reúne a un grupo selecto de médicos.', en: 'Each session brings together a select group of physicians.' },
   freeNote:      { es: 'La participación no tiene costo.', en: 'Participation is free of charge.' },
@@ -80,7 +78,7 @@ const COPY = {
     en: 'The first of its kind: an international certification in artificial intelligence for medicine, taught by physicians and experts in the field, and certified by New eXponential Thought Organization of the United States. These are stackable certifications that build toward a professional credential.',
   },
   p1t: { es: 'Qué puede hacer la IA hoy', en: 'What AI can do today' },
-  p1b: { es: 'Agenda, citas, correo y comunicación con pacientes. Con demostraciones en vivo.', en: 'Scheduling, appointments, email, and patient communication. With live demonstrations.' },
+  p1b: { es: 'Desde lo que hoy le consume horas hasta apoyo a su razonamiento clínico, con demostraciones en vivo.', en: 'From what eats your hours today to support for your clinical reasoning, with live demonstrations.' },
   p2t: { es: 'Cómo evaluar una herramienta', en: 'How to evaluate a tool' },
   p2b: { es: 'Criterio clínico y de privacidad para decidir qué adoptar en su consulta.', en: 'Clinical and privacy judgment to decide what to adopt in your practice.' },
   p3t: { es: 'Una conversación entre colegas', en: 'A conversation among colleagues' },
@@ -113,7 +111,7 @@ const RECEIVE: { title: { es: string; en: string }; body: { es: string; en: stri
   { title: { es: 'Su dominio y correo profesional', en: 'Your own professional domain and email' },
     body:  { es: 'Una identidad propia: suapellido.medikah.health, suya desde el primer día.', en: 'An identity of your own: yourname.medikah.health, yours from day one.' } },
   { title: { es: 'Herramientas de IA para su práctica', en: 'AI tools for your practice' },
-    body:  { es: 'Agenda, pacientes y expediente asistidos por inteligencia artificial. Sin costo.', en: 'Scheduling, patients, and records assisted by AI. At no cost.' } },
+    body:  { es: 'Inteligencia artificial que amplía su criterio clínico y le devuelve tiempo para lo que importa: sus pacientes. Sin costo.', en: 'AI that extends your clinical judgment and gives time back for what matters: your patients. At no cost.' } },
   { title: { es: 'El camino a la certificación', en: 'The path to certification' },
     body:  { es: 'Certificaciones acumulables hacia una credencial internacional en IA médica.', en: 'Stackable certifications toward an international credential in medical AI.' } },
   { title: { es: 'Una red de especialistas', en: 'A network of specialists' },
@@ -165,15 +163,8 @@ export default function CdmxLanding() {
   const [email, setEmail] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [profession, setProfession] = useState('');
-  const [sessions, setSessions] = useState<string[]>([]);
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'duplicate' | 'error'>('idle');
   const t = (k: keyof typeof COPY) => COPY[k][lang];
-  // Ordered selection: click order = preference order, capped at 3
-  const toggleSession = (id: string) => setSessions((cur) => {
-    if (cur.includes(id)) return cur.filter((x) => x !== id);
-    if (cur.length >= CDMX_MAX_PREFERENCES) return cur;
-    return [...cur, id];
-  });
 
   // funnel tracking: fire once when a visitor starts the form, and on completion
   const startedRef = useRef(false);
@@ -188,7 +179,7 @@ export default function CdmxLanding() {
       const res = await fetch('/api/cdmx-rsvp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), email: email.trim(), whatsapp: whatsapp.trim(), profession: profession.trim(), sessions, locale: lang }),
+        body: JSON.stringify({ name: name.trim(), email: email.trim(), whatsapp: whatsapp.trim(), profession: profession.trim(), sessions: [], locale: lang }),
       });
       if (res.status === 409) { setStatus('duplicate'); track('cdmx_rsvp_completed'); }
       else if (res.ok) { setStatus('success'); track('cdmx_rsvp_completed'); }
@@ -201,13 +192,13 @@ export default function CdmxLanding() {
   return (
     <>
       <Head>
-        <title>medikah health llega a CDMX · 22–30 junio 2026</title>
-        <meta name="description" content="Medikah Health llega a la Ciudad de México. Sesiones para médicos especialistas, del 22 al 30 de junio de 2026, tres por día. Primera certificación internacional en IA médica. Registro sin costo en medikah.health/cdmx." />
+        <title>medikah health · IA para médicos en CDMX · 28–29 junio 2026</title>
+        <meta name="description" content="Medikah Health en la Ciudad de México. Dos sesiones de trabajo para médicos especialistas: domingo 28 y lunes 29 de junio de 2026, de 9:00 a 11:00. Primera certificación internacional en IA médica. Registro sin costo en medikah.health/cdmx." />
         <link rel="canonical" href="https://medikah.health/cdmx" />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://medikah.health/cdmx" />
         <meta property="og:title" content="medikah health llega a CDMX" />
-        <meta property="og:description" content="Médicos especialistas · 22–30 de junio de 2026 · Ciudad de México. Primera certificación internacional en IA médica." />
+        <meta property="og:description" content="Médicos especialistas · domingo 28 y lunes 29 de junio de 2026 · Ciudad de México. Primera certificación internacional en IA médica." />
         <meta property="og:image" content="https://medikah.health/cdmx-og.png" />
         <meta property="og:image:secure_url" content="https://medikah.health/cdmx-og.png" />
         <meta property="og:image:type" content="image/png" />
@@ -219,7 +210,7 @@ export default function CdmxLanding() {
         <meta property="og:locale:alternate" content="en_US" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="medikah health llega a CDMX" />
-        <meta name="twitter:description" content="Médicos especialistas · 22–30 de junio de 2026 · Ciudad de México. Primera certificación internacional en IA médica." />
+        <meta name="twitter:description" content="Médicos especialistas · domingo 28 y lunes 29 de junio de 2026 · Ciudad de México. Primera certificación internacional en IA médica." />
         <meta name="twitter:image" content="https://medikah.health/cdmx-og.png" />
         <meta name="twitter:image:alt" content="Medikah Health llega a la Ciudad de México. La medicina ya cambió, ¿y tu consulta?" />
         <meta name="robots" content="index,follow" />
@@ -311,45 +302,8 @@ export default function CdmxLanding() {
                     <input type="text" value={profession} onChange={(e) => setProfession(e.target.value)} placeholder={t('professionPh')}
                       className="w-full rounded-sm border border-clinical-surface bg-clinical-surface px-4 py-3 font-body text-base text-inst-blue outline-none transition-colors placeholder:text-archival-grey/70 focus:border-clinical-teal focus:bg-white" />
                   </div>
-                  <div>
-                    <label className="mb-2 block font-body text-xs font-semibold uppercase tracking-wider text-archival-grey">{t('pickerLabel')}</label>
-                    {/* schedule grid: header row of time slots, one row per day */}
-                    <div className="grid grid-cols-[3.5rem_1fr_1fr_1fr] items-center gap-1.5">
-                      <span aria-hidden />
-                      {CDMX_SESSION_DAYS[0].slots.map((s) => (
-                        <span key={s.id} className="text-center font-body text-[0.65rem] font-semibold text-archival-grey">
-                          {s.label.replace(/\s/g, '')}
-                        </span>
-                      ))}
-                      {CDMX_SESSION_DAYS.map((d) => (
-                        <Fragment key={d.id}>
-                          <span className="font-body text-xs font-semibold text-inst-blue">
-                            {d.weekday[lang]} {d.dayNum}
-                          </span>
-                          {d.slots.map((s) => {
-                            const idx = sessions.indexOf(s.sessionId);
-                            const selected = idx !== -1;
-                            return (
-                              <button
-                                type="button"
-                                key={s.sessionId}
-                                onClick={() => toggleSession(s.sessionId)}
-                                aria-pressed={selected}
-                                aria-label={cdmxSessionLabel(s.sessionId, lang)}
-                                className={`flex h-9 items-center justify-center rounded-sm border font-body text-sm font-semibold transition-colors ${
-                                  selected
-                                    ? 'border-clinical-teal bg-clinical-teal text-white'
-                                    : 'border-clinical-surface bg-clinical-surface text-archival-grey hover:border-clinical-teal/50'
-                                }`}
-                              >
-                                {selected ? idx + 1 : ''}
-                              </button>
-                            );
-                          })}
-                        </Fragment>
-                      ))}
-                    </div>
-                    <p className="mt-2.5 font-body text-xs leading-relaxed text-archival-grey">{t('pickerHint')}</p>
+                  <div className="rounded-sm border border-clinical-teal/30 bg-clinical-teal/5 px-4 py-3.5">
+                    <p className="font-body text-sm leading-relaxed text-inst-blue">{t('seriesNote')}</p>
                     <p className="mt-1.5 font-body text-xs font-semibold text-inst-blue/75">{t('cohortNote')}</p>
                   </div>
                   <p className="font-body text-xs leading-relaxed text-clinical-teal">{t('pointsNote')}</p>

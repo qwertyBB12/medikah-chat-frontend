@@ -129,7 +129,7 @@ https://medikah.health
             </p>`
       : `
             <p style="font-family:${tokens.fonts.body};color:${tokens.colors.bodySlate};font-size:16px;line-height:1.6;margin:0 0 24px 0;">
-              Te confirmaremos tu sesión por WhatsApp y correo conforme se acerque la fecha.
+              Te enviaremos un recordatorio por WhatsApp y correo conforme se acerque la fecha.
             </p>`;
     return {
       subject: 'Te esperamos en CDMX — Medikah Health',
@@ -137,7 +137,7 @@ https://medikah.health
 <html lang="es">
 ${emailHead()}
 <body style="margin:0;padding:0;background-color:${tokens.pageBg};font-family:${tokens.fonts.body};color:${tokens.colors.bodySlate};">
-${emailHeader({ variant: 'navy', locale: 'es', wordmark: 'medikah', eyebrow: 'Ciudad de M&eacute;xico · 22–30 Junio 2026' })}
+${emailHeader({ variant: 'navy', locale: 'es', wordmark: 'medikah', eyebrow: 'Ciudad de M&eacute;xico · 28–29 Junio 2026' })}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${tokens.pageBg};padding:40px 20px;">
   <tr>
     <td align="center">
@@ -149,8 +149,8 @@ ${emailHeader({ variant: 'navy', locale: 'es', wordmark: 'medikah', eyebrow: 'Ci
               Gracias por tu interés. Medikah Health llega a la Ciudad de México con sesiones de capacitación en inteligencia artificial para médicos. La participación no tiene costo.
             </p>
             <p style="font-family:${tokens.fonts.body};color:${tokens.colors.bodySlate};font-size:16px;line-height:1.6;margin:0 0 24px 0;">
-              <strong style="color:${tokens.colors.instBlue};">Cuándo:</strong> del 22 al 30 de junio de 2026 — tres sesiones por día (9:00, 13:00 y 17:00).<br/>
-              <strong style="color:${tokens.colors.instBlue};">Dónde:</strong> Ciudad de México — sede por confirmar.
+              <strong style="color:${tokens.colors.instBlue};">Cuándo:</strong> domingo 28 y lunes 29 de junio de 2026, de 9:00 a 11:00 (ambas sesiones).<br/>
+              <strong style="color:${tokens.colors.instBlue};">Dónde:</strong> Chez Vous #TimeCaf&eacute; (Parque Hundido), Av. Insurgentes Sur 1188, Del Valle, CDMX.
             </p>${sessionsHtml}
             <p style="font-family:${tokens.fonts.body};color:${tokens.colors.bodySlate};font-size:16px;line-height:1.6;margin:0;">
               ¿Preguntas? Escríbenos a <a href="mailto:hello@medikah.health" style="color:${tokens.colors.clinicalTeal};text-decoration:none;font-weight:600;">hello@medikah.health</a>.
@@ -168,14 +168,14 @@ ${emailFooter({ locale: 'es' })}
 
 Gracias por tu interés. Medikah Health llega a la Ciudad de México con sesiones de capacitación en inteligencia artificial para médicos. La participación no tiene costo.
 
-Cuándo: del 22 al 30 de junio de 2026 — tres sesiones por día (9:00, 13:00 y 17:00).
-Dónde: Ciudad de México — sede por confirmar.
+Cuándo: domingo 28 y lunes 29 de junio de 2026, de 9:00 a 11:00 (ambas sesiones).
+Dónde: Chez Vous #TimeCafé (Parque Hundido), Av. Insurgentes Sur 1188, Del Valle, CDMX.
 ${sessionLines.length ? `
 Tus sesiones, en orden de preferencia:
 ${sessionLines.join('\n')}
 
 Según la disponibilidad, te asignaremos tu lugar siguiendo tu orden de selección y te lo confirmaremos por WhatsApp y correo.` : `
-Te confirmaremos tu sesión por WhatsApp y correo conforme se acerque la fecha.`}
+Te enviaremos un recordatorio por WhatsApp y correo conforme se acerque la fecha.`}
 
 ¿Preguntas? Escríbenos a hello@medikah.health
 
