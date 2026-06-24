@@ -130,11 +130,15 @@ const LABELS = {
   en: { close: 'Close', listening: 'Listening', thinking: 'Cue is thinking…',
         placeholder: 'or type a command…', error: 'Something went wrong. Please try again.',
         confirmBlock: 'Block this time?', confirmClear: 'Clear Cue blocks?',
-        done: 'Done', esc: 'esc to pause', context: 'Workspace' },
+        done: 'Done', esc: 'esc to pause', context: 'Workspace',
+        blockedResult: (uid: string) => `Time blocked. (ref ${uid})`,
+        clearResult: (deleted: number, kept: number) => `${deleted} removed, ${kept} kept.` },
   es: { close: 'Cerrar', listening: 'Escuchando', thinking: 'Cue está pensando…',
         placeholder: 'o escribe un comando…', error: 'Algo salió mal. Inténtalo de nuevo.',
         confirmBlock: '¿Bloquear este horario?', confirmClear: '¿Liberar los bloques de Cue?',
-        done: 'Listo', esc: 'esc para pausar', context: 'Espacio' },
+        done: 'Listo', esc: 'esc para pausar', context: 'Espacio',
+        blockedResult: (uid: string) => `Horario bloqueado. (ref ${uid})`,
+        clearResult: (deleted: number, kept: number) => `${deleted} eliminados, ${kept} conservados.` },
 } as const;
 
 interface CueResponse { title: string; summary: string; }
@@ -283,8 +287,12 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const r = (await res.json()) as { uid?: string; deleted?: number; skipped?: number };
-      setResponse({ title: labels.done, summary: pendingConfirm.action === 'block'
-        ? `${labels.done} (${r.uid ?? ''})` : `${r.deleted ?? 0} / ${r.skipped ?? 0}` });
+      setResponse({
+        title: labels.done,
+        summary: pendingConfirm.action === 'block'
+          ? labels.blockedResult(r.uid ?? '')
+          : labels.clearResult(r.deleted ?? 0, r.skipped ?? 0),
+      });
       setPendingConfirm(null);
     } catch { setErrorMsg(labels.error); }
     finally { setIsWriting(false); }
