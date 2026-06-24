@@ -5,7 +5,7 @@ vi.mock('./vadListener', () => ({
   isContinuousVADSupported: () => true,
   diagnoseVADSupport: () => ({ ok: true, reasons: [] }),
   VADListener: class {
-    constructor(opts: any) { vadHandlers.onSpeechStart = opts.onSpeechStart; vadHandlers.onUtterance = opts.onUtterance; }
+    constructor(opts: { onSpeechStart?: () => void; onUtterance?: (t: string) => void }) { vadHandlers.onSpeechStart = opts.onSpeechStart; vadHandlers.onUtterance = opts.onUtterance; }
     async start() {}
     pause() {}
     destroy() {}

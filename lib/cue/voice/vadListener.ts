@@ -45,16 +45,16 @@ export function isContinuousVADSupported(): boolean {
 export function diagnoseVADSupport(): { ok: boolean; reasons: string[] } {
   const reasons: string[] = []
   if (typeof window === 'undefined') { reasons.push('no window'); return { ok: false, reasons } }
-  const hasWasm = typeof (window as any).WebAssembly !== 'undefined'
+  const hasWasm = typeof WebAssembly !== 'undefined'
   if (!hasWasm) reasons.push('no WebAssembly')
-  const ACtor = window.AudioContext || (window as any).webkitAudioContext
+  const ACtor = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
   if (!ACtor) reasons.push('no AudioContext')
   // AudioWorklet specifically — required by VAD pipeline. Different from plain AudioContext.
   let hasWorklet = false
   try {
     if (ACtor) {
       const probe = new ACtor()
-      hasWorklet = !!(probe as any).audioWorklet
+      hasWorklet = !!probe.audioWorklet
       probe.close?.()
     }
   } catch { /* probe failed */ }
@@ -78,8 +78,8 @@ export class VADListener {
 
   async start(): Promise<void> {
     if (this.running) return
-    const vad = await import('@ricky0123/vad-web')
-    const { MicVAD } = vad as any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- @ricky0123/vad-web has no reliable .d.ts; MicVAD.new() is a static async factory with no exported type
+    const { MicVAD } = await import('@ricky0123/vad-web') as any
 
     this.mic = await MicVAD.new({
       // Asset routing — use locally-hosted vendor files.
