@@ -20,6 +20,7 @@ import { getServerSession } from 'next-auth';
 import { getToken } from 'next-auth/jwt';
 import { authOptions } from '../auth/[...nextauth]';
 import { applyCueBffCors } from '../../../lib/cue/bffCors';
+import { mintCueBackendToken } from '../../../lib/cue/backendToken';
 
 const FASTAPI_URL =
   process.env.PRACTIKAH_API_URL ||
@@ -42,13 +43,26 @@ export default async function handler(
     return;
   }
 
-  const tokenRaw = await getToken({
+  // Mint a fresh HS256 JWS the FastAPI cue gate verifies (utils/auth.py) — the
+  // raw NextAuth token is an encrypted JWE that PyJWT's HS256 decode rejects.
+  // See lib/cue/backendToken.ts.
+  const token = await getToken({
     req,
     secret: process.env.NEXTAUTH_SECRET,
-    raw: true,
   });
-  if (!tokenRaw) {
+  if (!token?.userId || !token?.role) {
     res.status(401).json({ error: 'Session token unavailable' });
+    return;
+  }
+  let backendToken: string;
+  try {
+    backendToken = await mintCueBackendToken({
+      userId: String(token.userId),
+      role: String(token.role),
+      email: session.user.email,
+    });
+  } catch {
+    res.status(503).json({ error: 'Auth not configured' });
     return;
   }
 
@@ -56,7 +70,7 @@ export default async function handler(
     const upstream = await fetch(`${FASTAPI_URL}/cue/tts`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${tokenRaw}`,
+        Authorization: `Bearer ${backendToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(req.body ?? {}),
