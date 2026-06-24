@@ -12,30 +12,45 @@ vi.mock('./vadListener', () => ({
   },
 }));
 
-let playMode: 'resolve' | 'pending' = 'resolve';
-let releasePlay: ((v: 'done' | 'interrupted') => void) | null = null;
+// ── TTS player mock — Phase 23 streaming API (beginStreaming/pushText/endPushing)
+let streamMode: 'resolve' | 'pending' = 'resolve';
+let releaseStream: ((v: 'done' | 'interrupted') => void) | null = null;
 const ttsStop = vi.fn();
+const pushTextSpy = vi.fn();
+const endPushingSpy = vi.fn();
+const playSpy = vi.fn();
 vi.mock('./streamingTts', () => ({
   StreamingTTSPlayer: class {
     unlock() {}
-    stop() { ttsStop(); releasePlay?.('interrupted'); releasePlay = null; }
-    play() {
-      if (playMode === 'resolve') return Promise.resolve('done' as const);
-      return new Promise<'done' | 'interrupted'>((res) => { releasePlay = res; });
+    stop() { ttsStop(); releaseStream?.('interrupted'); releaseStream = null; }
+    beginStreaming() {
+      if (streamMode === 'resolve') return Promise.resolve('done' as const);
+      return new Promise<'done' | 'interrupted'>((res) => { releaseStream = res; });
     }
+    pushText(c: string) { pushTextSpy(c); }
+    endPushing() { endPushingSpy(); }
+    play(text: string) { playSpy(text); return Promise.resolve('done' as const); }
   },
 }));
 
 import { ContinuousFlowController } from './continuousFlow';
 import type { OrbState } from '../stateMachine';
 
+const ok = (text: string) => async (_t: string, opts?: { onTextChunk?: (c: string) => void }) => {
+  opts?.onTextChunk?.(text);
+  return { text, pendingConfirm: null };
+};
+
 describe('ContinuousFlowController', () => {
-  beforeEach(() => { ttsStop.mockClear(); playMode = 'resolve'; releasePlay = null; });
+  beforeEach(() => {
+    ttsStop.mockClear(); pushTextSpy.mockClear(); endPushingSpy.mockClear(); playSpy.mockClear();
+    streamMode = 'resolve'; releaseStream = null;
+  });
 
   it('runs a turn: listening → thinking → speaking', async () => {
     const states: OrbState[] = [];
     const ctrl = new ContinuousFlowController({
-      respond: async () => 'Bien.',
+      respond: ok('Bien.'),
       onStateChange: (s) => states.push(s as OrbState),
     });
     await ctrl.start();
@@ -45,11 +60,30 @@ describe('ContinuousFlowController', () => {
     expect(states).toContain('speaking');
   });
 
-  it('barge-in while speaking stops TTS', async () => {
-    playMode = 'pending';
+  it('flips to speaking on the FIRST streamed token, then feeds TTS incrementally', async () => {
     const states: OrbState[] = [];
     const ctrl = new ContinuousFlowController({
-      respond: async () => 'Una respuesta larga.',
+      // emit two chunks; the FIRST should already move us to speaking
+      respond: async (_t, opts) => {
+        opts?.onTextChunk?.('Hola. ');
+        expect(states).toContain('speaking'); // speaking happened on chunk 1, before chunk 2
+        opts?.onTextChunk?.('¿En qué te ayudo?');
+        return { text: 'Hola. ¿En qué te ayudo?', pendingConfirm: null };
+      },
+      onStateChange: (s) => states.push(s as OrbState),
+    });
+    await ctrl.start();
+    await vadHandlers.onUtterance!('hola');
+    expect(pushTextSpy).toHaveBeenCalledWith('Hola. ');
+    expect(pushTextSpy).toHaveBeenCalledWith('¿En qué te ayudo?');
+    expect(endPushingSpy).toHaveBeenCalled();
+  });
+
+  it('barge-in while speaking stops TTS', async () => {
+    streamMode = 'pending';
+    const states: OrbState[] = [];
+    const ctrl = new ContinuousFlowController({
+      respond: ok('Una respuesta larga.'),
       onStateChange: (s) => states.push(s as OrbState),
     });
     await ctrl.start();
@@ -58,5 +92,26 @@ describe('ContinuousFlowController', () => {
     vadHandlers.onSpeechStart!(); // user interrupts mid-speech
     expect(ttsStop).toHaveBeenCalled();
     await turn;
+  });
+
+  it('D-03: speaks a CONTROLLED templated line on a write proposal, not model prose', async () => {
+    const ctrl = new ContinuousFlowController({
+      locale: 'en',
+      respond: async (_t, opts) => {
+        opts?.onTextChunk?.("I'll prepare that block."); // model preamble (must be cut)
+        return {
+          text: "I'll prepare that block.",
+          pendingConfirm: { action: 'block', summary: '2–3 PM', start_iso: 'a', end_iso: 'b' },
+        };
+      },
+    });
+    await ctrl.start();
+    await vadHandlers.onUtterance!('block 2 to 3');
+    // preamble was cut (stop) and the templated interrogative line was spoken
+    expect(ttsStop).toHaveBeenCalled();
+    expect(playSpy).toHaveBeenCalledTimes(1);
+    const spoken = playSpy.mock.calls[0][0] as string;
+    expect(spoken).toBe('Block 2–3 PM? Confirm below.');
+    expect(spoken).not.toContain('prepare'); // never the model's prose
   });
 });
