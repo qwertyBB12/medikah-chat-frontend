@@ -27,6 +27,7 @@ import { getServerSession } from 'next-auth';
 import { getToken } from 'next-auth/jwt';
 import { authOptions } from '../auth/[...nextauth]';
 import { applyCueBffCors } from '../../../lib/cue/bffCors';
+import { mintCueBackendToken } from '../../../lib/cue/backendToken';
 
 const FASTAPI_URL =
   process.env.PRACTIKAH_API_URL ||
@@ -54,14 +55,27 @@ export default async function handler(
     return;
   }
 
-  // 3. Extract the raw NextAuth HS256 JWT for FastAPI verification (D-04)
-  const tokenRaw = await getToken({
+  // 3. Read the DECRYPTED session claims, then mint a fresh HS256 JWS the
+  //    FastAPI cue gate verifies (utils/auth.py). The raw NextAuth token is an
+  //    encrypted JWE — PyJWT's HS256 decode rejects it ("Invalid token"), which
+  //    is why forwarding `raw: true` 401'd in prod. See lib/cue/backendToken.ts.
+  const token = await getToken({
     req,
     secret: process.env.NEXTAUTH_SECRET,
-    raw: true,
   });
-  if (!tokenRaw) {
+  if (!token?.userId || !token?.role) {
     res.status(401).json({ error: 'Session token unavailable' });
+    return;
+  }
+  let backendToken: string;
+  try {
+    backendToken = await mintCueBackendToken({
+      userId: String(token.userId),
+      role: String(token.role),
+      email: session.user.email,
+    });
+  } catch {
+    res.status(503).json({ error: 'Auth not configured' });
     return;
   }
 
@@ -70,7 +84,7 @@ export default async function handler(
     const upstream = await fetch(`${FASTAPI_URL}/cue/chat`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${tokenRaw}`,
+        Authorization: `Bearer ${backendToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(req.body ?? {}),
