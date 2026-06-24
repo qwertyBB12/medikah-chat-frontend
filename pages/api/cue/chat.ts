@@ -12,11 +12,11 @@
  *
  * Body shape forwarded verbatim: { messages, locale, opening? }. The upstream /cue/chat is a
  * text/plain StreamingResponse whose body may carry the \x1e pending_confirm
- * sentinel (D-03). CueSurface buffers the body (res.text()) and splits on the
- * sentinel, so this proxy buffers too and returns the body byte-for-byte
- * (sentinel preserved) — no streaming machinery needed for the current UX. If a
- * later plan makes the surface stream-read token-by-token, upgrade this to pipe
- * upstream.body instead of buffering.
+ * sentinel (D-03). Phase 23 streams the reasoning text token-by-token (TTFT) so
+ * Cue starts speaking sentence 1 early — this proxy therefore PIPES upstream.body
+ * straight to the client (no res.text() buffer) so the deltas reach the surface
+ * as they arrive. The sentinel survives byte-for-byte (text/plain passthrough).
+ * Mirrors the proven SSE-pipe in pages/api/practikah/upgrade/status.ts.
  *
  * SECURITY: forwards ONLY the physician bearer token; it never references the
  * Supabase service-role key.
@@ -28,6 +28,10 @@ import { getToken } from 'next-auth/jwt';
 import { authOptions } from '../auth/[...nextauth]';
 import { applyCueBffCors } from '../../../lib/cue/bffCors';
 import { mintCueBackendToken } from '../../../lib/cue/backendToken';
+
+// Disable Next.js's 4MB response cap — the streamed reply is chunked and
+// piped, not buffered (mirrors practikah/upgrade/status.ts).
+export const config = { api: { responseLimit: false } };
 
 const FASTAPI_URL =
   process.env.PRACTIKAH_API_URL ||
@@ -91,14 +95,57 @@ export default async function handler(
       body: JSON.stringify(req.body ?? {}),
     });
 
-    // Upstream is text/plain (with an optional \x1e pending_confirm sentinel).
-    // CueSurface buffers + splits, so we buffer + return the body verbatim.
-    const text = await upstream.text();
-    res.status(upstream.status);
-    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    res.send(text);
+    // Non-2xx (or no streamable body): forward the status + buffered body so the
+    // surface still sees the error text. No partial 200 is ever emitted.
+    if (!upstream.ok || !upstream.body) {
+      const text = await upstream.text();
+      res.status(upstream.status);
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      res.send(text);
+      return;
+    }
+
+    // Pipe the text/plain stream straight through (Phase-23 TTFT). The \x1e
+    // pending_confirm sentinel survives byte-for-byte. no-transform +
+    // X-Accel-Buffering:no stop Netlify edge / nginx from re-buffering the chunks.
+    res.writeHead(upstream.status, {
+      'Content-Type':
+        upstream.headers.get('content-type') || 'text/plain; charset=utf-8',
+      'Cache-Control': 'no-cache, no-transform',
+      'X-Accel-Buffering': 'no',
+    });
+
+    const reader = upstream.body.getReader();
+    // If the client disconnects mid-stream, abort the upstream read.
+    req.on('close', () => {
+      try {
+        reader.cancel();
+      } catch {
+        /* best-effort cancel */
+      }
+    });
+
+    try {
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        res.write(Buffer.from(value));
+        const flush = (res as unknown as { flush?: () => void }).flush;
+        if (typeof flush === 'function') flush.call(res);
+      }
+    } catch (streamErr) {
+      console.error('Exception streaming cue/chat upstream body:', streamErr);
+    } finally {
+      res.end();
+    }
   } catch (err) {
     console.error('Exception in cue/chat BFF:', err);
-    res.status(502).json({ error: 'Upstream API unreachable' });
+    // Headers may already be sent if the failure happened mid-stream.
+    if (!res.headersSent) {
+      res.status(502).json({ error: 'Upstream API unreachable' });
+    } else {
+      res.end();
+    }
   }
 }

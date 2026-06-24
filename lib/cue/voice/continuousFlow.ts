@@ -33,6 +33,7 @@
 
 import { VADListener, isContinuousVADSupported, diagnoseVADSupport } from './vadListener'
 import { StreamingTTSPlayer } from './streamingTts'
+import { buildProposalLine, type CueProposal } from './proposalLine'
 import {
   VoiceStateMachine,
   type VoiceState,
@@ -47,13 +48,20 @@ import {
   type VadOverrides,
 } from '../sobremesaConfig'
 
+/** What respond() resolves to: the streamed reasoning text plus an optional
+ *  write proposal (D-03). Text chunks are delivered live via opts.onTextChunk. */
+export interface CueRespondResult {
+  text: string
+  pendingConfirm: CueProposal | null
+}
+
 export interface ContinuousFlowOptions {
   locale?: 'en' | 'es'
   config?: SobremesaVADConfig
   respond: (
     userText: string,
-    opts?: { signal?: AbortSignal },
-  ) => Promise<string>
+    opts?: { signal?: AbortSignal; onTextChunk?: (chunk: string) => void },
+  ) => Promise<CueRespondResult>
   onStateChange?: (state: VoiceState) => void
   /** New canonical subscription — receives full OrbEventPayload for each transition. */
   onOrbEvent?: (payload: OrbEventPayload) => void
@@ -191,8 +199,13 @@ export class ContinuousFlowController {
   }
 
   /**
-   * User finished speaking.  We have transcribed text; now ask the caller
-   * to produce Cue's reply, then play it.
+   * User finished speaking.  We have transcribed text; ask the caller to produce
+   * Cue's reply and STREAM it into the TTS player as it arrives (Phase-23 TTFT):
+   *   • flip the orb thinking → speaking on the FIRST text token (not after the
+   *     whole reply assembles), so the wait feels instant
+   *   • speak sentence 1 while later sentences are still generating
+   *   • on a write proposal (D-03), cut any streamed preamble and speak a
+   *     CONTROLLED templated line instead (never the model's prose)
    */
   private async handleUtterance(text: string): Promise<void> {
     if (!text) return
@@ -201,38 +214,82 @@ export class ContinuousFlowController {
 
     const ac = new AbortController()
     this.activeAbort = ac
-    let reply = ''
+
+    // Open an incremental TTS session up front; its promise resolves when the
+    // streamed playback finishes ('done') or is cut ('interrupted').
+    const ttsDone = this.tts.beginStreaming()
+    let startedSpeaking = false
+
+    let result: CueRespondResult
     try {
-      reply = await this.opts.respond(text, { signal: ac.signal })
+      result = await this.opts.respond(text, {
+        signal: ac.signal,
+        onTextChunk: (chunk) => {
+          if (this.destroyed) return
+          // Only feed/transition while we still own this turn (a barge-in moves
+          // state out of thinking/speaking).
+          const s = this.state.state
+          if (s !== 'thinking' && s !== 'speaking') return
+          if (!startedSpeaking) {
+            startedSpeaking = true
+            this.state.send('response-started', { source: 'llm' }) // thinking → speaking
+          }
+          this.tts.pushText(chunk)
+        },
+      })
     } catch (err) {
+      this.tts.stop() // tear down the streaming session
       const name = (err as { name?: string } | null)?.name
       if (name === 'AbortError') {
-        // Expected cancellation from a barge-in during `thinking`. The
-        // barge-in handler already walked state to `intercepting → listening`,
-        // so we simply bail without emitting onError.
+        // Expected cancellation from a barge-in during `thinking`. The barge-in
+        // handler already walked state to `intercepting → listening`.
         return
       }
       this.opts.onError?.(err)
-      // Return to listening on error; don't strand the state in `thinking`.
       this.state.send('error', { source: 'llm' })
       this.state.send('start', { source: 'internal' })
       return
     } finally {
       if (this.activeAbort === ac) this.activeAbort = null
     }
-    if (this.destroyed) return
+    if (this.destroyed) { this.tts.stop(); return }
 
-    // If a barge-in already fired, state is no longer `thinking` — don't
-    // override it by trying to play a now-stale reply.
-    if (this.state.state !== 'thinking') return
+    // A barge-in already moved us out of thinking/speaking — don't play a now
+    // stale reply. (Could be `intercepting`/`listening`/`idle`.)
+    if (this.state.state !== 'thinking' && this.state.state !== 'speaking') {
+      this.tts.stop()
+      return
+    }
 
-    if (!reply) {
+    // D-03: a calendar write was proposed. Cut any streamed preamble audio and
+    // speak a CONTROLLED, interrogative templated line built from the structured
+    // payload (never model prose, never past-tense). The write still requires
+    // the explicit Confirm tap — this line only asks.
+    if (result.pendingConfirm) {
+      this.tts.stop()
+      await ttsDone // let the cut streaming session fully unwind before re-playing
+      if (this.destroyed) return
+      if (this.state.state === 'thinking') {
+        this.state.send('response-started', { source: 'llm' }) // ensure speaking
+      }
+      const line = buildProposalLine(result.pendingConfirm, this.opts.locale ?? 'en')
+      await this.tts.play(line)
+      if (this.destroyed) return
+      this.state.send('response-ended', { source: 'tts' })
+      return
+    }
+
+    // No speakable text at all (empty reply, no chunks streamed) — close out.
+    if (!startedSpeaking && !result.text.trim()) {
+      this.tts.stop()
       this.state.send('response-ended', { source: 'llm' })
       return
     }
 
-    this.state.send('response-started', { source: 'llm' })
-    const outcome = await this.tts.play(reply)
+    // Normal path: no more text is coming — flush the trailing partial and wait
+    // for the streamed playback to drain.
+    this.tts.endPushing()
+    const outcome = await ttsDone
     if (this.destroyed) return
     if (outcome === 'done') {
       this.state.send('response-ended', { source: 'tts' })

@@ -51,50 +51,20 @@ import {
   ContinuousFlowController,
   diagnoseVADSupport,
 } from '../../lib/cue/voice/continuousFlow';
+import {
+  splitCueStream,
+  readCueStream,
+  PENDING_CONFIRM_SENTINEL,
+  type CuePendingConfirm,
+} from '../../lib/cue/cueStream';
 
 const CueOrb3D = dynamic(() => import('./CueOrb3D'), { ssr: false });
 
-// ── exports kept for tests + custom-sogo.js parity ──────────────────────────
-
-/**
- * The {kind:'confirm', ...} payload surfaced by run_cue_turn and emitted on the
- * /api/cue/chat stream as the U+001E sentinel line (D-03 / Plan 23-04 canonical
- * contract). The confirm card is keyed off THIS — never off model prose.
- */
-export interface CuePendingConfirm {
-  kind: 'confirm';
-  action: 'block' | 'clear';
-  title: string;
-  summary: string;
-  start_iso: string;
-  end_iso: string;
-}
-
-/** U+001E (RECORD SEPARATOR) — the canonical pending_confirm sentinel byte. */
-export const PENDING_CONFIRM_SENTINEL = '\x1e';
-
-/**
- * Split a /api/cue/chat response body on the pending_confirm sentinel.
- * Everything BEFORE the first sentinel is the reasoning text; the JSON line
- * AFTER it (if present) carries { pending_confirm }. Returns null pendingConfirm
- * when no sentinel is present (Phase-22 plain-text path, byte-identical).
- */
-export function splitCueStream(body: string): {
-  text: string;
-  pendingConfirm: CuePendingConfirm | null;
-} {
-  const idx = body.indexOf(PENDING_CONFIRM_SENTINEL);
-  if (idx === -1) return { text: body, pendingConfirm: null };
-  const text = body.slice(0, idx);
-  const rest = body.slice(idx + 1).trim();
-  try {
-    const parsed = JSON.parse(rest) as { pending_confirm?: CuePendingConfirm };
-    const pc = parsed?.pending_confirm ?? null;
-    return { text, pendingConfirm: pc && pc.kind === 'confirm' ? pc : null };
-  } catch {
-    return { text, pendingConfirm: null };
-  }
-}
+// ── re-exports kept for tests + custom-sogo.js parity ───────────────────────
+// The pure stream/sentinel helpers now live in lib/cue/cueStream.ts (testable,
+// React-free). Re-exported here so existing importers keep working unchanged.
+export { splitCueStream, PENDING_CONFIRM_SENTINEL };
+export type { CuePendingConfirm };
 
 // ── Focus trap (hand-rolled, no library dep) ────────────────────────────────
 
@@ -178,9 +148,15 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
   }, []);
 
   // respond() — the brain turn the controller (and text submit) call. Posts the
-  // canonical messages[] shape to /api/cue/chat, splits on the D-03 sentinel, and
-  // returns the spoken text ('' for a pending write so it is never spoken).
-  const respond = useCallback(async (userText: string, opts?: { signal?: AbortSignal }): Promise<string> => {
+  // canonical messages[] shape to /api/cue/chat and STREAM-READS the reply
+  // (Phase-23 TTFT): each reasoning text chunk is forwarded to opts.onTextChunk
+  // as it arrives so the controller can start speaking sentence 1 early. Returns
+  // { text, pendingConfirm } — the controller decides whether to finish the
+  // streamed speech or (on a write proposal) cut it + speak a templated line.
+  const respond = useCallback(async (
+    userText: string,
+    opts?: { signal?: AbortSignal; onTextChunk?: (chunk: string) => void },
+  ): Promise<{ text: string; pendingConfirm: CuePendingConfirm | null }> => {
     setResponse(null); setErrorMsg(null); setPendingConfirm(null);
     idempotencyTokenRef.current = null;
     const res = await fetch('/api/cue/chat', {
@@ -190,21 +166,32 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
       signal: opts?.signal,
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const { text, pendingConfirm: pc } = splitCueStream(await res.text());
+
+    // Live-update the displayed transcript as text streams in.
+    let acc = '';
+    const { text, pendingConfirm: pc } = await readCueStream(res, (chunk) => {
+      acc += chunk;
+      setResponse({ title: 'Cue', summary: acc });
+      opts?.onTextChunk?.(chunk);
+    });
+
     if (pc && pc.kind === 'confirm') {
       idempotencyTokenRef.current =
         typeof crypto !== 'undefined' && 'randomUUID' in crypto
           ? crypto.randomUUID() : `cue-${Math.random().toString(36).slice(2)}`;
       setPendingConfirm(pc);
       if (text.trim()) setResponse({ title: 'Cue', summary: text });
-      return ''; // don't speak a pending write as done (D-03 voice parity)
+      else setResponse(null);
+      return { text, pendingConfirm: pc };
     }
     if (text.trim()) setResponse({ title: 'Cue', summary: text });
-    return text;
+    return { text, pendingConfirm: null };
   }, [locale]);
 
   // Greeting (brain turn) — fetched on open, spoken via the controller's TTS so
-  // it shares the unlocked AudioContext from the user gesture.
+  // it shares the unlocked AudioContext from the user gesture. The backend
+  // streams it tool-free (opening bypass); one short sentence, so we read it to
+  // completion before speaking (no incremental TTS needed for a single line).
   const speakGreeting = useCallback(async (ctrl: ContinuousFlowController) => {
     try {
       const res = await fetch('/api/cue/chat', {
@@ -212,7 +199,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
         body: JSON.stringify({ opening: true, messages: [], locale }),
       });
       if (!res.ok) return;
-      const { text } = splitCueStream(await res.text());
+      const { text } = await readCueStream(res);
       if (text.trim()) { setResponse({ title: 'Cue', summary: text }); await ctrl.playReply(text); }
     } catch { /* greeting is best-effort */ }
   }, [locale]);

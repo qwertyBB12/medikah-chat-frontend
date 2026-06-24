@@ -50,6 +50,15 @@ export class StreamingTTSPlayer {
   private stopped = false
   private abortController: AbortController | null = null
 
+  // ── Incremental streaming session (Phase 23 TTFT) ──────────────────────────
+  // beginStreaming() → pushText(chunk)* → endPushing(). Lets playback start on
+  // sentence 1 while later sentences are still arriving from /api/cue/chat,
+  // instead of waiting for the whole reply (play(fullText)).
+  private streamQueue: QueuedChunk[] = []
+  private streamPending = ''
+  private streamDonePushing = false
+  private streamWaiters: Array<() => void> = []
+
   constructor(private opts: StreamingTTSOptions = {}) {}
 
   /** Must be called during a user gesture to unlock Safari audio. */
@@ -78,8 +87,6 @@ export class StreamingTTSPlayer {
     this.abortController = new AbortController()
 
     const sentences = splitSentences(fullText)
-    const endpoint = this.opts.endpoint ?? '/api/cue/tts'
-    const locale = this.opts.locale ?? 'en'
     const concurrency = Math.max(1, this.opts.concurrency ?? 3)
 
     // Kick off fetches with a simple rolling concurrency gate so we don't
@@ -89,29 +96,11 @@ export class StreamingTTSPlayer {
     let inFlight = 0
     let nextFetch = 0
 
-    const fetchOne = async (text: string): Promise<AudioBuffer | null> => {
-      if (this.stopped) return null
-      try {
-        const res = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: applyTtsPronunciation(text, locale), locale }),
-          signal: this.abortController?.signal,
-        })
-        if (!res.ok || res.status === 204) return null
-        const arrayBuf = await res.arrayBuffer()
-        if (this.stopped || !this.ctx) return null
-        return await this.ctx.decodeAudioData(arrayBuf)
-      } catch {
-        return null
-      }
-    }
-
     const primeQueue = () => {
       while (inFlight < concurrency && nextFetch < sentences.length) {
         const text = sentences[nextFetch++]
         inFlight++
-        const bufferPromise = fetchOne(text).finally(() => {
+        const bufferPromise = this._fetchSentence(text).finally(() => {
           inFlight--
           primeQueue()
         })
@@ -145,6 +134,121 @@ export class StreamingTTSPlayer {
     }
     this.opts.onDone?.()
     return 'done'
+  }
+
+  /** Fetch + decode one sentence's audio. Shared by play() and the streaming
+   *  session. Returns null on any failure (caller still reveals the text). */
+  private async _fetchSentence(text: string): Promise<AudioBuffer | null> {
+    if (this.stopped) return null
+    const endpoint = this.opts.endpoint ?? '/api/cue/tts'
+    const locale = this.opts.locale ?? 'en'
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: applyTtsPronunciation(text, locale), locale }),
+        signal: this.abortController?.signal,
+      })
+      if (!res.ok || res.status === 204) return null
+      const arrayBuf = await res.arrayBuffer()
+      if (this.stopped || !this.ctx) return null
+      return await this.ctx.decodeAudioData(arrayBuf)
+    } catch {
+      return null
+    }
+  }
+
+  // ── Incremental streaming session (Phase 23 TTFT) ──────────────────────────
+
+  /**
+   * Begin an incremental TTS session. Feed text with pushText() as it streams
+   * in, then call endPushing() when the reply is complete. The returned promise
+   * resolves when playback finishes ('done') or is cut by stop() ('interrupted').
+   *
+   * Unlike play(fullText), playback can begin on sentence 1 while later
+   * sentences are still being generated upstream — the core TTFT win.
+   */
+  beginStreaming(): Promise<'done' | 'interrupted'> {
+    this.stopped = false
+    this.playing = true
+    this.abortController = new AbortController()
+    this.streamQueue = []
+    this.streamPending = ''
+    this.streamDonePushing = false
+    this.streamWaiters = []
+    return this._consumeStream()
+  }
+
+  /**
+   * Feed a text chunk into the active streaming session. Complete sentences are
+   * fetched + queued immediately; the trailing partial is held until the next
+   * chunk completes it (so we never synthesize a half-sentence).
+   */
+  pushText(chunk: string): void {
+    if (this.stopped || !chunk) return
+    this.streamPending += chunk
+    const { complete, pending } = splitSentencesIncremental(this.streamPending)
+    this.streamPending = pending
+    for (const s of complete) this._enqueueStreamSentence(s)
+    if (complete.length) this._wake()
+  }
+
+  /** Signal that no more text will be pushed; flush the trailing partial as a
+   *  final sentence so it is spoken even without terminal punctuation. */
+  endPushing(): void {
+    const tail = this.streamPending.trim()
+    this.streamPending = ''
+    if (tail) this._enqueueStreamSentence(tail)
+    this.streamDonePushing = true
+    this._wake()
+  }
+
+  private _enqueueStreamSentence(text: string): void {
+    if (this.stopped) return
+    const bufferPromise = this._fetchSentence(text)
+    this.streamQueue.push({ text, bufferPromise })
+  }
+
+  private async _consumeStream(): Promise<'done' | 'interrupted'> {
+    // FIFO: play sentences in order as their audio resolves; wait when the
+    // queue drains until more text arrives (or endPushing/stop wakes us).
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      if (this.stopped) break
+      if (this.streamQueue.length === 0) {
+        if (this.streamDonePushing) break
+        await this._waitForMore()
+        continue
+      }
+      const chunk = this.streamQueue.shift()!
+      const buffer = await chunk.bufferPromise
+      if (this.stopped) break
+      this.opts.onSentenceStart?.(chunk.text)
+      this.opts.onSentence?.(chunk.text)
+      if (buffer) {
+        await this.playBuffer(buffer)
+        if (this.stopped) break
+      }
+    }
+    this.playing = false
+    if (this.stopped) {
+      this.opts.onInterrupted?.()
+      return 'interrupted'
+    }
+    this.opts.onDone?.()
+    return 'done'
+  }
+
+  private _wake(): void {
+    const waiters = this.streamWaiters
+    this.streamWaiters = []
+    for (const w of waiters) w()
+  }
+
+  private _waitForMore(): Promise<void> {
+    return new Promise((resolve) => {
+      this.streamWaiters.push(resolve)
+    })
   }
 
   private playBuffer(buffer: AudioBuffer): Promise<void> {
@@ -186,6 +290,9 @@ export class StreamingTTSPlayer {
       this.currentSource = null
     }
     this.playing = false
+    // Wake any streaming consumer parked in _waitForMore so it exits promptly
+    // (resolving its beginStreaming() promise as 'interrupted').
+    this._wake()
   }
 }
 
@@ -196,4 +303,30 @@ export function splitSentences(text: string): string[] {
   const parts = cleaned.match(/[^.!?]+[.!?]+\s*|[^.!?]+$/g)
   if (!parts) return [cleaned]
   return parts.map((s) => s.trim()).filter((s) => s.length > 0)
+}
+
+/**
+ * Incremental sentence splitter for the streaming path. Returns the COMPLETE
+ * sentences found in `text` (each ending in terminal punctuation) plus the
+ * trailing `pending` partial (no terminal punctuation yet) to carry forward.
+ *
+ *   "Hola. ¿Cómo" → { complete: ["Hola."], pending: "¿Cómo" }
+ *   "Hel"         → { complete: [],        pending: "Hel" }
+ */
+export function splitSentencesIncremental(text: string): {
+  complete: string[]
+  pending: string
+} {
+  const complete: string[] = []
+  const re = /[^.!?]*[.!?]+\s*/g
+  let m: RegExpExecArray | null
+  let lastIndex = 0
+  while ((m = re.exec(text)) !== null) {
+    const s = m[0].trim()
+    // Skip empty AND pure-punctuation fragments (e.g. a lone "." from " . Hi"
+    // or decimal-point splits) — synthesizing them yields a click/silence.
+    if (s && !/^[.!?]+$/.test(s)) complete.push(s)
+    lastIndex = re.lastIndex
+  }
+  return { complete, pending: text.slice(lastIndex) }
 }
