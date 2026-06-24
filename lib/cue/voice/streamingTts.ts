@@ -57,7 +57,7 @@ export class StreamingTTSPlayer {
     if (!this.ctx) {
       this.ctx =
         existingCtx ??
-        new (window.AudioContext || (window as any).webkitAudioContext)()
+        new (window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext)()
     }
     if (this.ctx.state === 'suspended') {
       this.ctx.resume().catch(() => {})

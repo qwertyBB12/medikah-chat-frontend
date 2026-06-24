@@ -100,11 +100,13 @@ export default function CueOrb3D({ state, paused = false }: CueOrb3DProps) {
       };
       img.src = '/cue/orb/flow-field.png';
     });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- SVGLoader result type not exported by three.js examples
     const loadSVG = () => new Promise<any>((res) => new SVGLoader().load('/cue/orb/codex-paths.svg', res));
 
     let disposed = false;
     Promise.all([loadFlow(), loadSVG(), fetch('/cue/orb/trace-data.json').then((r) => r.json())])
-      .then(([flow, svg, td]: [any, any, any]) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- SVGLoader + trace-data JSON are untyped third-party shapes
+      .then(([flow, svg, td]: [{ d: Uint8ClampedArray; w: number; h: number }, any, any]) => {
         if (disposed) return;
         const sample = (x: number, y: number) => {
           const xi = Math.min(flow.w - 1, Math.max(0, Math.round(x)));
@@ -112,6 +114,7 @@ export default function CueOrb3D({ state, paused = false }: CueOrb3DProps) {
           return flow.d[(yi * flow.w + xi) * 4] / 255;
         };
         const geos: THREE.ExtrudeGeometry[] = [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- SVGLoader path/shape objects lack public type exports
         svg.paths.forEach((p: any) => SVGLoader.createShapes(p).forEach((sh: any) => geos.push(
           new THREE.ExtrudeGeometry(sh, { depth: DEPTH, bevelEnabled: true, bevelThickness: 5, bevelSize: 3.5, bevelSegments: 2, curveSegments: 6 }),
         )));
@@ -122,6 +125,7 @@ export default function CueOrb3D({ state, paused = false }: CueOrb3DProps) {
         const slab = new THREE.Mesh(sg, slabMat); slab.scale.set(s, -s, s); group.add(slab);
 
         const frontZ = DEPTH - c.z + FRONT_EPS; const tubeGeos: THREE.TubeGeometry[] = [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- trace-data.json shape is runtime-only, no type definition available
         td.current.forEach((cw: any) => {
           let pts = cw.pts; if (pts.length < 2) return;
           if (sample(pts[0][0], pts[0][1]) > sample(pts[pts.length - 1][0], pts[pts.length - 1][1])) pts = pts.slice().reverse();
@@ -156,7 +160,7 @@ export default function CueOrb3D({ state, paused = false }: CueOrb3DProps) {
     };
     applyRef.current = applyState;
     // Boot pulse on mount (mirrors cue-stage.html open()).
-    bootStart = vt; applyState(STATES.thinking ? 'thinking' : 'ready');
+    bootStart = vt; applyState('thinking');
     const bootTimer = window.setTimeout(() => applyState(orbVisualState(state)), 1700);
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
