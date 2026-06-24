@@ -124,6 +124,20 @@ export class ContinuousFlowController {
     this.state.send('stop', { source: 'user' })
   }
 
+  /**
+   * Speak a one-off line (the open-greeting) through the shared TTS player.
+   * Used by CueSurface so the brain-turn greeting plays via the same unlocked
+   * AudioContext as the conversational replies. State transitions are
+   * best-effort (the greeting fires right after start(), when the machine is in
+   * `listening`); the TTS playback is the load-bearing part.
+   */
+  async playReply(text: string): Promise<void> {
+    if (!text) return
+    this.state.send('response-started', { source: 'llm' }) // thinking→speaking (best-effort)
+    await this.tts.play(text)
+    this.state.send('response-ended', { source: 'tts' })
+  }
+
   destroy(): void {
     this.destroyed = true
     this.tts.stop()
@@ -191,7 +205,7 @@ export class ContinuousFlowController {
     try {
       reply = await this.opts.respond(text, { signal: ac.signal })
     } catch (err) {
-      const name = (err as any)?.name
+      const name = (err as { name?: string } | null)?.name
       if (name === 'AbortError') {
         // Expected cancellation from a barge-in during `thinking`. The
         // barge-in handler already walked state to `intercepting → listening`,

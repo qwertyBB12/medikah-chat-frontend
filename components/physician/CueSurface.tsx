@@ -1,94 +1,64 @@
 /**
- * CueSurface — Phase 23 (PRES-03 / PRES-04 / PRES-05)
+ * CueSurface — Phase 23 voice port (PRES-03 / PRES-04 / PRES-05).
  *
- * Centered, voice-first Cue command surface. Mounted once by PortalLayout.
- * Opens on the medikah:cue:open CustomEvent or Cmd+K (handled by lib/cue/surface.ts).
+ * The dark codex stage: a centered navy command surface mounted once by
+ * PortalLayout. Opens on the medikah:cue:open CustomEvent or Cmd+K
+ * (handled by lib/cue/surface.ts).
+ *
+ * Voice-first by default (continuous flow), text always-on as the fallback:
+ *   - When the browser supports continuous VAD + WebGL (diagnoseVADSupport().ok),
+ *     a full-card CueOrb3D (Three.js, lazy, ssr:false) is bound to the five-state
+ *     FSM, and a ContinuousFlowController auto-listen loop drives the round-trip
+ *     (VAD → transcribe → /api/cue/chat → streaming TTS). A brain-turn greeting is
+ *     fetched + spoken on open.
+ *   - When it doesn't (older browsers, jsdom test env, no AudioWorklet / mic /
+ *     secure context), the surface degrades to the CSS CueOrb + the text input.
+ *     Text submit is the only path and posts the SAME messages[] shape to
+ *     /api/cue/chat.
  *
  * Accessibility contract (PRES-05 / LENS-REVIEW-v2 hard gates):
  *   - role="dialog" aria-modal="true" aria-label="Cue"
  *   - Stores document.activeElement on open → moves focus into the dialog
  *   - Tab trapped within the dialog (hand-rolled, ~20 LOC, no library dep)
  *   - Returns focus to the previously-focused element (the launcher) on close
- *   - Esc / scrim click: NON-DESTRUCTIVE when input is non-empty
- *   - prefers-reduced-motion: entrance + breath animations disabled
- *   - All interactive controls ≥ 44px tap target
+ *   - Esc / scrim click: NON-DESTRUCTIVE when the text input is non-empty
+ *   - prefers-reduced-motion: entrance + wave animations disabled
  *   - z-index: 10000 (above SOGo dialogs at ~9999) — T-23-03-01 mitigation
  *
  * Architecture notes:
- *   - Text submit POSTs to /cue/chat with the workspace bearer token
- *     (token in Authorization header only — T-23-03-02 mitigation)
- *   - Responses render as CueActionCard components, NEVER chat bubbles (D-04)
- *   - Confirm-before-write (D-03 / Plan 23-04): the /cue/chat stream is split on
- *     the U+001E (RS) sentinel — the text before it is the reasoning prose; the
- *     JSON after it carries pending_confirm. When pending_confirm.kind==='confirm'
- *     a Confirm/Cancel CueActionCard is rendered. The confirm card is keyed ONLY
- *     off the parsed pending_confirm payload — NEVER off model prose (T-23-04-09).
- *     Confirm → POST /api/cue/calendar/confirm-write (the sole mutation path; the
- *     model loop never writes). Cancel → dismiss, no write.
- *   - Scrim: rgba(27,42,65,0.72) + backdrop-filter blur; solid-color fallback
- *     for Safari/SOGo compositor (T-23-03-03 mitigation)
+ *   - Text submit POSTs to /api/cue/chat via the same-origin BFF (NextAuth-JWT
+ *     auth); the workspace bearer token is sent on the confirm-write hop only
+ *     (Authorization header — T-23-03-02 mitigation).
+ *   - Responses render as CueActionCard components, NEVER chat bubbles (D-04).
+ *   - Confirm-before-write (D-03 / Plan 23-04): the /api/cue/chat stream is split
+ *     on the U+001E (RS) sentinel — text before it is reasoning prose; the JSON
+ *     after it carries pending_confirm. The confirm card is keyed ONLY off the
+ *     parsed payload — NEVER off model prose (T-23-04-09). Confirm → POST
+ *     /api/cue/calendar/confirm-write (the sole mutation path). Cancel → no write.
+ *   - A voice-initiated block/clear is NEVER spoken as a fait accompli: respond()
+ *     returns '' for a pending write so the controller's TTS stays silent until
+ *     the explicit Confirm tap (D-03 voice parity).
  */
 
 'use client';
 
 import { useRef, useEffect, useState, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import CueActionCard from './CueActionCard';
-import CueOrb from './CueOrb';
+import CueOrb from './CueOrb'; // CSS fallback orb (unsupported browsers)
 import { VoiceStateMachine, type OrbState } from '../../lib/cue/stateMachine';
+import {
+  ContinuousFlowController,
+  diagnoseVADSupport,
+} from '../../lib/cue/voice/continuousFlow';
 
-// ─── Props ───────────────────────────────────────────────────────────────────
+const CueOrb3D = dynamic(() => import('./CueOrb3D'), { ssr: false });
 
-export interface CueSurfaceProps {
-  /** Whether the surface is visible. Owned by PortalLayout via useCueSurface. */
-  isOpen: boolean;
-  /** Called by the surface to request close (PortalLayout updates isOpen). */
-  onClose: () => void;
-  /** Workspace bearer token — used for /cue/chat fetch. May be null before init. */
-  accessToken: string | null;
-  /** Active locale for bilingual rendering. */
-  locale?: 'en' | 'es';
-}
-
-// ─── Focus trap ──────────────────────────────────────────────────────────────
-
-const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
-
-function trapFocus(container: HTMLElement) {
-  const focusable = Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE));
-  if (focusable.length === 0) return;
-  const first = focusable[0];
-  const last = focusable[focusable.length - 1];
-
-  function handler(e: KeyboardEvent) {
-    if (e.key !== 'Tab') return;
-    if (e.shiftKey) {
-      if (document.activeElement === first) {
-        last.focus();
-        e.preventDefault();
-      }
-    } else {
-      if (document.activeElement === last) {
-        first.focus();
-        e.preventDefault();
-      }
-    }
-  }
-
-  container.addEventListener('keydown', handler);
-  return () => container.removeEventListener('keydown', handler);
-}
-
-// ─── Response card type ───────────────────────────────────────────────────────
-
-interface CueResponse {
-  title: string;
-  summary: string;
-  items?: string[];
-}
+// ── exports kept for tests + custom-sogo.js parity ──────────────────────────
 
 /**
  * The {kind:'confirm', ...} payload surfaced by run_cue_turn and emitted on the
- * /cue/chat stream as the U+001E sentinel line (D-03 / Plan 23-04 canonical
+ * /api/cue/chat stream as the U+001E sentinel line (D-03 / Plan 23-04 canonical
  * contract). The confirm card is keyed off THIS — never off model prose.
  */
 export interface CuePendingConfirm {
@@ -101,12 +71,12 @@ export interface CuePendingConfirm {
 }
 
 /** U+001E (RECORD SEPARATOR) — the canonical pending_confirm sentinel byte. */
-const PENDING_CONFIRM_SENTINEL = '\x1e';
+export const PENDING_CONFIRM_SENTINEL = '\x1e';
 
 /**
- * Split a /cue/chat response body on the pending_confirm sentinel.
+ * Split a /api/cue/chat response body on the pending_confirm sentinel.
  * Everything BEFORE the first sentinel is the reasoning text; the JSON line
- * AFTER it (if present) carries { pending_confirm }. Returns null pending_confirm
+ * AFTER it (if present) carries { pending_confirm }. Returns null pendingConfirm
  * when no sentinel is present (Phase-22 plain-text path, byte-identical).
  */
 export function splitCueStream(body: string): {
@@ -114,825 +84,325 @@ export function splitCueStream(body: string): {
   pendingConfirm: CuePendingConfirm | null;
 } {
   const idx = body.indexOf(PENDING_CONFIRM_SENTINEL);
-  if (idx === -1) {
-    return { text: body, pendingConfirm: null };
-  }
+  if (idx === -1) return { text: body, pendingConfirm: null };
   const text = body.slice(0, idx);
   const rest = body.slice(idx + 1).trim();
   try {
     const parsed = JSON.parse(rest) as { pending_confirm?: CuePendingConfirm };
     const pc = parsed?.pending_confirm ?? null;
-    return {
-      text,
-      pendingConfirm: pc && pc.kind === 'confirm' ? pc : null,
-    };
+    return { text, pendingConfirm: pc && pc.kind === 'confirm' ? pc : null };
   } catch {
     return { text, pendingConfirm: null };
   }
 }
 
-// ─── Labels ──────────────────────────────────────────────────────────────────
+// ── Focus trap (hand-rolled, no library dep) ────────────────────────────────
+
+const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
+function trapFocus(container: HTMLElement) {
+  const focusable = Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE));
+  if (focusable.length === 0) return;
+  const first = focusable[0], last = focusable[focusable.length - 1];
+  function handler(e: KeyboardEvent) {
+    if (e.key !== 'Tab') return;
+    if (e.shiftKey) { if (document.activeElement === first) { last.focus(); e.preventDefault(); } }
+    else { if (document.activeElement === last) { first.focus(); e.preventDefault(); } }
+  }
+  container.addEventListener('keydown', handler);
+  return () => container.removeEventListener('keydown', handler);
+}
+
+// ── Props ───────────────────────────────────────────────────────────────────
+
+export interface CueSurfaceProps {
+  /** Whether the surface is visible. Owned by PortalLayout via useCueSurface. */
+  isOpen: boolean;
+  /** Called by the surface to request close (PortalLayout updates isOpen). */
+  onClose: () => void;
+  /** Workspace bearer token — used for the confirm-write hop. May be null. */
+  accessToken: string | null;
+  /** Active locale for bilingual rendering. */
+  locale?: 'en' | 'es';
+}
 
 const LABELS = {
-  en: {
-    placeholder: 'Ask Cue anything about your calendar…',
-    submit: 'Send',
-    close: 'Close',
-    loading: 'Cue is thinking…',
-    error: 'Something went wrong. Please try again.',
-    confirmTitleBlock: 'Block this time?',
-    confirmTitleClear: 'Clear Cue blocks?',
-    resultTitle: 'Done',
-    blockedResult: (uid: string) => `Time blocked. (ref ${uid})`,
-    clearResult: (deleted: number, kept: number) =>
-      `${deleted} removed, ${kept} kept.`,
-    micStart: 'Hold to speak',
-    micStop: 'Stop',
-    listening: 'Listening…',
-    transcribing: 'Transcribing…',
-    voiceUnsupported: 'Voice input is not available in this browser — type instead.',
-  },
-  es: {
-    placeholder: 'Pregúntale a Cue sobre tu calendario…',
-    submit: 'Enviar',
-    close: 'Cerrar',
-    loading: 'Cue está pensando…',
-    error: 'Algo salió mal. Inténtalo de nuevo.',
-    confirmTitleBlock: '¿Bloquear este horario?',
-    confirmTitleClear: '¿Liberar los bloques de Cue?',
-    resultTitle: 'Listo',
-    blockedResult: (uid: string) => `Horario bloqueado. (ref ${uid})`,
-    clearResult: (deleted: number, kept: number) =>
-      `${deleted} eliminados, ${kept} conservados.`,
-    micStart: 'Mantén para hablar',
-    micStop: 'Detener',
-    listening: 'Escuchando…',
-    transcribing: 'Transcribiendo…',
-    voiceUnsupported: 'La entrada de voz no está disponible en este navegador — escribe.',
-  },
+  en: { close: 'Close', listening: 'Listening', thinking: 'Cue is thinking…',
+        placeholder: 'or type a command…', error: 'Something went wrong. Please try again.',
+        confirmBlock: 'Block this time?', confirmClear: 'Clear Cue blocks?',
+        done: 'Done', esc: 'esc to pause', context: 'Workspace' },
+  es: { close: 'Cerrar', listening: 'Escuchando', thinking: 'Cue está pensando…',
+        placeholder: 'o escribe un comando…', error: 'Algo salió mal. Inténtalo de nuevo.',
+        confirmBlock: '¿Bloquear este horario?', confirmClear: '¿Liberar los bloques de Cue?',
+        done: 'Listo', esc: 'esc para pausar', context: 'Espacio' },
 } as const;
 
-// ─── Component ───────────────────────────────────────────────────────────────
+interface CueResponse { title: string; summary: string; }
 
-export default function CueSurface({
-  isOpen,
-  onClose,
-  accessToken,
-  locale = 'en',
-}: CueSurfaceProps) {
+// ── Component ───────────────────────────────────────────────────────────────
+
+export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en' }: CueSurfaceProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
   const prevFocusRef = useRef<Element | null>(null);
-
-  const [inputValue, setInputValue] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [response, setResponse] = useState<CueResponse | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  // D-03 confirm card state (Plan 23-04). pendingConfirm is keyed off the parsed
-  // sentinel payload only — never off model prose.
-  const [pendingConfirm, setPendingConfirm] = useState<CuePendingConfirm | null>(null);
-  const [isWriting, setIsWriting] = useState(false);
-  // A fresh idempotency token is generated per proposal and reused across retries
-  // of the SAME proposal, so a double-click cannot double-write (HANDS-04).
-  const idempotencyTokenRef = useRef<string | null>(null);
-
   const labels = LABELS[locale];
 
-  // ── Voice round-trip state (Plan 23-06 — PRES-03 voice-first, VOICE-05/08) ──
-  // The five-state orb FSM drives the orb visual. Mic capture posts to the
-  // /api/cue/transcribe BFF (auth-correct same-origin hop — see the route file),
-  // feeds the transcript into the SAME /api/cue/chat path as text, then optionally
-  // speaks the reply via the /api/cue/tts BFF. Text stays the always-on fallback.
+  const [inputValue, setInputValue] = useState('');
+  const [orbState, setOrbState] = useState<OrbState>('idle');
+  const [spoken, setSpoken] = useState('');           // last user utterance (caption)
+  const [response, setResponse] = useState<CueResponse | null>(null);
+  const [pendingConfirm, setPendingConfirm] = useState<CuePendingConfirm | null>(null);
+  const [isWriting, setIsWriting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [typingPaused, setTypingPaused] = useState(false);
+
   const smRef = useRef<VoiceStateMachine | null>(null);
   if (smRef.current === null) smRef.current = new VoiceStateMachine();
-  const [orbState, setOrbState] = useState<OrbState>('idle');
-  const [isRecording, setIsRecording] = useState(false);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<BlobPart[]>([]);
-  const mediaStreamRef = useRef<MediaStream | null>(null);
-  const audioElRef = useRef<HTMLAudioElement | null>(null);
+  const controllerRef = useRef<ContinuousFlowController | null>(null);
+  const idempotencyTokenRef = useRef<string | null>(null);
 
-  // Voice is available only when the browser exposes getUserMedia + MediaRecorder
-  // (jsdom/test + older browsers fall through to text-only — graceful degrade).
-  const voiceSupported =
-    typeof navigator !== 'undefined' &&
-    !!navigator.mediaDevices &&
-    typeof navigator.mediaDevices.getUserMedia === 'function' &&
-    typeof window !== 'undefined' &&
-    typeof window.MediaRecorder !== 'undefined';
+  // Compute ONCE — diagnoseVADSupport() constructs + closes an AudioContext on
+  // each call (a per-render leak), so memoize it in lazy state (Resolution 1).
+  const [voiceSupported] = useState(
+    () => typeof window !== 'undefined' && diagnoseVADSupport().ok,
+  );
 
   // Drive orbState from the FSM (single source of truth for the orb visual).
   useEffect(() => {
     const sm = smRef.current!;
     setOrbState(sm.state);
-    const unsub = sm.subscribeOrbEvents((p) => setOrbState(p.state));
-    return unsub;
+    return sm.subscribeOrbEvents((p) => setOrbState(p.state));
   }, []);
 
-  // ── Open / Close lifecycle ───────────────────────────────────────────────
+  // respond() — the brain turn the controller (and text submit) call. Posts the
+  // canonical messages[] shape to /api/cue/chat, splits on the D-03 sentinel, and
+  // returns the spoken text ('' for a pending write so it is never spoken).
+  const respond = useCallback(async (userText: string, opts?: { signal?: AbortSignal }): Promise<string> => {
+    setResponse(null); setErrorMsg(null); setPendingConfirm(null);
+    idempotencyTokenRef.current = null;
+    const res = await fetch('/api/cue/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [{ role: 'user', content: userText }], locale }),
+      signal: opts?.signal,
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const { text, pendingConfirm: pc } = splitCueStream(await res.text());
+    if (pc && pc.kind === 'confirm') {
+      idempotencyTokenRef.current =
+        typeof crypto !== 'undefined' && 'randomUUID' in crypto
+          ? crypto.randomUUID() : `cue-${Math.random().toString(36).slice(2)}`;
+      setPendingConfirm(pc);
+      if (text.trim()) setResponse({ title: 'Cue', summary: text });
+      return ''; // don't speak a pending write as done (D-03 voice parity)
+    }
+    if (text.trim()) setResponse({ title: 'Cue', summary: text });
+    return text;
+  }, [locale]);
 
+  // Greeting (brain turn) — fetched on open, spoken via the controller's TTS so
+  // it shares the unlocked AudioContext from the user gesture.
+  const speakGreeting = useCallback(async (ctrl: ContinuousFlowController) => {
+    try {
+      const res = await fetch('/api/cue/chat', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ opening: true, messages: [], locale }),
+      });
+      if (!res.ok) return;
+      const { text } = splitCueStream(await res.text());
+      if (text.trim()) { setResponse({ title: 'Cue', summary: text }); await ctrl.playReply(text); }
+    } catch { /* greeting is best-effort */ }
+  }, [locale]);
+
+  // Open: start continuous flow (supported) inside the user gesture; on close,
+  // tear down the controller + restore focus.
   useEffect(() => {
     if (!isOpen) {
-      // Stop any in-flight mic/audio and reset the orb when the surface closes.
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-        mediaRecorderRef.current.stop();
-      }
-      mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
-      mediaStreamRef.current = null;
-      setIsRecording(false);
-      audioElRef.current?.pause();
+      controllerRef.current?.destroy(); controllerRef.current = null;
       smRef.current?.reset();
-      // Return focus to whatever had it before we opened
-      if (prevFocusRef.current) {
-        (prevFocusRef.current as HTMLElement).focus?.();
-        prevFocusRef.current = null;
-      }
+      if (prevFocusRef.current) { (prevFocusRef.current as HTMLElement).focus?.(); prevFocusRef.current = null; }
       return;
     }
-
-    // Store the element that had focus before we opened (the launcher button)
     prevFocusRef.current = document.activeElement;
-
-    // Move focus into the dialog
     const dialog = dialogRef.current;
-    if (!dialog) return;
-    const focusable = dialog.querySelectorAll<HTMLElement>(FOCUSABLE);
-    if (focusable.length > 0) {
-      focusable[0].focus();
-    } else {
-      dialog.focus();
+    if (dialog) {
+      const f = dialog.querySelectorAll<HTMLElement>(FOCUSABLE);
+      (f.length ? f[0] : dialog).focus();
     }
+    const removeTrap = dialog ? trapFocus(dialog) : undefined;
 
-    // Activate focus trap
-    const removeTrap = trapFocus(dialog);
-    return removeTrap;
-  }, [isOpen]);
+    if (voiceSupported) {
+      const ctrl = new ContinuousFlowController({
+        locale,
+        respond,
+        onOrbEvent: (p) => setOrbState(p.state),
+        onUserUtterance: (t) => setSpoken(t),
+        onError: () => setErrorMsg(labels.error),
+      });
+      controllerRef.current = ctrl;
+      ctrl.start().then(() => speakGreeting(ctrl)).catch(() => setErrorMsg(labels.error));
+    }
+    // Cleanup also tears down the controller so a re-run/unmount can't leak one
+    // (Resolution 2 — destroy in cleanup, not only the !isOpen branch).
+    return () => { removeTrap?.(); controllerRef.current?.destroy(); controllerRef.current = null; };
+  }, [isOpen, voiceSupported, locale, respond, speakGreeting, labels.error]);
 
-  // ── Non-destructive close ────────────────────────────────────────────────
-
+  // Non-destructive close: only when the text input is empty.
   const tryClose = useCallback(() => {
-    // Non-destructive: only close if the input is empty+idle (D-03 / LENS-REVIEW-v2)
-    const isEmpty = inputValue.trim() === '';
-    if (isEmpty && !isLoading) {
-      onClose();
-    }
-  }, [inputValue, isLoading, onClose]);
-
-  // ── Keyboard handler (Esc) ───────────────────────────────────────────────
+    if (inputValue.trim() === '') onClose();
+  }, [inputValue, onClose]);
 
   function handleDialogKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
-    if (e.key === 'Escape') {
-      tryClose();
-    }
+    if (e.key === 'Escape') tryClose();
   }
 
-  // ── Core chat turn (shared by text + voice) → /api/cue/chat ──────────────
-
-  async function sendChatMessage(
-    message: string,
-    opts?: { speak?: boolean },
-  ): Promise<void> {
-    setIsLoading(true);
-    setResponse(null);
-    setErrorMsg(null);
-    setPendingConfirm(null);
-    idempotencyTokenRef.current = null;
-
-    try {
-      // Route through the same-origin BFF proxy (/api/cue/chat): it reads the
-      // NextAuth session cookie and forwards the NextAuth HS256 JWT that the
-      // FastAPI cue gate (authenticated_physician) verifies. Posting straight to
-      // FastAPI with the Supabase token 401'd; the browser never touches FastAPI
-      // directly (D-04) — same BFF pattern as the confirm-write proxy. The voice
-      // path (transcribe/tts) uses the same BFF hop for the same reason.
-      const res = await fetch('/api/cue/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, locale }),
-      });
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-
-      // Read the response and split on the U+001E pending_confirm sentinel
-      // (D-03 / Plan 23-04). Text before the sentinel is reasoning prose; the
-      // JSON after it carries pending_confirm. The confirm card is keyed ONLY
-      // off the parsed payload — never off prose (T-23-04-09).
-      const body = await res.text();
-      const { text, pendingConfirm: pc } = splitCueStream(body);
-
-      if (pc && pc.kind === 'confirm') {
-        // Fresh idempotency token per proposal; reused across retries so a
-        // double-click cannot double-write (HANDS-04).
-        idempotencyTokenRef.current =
-          typeof crypto !== 'undefined' && 'randomUUID' in crypto
-            ? crypto.randomUUID()
-            : `cue-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-        setPendingConfirm(pc);
-        // Show the reasoning text too, if any (no Confirm/Cancel on this card —
-        // the confirm affordance lives on the dedicated CuePendingConfirm card).
-        if (text.trim()) {
-          setResponse({ title: 'Cue', summary: text });
-        }
-      } else {
-        setResponse({ title: 'Cue', summary: text });
-      }
-
-      // Voice path: speak the reasoning text. A voice-initiated block/clear is
-      // NEVER auto-executed and NEVER spoken as a fait accompli — it still
-      // surfaces the D-03 confirm card and requires the explicit Confirm tap, so
-      // we only speak when there is no pending confirm (D-03 voice parity).
-      if (opts?.speak && text.trim() && !pc) {
-        void speakReply(text);
-      } else if (opts?.speak) {
-        // Nothing to speak (confirm card or empty) → return the orb to rest.
-        smRef.current?.send('stop');
-      }
-    } catch {
-      setErrorMsg(labels.error);
-      smRef.current?.send('error'); // surface failure on the orb (→ idle)
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  // ── Text submit → shared chat turn ───────────────────────────────────────
-
+  // Text fallback submit (always available; the only path when !voiceSupported).
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const message = inputValue.trim();
-    if (!message || isLoading) return;
-    setInputValue('');
-    await sendChatMessage(message);
+    if (!message) return;
+    setInputValue(''); setSpoken(message);
+    const sm = smRef.current!;
+    sm.send('start'); sm.send('speech-ended'); // idle→listening→thinking
+    try { await respond(message); } catch { setErrorMsg(labels.error); sm.send('error'); return; }
+    sm.send('stop');
   }
 
-  // ── Confirm → POST /api/cue/calendar/confirm-write (the sole mutation path) ──
-
+  // Confirm → POST /api/cue/calendar/confirm-write (the sole mutation path).
   async function handleConfirmWrite() {
     if (!pendingConfirm || isWriting) return;
-    const token = idempotencyTokenRef.current;
-    if (!token) return;
-
-    setIsWriting(true);
-    setErrorMsg(null);
+    const token = idempotencyTokenRef.current; if (!token) return;
+    setIsWriting(true); setErrorMsg(null);
     try {
       const res = await fetch('/api/cue/calendar/confirm-write', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-        },
+        headers: { 'Content-Type': 'application/json', ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) },
         body: JSON.stringify({
-          action: pendingConfirm.action,
-          start_iso: pendingConfirm.start_iso,
-          end_iso: pendingConfirm.end_iso,
-          title: pendingConfirm.title || undefined,
-          idempotency_token: token, // reused across retries of THIS proposal
-          locale,
+          action: pendingConfirm.action, start_iso: pendingConfirm.start_iso, end_iso: pendingConfirm.end_iso,
+          title: pendingConfirm.title || undefined, idempotency_token: token, locale,
         }),
       });
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-
-      const result = (await res.json()) as {
-        blocked?: boolean;
-        uid?: string;
-        deleted?: number;
-        skipped?: number;
-      };
-
-      // Surface the write result as a follow-up card.
-      if (pendingConfirm.action === 'block') {
-        setResponse({
-          title: labels.resultTitle,
-          summary: labels.blockedResult(result.uid ?? ''),
-        });
-      } else {
-        setResponse({
-          title: labels.resultTitle,
-          summary: labels.clearResult(result.deleted ?? 0, result.skipped ?? 0),
-        });
-      }
-      // Dismiss the confirm card (the write is done).
-      setPendingConfirm(null);
-    } catch {
-      setErrorMsg(labels.error);
-    } finally {
-      setIsWriting(false);
-    }
-  }
-
-  // ── Cancel → dismiss the confirm card, NO write (D-03) ──────────────────────
-
-  function handleCancelWrite() {
-    setPendingConfirm(null);
-    idempotencyTokenRef.current = null;
-  }
-
-  // ── Mic capture (tap to start, tap to stop) → /api/cue/transcribe BFF ─────
-  // Tap-to-talk via the browser-native MediaRecorder (NO new npm dep — T-23-06-SC).
-  // The deliberately-slowed sobremesa VAD cadence (lib/cue/sobremesaConfig.ts) is
-  // the tuning source of truth for a future automatic end-of-turn; v1 ends the
-  // turn on the explicit second tap.
-
-  function stopTracks(): void {
-    mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
-    mediaStreamRef.current = null;
-  }
-
-  async function startRecording(): Promise<void> {
-    if (!voiceSupported || isRecording || isLoading) return;
-    const sm = smRef.current!;
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaStreamRef.current = stream;
-      audioChunksRef.current = [];
-      const recorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = recorder;
-      recorder.ondataavailable = (ev) => {
-        if (ev.data && ev.data.size > 0) audioChunksRef.current.push(ev.data);
-      };
-      recorder.onstop = () => {
-        void handleRecordingStop(recorder.mimeType);
-      };
-      recorder.start();
-      setIsRecording(true);
-      sm.send('start'); // idle → listening
-    } catch {
-      setErrorMsg(labels.voiceUnsupported);
-      stopTracks();
-    }
-  }
-
-  function stopRecording(): void {
-    if (!isRecording) return;
-    const recorder = mediaRecorderRef.current;
-    setIsRecording(false);
-    if (recorder && recorder.state !== 'inactive') {
-      recorder.stop(); // fires onstop → handleRecordingStop
-    }
-  }
-
-  function toggleMic(): void {
-    if (isRecording) stopRecording();
-    else void startRecording();
-  }
-
-  async function handleRecordingStop(mimeType: string): Promise<void> {
-    const sm = smRef.current!;
-    stopTracks();
-    const chunks = audioChunksRef.current;
-    audioChunksRef.current = [];
-    if (chunks.length === 0) {
-      sm.send('stop'); // listening → idle (nothing captured)
-      return;
-    }
-    sm.send('speech-ended'); // listening → thinking
-    const blob = new Blob(chunks, { type: mimeType || 'audio/webm' });
-    try {
-      // Post audio to the same-origin BFF (auth-correct hop; the absolute backend
-      // target ${NEXT_PUBLIC_API_URL}/cue/transcribe lives in the BFF route file).
-      const res = await fetch('/api/cue/transcribe', {
-        method: 'POST',
-        headers: { 'Content-Type': blob.type || 'audio/webm', 'X-Locale': locale },
-        body: blob,
-      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = (await res.json()) as { transcript?: string; language?: string };
-      const transcript = (data.transcript || '').trim();
-      if (!transcript) {
-        sm.send('stop');
-        return;
-      }
-      // Feed the transcript into the SAME /api/cue/chat path as text, and speak
-      // the reply (sendChatMessage drives the FSM thinking → speaking → idle).
-      await sendChatMessage(transcript, { speak: true });
-    } catch {
-      setErrorMsg(labels.error);
-      sm.send('error'); // → idle
-    }
+      const r = (await res.json()) as { uid?: string; deleted?: number; skipped?: number };
+      setResponse({ title: labels.done, summary: pendingConfirm.action === 'block'
+        ? `${labels.done} (${r.uid ?? ''})` : `${r.deleted ?? 0} / ${r.skipped ?? 0}` });
+      setPendingConfirm(null);
+    } catch { setErrorMsg(labels.error); }
+    finally { setIsWriting(false); }
   }
 
-  // ── Speak Cue's reply via /api/cue/tts BFF (voice path only; best-effort) ──
-  async function speakReply(text: string): Promise<void> {
-    const sm = smRef.current;
-    try {
-      const res = await fetch('/api/cue/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, locale }),
-      });
-      if (!res.ok) {
-        sm?.send('stop'); // TTS unavailable — the carded text is already shown.
-        return;
-      }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const audio = audioElRef.current ?? new Audio();
-      audioElRef.current = audio;
-      audio.src = url;
-      sm?.send('response-started'); // thinking → speaking
-      const finish = () => {
-        URL.revokeObjectURL(url);
-        sm?.send('stop'); // speaking → idle (tap-to-talk: one turn at a time)
-      };
-      audio.onended = finish;
-      audio.onerror = finish;
-      // play() returns a Promise in browsers (undefined in some test envs) —
-      // guard so a non-Promise return doesn't throw; onended drives the FSM.
-      const playback = audio.play() as Promise<void> | undefined;
-      if (playback && typeof playback.then === 'function') {
-        playback.catch(finish); // autoplay blocked → degrade to text
-      }
-    } catch {
-      sm?.send('stop');
-    }
-  }
-
-  // ── Render ───────────────────────────────────────────────────────────────
+  // Cancel → dismiss the confirm card, NO write (D-03).
+  function handleCancelWrite() { setPendingConfirm(null); idempotencyTokenRef.current = null; }
 
   if (!isOpen) return null;
+  const isListening = orbState === 'listening';
+  const isThinking = orbState === 'thinking';
 
   return (
     <>
-      {/* ── Inline styles: keyframes + surface layout ─────────────────────
-          Mirror the inline <style> approach from CueLauncher.tsx (project
-          convention) to keep the surface self-contained and SOGo-injectable. */}
       <style>{`
-        @keyframes mk-cue-entrance {
-          from { opacity: 0; transform: scale(0.97) translateY(-8px); }
-          to   { opacity: 1; transform: scale(1) translateY(0); }
-        }
-
-        @keyframes mk-cue-scrim-in {
-          from { opacity: 0; }
-          to   { opacity: 1; }
-        }
-
-        .mk-cue-surface {
-          position: fixed;
-          inset: 0;
-          /* T-23-03-01: above SOGo dialogs (~9999); PRES-06 injection safe */
-          z-index: 10000;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 16px;
-          box-sizing: border-box;
-        }
-
-        .mk-cue-scrim {
-          position: absolute;
-          inset: 0;
-          /* inst-blue rgba scrim */
-          background: rgba(27, 42, 65, 0.72);
-          /* rack-focus blur — T-23-03-03: solid-color fallback if unsupported */
-          backdrop-filter: blur(4px);
-          -webkit-backdrop-filter: blur(4px);
-          animation: mk-cue-scrim-in 180ms ease forwards;
-        }
-
-        /* Solid-color fallback for Safari/SOGo contexts where backdrop-filter
-           creates a black rectangle (T-23-03-03 / LENS-REVIEW-v2 pitfall 5). */
-        @supports not (backdrop-filter: blur(1px)) {
-          .mk-cue-scrim {
-            background: rgba(27, 42, 65, 0.88);
-          }
-        }
-
-        .mk-cue-dialog {
-          position: relative;
-          z-index: 10001;
-          /* rounded-lg = 24px per tailwind.config.js */
-          border-radius: 24px;
-          background: #ffffff;
-          width: 100%;
-          max-width: 640px;
-          max-height: calc(100vh - 80px);
-          overflow-y: auto;
-          box-shadow:
-            0 20px 60px rgba(27, 42, 65, 0.22),
-            0 4px 16px rgba(27, 42, 65, 0.10);
-          animation: mk-cue-entrance 220ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
-          outline: none;
-        }
-
-        .mk-cue-inner {
-          padding: 28px 28px 24px;
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-        }
-
-        .mk-cue-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-
-        .mk-cue-label {
-          font-family: 'Mulish', sans-serif;
-          font-size: 0.75rem;
-          font-weight: 600;
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
-          color: #2C7A8C; /* clinical-teal */
-        }
-
-        /* Close button — ≥44px tap target (PRES-05) */
-        .mk-cue-close {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 44px;
-          height: 44px;
-          border-radius: 50%;
-          border: none;
-          background: transparent;
-          cursor: pointer;
-          color: #4A5568; /* body-slate */
-          font-family: 'Mulish', sans-serif;
-          font-size: 1.25rem;
-          line-height: 1;
-          transition: background-color 180ms ease;
-          flex-shrink: 0;
-        }
-
-        .mk-cue-close:hover,
-        .mk-cue-close:focus-visible {
-          background: rgba(27, 42, 65, 0.06);
-          outline: 2px solid rgba(44, 122, 140, 0.55);
-          outline-offset: 2px;
-        }
-
-        .mk-cue-orb-wrap {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 4px 0 2px;
-        }
-
-        .mk-cue-response-area {
-          min-height: 0;
-        }
-
-        /* Mic button — ≥44px tap target (PRES-05). Teal when armed/recording. */
-        .mk-cue-mic {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 44px;
-          height: 44px;
-          border-radius: 16px;
-          border: 1.5px solid rgba(27, 42, 65, 0.18);
-          background: #ffffff;
-          color: #2C7A8C; /* clinical-teal */
-          cursor: pointer;
-          flex-shrink: 0;
-          transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
-        }
-
-        .mk-cue-mic:hover:not(:disabled),
-        .mk-cue-mic:focus-visible {
-          border-color: #2C7A8C;
-          background: rgba(44, 122, 140, 0.08);
-          outline: none;
-        }
-
-        .mk-cue-mic--on {
-          background: #2C7A8C;
-          border-color: #2C7A8C;
-          color: #ffffff;
-          animation: mk-cue-mic-pulse 1.4s ease-in-out infinite;
-        }
-
-        .mk-cue-mic:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
-        @keyframes mk-cue-mic-pulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(44, 122, 140, 0.35); }
-          50%      { box-shadow: 0 0 0 6px rgba(44, 122, 140, 0); }
-        }
-
-        .mk-cue-loading {
-          font-family: 'Mulish', sans-serif;
-          font-size: 0.875rem;
-          color: #4A5568;
-          padding: 12px 0;
-          text-align: center;
-        }
-
-        .mk-cue-error {
-          font-family: 'Mulish', sans-serif;
-          font-size: 0.875rem;
-          color: #B83D3D; /* alert-garnet */
-          padding: 8px 0;
-        }
-
-        .mk-cue-form {
-          display: flex;
-          gap: 8px;
-          align-items: stretch;
-        }
-
-        /* Text input — ≥44px height (PRES-05) */
-        .mk-cue-input {
-          flex: 1;
-          height: 44px;
-          border-radius: 16px; /* rounded-md per tailwind.config.js */
-          border: 1.5px solid rgba(27, 42, 65, 0.18);
-          padding: 0 16px;
-          font-family: 'Mulish', sans-serif;
-          font-size: 0.9375rem;
-          color: #1C1C1E; /* deep-charcoal */
-          background: #ffffff;
-          outline: none;
-          transition: border-color 180ms ease, box-shadow 180ms ease;
-          box-sizing: border-box;
-        }
-
-        .mk-cue-input::placeholder {
-          color: #8A8D91; /* archival-grey */
-        }
-
-        .mk-cue-input:focus {
-          border-color: #2C7A8C;
-          box-shadow: 0 0 0 3px rgba(44, 122, 140, 0.18);
-        }
-
-        /* Submit button — ≥44px (PRES-05) */
-        .mk-cue-submit {
-          height: 44px;
-          padding: 0 20px;
-          border-radius: 16px;
-          border: none;
-          background: #2C7A8C; /* clinical-teal */
-          color: #ffffff;
-          font-family: 'Mulish', sans-serif;
-          font-size: 0.875rem;
-          font-weight: 600;
-          cursor: pointer;
-          white-space: nowrap;
-          transition: background-color 180ms ease;
-          flex-shrink: 0;
-        }
-
-        .mk-cue-submit:hover:not(:disabled) {
-          background: rgba(44, 122, 140, 0.88);
-        }
-
-        .mk-cue-submit:disabled {
-          opacity: 0.55;
-          cursor: not-allowed;
-        }
-
-        /* prefers-reduced-motion: disable entrance + breath + mic animations */
+        @keyframes mk-stage-in { from { opacity:0; transform:translate(-50%,-48%) scale(.96);} to { opacity:1; transform:translate(-50%,-50%) scale(1);} }
+        @keyframes mk-bar { 0%,100%{transform:scaleY(.4)} 50%{transform:scaleY(1)} }
+        .mk-cue-surface { position:fixed; inset:0; z-index:10000; }
+        .mk-cue-scrim { position:absolute; inset:0; background:rgba(8,13,22,.5);
+          backdrop-filter:blur(10px) saturate(.9); -webkit-backdrop-filter:blur(10px) saturate(.9); }
+        @supports not (backdrop-filter: blur(1px)) { .mk-cue-scrim { background:rgba(8,13,22,.9); } }
+        .mk-stage { position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
+          width:880px; max-width:calc(100vw - 48px); border-radius:30px; overflow:hidden;
+          background:radial-gradient(120% 90% at 78% 0%, rgba(58,160,181,.20), transparent 55%),
+            radial-gradient(90% 80% at 10% 110%, rgba(44,122,140,.16), transparent 55%),
+            linear-gradient(160deg, #22344e, #1B2A41 45%, #0e1726);
+          box-shadow:0 60px 160px rgba(6,12,22,.6), 0 0 0 1px rgba(127,199,212,.12), inset 0 1px 0 rgba(255,255,255,.06);
+          color:#eaf2f5; font-family:'Mulish', sans-serif; animation:mk-stage-in .5s cubic-bezier(.16,1,.3,1); outline:none; }
+        .mk-stage-head { display:flex; align-items:center; gap:12px; padding:22px 28px 0; position:relative; z-index:1; }
+        .mk-stage-head .n { font-weight:800; font-size:15px; letter-spacing:.06em; text-transform:uppercase; }
+        .mk-stage-head .ctx { font-size:12px; color:#b3cad2; }
+        .mk-stage-head .esc { margin-left:auto; font-size:11px; color:#b3cad2; border:1px solid rgba(127,199,212,.3); border-radius:7px; padding:6px 9px; }
+        .mk-close { width:44px; height:44px; border-radius:50%; border:none; background:transparent; color:#cfe2e8; font-size:1.25rem; cursor:pointer; }
+        .mk-close:focus-visible { outline:2px solid #7fc7d4; outline-offset:2px; }
+        .mk-hero { position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; gap:11px; padding:0 28px 6px; text-align:center; }
+        .mk-glyph-spacer { height:234px; }
+        .mk-listen { display:flex; flex-direction:column; align-items:center; gap:11px; }
+        .mk-listening { font-size:12px; letter-spacing:.18em; text-transform:uppercase; color:#7fc7d4; }
+        .mk-wave { display:flex; align-items:flex-end; gap:5px; height:34px; }
+        .mk-wave i { width:4px; border-radius:3px; background:linear-gradient(180deg,#7fc7d4,#3aa0b5); animation:mk-bar 1.1s ease-in-out infinite; }
+        .mk-spoken { font-size:25px; font-weight:300; color:#fff; line-height:1.25; margin:4px 0 2px; }
+        .mk-resolved { position:relative; z-index:1; padding:6px 24px 4px; }
+        .mk-foot { display:flex; align-items:center; gap:12px; padding:16px 24px 22px; position:relative; z-index:1; }
+        .mk-foot input { margin-left:auto; background:rgba(255,255,255,.05); border:1px solid rgba(127,199,212,.2); border-radius:11px;
+          padding:12px 13px; color:#eaf2f5; font:inherit; font-size:13.5px; width:230px; height:44px; outline:none; box-sizing:border-box; }
+        .mk-foot input:focus { border-color:#7fc7d4; box-shadow:0 0 0 3px rgba(127,199,212,.15); }
         @media (prefers-reduced-motion: reduce) {
-          .mk-cue-entrance,
-          .mk-cue-dialog,
-          .mk-cue-scrim,
-          .mk-cue-mic--on {
-            animation: none;
-          }
+          .mk-stage { animation:none; transform:translate(-50%,-50%); }
+          .mk-wave i { animation:none; }
         }
       `}</style>
 
-      <div className="mk-cue-surface" aria-hidden="false">
-        {/* Scrim — click-away closes only when input is empty */}
-        <div
-          className="mk-cue-scrim"
-          onClick={tryClose}
-          aria-hidden="true"
-        />
-
-        {/* Dialog */}
+      <div className="mk-cue-surface">
+        <div className="mk-cue-scrim" onClick={tryClose} aria-hidden="true" />
         <div
           ref={dialogRef}
           role="dialog"
           aria-modal="true"
           aria-label="Cue"
-          className="mk-cue-dialog"
+          className="mk-stage"
           onKeyDown={handleDialogKeyDown}
           tabIndex={-1}
         >
-          <div className="mk-cue-inner">
-            {/* Header: label + close button */}
-            <header className="mk-cue-header">
-              <span className="mk-cue-label">Cue</span>
-              <button
-                type="button"
-                className="mk-cue-close"
-                aria-label={labels.close}
-                onClick={onClose}
-              >
-                &times;
-              </button>
-            </header>
+          {voiceSupported
+            ? <CueOrb3D state={orbState} paused={typingPaused} />
+            : <div className="mk-glyph-spacer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CueOrb state={orbState} tone="light" size={120} />
+              </div>}
 
-            {/* Orb — voice-first, mark-anchored (D-04 / PRES-03). Driven by the
-                five-state FSM; breathes at rest, pulses while listening/speaking. */}
-            <div className="mk-cue-orb-wrap">
-              <CueOrb state={orbState} tone="dark" size={88} />
-            </div>
-
-            {/* Response area */}
-            <div className="mk-cue-response-area" aria-live="polite" aria-atomic="true">
-              {isRecording && (
-                <p className="mk-cue-loading">{labels.listening}</p>
-              )}
-              {isLoading && (
-                <p className="mk-cue-loading">{labels.loading}</p>
-              )}
-              {errorMsg && (
-                <p className="mk-cue-error">{errorMsg}</p>
-              )}
-              {/* Reasoning / result card — never carries Confirm/Cancel. */}
-              {response && !isLoading && (
-                <CueActionCard
-                  title={response.title}
-                  summary={response.summary}
-                  items={response.items}
-                  locale={locale}
-                  onConfirm={undefined}
-                  onCancel={undefined}
-                />
-              )}
-              {/* D-03 confirm card — rendered ONLY off the parsed pending_confirm
-                  payload (kind==='confirm'), never off model prose (T-23-04-09).
-                  Confirm POSTs to /api/cue/calendar/confirm-write; Cancel writes
-                  nothing. */}
-              {pendingConfirm && pendingConfirm.kind === 'confirm' && !isLoading && (
-                <CueActionCard
-                  title={
-                    pendingConfirm.action === 'block'
-                      ? labels.confirmTitleBlock
-                      : labels.confirmTitleClear
-                  }
-                  summary={pendingConfirm.summary}
-                  locale={locale}
-                  onConfirm={handleConfirmWrite}
-                  onCancel={handleCancelWrite}
-                />
-              )}
-            </div>
-
-            {/* Text input form — text is the always-on fallback; the mic adds the
-                voice round-trip when the browser supports it (graceful degrade). */}
-            <form className="mk-cue-form" onSubmit={handleSubmit}>
-              {voiceSupported && (
-                <button
-                  type="button"
-                  className={`mk-cue-mic${isRecording ? ' mk-cue-mic--on' : ''}`}
-                  onClick={toggleMic}
-                  disabled={isLoading}
-                  aria-label={isRecording ? labels.micStop : labels.micStart}
-                  aria-pressed={isRecording}
-                  title={isRecording ? labels.micStop : labels.micStart}
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="20"
-                    height="20"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <rect x="9" y="3" width="6" height="11" rx="3" />
-                    <path d="M5 11a7 7 0 0 0 14 0" />
-                    <line x1="12" y1="18" x2="12" y2="21" />
-                  </svg>
-                </button>
-              )}
-              <input
-                ref={inputRef}
-                type="text"
-                className="mk-cue-input"
-                placeholder={labels.placeholder}
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                aria-label={labels.placeholder}
-                autoComplete="off"
-                spellCheck={false}
-                disabled={isLoading}
-              />
-              <button
-                type="submit"
-                className="mk-cue-submit"
-                disabled={isLoading || !inputValue.trim()}
-                aria-label={labels.submit}
-              >
-                {labels.submit}
-              </button>
-            </form>
+          <div className="mk-stage-head">
+            <span className="n">Cue</span>
+            <span className="ctx">· {labels.context}</span>
+            <span className="esc">{labels.esc}</span>
+            <button type="button" className="mk-close" aria-label={labels.close} onClick={onClose}>&times;</button>
           </div>
+
+          <div className="mk-hero">
+            {voiceSupported && <div className="mk-glyph-spacer" />}
+            {(isListening || isThinking) && (
+              <div className="mk-listen">
+                <div className="mk-listening">{isThinking ? labels.thinking : labels.listening}</div>
+                <div className="mk-wave">{Array.from({ length: 9 }).map((_, i) => (
+                  <i key={i} style={{ height: [12, 24, 34, 20, 30, 16, 28, 22, 12][i], animationDelay: `${i * 0.08}s` }} />
+                ))}</div>
+              </div>
+            )}
+            {spoken && <div className="mk-spoken">&ldquo;{spoken}&rdquo;</div>}
+          </div>
+
+          <div className="mk-resolved" aria-live="polite" aria-atomic="true">
+            {errorMsg && <p style={{ color: '#f0b4b4', fontSize: 14 }}>{errorMsg}</p>}
+            {response && (
+              <CueActionCard title={response.title} summary={response.summary} locale={locale} onConfirm={undefined} onCancel={undefined} />
+            )}
+            {pendingConfirm && pendingConfirm.kind === 'confirm' && (
+              <CueActionCard
+                title={pendingConfirm.action === 'block' ? labels.confirmBlock : labels.confirmClear}
+                summary={pendingConfirm.summary}
+                locale={locale}
+                onConfirm={isWriting ? undefined : handleConfirmWrite}
+                onCancel={handleCancelWrite}
+              />
+            )}
+          </div>
+
+          <form className="mk-foot" onSubmit={handleSubmit}>
+            <input
+              type="text"
+              placeholder={labels.placeholder}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onFocus={() => setTypingPaused(true)}
+              onBlur={() => setTypingPaused(false)}
+              aria-label={labels.placeholder}
+              autoComplete="off"
+              spellCheck={false}
+            />
+          </form>
         </div>
       </div>
     </>
