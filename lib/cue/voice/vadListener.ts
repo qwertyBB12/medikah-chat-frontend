@@ -22,7 +22,7 @@ type MicVADInstance = {
 
 export interface VADListenerOptions {
   config?: SobremesaVADConfig
-  /** Locale hint forwarded to /api/companion/transcribe */
+  /** Locale hint forwarded to /api/cue/transcribe */
   locale?: 'en' | 'es'
   /** Fires on speech onset. If Cue is speaking, treat as barge-in. */
   onSpeechStart?: () => void
