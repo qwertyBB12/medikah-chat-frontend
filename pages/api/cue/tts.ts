@@ -19,6 +19,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { getToken } from 'next-auth/jwt';
 import { authOptions } from '../auth/[...nextauth]';
+import { applyCueBffCors } from '../../../lib/cue/bffCors';
 
 const FASTAPI_URL =
   process.env.PRACTIKAH_API_URL ||
@@ -29,6 +30,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
 ): Promise<void> {
+  if (applyCueBffCors(req, res)) return; // CORS preflight (cross-origin SOGo)
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
     return;

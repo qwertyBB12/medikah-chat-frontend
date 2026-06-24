@@ -20,6 +20,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { getToken } from 'next-auth/jwt';
 import { authOptions } from '../../auth/[...nextauth]';
+import { applyCueBffCors } from '../../../../lib/cue/bffCors';
 
 const FASTAPI_URL =
   process.env.PRACTIKAH_API_URL ||
@@ -30,6 +31,10 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
 ): Promise<void> {
+  // 0. CORS — the SOGo-injected surface (practikah subdomain) confirms writes
+  //    cross-origin with credentials. Answer the preflight first.
+  if (applyCueBffCors(req, res)) return;
+
   // 1. Method check — confirm-write is a POST.
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
