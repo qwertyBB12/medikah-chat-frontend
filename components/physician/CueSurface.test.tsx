@@ -1,18 +1,19 @@
 /**
- * CueSurface tests — Phase 23 Plan 03 TDD (PRES-03 / PRES-05) + Plan 23 voice port.
+ * CueSurface tests — Phase 23 voice port + Cue Console pivot (docked panel).
  *
- * Behavioral contract (preserved across the dark-stage rewrite):
- *   - Dialog has role="dialog", aria-modal="true", aria-label="Cue"
+ * Behavioral contract (preserved across the modal→docked-console rewrite):
+ *   - Surface has role="dialog", aria-label="Cue" (now a non-modal right dock —
+ *     no aria-modal, no scrim; the doctor keeps their screen)
  *   - Focus moves into the surface on open; returns to the previously-focused
  *     element on close
- *   - Esc with empty input closes the surface
- *   - Esc with non-empty input does NOT close (non-destructive dismiss)
- *   - Scrim click with empty input closes the surface
- *   - Scrim click with non-empty input does NOT close
+ *   - Esc with empty input closes the surface (non-destructive dismiss)
+ *   - Esc with non-empty input does NOT close
+ *   - The close (×) button closes the dock
  *   - prefers-reduced-motion: the component renders without throwing
  *   - Surface is only mounted in the DOM when isOpen=true
  *   - aria-live region announced for async Cue responses
  *   - D-03 sentinel split + Confirm/Cancel confirm-before-write card
+ *   - Thinking trace: \x1f tool-event frames render as cascading steps
  *
  * Test environment note: in jsdom diagnoseVADSupport() returns ok:false (no
  * AudioWorklet / getUserMedia / secure context), so voiceSupported is false and
@@ -83,12 +84,13 @@ describe('CueSurface — PRES-03 / PRES-05 accessibility contract', () => {
 
   // ── 1. Basic render and ARIA ─────────────────────────────────────────────
 
-  it('Test 1a: dialog has role=dialog, aria-modal=true, aria-label=Cue when open', () => {
+  it('Test 1a: surface has role=dialog, aria-label=Cue when open (non-modal dock)', () => {
     renderSurface({ isOpen: true });
     const dialog = screen.getByRole('dialog');
     expect(dialog).toBeTruthy();
-    expect(dialog.getAttribute('aria-modal')).toBe('true');
     expect(dialog.getAttribute('aria-label')).toBe('Cue');
+    // The docked console is NOT modal — the doctor keeps using their screen.
+    expect(dialog.getAttribute('aria-modal')).not.toBe('true');
   });
 
   it('Test 1b: surface is not rendered when isOpen=false', () => {
@@ -118,23 +120,13 @@ describe('CueSurface — PRES-03 / PRES-05 accessibility contract', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  it('Test 2c: scrim click with empty input closes the surface', () => {
+  it('Test 2c: the close (×) button closes the dock', () => {
     const onClose = vi.fn();
     renderSurface({ onClose });
-    const scrim = document.querySelector('.mk-cue-scrim') as HTMLElement;
-    expect(scrim).toBeTruthy();
-    fireEvent.click(scrim);
+    // The docked console has no scrim; the close button dismisses it.
+    expect(document.querySelector('.mk-cue-scrim')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(onClose).toHaveBeenCalledTimes(1);
-  });
-
-  it('Test 2d: scrim click with non-empty input does NOT close', () => {
-    const onClose = vi.fn();
-    renderSurface({ onClose });
-    const input = screen.getByRole('textbox');
-    fireEvent.change(input, { target: { value: 'block tuesday afternoon' } });
-    const scrim = document.querySelector('.mk-cue-scrim') as HTMLElement;
-    fireEvent.click(scrim);
-    expect(onClose).not.toHaveBeenCalled();
   });
 
   // ── 3. Focus management ───────────────────────────────────────────────────
@@ -376,5 +368,51 @@ describe('CueSurface — Phase 23 voice port', () => {
     render(<CueSurface isOpen onClose={() => {}} accessToken="t" locale="en" />);
     expect(screen.getByRole('dialog', { name: 'Cue' })).toBeTruthy();
     expect(screen.getByRole('textbox')).toBeTruthy();
+  });
+});
+
+// ─── Cue Console — cascading thinking trace (\x1f tool-event frames) ───────────
+
+describe('CueSurface — thinking trace', () => {
+  beforeEach(() => stubReducedMotion(false));
+  afterEach(() => { vi.restoreAllMocks(); cleanup(); });
+
+  const US = '\x1f';
+
+  /** A streaming fetch mock whose /api/cue/chat body yields the given chunks. */
+  function streamFetch(chunks: string[]) {
+    const enc = new TextEncoder();
+    let i = 0;
+    return vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      headers: new Headers(),
+      body: {
+        getReader: () => ({
+          read: async () =>
+            i < chunks.length
+              ? { done: false, value: enc.encode(chunks[i++]) }
+              : { done: true, value: undefined },
+          cancel: async () => {},
+        }),
+      },
+      text: async () => chunks.join(''),
+    }));
+  }
+
+  it('renders a cascading step (localized label + ✓ count) from tool-event frames', async () => {
+    const start = US + JSON.stringify({ phase: 'start', tool: 'inbox_read_recent' }) + '\n';
+    const end = US + JSON.stringify({ phase: 'end', tool: 'inbox_read_recent', ok: true, items: 3 }) + '\n';
+    vi.stubGlobal('fetch', streamFetch([start, 'Tienes ', end, '3 mensajes nuevos.']));
+
+    render(<CueSurface isOpen onClose={vi.fn()} accessToken="t" locale="es" />);
+    const input = screen.getByRole('textbox');
+    fireEvent.change(input, { target: { value: '¿qué hay en mi bandeja?' } });
+    fireEvent.submit(input.closest('form') as HTMLFormElement);
+
+    // The trace step renders with the Spanish label for inbox_read_recent…
+    expect(await screen.findByText('leyendo tu bandeja')).toBeTruthy();
+    // …and resolves to a checked count once the end frame arrives.
+    await waitFor(() => expect(screen.getByText(/3\s+nuevos/)).toBeTruthy());
   });
 });
