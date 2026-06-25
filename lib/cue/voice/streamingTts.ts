@@ -25,6 +25,13 @@ export interface StreamingTTSOptions {
   locale?: 'en' | 'es'
   /** Concurrency cap for in-flight fetches (keeps network from stampeding) */
   concurrency?: number
+  /** Max fetch attempts per sentence before giving up (1 = no retry). Default 3.
+   *  A transient TTS failure (429 / 5xx / network) was silently dropping the whole
+   *  sentence's audio — the doctor saw the text but heard nothing. */
+  maxAttempts?: number
+  /** Base backoff in ms between retries (attempt n waits n * base). Default 200.
+   *  Set 0 in tests. */
+  retryBackoffMs?: number
   /** Called when each sentence begins playing (for UI reveal) */
   onSentenceStart?: (sentence: string) => void
   /** Phase 55 (ORB-03): fires at sentence boundary so the caption strip can
@@ -58,6 +65,13 @@ export class StreamingTTSPlayer {
   private streamPending = ''
   private streamDonePushing = false
   private streamWaiters: Array<() => void> = []
+
+  // Concurrency semaphore for streaming TTS fetches. The play() path has its own
+  // rolling gate (primeQueue); the streaming path used to fire one fetch per
+  // sentence with NO bound — a multi-sentence reply stampeded the TTS endpoint,
+  // rate-limited, and silently dropped sentences. This caps in-flight fetches.
+  private streamInFlight = 0
+  private streamSlotWaiters: Array<() => void> = []
 
   constructor(private opts: StreamingTTSOptions = {}) {}
 
@@ -137,24 +151,89 @@ export class StreamingTTSPlayer {
   }
 
   /** Fetch + decode one sentence's audio. Shared by play() and the streaming
-   *  session. Returns null on any failure (caller still reveals the text). */
+   *  session. Retries transient failures (429 / 5xx / network) so one cold-start
+   *  blip can't silently drop a whole sentence's audio. Returns null only after
+   *  exhausting attempts or on a hard error (caller still reveals the text). */
   private async _fetchSentence(text: string): Promise<AudioBuffer | null> {
     if (this.stopped) return null
     const endpoint = this.opts.endpoint ?? '/api/cue/tts'
     const locale = this.opts.locale ?? 'en'
+    const maxAttempts = Math.max(1, this.opts.maxAttempts ?? 3)
+    const body = JSON.stringify({ text: applyTtsPronunciation(text, locale), locale })
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      if (this.stopped) return null
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body,
+          signal: this.abortController?.signal,
+        })
+        if (res.status === 204) return null // genuinely empty — nothing to retry
+        if (!res.ok) {
+          // Retry only transient server-side failures; a hard 4xx (401/403/422)
+          // won't change on retry, so give up immediately (no wasted calls).
+          if (this._isTransient(res.status) && attempt < maxAttempts) {
+            await this._backoff(attempt)
+            continue
+          }
+          return null
+        }
+        const arrayBuf = await res.arrayBuffer()
+        if (this.stopped || !this.ctx) return null
+        return await this.ctx.decodeAudioData(arrayBuf)
+      } catch {
+        // Network/abort/decode error. Don't retry once stopped (barge-in aborts
+        // the shared signal); otherwise retry the transient blip.
+        if (this.stopped || attempt >= maxAttempts) return null
+        await this._backoff(attempt)
+      }
+    }
+    return null
+  }
+
+  /** 429 (rate limit) and 5xx (incl. cold-start 502/503) are worth retrying. */
+  private _isTransient(status: number): boolean {
+    return status === 429 || status >= 500
+  }
+
+  private _backoff(attempt: number): Promise<void> {
+    const base = this.opts.retryBackoffMs ?? 200
+    if (base <= 0) return Promise.resolve()
+    return new Promise((resolve) => setTimeout(resolve, base * attempt))
+  }
+
+  // ── Streaming-fetch concurrency gate ────────────────────────────────────────
+  // Acquire a slot before hitting the network; release when the fetch settles.
+  // The slot is handed directly to the next waiter on release (no re-check race).
+  private async _acquireSlot(): Promise<void> {
+    const cap = Math.max(1, this.opts.concurrency ?? 3)
+    if (this.streamInFlight < cap) {
+      this.streamInFlight++
+      return
+    }
+    await new Promise<void>((resolve) => this.streamSlotWaiters.push(resolve))
+    // A releaser handed us its slot — streamInFlight count is unchanged.
+  }
+
+  private _releaseSlot(): void {
+    const next = this.streamSlotWaiters.shift()
+    if (next) next()            // hand the slot over; count stays the same
+    else this.streamInFlight--  // no one waiting — free the slot
+  }
+
+  /** Gated wrapper: bound the streaming path's network concurrency to the cap so a
+   *  burst of sentences can't stampede the TTS endpoint. Order is preserved by the
+   *  FIFO streamQueue; only the fetch START is deferred until a slot frees. */
+  private async _gatedFetchSentence(text: string): Promise<AudioBuffer | null> {
+    if (this.stopped) return null
+    await this._acquireSlot()
     try {
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: applyTtsPronunciation(text, locale), locale }),
-        signal: this.abortController?.signal,
-      })
-      if (!res.ok || res.status === 204) return null
-      const arrayBuf = await res.arrayBuffer()
-      if (this.stopped || !this.ctx) return null
-      return await this.ctx.decodeAudioData(arrayBuf)
-    } catch {
-      return null
+      if (this.stopped) return null
+      return await this._fetchSentence(text)
+    } finally {
+      this._releaseSlot()
     }
   }
 
@@ -176,6 +255,8 @@ export class StreamingTTSPlayer {
     this.streamPending = ''
     this.streamDonePushing = false
     this.streamWaiters = []
+    this.streamInFlight = 0
+    this.streamSlotWaiters = []
     return this._consumeStream()
   }
 
@@ -205,7 +286,9 @@ export class StreamingTTSPlayer {
 
   private _enqueueStreamSentence(text: string): void {
     if (this.stopped) return
-    const bufferPromise = this._fetchSentence(text)
+    // Gate the network fetch behind the concurrency semaphore (no stampede) and
+    // let _fetchSentence retry transient failures (no silent drop).
+    const bufferPromise = this._gatedFetchSentence(text)
     this.streamQueue.push({ text, bufferPromise })
   }
 
@@ -293,6 +376,11 @@ export class StreamingTTSPlayer {
     // Wake any streaming consumer parked in _waitForMore so it exits promptly
     // (resolving its beginStreaming() promise as 'interrupted').
     this._wake()
+    // Release any fetches parked on the concurrency gate so their promises settle
+    // (each re-checks `stopped` and returns null) instead of dangling.
+    const slotWaiters = this.streamSlotWaiters
+    this.streamSlotWaiters = []
+    for (const w of slotWaiters) w()
   }
 }
 
