@@ -1,51 +1,46 @@
 /**
- * CueSurface — Phase 23 voice port (PRES-03 / PRES-04 / PRES-05).
+ * CueSurface — the "Cue Console" (Phase 23 → Cue Console pivot).
  *
- * The dark codex stage: a centered navy command surface mounted once by
- * PortalLayout. Opens on the medikah:cue:open CustomEvent or Cmd+K
+ * A docked clinical command panel — Claude-Code-inside-Medikah. Instead of a
+ * full-screen takeover, Cue lives as a right-docked side panel: the doctor keeps
+ * their screen (calendar/email stay visible) and Cue floats over it. Mounted once
+ * by PortalLayout; opens on the medikah:cue:open CustomEvent or Cmd+K
  * (handled by lib/cue/surface.ts).
  *
- * Voice-first by default (continuous flow), text always-on as the fallback:
- *   - When the browser supports continuous VAD + WebGL (diagnoseVADSupport().ok),
- *     a full-card CueOrb3D (Three.js, lazy, ssr:false) is bound to the five-state
- *     FSM, and a ContinuousFlowController auto-listen loop drives the round-trip
- *     (VAD → transcribe → /api/cue/chat → streaming TTS). A brain-turn greeting is
- *     fetched + spoken on open.
- *   - When it doesn't (older browsers, jsdom test env, no AudioWorklet / mic /
- *     secure context), the surface degrades to the CSS CueOrb + the text input.
- *     Text submit is the only path and posts the SAME messages[] shape to
- *     /api/cue/chat.
+ * The three console pieces (cue-console-mock-v2):
+ *   1. Cascading THINKING TRACE — Cue narrates its tool steps like Code
+ *      ("leyendo tu bandeja ✓ 3 nuevos") as cascading terminal lines BEFORE the
+ *      answer. Driven by \x1f tool-event frames on the /api/cue/chat stream
+ *      (parsed by lib/cue/cueStream.ts → onToolEvent). Transparent; the wait
+ *      feels alive.
+ *   2. ANSWER LINE — the streamed reply (TTFT), plain text with a live cursor.
+ *   3. D-03 CONFIRM CARD — block/clear write proposals, keyed ONLY off the parsed
+ *      \x1e sentinel payload, NEVER off model prose (T-23-04-09). Confirm → POST
+ *      /api/cue/calendar/confirm-write (the sole mutation path). Cancel → no write.
  *
- * Accessibility contract (PRES-05 / LENS-REVIEW-v2 hard gates):
- *   - role="dialog" aria-modal="true" aria-label="Cue"
- *   - Stores document.activeElement on open → moves focus into the dialog
- *   - Tab trapped within the dialog (hand-rolled, ~20 LOC, no library dep)
- *   - Returns focus to the previously-focused element (the launcher) on close
- *   - Esc / scrim click: NON-DESTRUCTIVE when the text input is non-empty
- *   - prefers-reduced-motion: entrance + wave animations disabled
- *   - z-index: 10000 (above SOGo dialogs at ~9999) — T-23-03-01 mitigation
+ * Text-first + push-to-talk: a command line + mic at the bottom; bilingual. When
+ * the browser supports continuous VAD (diagnoseVADSupport().ok) a
+ * ContinuousFlowController drives the voice round-trip (VAD → transcribe →
+ * /api/cue/chat → streaming TTS) and a brain-turn greeting is spoken on open;
+ * otherwise the surface degrades to the text input. Voice is the accelerator, not
+ * the primary modality (the round-trip can't beat text for speed).
  *
- * Architecture notes:
- *   - Text submit POSTs to /api/cue/chat via the same-origin BFF (NextAuth-JWT
- *     auth); the workspace bearer token is sent on the confirm-write hop only
- *     (Authorization header — T-23-03-02 mitigation).
- *   - Responses render as CueActionCard components, NEVER chat bubbles (D-04).
- *   - Confirm-before-write (D-03 / Plan 23-04): the /api/cue/chat stream is split
- *     on the U+001E (RS) sentinel — text before it is reasoning prose; the JSON
- *     after it carries pending_confirm. The confirm card is keyed ONLY off the
- *     parsed payload — NEVER off model prose (T-23-04-09). Confirm → POST
- *     /api/cue/calendar/confirm-write (the sole mutation path). Cancel → no write.
- *   - A voice-initiated block/clear is NEVER spoken as a fait accompli: respond()
- *     returns '' for a pending write so the controller's TTS stays silent until
- *     the explicit Confirm tap (D-03 voice parity).
+ * Accessibility:
+ *   - role="dialog" aria-label="Cue" (NON-modal dock — no aria-modal, no scrim;
+ *     the doctor keeps using their screen and can Tab back to it)
+ *   - Stores document.activeElement on open → moves focus into the panel →
+ *     returns it to the launcher on close
+ *   - Esc: NON-DESTRUCTIVE when the text input is non-empty
+ *   - prefers-reduced-motion: entrance + pulse animations disabled
+ *   - z-index above the dashboard surface (T-23-03-01)
+ *
+ * Auth: text submit POSTs to /api/cue/chat via the same-origin BFF (NextAuth-JWT);
+ * the workspace bearer token is sent on the confirm-write hop only (T-23-03-02).
  */
 
 'use client';
 
 import { useRef, useEffect, useState, useCallback } from 'react';
-import dynamic from 'next/dynamic';
-import CueActionCard from './CueActionCard';
-import CueOrb from './CueOrb'; // CSS fallback orb (unsupported browsers)
 import { VoiceStateMachine, type OrbState } from '../../lib/cue/stateMachine';
 import {
   ContinuousFlowController,
@@ -56,37 +51,23 @@ import {
   readCueStream,
   PENDING_CONFIRM_SENTINEL,
   type CuePendingConfirm,
+  type CueToolEvent,
 } from '../../lib/cue/cueStream';
 
-const CueOrb3D = dynamic(() => import('./CueOrb3D'), { ssr: false });
-
 // ── re-exports kept for tests + custom-sogo.js parity ───────────────────────
-// The pure stream/sentinel helpers now live in lib/cue/cueStream.ts (testable,
+// The pure stream/sentinel helpers live in lib/cue/cueStream.ts (testable,
 // React-free). Re-exported here so existing importers keep working unchanged.
 export { splitCueStream, PENDING_CONFIRM_SENTINEL };
-export type { CuePendingConfirm };
+export type { CuePendingConfirm, CueToolEvent };
 
-// ── Focus trap (hand-rolled, no library dep) ────────────────────────────────
-
+// Focusable selector — used to move focus into the panel on open (NOT a trap:
+// the dock is non-modal, so Tab may leave it back to the doctor's screen).
 const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
-
-function trapFocus(container: HTMLElement) {
-  const focusable = Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE));
-  if (focusable.length === 0) return;
-  const first = focusable[0], last = focusable[focusable.length - 1];
-  function handler(e: KeyboardEvent) {
-    if (e.key !== 'Tab') return;
-    if (e.shiftKey) { if (document.activeElement === first) { last.focus(); e.preventDefault(); } }
-    else { if (document.activeElement === last) { first.focus(); e.preventDefault(); } }
-  }
-  container.addEventListener('keydown', handler);
-  return () => container.removeEventListener('keydown', handler);
-}
 
 // ── Props ───────────────────────────────────────────────────────────────────
 
 export interface CueSurfaceProps {
-  /** Whether the surface is visible. Owned by PortalLayout via useCueSurface. */
+  /** Whether the dock is open. Owned by PortalLayout via useCueSurface. */
   isOpen: boolean;
   /** Called by the surface to request close (PortalLayout updates isOpen). */
   onClose: () => void;
@@ -97,21 +78,76 @@ export interface CueSurfaceProps {
 }
 
 const LABELS = {
-  en: { close: 'Close', listening: 'Listening', thinking: 'Cue is thinking…',
-        placeholder: 'or type a command…', error: 'Something went wrong. Please try again.',
+  en: { close: 'Close', collapse: 'Collapse', you: 'You', context: 'Clinical space',
+        thinking: 'Cue is thinking…', placeholder: 'Type a command…',
+        error: 'Something went wrong. Please try again.', mic: 'Send message',
         confirmBlock: 'Block this time?', confirmClear: 'Clear Cue blocks?',
-        done: 'Done', esc: 'esc to pause', context: 'Workspace',
+        confirmEyebrow: 'Confirm before writing', confirm: 'Confirm', cancel: 'Cancel',
+        hintLeft: 'Cue · English + Spanish', done: 'Done',
         blockedResult: (uid: string) => `Time blocked. (ref ${uid})`,
         clearResult: (deleted: number, kept: number) => `${deleted} removed, ${kept} kept.` },
-  es: { close: 'Cerrar', listening: 'Escuchando', thinking: 'Cue está pensando…',
-        placeholder: 'o escribe un comando…', error: 'Algo salió mal. Inténtalo de nuevo.',
+  es: { close: 'Cerrar', collapse: 'Contraer', you: 'Tú', context: 'Espacio clínico',
+        thinking: 'Cue está pensando…', placeholder: 'Escribe un comando…',
+        error: 'Algo salió mal. Inténtalo de nuevo.', mic: 'Enviar mensaje',
         confirmBlock: '¿Bloquear este horario?', confirmClear: '¿Liberar los bloques de Cue?',
-        done: 'Listo', esc: 'esc para pausar', context: 'Espacio',
+        confirmEyebrow: 'Confirmar antes de escribir', confirm: 'Confirmar', cancel: 'Cancelar',
+        hintLeft: 'Cue · español + inglés', done: 'Listo',
         blockedResult: (uid: string) => `Horario bloqueado. (ref ${uid})`,
         clearResult: (deleted: number, kept: number) => `${deleted} eliminados, ${kept} conservados.` },
 } as const;
 
+// Localized human phrasing for the thinking trace, keyed by tool name. The wire
+// carries only the structured event (phase/tool/ok/items); the verb + unit are
+// presentation, rendered in the doctor's active language.
+const TOOL_LABELS: Record<'en' | 'es', Record<string, { verb: string; unit: string }>> = {
+  en: {
+    inbox_read_recent: { verb: 'reading your inbox', unit: 'new' },
+    calendar_read_day: { verb: 'reading your calendar', unit: 'events' },
+    availability_read: { verb: 'checking your availability', unit: '' },
+    inquiry_list_recent: { verb: 'reviewing your queue', unit: 'patients' },
+    calendar_block_time: { verb: 'preparing the block', unit: '' },
+    calendar_clear_range: { verb: 'preparing to clear', unit: '' },
+  },
+  es: {
+    inbox_read_recent: { verb: 'leyendo tu bandeja', unit: 'nuevos' },
+    calendar_read_day: { verb: 'leyendo tu calendario', unit: 'eventos' },
+    availability_read: { verb: 'revisando tu disponibilidad', unit: '' },
+    inquiry_list_recent: { verb: 'revisando tu fila', unit: 'pacientes' },
+    calendar_block_time: { verb: 'preparando el bloqueo', unit: '' },
+    calendar_clear_range: { verb: 'preparando la limpieza', unit: '' },
+  },
+};
+
+function toolLabel(locale: 'en' | 'es', tool: string): { verb: string; unit: string } {
+  return TOOL_LABELS[locale][tool] ?? { verb: locale === 'es' ? 'trabajando' : 'working', unit: '' };
+}
+
 interface CueResponse { title: string; summary: string; }
+
+/** One cascading trace step. The engine runs tools sequentially, so at most one
+ *  step is 'run' at a time; an 'end' frame resolves the last running step. */
+interface ToolStep { tool: string; status: 'run' | 'done' | 'err'; items?: number; }
+
+function applyToolEvent(prev: ToolStep[], ev: CueToolEvent): ToolStep[] {
+  if (ev.phase === 'start') return [...prev, { tool: ev.tool, status: 'run' }];
+  const next = [...prev];
+  for (let i = next.length - 1; i >= 0; i--) {
+    if (next[i].status === 'run') {
+      next[i] = { ...next[i], status: ev.ok === false ? 'err' : 'done', items: ev.items };
+      break;
+    }
+  }
+  return next;
+}
+
+function stepResultText(s: ToolStep, unit: string): string {
+  if (s.status === 'err') return '⚠';
+  // The backend omits `items` when a tool returns no rows, so a count is shown
+  // only for a positive result — `✓ 0 eventos` (success styling on an empty
+  // result) never renders; an empty/headerless read shows a plain `✓`.
+  if (!s.items) return '✓';
+  return unit ? `✓ ${s.items} ${unit}` : `✓ ${s.items}`;
+}
 
 // ── Component ───────────────────────────────────────────────────────────────
 
@@ -124,10 +160,10 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
   const [orbState, setOrbState] = useState<OrbState>('idle');
   const [spoken, setSpoken] = useState('');           // last user utterance (caption)
   const [response, setResponse] = useState<CueResponse | null>(null);
+  const [toolTrace, setToolTrace] = useState<ToolStep[]>([]);
   const [pendingConfirm, setPendingConfirm] = useState<CuePendingConfirm | null>(null);
   const [isWriting, setIsWriting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [typingPaused, setTypingPaused] = useState(false);
 
   const smRef = useRef<VoiceStateMachine | null>(null);
   if (smRef.current === null) smRef.current = new VoiceStateMachine();
@@ -135,12 +171,12 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
   const idempotencyTokenRef = useRef<string | null>(null);
 
   // Compute ONCE — diagnoseVADSupport() constructs + closes an AudioContext on
-  // each call (a per-render leak), so memoize it in lazy state (Resolution 1).
+  // each call (a per-render leak), so memoize it in lazy state.
   const [voiceSupported] = useState(
     () => typeof window !== 'undefined' && diagnoseVADSupport().ok,
   );
 
-  // Drive orbState from the FSM (single source of truth for the orb visual).
+  // Drive orbState from the FSM (single source of truth for the live indicators).
   useEffect(() => {
     const sm = smRef.current!;
     setOrbState(sm.state);
@@ -149,15 +185,14 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
 
   // respond() — the brain turn the controller (and text submit) call. Posts the
   // canonical messages[] shape to /api/cue/chat and STREAM-READS the reply
-  // (Phase-23 TTFT): each reasoning text chunk is forwarded to opts.onTextChunk
-  // as it arrives so the controller can start speaking sentence 1 early. Returns
-  // { text, pendingConfirm } — the controller decides whether to finish the
-  // streamed speech or (on a write proposal) cut it + speak a templated line.
+  // (Phase-23 TTFT): reasoning text chunks forward to opts.onTextChunk as they
+  // arrive (so the controller can start speaking sentence 1 early) and tool-event
+  // frames drive the thinking trace. Returns { text, pendingConfirm }.
   const respond = useCallback(async (
     userText: string,
     opts?: { signal?: AbortSignal; onTextChunk?: (chunk: string) => void },
   ): Promise<{ text: string; pendingConfirm: CuePendingConfirm | null }> => {
-    setResponse(null); setErrorMsg(null); setPendingConfirm(null);
+    setResponse(null); setErrorMsg(null); setPendingConfirm(null); setToolTrace([]);
     idempotencyTokenRef.current = null;
     const res = await fetch('/api/cue/chat', {
       method: 'POST',
@@ -167,13 +202,17 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-    // Live-update the displayed transcript as text streams in.
+    // Live-update the answer line + the thinking trace as the stream arrives.
     let acc = '';
-    const { text, pendingConfirm: pc } = await readCueStream(res, (chunk) => {
-      acc += chunk;
-      setResponse({ title: 'Cue', summary: acc });
-      opts?.onTextChunk?.(chunk);
-    });
+    const { text, pendingConfirm: pc } = await readCueStream(
+      res,
+      (chunk) => {
+        acc += chunk;
+        setResponse({ title: 'Cue', summary: acc });
+        opts?.onTextChunk?.(chunk);
+      },
+      (ev) => setToolTrace((prev) => applyToolEvent(prev, ev)),
+    );
 
     if (pc && pc.kind === 'confirm') {
       idempotencyTokenRef.current =
@@ -189,9 +228,8 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
   }, [locale]);
 
   // Greeting (brain turn) — fetched on open, spoken via the controller's TTS so
-  // it shares the unlocked AudioContext from the user gesture. The backend
-  // streams it tool-free (opening bypass); one short sentence, so we read it to
-  // completion before speaking (no incremental TTS needed for a single line).
+  // it shares the unlocked AudioContext from the user gesture. Tool-free (opening
+  // bypass); one short sentence, read to completion before speaking.
   const speakGreeting = useCallback(async (ctrl: ContinuousFlowController) => {
     try {
       const res = await fetch('/api/cue/chat', {
@@ -204,8 +242,8 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
     } catch { /* greeting is best-effort */ }
   }, [locale]);
 
-  // Open: start continuous flow (supported) inside the user gesture; on close,
-  // tear down the controller + restore focus.
+  // Open: start continuous flow (supported) inside the user gesture; move focus
+  // into the panel. On close: tear down the controller + restore focus.
   useEffect(() => {
     if (!isOpen) {
       controllerRef.current?.destroy(); controllerRef.current = null;
@@ -219,7 +257,6 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
       const f = dialog.querySelectorAll<HTMLElement>(FOCUSABLE);
       (f.length ? f[0] : dialog).focus();
     }
-    const removeTrap = dialog ? trapFocus(dialog) : undefined;
 
     if (voiceSupported) {
       const ctrl = new ContinuousFlowController({
@@ -232,9 +269,8 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
       controllerRef.current = ctrl;
       ctrl.start().then(() => speakGreeting(ctrl)).catch(() => setErrorMsg(labels.error));
     }
-    // Cleanup also tears down the controller so a re-run/unmount can't leak one
-    // (Resolution 2 — destroy in cleanup, not only the !isOpen branch).
-    return () => { removeTrap?.(); controllerRef.current?.destroy(); controllerRef.current = null; };
+    // Cleanup tears down the controller so a re-run/unmount can't leak one.
+    return () => { controllerRef.current?.destroy(); controllerRef.current = null; };
   }, [isOpen, voiceSupported, locale, respond, speakGreeting, labels.error]);
 
   // Non-destructive close: only when the text input is empty.
@@ -246,7 +282,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
     if (e.key === 'Escape') tryClose();
   }
 
-  // Text fallback submit (always available; the only path when !voiceSupported).
+  // Text submit (always available; the only path when !voiceSupported).
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const message = inputValue.trim();
@@ -289,117 +325,222 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
   function handleCancelWrite() { setPendingConfirm(null); idempotencyTokenRef.current = null; }
 
   if (!isOpen) return null;
-  const isListening = orbState === 'listening';
   const isThinking = orbState === 'thinking';
+  const isSpeaking = orbState === 'speaking';
+  const hasCueTurn = toolTrace.length > 0 || response != null || pendingConfirm != null || errorMsg != null || isThinking;
 
   return (
     <>
       <style>{`
-        @keyframes mk-stage-in { from { opacity:0; transform:translate(-50%,-48%) scale(.96);} to { opacity:1; transform:translate(-50%,-50%) scale(1);} }
-        @keyframes mk-bar { 0%,100%{transform:scaleY(.4)} 50%{transform:scaleY(1)} }
-        .mk-cue-surface { position:fixed; inset:0; z-index:10000; }
-        .mk-cue-scrim { position:absolute; inset:0; background:rgba(8,13,22,.5);
-          backdrop-filter:blur(10px) saturate(.9); -webkit-backdrop-filter:blur(10px) saturate(.9); }
-        @supports not (backdrop-filter: blur(1px)) { .mk-cue-scrim { background:rgba(8,13,22,.9); } }
-        .mk-stage { position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
-          width:880px; max-width:calc(100vw - 48px); border-radius:30px; overflow:hidden;
-          background:radial-gradient(120% 90% at 78% 0%, rgba(58,160,181,.20), transparent 55%),
-            radial-gradient(90% 80% at 10% 110%, rgba(44,122,140,.16), transparent 55%),
-            linear-gradient(160deg, #22344e, #1B2A41 45%, #0e1726);
-          box-shadow:0 60px 160px rgba(6,12,22,.6), 0 0 0 1px rgba(127,199,212,.12), inset 0 1px 0 rgba(255,255,255,.06);
-          color:#eaf2f5; font-family:'Mulish', sans-serif; animation:mk-stage-in .5s cubic-bezier(.16,1,.3,1); outline:none; }
-        .mk-stage-head { display:flex; align-items:center; gap:12px; padding:22px 28px 0; position:relative; z-index:1; }
-        .mk-stage-head .n { font-weight:800; font-size:15px; letter-spacing:.06em; text-transform:uppercase; }
-        .mk-stage-head .ctx { font-size:12px; color:#b3cad2; }
-        .mk-stage-head .esc { margin-left:auto; font-size:11px; color:#b3cad2; border:1px solid rgba(127,199,212,.3); border-radius:7px; padding:6px 9px; }
-        .mk-close { width:44px; height:44px; border-radius:50%; border:none; background:transparent; color:#cfe2e8; font-size:1.25rem; cursor:pointer; }
-        .mk-close:focus-visible { outline:2px solid #7fc7d4; outline-offset:2px; }
-        .mk-hero { position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; gap:11px; padding:0 28px 6px; text-align:center; }
-        .mk-glyph-spacer { height:234px; }
-        .mk-listen { display:flex; flex-direction:column; align-items:center; gap:11px; }
-        .mk-listening { font-size:12px; letter-spacing:.18em; text-transform:uppercase; color:#7fc7d4; }
-        .mk-wave { display:flex; align-items:flex-end; gap:5px; height:34px; }
-        .mk-wave i { width:4px; border-radius:3px; background:linear-gradient(180deg,#7fc7d4,#3aa0b5); animation:mk-bar 1.1s ease-in-out infinite; }
-        .mk-spoken { font-size:25px; font-weight:300; color:#fff; line-height:1.25; margin:4px 0 2px; }
-        .mk-resolved { position:relative; z-index:1; padding:6px 24px 4px; }
-        .mk-foot { display:flex; align-items:center; gap:12px; padding:16px 24px 22px; position:relative; z-index:1; }
-        .mk-foot input { margin-left:auto; background:rgba(255,255,255,.05); border:1px solid rgba(127,199,212,.2); border-radius:11px;
-          padding:12px 13px; color:#eaf2f5; font:inherit; font-size:13.5px; width:230px; height:44px; outline:none; box-sizing:border-box; }
-        .mk-foot input:focus { border-color:#7fc7d4; box-shadow:0 0 0 3px rgba(127,199,212,.15); }
+        @keyframes mk-dock-in { from { opacity:0; transform:translateX(18px);} to { opacity:1; transform:none;} }
+        @keyframes mk-pulse { 0%,100%{opacity:.35} 50%{opacity:1} }
+        @keyframes mk-blink { 50%{opacity:0} }
+        .mk-dock { position:fixed; top:64px; right:0; bottom:0; width:min(416px,100vw); z-index:10000;
+          display:flex; flex-direction:column; color:#eaf2f5; font-family:'Mulish', sans-serif;
+          border-top-left-radius:24px; overflow:hidden; outline:none;
+          background:
+            radial-gradient(120% 36% at 88% 0%, rgba(58,160,181,.18), transparent 60%),
+            linear-gradient(180deg,#22344e,#1B2A41 42%,#0e1726);
+          box-shadow:-26px 0 70px rgba(6,12,22,.34), inset 1px 0 0 rgba(127,199,212,.12);
+          animation:mk-dock-in .42s cubic-bezier(.16,1,.3,1); }
+        /* soft concave seam echoing the brand wave on the dock's left edge */
+        .mk-dock::before { content:''; position:absolute; left:0; top:0; bottom:0; width:24px; pointer-events:none;
+          background:linear-gradient(90deg, rgba(127,199,212,.10), transparent); }
+        /* a self-contained wave lip across the dock's top (flows from an arc) */
+        .mk-dock-lip { position:absolute; top:0; left:0; right:0; height:16px; z-index:1; pointer-events:none; display:block; }
+
+        .mk-dock-h { flex:none; display:flex; align-items:center; gap:11px; padding:16px 14px 10px; position:relative; z-index:2; }
+        .mk-glyph { width:30px; height:30px; border-radius:9px; display:grid; place-items:center; flex:none;
+          background:radial-gradient(120% 120% at 30% 20%, rgba(127,199,212,.5), transparent 62%), #16233a;
+          border:1px solid rgba(127,199,212,.32); box-shadow:0 0 18px rgba(58,160,181,.32); }
+        .mk-glyph svg { width:17px; height:17px; }
+        .mk-dock-name { font-weight:800; letter-spacing:.05em; font-size:14px; }
+        .mk-dock-ctx { font-size:11.5px; color:#9fbcc6; }
+        .mk-dock-actions { margin-left:auto; display:flex; gap:6px; }
+        .mk-icbtn { width:30px; height:30px; border-radius:8px; border:1px solid rgba(127,199,212,.18);
+          background:rgba(255,255,255,.03); color:#cfe2e8; display:grid; place-items:center; font-size:15px;
+          cursor:pointer; line-height:1; }
+        .mk-icbtn:hover { background:rgba(255,255,255,.07); }
+        .mk-icbtn:focus-visible { outline:2px solid #7fc7d4; outline-offset:2px; }
+
+        .mk-thread { flex:1; overflow:auto; padding:6px 16px 8px; display:flex; flex-direction:column; gap:14px; position:relative; z-index:2; }
+        .mk-thread::-webkit-scrollbar { width:8px; }
+        .mk-thread::-webkit-scrollbar-thumb { background:rgba(127,199,212,.18); border-radius:8px; }
+        .mk-turn { display:flex; flex-direction:column; gap:6px; }
+        .mk-who { font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:#7fa6b2; }
+        .mk-bubble { align-self:flex-start; background:rgba(127,199,212,.1); border:1px solid rgba(127,199,212,.16);
+          border-radius:12px; padding:9px 12px; font-size:13.5px; color:#dff0f4; max-width:92%; }
+
+        /* ★ the cascading thinking trace */
+        .mk-think { border-left:2px solid rgba(127,199,212,.28); padding:2px 0 2px 12px;
+          display:flex; flex-direction:column; gap:5px; margin:1px 0 2px; }
+        .mk-step { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12px; color:#90b4bf;
+          display:flex; align-items:center; gap:8px; }
+        .mk-step .mk-pr { color:#7fc7d4; }
+        .mk-step .mk-ok { margin-left:auto; color:#73c2a6; font-size:11px; display:flex; align-items:center; }
+        .mk-step.mk-run { color:#cfe6ec; }
+        .mk-step.mk-run .mk-ok { color:#7fa6b2; }
+        .mk-dotpulse { width:6px; height:6px; border-radius:50%; background:#7fc7d4; animation:mk-pulse 1s ease-in-out infinite; }
+
+        .mk-line { font-size:14px; line-height:1.5; color:#eaf2f5; white-space:pre-wrap; }
+        .mk-cur { display:inline-block; width:8px; height:15px; vertical-align:-2px; margin-left:2px; border-radius:1px;
+          background:#7fc7d4; animation:mk-blink 1s steps(2) infinite; }
+        .mk-err { color:#f0b4b4; font-size:14px; margin:0; }
+
+        /* D-03 confirm card — dark surface */
+        .mk-card { background:rgba(255,255,255,.05); border:1px solid rgba(127,199,212,.18); border-radius:13px;
+          padding:12px 13px; margin-top:5px; }
+        .mk-card-k { font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:#7fc7d4; }
+        .mk-card-ttl { font-weight:700; font-size:14.5px; margin:5px 0 2px; }
+        .mk-card-sub { font-size:12.5px; color:#b6cdd4; white-space:pre-wrap; }
+        .mk-card-acts { display:flex; gap:8px; margin-top:11px; }
+        .mk-btn { flex:1; border:none; border-radius:9px; padding:10px; font:inherit; font-weight:700; font-size:13px;
+          min-height:44px; cursor:pointer; }
+        .mk-btn.mk-go { background:linear-gradient(180deg,#3aa0b5,#2C7A8C); color:#fff; box-shadow:0 6px 16px rgba(44,122,140,.4); }
+        .mk-btn.mk-go:disabled { opacity:.6; cursor:default; }
+        .mk-btn.mk-no { background:rgba(255,255,255,.06); color:#cfe2e8; border:1px solid rgba(127,199,212,.2); }
+
+        .mk-cmd { flex:none; padding:11px 14px 14px; border-top:1px solid rgba(127,199,212,.1); position:relative; z-index:2; }
+        .mk-cmd-row { display:flex; align-items:center; gap:9px; background:rgba(255,255,255,.045);
+          border:1px solid rgba(127,199,212,.22); border-radius:12px; padding:9px 11px; }
+        .mk-cmd-row:focus-within { border-color:#7fc7d4; box-shadow:0 0 0 3px rgba(127,199,212,.15); }
+        .mk-prompt { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; color:#7fc7d4; font-size:14px; }
+        .mk-cmd-in { flex:1; background:none; border:none; outline:none; color:#eaf2f5; font:inherit; font-size:13.5px; min-width:0; }
+        .mk-cmd-in::placeholder { color:#7fa6b2; }
+        /* ≥44px tap target (PRES-05 a11y contract — matches the Confirm/Cancel buttons). */
+        .mk-mic { width:44px; height:44px; border-radius:50%; flex:none; display:grid; place-items:center; border:none;
+          background:linear-gradient(150deg,#2C7A8C,#3aa0b5); color:#fff; box-shadow:0 4px 12px rgba(44,122,140,.45); cursor:pointer; }
+        .mk-mic svg { width:16px; height:16px; }
+        .mk-mic:focus-visible { outline:2px solid #7fc7d4; outline-offset:2px; }
+        .mk-mic.mk-mic-live { box-shadow:0 0 0 4px rgba(127,199,212,.25), 0 4px 12px rgba(44,122,140,.45); }
+        .mk-hint { display:flex; justify-content:space-between; margin-top:7px; font-size:11px; color:#7fa6b2; }
+
+        @media (max-width: 768px) { .mk-dock { top:0; width:100vw; border-top-left-radius:0; } }
         @media (prefers-reduced-motion: reduce) {
-          .mk-stage { animation:none; transform:translate(-50%,-50%); }
-          .mk-wave i { animation:none; }
+          .mk-dock { animation:none; }
+          .mk-dotpulse, .mk-cur { animation:none; }
         }
       `}</style>
 
-      <div className="mk-cue-surface">
-        <div className="mk-cue-scrim" onClick={tryClose} aria-hidden="true" />
-        <div
-          ref={dialogRef}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Cue"
-          className="mk-stage"
-          onKeyDown={handleDialogKeyDown}
-          tabIndex={-1}
-        >
-          {voiceSupported
-            ? <CueOrb3D state={orbState} paused={typingPaused} />
-            : <div className="mk-glyph-spacer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <CueOrb state={orbState} tone="light" size={120} />
-              </div>}
+      <aside
+        ref={dialogRef}
+        role="dialog"
+        aria-label="Cue"
+        className="mk-dock"
+        onKeyDown={handleDialogKeyDown}
+        tabIndex={-1}
+      >
+        {/* self-contained wave lip — flows from an arc (brand direction: arcs up
+            in the middle, navy drips lower at the edges) */}
+        <svg className="mk-dock-lip" viewBox="0 0 416 16" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0,0 L416,0 L416,12 C277,2 139,2 0,12 Z" fill="#1B2A41" />
+          <path d="M0,12 C139,2 277,2 416,12" fill="none" stroke="rgba(127,199,212,.22)" strokeWidth="1" />
+        </svg>
 
-          <div className="mk-stage-head">
-            <span className="n">Cue</span>
-            <span className="ctx">· {labels.context}</span>
-            <span className="esc">{labels.esc}</span>
-            <button type="button" className="mk-close" aria-label={labels.close} onClick={onClose}>&times;</button>
-          </div>
+        <header className="mk-dock-h">
+          <span className="mk-glyph" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#7fc7d4" strokeWidth="1.7">
+              <circle cx="12" cy="12" r="8.2" opacity=".5" />
+              <path d="M12 4.2v15.6M4.2 12h15.6" />
+            </svg>
+          </span>
+          <span className="mk-dock-name">Cue</span>
+          <span className="mk-dock-ctx">· {labels.context}</span>
+          <span className="mk-dock-actions">
+            <button type="button" className="mk-icbtn" aria-label={labels.collapse} onClick={onClose}>⌄</button>
+            <button type="button" className="mk-icbtn" aria-label={labels.close} onClick={onClose}>&times;</button>
+          </span>
+        </header>
 
-          <div className="mk-hero">
-            {voiceSupported && <div className="mk-glyph-spacer" />}
-            {(isListening || isThinking) && (
-              <div className="mk-listen">
-                <div className="mk-listening">{isThinking ? labels.thinking : labels.listening}</div>
-                <div className="mk-wave">{Array.from({ length: 9 }).map((_, i) => (
-                  <i key={i} style={{ height: [12, 24, 34, 20, 30, 16, 28, 22, 12][i], animationDelay: `${i * 0.08}s` }} />
-                ))}</div>
-              </div>
-            )}
-            {spoken && <div className="mk-spoken">&ldquo;{spoken}&rdquo;</div>}
-          </div>
+        <div className="mk-thread" aria-live="polite" aria-atomic="false">
+          {spoken && (
+            <div className="mk-turn mk-you">
+              <div className="mk-who">{labels.you}</div>
+              <div className="mk-bubble">{spoken}</div>
+            </div>
+          )}
 
-          <div className="mk-resolved" aria-live="polite" aria-atomic="true">
-            {errorMsg && <p style={{ color: '#f0b4b4', fontSize: 14 }}>{errorMsg}</p>}
-            {response && (
-              <CueActionCard title={response.title} summary={response.summary} locale={locale} onConfirm={undefined} onCancel={undefined} />
-            )}
-            {pendingConfirm && pendingConfirm.kind === 'confirm' && (
-              <CueActionCard
-                title={pendingConfirm.action === 'block' ? labels.confirmBlock : labels.confirmClear}
-                summary={pendingConfirm.summary}
-                locale={locale}
-                onConfirm={isWriting ? undefined : handleConfirmWrite}
-                onCancel={handleCancelWrite}
-              />
-            )}
-          </div>
+          {hasCueTurn && (
+            <div className="mk-turn mk-cue">
+              <div className="mk-who">Cue</div>
 
-          <form className="mk-foot" onSubmit={handleSubmit}>
+              {toolTrace.length > 0 && (
+                <div className="mk-think">
+                  {toolTrace.map((s, i) => {
+                    const { verb, unit } = toolLabel(locale, s.tool);
+                    return (
+                      <div key={i} className={`mk-step ${s.status === 'run' ? 'mk-run' : ''}`}>
+                        <span className="mk-pr">&rsaquo;</span>
+                        <span className="mk-step-label">{verb}</span>
+                        <span className="mk-ok">
+                          {s.status === 'run' ? <span className="mk-dotpulse" /> : stepResultText(s, unit)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {errorMsg && <p className="mk-err">{errorMsg}</p>}
+
+              {response && (
+                <div className="mk-line">
+                  {response.summary}
+                  {(isThinking || isSpeaking) && <span className="mk-cur" />}
+                </div>
+              )}
+
+              {pendingConfirm && pendingConfirm.kind === 'confirm' && (
+                <div className="mk-card">
+                  <div className="mk-card-k">&#9670; {labels.confirmEyebrow}</div>
+                  <div className="mk-card-ttl">
+                    {pendingConfirm.action === 'block' ? labels.confirmBlock : labels.confirmClear}
+                  </div>
+                  <div className="mk-card-sub">{pendingConfirm.summary}</div>
+                  <div className="mk-card-acts">
+                    <button type="button" className="mk-btn mk-go" onClick={handleConfirmWrite} disabled={isWriting}>
+                      {labels.confirm}
+                    </button>
+                    <button type="button" className="mk-btn mk-no" onClick={handleCancelWrite}>
+                      {labels.cancel}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <form className="mk-cmd" onSubmit={handleSubmit}>
+          <div className="mk-cmd-row">
+            <span className="mk-prompt" aria-hidden="true">&rsaquo;</span>
             <input
               type="text"
+              className="mk-cmd-in"
               placeholder={labels.placeholder}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              onFocus={() => setTypingPaused(true)}
-              onBlur={() => setTypingPaused(false)}
               aria-label={labels.placeholder}
               autoComplete="off"
               spellCheck={false}
             />
-          </form>
-        </div>
-      </div>
+            <button
+              type="submit"
+              className={`mk-mic ${orbState === 'listening' ? 'mk-mic-live' : ''}`}
+              aria-label={labels.mic}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round">
+                <rect x="9" y="3" width="6" height="11" rx="3" />
+                <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+              </svg>
+            </button>
+          </div>
+          <div className="mk-hint">
+            <span>{labels.hintLeft}</span>
+            <span>{isThinking ? labels.thinking : ''}</span>
+          </div>
+        </form>
+      </aside>
     </>
   );
 }

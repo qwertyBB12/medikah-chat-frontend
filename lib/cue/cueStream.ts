@@ -1,11 +1,25 @@
 /**
- * lib/cue/cueStream.ts — the /api/cue/chat wire contract (D-03 + Phase-23 TTFT).
+ * lib/cue/cueStream.ts — the /api/cue/chat wire contract (D-03 + Phase-23 TTFT +
+ * Phase-23 thinking trace).
  *
- * The upstream is a `text/plain` StreamingResponse: reasoning text deltas as they
- * are generated, optionally followed by ONE structured sentinel line carrying the
- * pending_confirm payload:
+ * The upstream is a `text/plain` StreamingResponse carrying three kinds of bytes,
+ * interleaved in this order:
  *
- *     <text delta><text delta>…<U+001E><compact JSON {"pending_confirm":{…}}>\n
+ *   1. Reasoning/answer text deltas — raw UTF-8, no framing (the speakable reply).
+ *      Never contains the \x1e or \x1f control bytes.
+ *   2. Tool-event frames (the "thinking trace") — \x1f (US) + compact JSON + \n,
+ *      emitted by the engine as each agentic tool call STARTS and FINISHES, e.g.
+ *          \x1f{"phase":"start","tool":"inbox_read_recent"}\n
+ *          \x1f{"phase":"end","tool":"inbox_read_recent","ok":true,"items":3}\n
+ *      Interleaved; zero or more; rendered as cascading terminal lines.
+ *   3. ONE structured confirm sentinel line (terminal) — \x1e (RS) + compact JSON
+ *      {"pending_confirm":{…}} + \n (D-03 / Plan 23-04).
+ *
+ *   <delta>…<\x1f frame>…<delta>…<\x1e confirm tail>
+ *
+ * BACKWARD COMPATIBILITY: a stream with NO \x1f frames parses byte-identically to
+ * the Phase-22/23 contract (text + optional \x1e tail). The confirm framing and
+ * timing are unchanged.
  *
  * Phase 23 streams the text token-by-token (TTFT) so Cue can start speaking
  * sentence 1 while the rest generates. These pure helpers are kept out of the
@@ -27,42 +41,109 @@ export interface CuePendingConfirm {
   end_iso: string;
 }
 
+/**
+ * A "thinking trace" event: the engine emits one when a tool call starts and one
+ * when it finishes. `ok`/`items` appear only on the `end` frame (`items` only when
+ * the tool returned a countable list). The surface renders these as cascading
+ * terminal steps BEFORE the answer — NEVER spoken (they never reach the TTS feed).
+ */
+export interface CueToolEvent {
+  phase: 'start' | 'end';
+  tool: string;
+  ok?: boolean;
+  items?: number;
+}
+
 /** U+001E (RECORD SEPARATOR) — the canonical pending_confirm sentinel byte. */
 export const PENDING_CONFIRM_SENTINEL = '\x1e';
 
-/**
- * Split a fully-buffered /api/cue/chat response body on the pending_confirm
- * sentinel. Everything BEFORE the first sentinel is the reasoning text; the JSON
- * line AFTER it (if present) carries { pending_confirm }. Returns null
- * pendingConfirm when no sentinel is present (Phase-22 plain-text path,
- * byte-identical).
- */
-export function splitCueStream(body: string): {
+/** U+001F (UNIT SEPARATOR) — the tool-event frame prefix (terminated by \n). */
+export const TOOL_EVENT_SENTINEL = '\x1f';
+
+interface ParsedCueBuffer {
   text: string;
   pendingConfirm: CuePendingConfirm | null;
-} {
-  const idx = body.indexOf(PENDING_CONFIRM_SENTINEL);
-  if (idx === -1) return { text: body, pendingConfirm: null };
-  const text = body.slice(0, idx);
-  const rest = body.slice(idx + 1).trim();
+  toolEvents: CueToolEvent[];
+}
+
+/** Parse a tool-event frame's JSON; returns null if malformed or missing `tool`. */
+function parseToolFrame(json: string): CueToolEvent | null {
   try {
-    const parsed = JSON.parse(rest) as { pending_confirm?: CuePendingConfirm };
-    const pc = parsed?.pending_confirm ?? null;
-    return { text, pendingConfirm: pc && pc.kind === 'confirm' ? pc : null };
+    const ev = JSON.parse(json) as CueToolEvent;
+    if (ev && typeof ev.tool === 'string' && (ev.phase === 'start' || ev.phase === 'end')) {
+      return ev;
+    }
   } catch {
-    return { text, pendingConfirm: null };
+    /* malformed frame — ignore */
+  }
+  return null;
+}
+
+/** Parse the confirm tail (everything after the first \x1e). */
+function parseConfirmTail(rest: string): CuePendingConfirm | null {
+  try {
+    const parsed = JSON.parse(rest.trim()) as { pending_confirm?: CuePendingConfirm };
+    const pc = parsed?.pending_confirm ?? null;
+    return pc && pc.kind === 'confirm' ? pc : null;
+  } catch {
+    return null;
   }
 }
 
 /**
+ * Single source of truth for the FINAL parse of a fully-buffered body: peels the
+ * confirm tail at the first \x1e, then strips every complete \x1f…\n frame out of
+ * the head — text is everything that remains, toolEvents are the parsed frames.
+ */
+function parseCueBuffer(full: string): ParsedCueBuffer {
+  const confirmIdx = full.indexOf(PENDING_CONFIRM_SENTINEL);
+  const head = confirmIdx === -1 ? full : full.slice(0, confirmIdx);
+  const pendingConfirm =
+    confirmIdx === -1 ? null : parseConfirmTail(full.slice(confirmIdx + 1));
+
+  const toolEvents: CueToolEvent[] = [];
+  let text = '';
+  let i = 0;
+  while (i < head.length) {
+    const us = head.indexOf(TOOL_EVENT_SENTINEL, i);
+    if (us === -1) {
+      text += head.slice(i);
+      break;
+    }
+    text += head.slice(i, us);
+    const nl = head.indexOf('\n', us + 1);
+    if (nl === -1) {
+      // Incomplete trailing frame (server closed mid-frame) — drop it; never text.
+      break;
+    }
+    const ev = parseToolFrame(head.slice(us + 1, nl));
+    if (ev) toolEvents.push(ev);
+    i = nl + 1;
+  }
+
+  return { text, pendingConfirm, toolEvents };
+}
+
+/**
+ * Split a fully-buffered /api/cue/chat response body. Strips \x1f tool-event
+ * frames (collected into `toolEvents`) and peels the \x1e pending_confirm tail;
+ * everything else is reasoning text. Returns null pendingConfirm / empty
+ * toolEvents for the Phase-22 plain-text path (byte-identical).
+ */
+export function splitCueStream(body: string): ParsedCueBuffer {
+  return parseCueBuffer(body);
+}
+
+/**
  * Stream-read a /api/cue/chat Response, forwarding reasoning text to `onTextChunk`
- * as it arrives (the Phase-23 TTFT path), and returning the authoritative
- * { text, pendingConfirm } once the stream ends.
+ * and tool-event frames to `onToolEvent` as they arrive (the Phase-23 TTFT +
+ * thinking-trace path), and returning the authoritative
+ * { text, pendingConfirm, toolEvents } once the stream ends.
  *
- * Only the text BEFORE the sentinel is forwarded to onTextChunk — the JSON tail
- * (pending_confirm) is parsed at the end and NEVER spoken. The 1-byte sentinel
- * may straddle a chunk boundary, so detection runs on the accumulated buffer and
- * the final split() is authoritative.
+ * Only speakable text is forwarded to onTextChunk — the \x1f frames and the \x1e
+ * JSON tail NEVER reach it (so they are never spoken). Control bytes may straddle
+ * a chunk boundary, so an incomplete frame is held back until its terminating \n
+ * arrives; the final parseCueBuffer() over the whole body is authoritative.
  *
  * Falls back to buffering (`res.text()`) when the body is not a readable stream
  * (older runtimes / test mocks), so callers get identical results either way.
@@ -70,43 +151,72 @@ export function splitCueStream(body: string): {
 export async function readCueStream(
   res: Response,
   onTextChunk?: (chunk: string) => void,
-): Promise<{ text: string; pendingConfirm: CuePendingConfirm | null }> {
+  onToolEvent?: (event: CueToolEvent) => void,
+): Promise<ParsedCueBuffer> {
   if (!res.body || typeof res.body.getReader !== 'function') {
-    return splitCueStream(await res.text());
+    return parseCueBuffer(await res.text());
   }
 
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let full = '';
-  let emittedLen = 0; // chars of pre-sentinel text already handed to onTextChunk
-  let sentinelIdx = -1;
+  let cursor = 0;        // chars in `full` already processed (text emitted / frame consumed)
+  let confirmSeen = false; // once \x1e is reached, the rest is the confirm tail (buffer only)
+
+  // Process every COMPLETE unit (text run, tool frame) from `cursor` forward.
+  const pump = () => {
+    while (cursor < full.length && !confirmSeen) {
+      const usIdx = full.indexOf(TOOL_EVENT_SENTINEL, cursor);
+      const rsIdx = full.indexOf(PENDING_CONFIRM_SENTINEL, cursor);
+
+      // Earliest control byte at/after cursor decides what comes next.
+      let ctrlIdx = -1;
+      let ctrlIsConfirm = false;
+      if (usIdx !== -1 && (rsIdx === -1 || usIdx < rsIdx)) {
+        ctrlIdx = usIdx;
+      } else if (rsIdx !== -1) {
+        ctrlIdx = rsIdx;
+        ctrlIsConfirm = true;
+      }
+
+      if (ctrlIdx === -1) {
+        // No control byte ahead — everything left is speakable text.
+        if (onTextChunk && full.length > cursor) onTextChunk(full.slice(cursor));
+        cursor = full.length;
+        return;
+      }
+
+      // Emit any text up to the control byte.
+      if (onTextChunk && ctrlIdx > cursor) onTextChunk(full.slice(cursor, ctrlIdx));
+
+      if (ctrlIsConfirm) {
+        // Confirm tail begins — stop emitting; buffer the remainder for final parse.
+        cursor = ctrlIdx;
+        confirmSeen = true;
+        return;
+      }
+
+      // Tool frame — needs its terminating \n before we can parse it.
+      const nl = full.indexOf('\n', ctrlIdx + 1);
+      if (nl === -1) {
+        cursor = ctrlIdx; // hold the partial frame; re-scan when more data arrives
+        return;
+      }
+      const ev = parseToolFrame(full.slice(ctrlIdx + 1, nl));
+      if (ev) onToolEvent?.(ev);
+      cursor = nl + 1;
+    }
+  };
 
   // eslint-disable-next-line no-constant-condition
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
     full += decoder.decode(value, { stream: true });
-
-    if (sentinelIdx === -1) {
-      const idx = full.indexOf(PENDING_CONFIRM_SENTINEL);
-      if (idx === -1) {
-        // Everything so far is speakable text — forward the newly-arrived tail.
-        if (onTextChunk && full.length > emittedLen) {
-          onTextChunk(full.slice(emittedLen));
-          emittedLen = full.length;
-        }
-      } else {
-        // Sentinel reached — forward only the text up to it, then stop emitting.
-        sentinelIdx = idx;
-        if (onTextChunk && idx > emittedLen) {
-          onTextChunk(full.slice(emittedLen, idx));
-          emittedLen = idx;
-        }
-      }
-    }
-    // After the sentinel, keep buffering the JSON remainder (no more onTextChunk).
+    pump();
   }
   full += decoder.decode(); // flush any trailing multibyte
+  pump();
 
-  return splitCueStream(full);
+  return parseCueBuffer(full);
 }
