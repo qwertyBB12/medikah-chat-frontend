@@ -118,17 +118,6 @@ export default function ThemedShell({
         {/* ── De-branded minimal header (NO Medikah wordmark — D-03) ── */}
         <header className="sticky top-0 z-50 px-6 py-4 border-b border-deep-charcoal/10 bg-white/95 backdrop-blur-sm">
           <div className="max-w-5xl mx-auto flex items-center justify-between">
-            {/*
-             * Try Pro preview badge — physician's name is shown by the hero component
-             * inside `children`. The header stays minimal and de-branded per D-03.
-             */}
-            <span
-              className="font-heading text-sm tracking-wider uppercase"
-              style={{ color: accent }}
-            >
-              Try Pro Preview
-            </span>
-
             <nav className="flex items-center gap-6">
               <Link
                 href={`#contact`}
