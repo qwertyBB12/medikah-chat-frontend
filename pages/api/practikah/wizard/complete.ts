@@ -23,6 +23,7 @@ import { getToken } from 'next-auth/jwt';
 import { authOptions } from '../../auth/[...nextauth]';
 import { logEvent, extractRequestContext } from '../../../../lib/workspaceAuditService';
 import { checkPassword } from '../../../../lib/passwordPolicy';
+import { triggerWorkspaceActivation } from '../../../../lib/activationEmail';
 
 const FASTAPI_URL =
   process.env.PRACTIKAH_API_URL ||
@@ -106,12 +107,14 @@ export default async function handler(
 
     const result = (await upstream.json()) as Record<string, unknown>;
 
-    // 6. Audit log on success — ONLY on 200 (T-12-01-05, OPS-01)
+    // 6. Audit log + activation email on success — ONLY on 200 (T-12-01-05, OPS-01)
     if (upstream.status === 200) {
       const reqCtx = extractRequestContext(req);
+      const physicianId = (result.physician_id as string | undefined) ?? '';
+
       // Best-effort — never throws (workspaceAuditService contract)
       await logEvent({
-        physicianId: (result.physician_id as string | undefined) ?? '',
+        physicianId,
         actorId: (session.user as { id?: string }).id,
         actorRole: 'physician',
         action: 'workspace.setup_completed',
@@ -126,6 +129,16 @@ export default async function handler(
         ipAddress: reqCtx.ipAddress,
         userAgent: reqCtx.userAgent,
       });
+
+      // Auto-fire activation email now that the mailbox exists (Option B: provisioning
+      // gate means the email couldn't be sent before the wizard; fire it here so the
+      // doctor doesn't need an admin to manually click "Resend activation link").
+      // Best-effort — wizard completion is not rolled back if this fails.
+      if (physicianId) {
+        triggerWorkspaceActivation(physicianId).catch((err) => {
+          console.error('[wizard/complete] triggerWorkspaceActivation failed (non-fatal):', err);
+        });
+      }
     }
 
     return res.status(upstream.status).json(result);

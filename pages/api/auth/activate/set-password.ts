@@ -85,6 +85,21 @@ export default async function handler(
       return res.status(410).json({ error: 'Token has expired or has already been used' });
     }
 
+    // --- Resolve physician workspace account BEFORE consuming the token ---
+    // (checking workspace existence first means a missing mailbox returns 404 without
+    // burning the single-use token — the activation gate should prevent this branch
+    // in normal operation, but belt-and-suspenders protects against edge cases)
+    const { data: workspace, error: wsError } = await supabaseAdmin
+      .from('physician_workspace_accounts')
+      .select('id, mailbox_local_part')
+      .eq('physician_id', tokenPayload.physician_id)
+      .maybeSingle();
+
+    if (wsError || !workspace) {
+      console.error('[set-password] Workspace account not found:', wsError?.message);
+      return res.status(404).json({ error: 'Workspace account not found' });
+    }
+
     // --- PITFALL 4: Mark consumed_at BEFORE calling Mailcow (replay protection) ---
     const { error: consumeError } = await supabaseAdmin
       .from('physician_activation_tokens')
@@ -95,18 +110,6 @@ export default async function handler(
     if (consumeError) {
       console.error('[set-password] Failed to mark token consumed:', consumeError.message);
       return res.status(500).json({ error: 'Internal error' });
-    }
-
-    // --- Resolve physician workspace account ---
-    const { data: workspace, error: wsError } = await supabaseAdmin
-      .from('physician_workspace_accounts')
-      .select('id, mailbox_local_part')
-      .eq('physician_id', tokenPayload.physician_id)
-      .maybeSingle();
-
-    if (wsError || !workspace) {
-      console.error('[set-password] Workspace account not found:', wsError?.message);
-      return res.status(404).json({ error: 'Workspace account not found' });
     }
 
     const localPart = workspace.mailbox_local_part as string;
