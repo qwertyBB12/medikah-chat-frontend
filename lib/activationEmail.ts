@@ -299,34 +299,25 @@ Práctikah · Medikah Corporation
 /**
  * Generate and send a workspace activation magic-link email for a physician.
  *
- * Idempotent: if a non-consumed, non-expired activation token already exists
- * for the physician, this function returns without inserting a new row or
- * sending a second email (D-02 / FLOW-03 — "at most once" semantics).
+ * Idempotent by default: if a non-consumed, non-expired activation token already
+ * exists, returns without sending a duplicate (D-02 / FLOW-03 — "at most once").
  *
- * Should be called after verification_status flips to 'verified' in both
- * updatePhysicianVerificationStatus() and approveManualReview() in
- * lib/verification/verificationService.ts.
+ * Pass `{ force: true }` to expire any live token first and always issue a fresh
+ * link. Use for admin resend — the email may have been lost and the doctor is
+ * waiting. Auto-callers (verify flip, wizard complete) should NOT use force.
  *
- * Option B gate (project_onboarding_identity_flow / AUDIT-onboarding-readiness-2026-06-27):
- * the activation email lets the physician set their Mailcow MAILBOX password (+TOTP),
- * which only works once the mailbox actually EXISTS. set-password.ts resolves the
- * mailbox via physician_workspace_accounts.mailbox_local_part, and NOTHING creates
- * that row at verify time — only the post-login workspace wizard / provisioning saga
- * sets mailbox_local_part (on a successful free_pending → free_active transition).
- * Sending activation before provisioning dead-ends: set-password 404s AND burns the
- * single-use token. So we do NOT send until the mailbox is provisioned; the caller
- * surfaces 'mailbox_not_provisioned' to the admin. This is the single chokepoint for
- * ALL activation senders (admin verify, auto/manual verify flips, resend button,
- * self-service send-link), so the gate cannot be bypassed by any one path.
- *
- * Returns a discriminated result so callers can report sent/skipped/failed rather
- * than a silent no-op that always reads "sent".
+ * Option B gate: activation email is blocked until the Mailcow mailbox exists.
+ * set-password.ts resolves the mailbox via physician_workspace_accounts.mailbox_local_part;
+ * sending before provisioning dead-ends (404 + burned token). The gate stands even
+ * when force=true — force only bypasses the "token already active" guard.
  *
  * Security: raw token is never console-logged (T-17-02-05).
  */
 export async function triggerWorkspaceActivation(
   physicianId: string,
+  options?: { force?: boolean },
 ): Promise<ActivationTriggerResult> {
+  const force = options?.force ?? false;
   if (!supabaseAdmin) {
     console.error('[activationEmail] supabaseAdmin not configured — cannot trigger activation');
     return { status: 'skipped', reason: 'not_configured' };
@@ -381,8 +372,21 @@ export async function triggerWorkspaceActivation(
   }
 
   if (existingToken) {
-    // Valid non-consumed token already exists — do not send a duplicate
-    return { status: 'skipped', reason: 'token_active' };
+    if (!force) {
+      // Valid non-consumed token already exists — do not send a duplicate
+      return { status: 'skipped', reason: 'token_active' };
+    }
+    // force=true: expire the live token so a fresh link can be issued
+    const { error: expireError } = await supabaseAdmin
+      .from('physician_activation_tokens')
+      .update({ expires_at: now })
+      .eq('physician_id', physicianId)
+      .is('consumed_at', null)
+      .gt('expires_at', now);
+    if (expireError) {
+      console.error('[activationEmail] failed to expire live token for force-resend', { physicianId });
+      return { status: 'skipped', reason: 'lookup_error' };
+    }
   }
 
   // Generate a new single-use token

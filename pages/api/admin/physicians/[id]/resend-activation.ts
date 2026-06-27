@@ -77,12 +77,10 @@ export default async function handler(
       });
     }
 
-    // Re-fire the activation email (idempotent; sends only to physician.email).
-    // triggerWorkspaceActivation gates on the mailbox being provisioned (Option B):
-    // if the doctor's Mailcow mailbox does not exist yet, the activation link would
-    // dead-end at set-password (404 + burned token), so surface that to the admin
-    // instead of a misleading "sent" toast.
-    const result = await triggerWorkspaceActivation(physicianId);
+    // Re-fire the activation email. force=true expires any live token so the admin
+    // always gets a fresh link issued — the previous email may have been lost.
+    // triggerWorkspaceActivation still gates on the mailbox being provisioned (Option B).
+    const result = await triggerWorkspaceActivation(physicianId, { force: true });
 
     if (result.status === 'skipped' && result.reason === 'mailbox_not_provisioned') {
       return res.status(409).json({
