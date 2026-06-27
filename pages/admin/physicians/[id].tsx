@@ -320,6 +320,29 @@ export default function PhysicianDetailPage({
     }
   }
 
+  // Re-send the workspace activation magic-link to a verified physician who is
+  // stuck pre-activation (e.g. their link expired, or they were verified via a
+  // path that didn't auto-send). Safe: does NOT re-run verification.
+  async function handleResendActivation() {
+    setIsUpdating(true);
+    try {
+      const res = await fetch(`/api/admin/physicians/${physician.id}/resend-activation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const body = await res.json().catch(() => ({} as Record<string, unknown>));
+      if (res.ok) {
+        alert(`Activation link sent to ${body.sentTo ?? 'the physician’s email'}.`);
+      } else {
+        alert(`Could not send activation link: ${body.error ?? `HTTP ${res.status}`}`);
+      }
+    } catch {
+      alert('Failed to send activation link');
+    } finally {
+      setIsUpdating(false);
+    }
+  }
+
   return (
     <AdminLayout adminName={admin.fullName}>
       <div className="max-w-6xl mx-auto">
@@ -396,6 +419,15 @@ export default function PhysicianDetailPage({
             >
               Reject
             </button>
+            {physician.verification_status === 'verified' && (
+              <button
+                onClick={handleResendActivation}
+                disabled={isUpdating}
+                className="font-dm-sans text-sm font-medium py-2 px-4 rounded-[8px] bg-clinical-teal text-white hover:bg-clinical-teal/90 transition disabled:opacity-50"
+              >
+                Resend activation link
+              </button>
+            )}
           </div>
         </div>
 

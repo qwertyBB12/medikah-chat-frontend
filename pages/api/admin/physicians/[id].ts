@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { getAdminUser } from '../../../../lib/adminAuth';
 import { supabaseAdmin } from '../../../../lib/supabaseServer';
 import { listRecordsForPhysician } from '../../../../lib/verificationRecordService';
+import { triggerWorkspaceActivation } from '../../../../lib/activationEmail';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const admin = await getAdminUser(req, res);
@@ -174,7 +175,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(500).json({ error: 'Failed to update physician' });
       }
 
-      return res.status(200).json({ physician: data });
+      // When an admin flips a physician to 'verified', send the workspace
+      // activation magic-link — otherwise a manually-verified doctor never
+      // receives anything and cannot onboard (the auto credential-flip path was
+      // the ONLY caller of triggerWorkspaceActivation, so admin/manual approvals
+      // silently produced no email). Gated on activation_complete so re-verifying
+      // an already-active physician does not email them a fresh set-password link.
+      // Fault-tolerant: a send failure must NOT fail the status update.
+      let activationEmailTriggered = false;
+      if (updates.verification_status === 'verified') {
+        try {
+          const { data: wsAcct } = await supabaseAdmin
+            .from('physician_workspace_accounts')
+            .select('activation_complete')
+            .eq('physician_id', physicianId)
+            .maybeSingle();
+          if (!wsAcct?.activation_complete) {
+            await triggerWorkspaceActivation(physicianId);
+            activationEmailTriggered = true;
+          }
+        } catch (emailErr) {
+          console.error(
+            '[admin/physicians PUT] activation email trigger failed (status update applied):',
+            emailErr instanceof Error ? emailErr.message : String(emailErr),
+          );
+        }
+      }
+
+      return res.status(200).json({ physician: data, activationEmailTriggered });
     } catch (err) {
       console.error('Exception updating physician:', err);
       return res.status(500).json({ error: 'Internal error' });
