@@ -7,7 +7,7 @@
  * Security contract (T-17-01-01 / T-17-01-03):
  *   - Tokens are HS256 JWTs signed with NEXTAUTH_SECRET.
  *   - `type` claim must equal 'workspace_activation' — any other value returns null.
- *   - Expiry is 30 minutes; expired tokens return null.
+ *   - Expiry is ACTIVATION_TTL_MINUTES (default 24h); expired tokens return null.
  *   - hashToken produces a SHA-256 hex digest for DB storage; the raw token
  *     is NEVER stored.
  *   - No console.* calls in this file — tokens and secrets must not reach logs.
@@ -15,6 +15,20 @@
 
 import { SignJWT, jwtVerify } from 'jose';
 import crypto from 'crypto';
+
+/**
+ * Activation magic-link lifetime, in minutes. SINGLE SOURCE OF TRUTH — used by
+ * both the JWT `exp` (signActivationToken) and the DB `expires_at`
+ * (triggerWorkspaceActivation in activationEmail.ts) so the two can never drift.
+ *
+ * Bumped 30m → 24h (1440) for the onboarding launch window: a 30-minute link
+ * expires before many doctors (slow inboxes / different timezones) ever click,
+ * silently locking them out. Override via ACTIVATION_TTL_MINUTES if needed.
+ */
+export const ACTIVATION_TTL_MINUTES: number = (() => {
+  const raw = Number(process.env.ACTIVATION_TTL_MINUTES);
+  return Number.isFinite(raw) && raw > 0 ? raw : 1440;
+})();
 
 // Use Buffer.from with encoding rather than TextEncoder to ensure the secret
 // is always a proper Node.js Uint8Array — TextEncoder in jsdom environments
@@ -47,7 +61,7 @@ export async function signActivationToken(payload: ActivationTokenPayload): Prom
   const secret = secretKey();
   return new SignJWT({ ...payload, type: 'workspace_activation' })
     .setProtectedHeader({ alg: 'HS256' })
-    .setExpirationTime('30m')
+    .setExpirationTime(`${ACTIVATION_TTL_MINUTES}m`)
     .setJti(payload.jti)
     .sign(secret);
 }

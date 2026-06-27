@@ -14,7 +14,7 @@
 
 import crypto from 'crypto';
 import { tokens, emailHead, emailHeader, emailFooter } from './emailChrome';
-import { signActivationToken, hashToken } from './auth/activationTokens';
+import { signActivationToken, hashToken, ACTIVATION_TTL_MINUTES } from './auth/activationTokens';
 import { supabaseAdmin } from './supabaseServer';
 
 // ---------------------------------------------------------------------------
@@ -122,9 +122,9 @@ export async function sendActivationEmail(
             'Su cuenta de médico ha sido verificada. Complete la configuración inicial para acceder a su espacio de trabajo clínico de Práctikah.',
           ctaHeading: 'Configure su acceso',
           ctaBody:
-            'Use el enlace de abajo para establecer su contraseña y activar la verificación en dos pasos. El enlace es válido por 30 minutos.',
+            'Use el enlace de abajo para establecer su contraseña y activar la verificación en dos pasos. El enlace es válido por 24 horas.',
           ctaButton: 'Activar espacio de trabajo',
-          expiryNote: 'Este enlace caduca en 30 minutos. Si ya no es válido, puede solicitar uno nuevo desde la página de activación.',
+          expiryNote: 'Este enlace caduca en 24 horas. Si ya no es válido, puede solicitar uno nuevo desde la página de activación.',
           totpHeading: 'Verificación en dos pasos',
           totpBody:
             'Durante la activación configurará una aplicación de autenticación para proteger su cuenta. Se recomienda Duo Mobile; Authy y Google Authenticator también son compatibles.',
@@ -140,9 +140,9 @@ export async function sendActivationEmail(
             'Your physician account has been verified. Complete the initial setup to access your Práctikah clinical workspace.',
           ctaHeading: 'Configure your access',
           ctaBody:
-            'Use the link below to set your password and activate two-step verification. The link is valid for 30 minutes.',
+            'Use the link below to set your password and activate two-step verification. The link is valid for 24 hours.',
           ctaButton: 'Activate workspace',
-          expiryNote: 'This link expires in 30 minutes. If it is no longer valid, you can request a new one from the activation page.',
+          expiryNote: 'This link expires in 24 hours. If it is no longer valid, you can request a new one from the activation page.',
           totpHeading: 'Two-step verification',
           totpBody:
             'During activation you will set up an authenticator app to secure your account. Duo Mobile is recommended; Authy and Google Authenticator are also supported.',
@@ -340,8 +340,9 @@ export async function triggerWorkspaceActivation(physicianId: string): Promise<v
     jti,
   });
 
-  // Store only the hash in the DB (single-use enforcement)
-  const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+  // Store only the hash in the DB (single-use enforcement). TTL is the shared
+  // ACTIVATION_TTL_MINUTES so the DB row and the JWT exp never drift.
+  const expiresAt = new Date(Date.now() + ACTIVATION_TTL_MINUTES * 60 * 1000).toISOString();
   const { error: insertError } = await supabaseAdmin
     .from('physician_activation_tokens')
     .insert({
