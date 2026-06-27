@@ -76,8 +76,7 @@ const content = {
     networkCard: {
       title: 'Medikah Network',
       description: 'You are part of a network of credentialed physicians across the Americas, connecting patients with quality healthcare.',
-      membersActive: 'physicians active',
-      countriesServed: 'countries served',
+      launchingCopy: 'Launching across the Americas.',
     },
   },
   es: {
@@ -103,8 +102,7 @@ const content = {
     networkCard: {
       title: 'Red Medikah',
       description: 'Usted es parte de una red de m\u00e9dicos acreditados en las Am\u00e9ricas, conectando pacientes con atenci\u00f3n m\u00e9dica de calidad.',
-      membersActive: 'm\u00e9dicos activos',
-      countriesServed: 'pa\u00edses atendidos',
+      launchingCopy: 'Lanzando en todo el continente.',
     },
   },
 };
@@ -396,16 +394,9 @@ export default function DashboardContent({
         <p className="font-body text-sm text-white/80 leading-relaxed mb-6">
           {t.networkCard.description}
         </p>
-        <div className="flex items-center gap-8">
-          <div>
-            <p className="font-body text-3xl font-bold">250+</p>
-            <p className="font-body text-xs text-white/60">{t.networkCard.membersActive}</p>
-          </div>
-          <div>
-            <p className="font-body text-3xl font-bold">12</p>
-            <p className="font-body text-xs text-white/60">{t.networkCard.countriesServed}</p>
-          </div>
-        </div>
+        <p className="font-body text-sm text-white/60 italic">
+          {t.networkCard.launchingCopy}
+        </p>
       </div>
     </div>
   );
