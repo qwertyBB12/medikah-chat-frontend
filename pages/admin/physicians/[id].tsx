@@ -8,6 +8,12 @@ import AdminLayout from '../../../components/admin/AdminLayout';
 import { listRecordsForPhysician } from '../../../lib/verificationRecordService';
 import type { VerificationRecordRow } from '../../../lib/verificationTypes';
 import { daysUntilExpiration } from '../../../lib/expirationFlags';
+import {
+  deriveLocalPart,
+  isUsableLocalPart,
+  MAILBOX_DOMAIN,
+  type PhysicianTitle,
+} from '../../../lib/mailcowLocalPart';
 
 interface VerificationResult {
   id: string;
@@ -281,6 +287,37 @@ export default function PhysicianDetailPage({
   const router = useRouter();
   const [isUpdating, setIsUpdating] = useState(false);
 
+  // Option A verify modal — collects the honorific (Dr/Dra) + confirms the
+  // gendered mailbox local-part before provisioning. The title is NEVER guessed
+  // from a name (feedback_dr_dra_title_mexico).
+  const fullName = (physician.full_name as string) || '';
+  const existingTitle =
+    physician.title === 'Dr' || physician.title === 'Dra' ? (physician.title as PhysicianTitle) : '';
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [verifyTitle, setVerifyTitle] = useState<PhysicianTitle | ''>(existingTitle);
+  const [verifyLocalPart, setVerifyLocalPart] = useState('');
+  const [localPartTouched, setLocalPartTouched] = useState(false);
+
+  // Keep the derived default in sync with the chosen title until the admin edits
+  // the local-part by hand.
+  function selectVerifyTitle(t: PhysicianTitle) {
+    setVerifyTitle(t);
+    if (!localPartTouched) {
+      setVerifyLocalPart(deriveLocalPart(fullName, t));
+    }
+  }
+
+  function openVerifyModal() {
+    const initialTitle = existingTitle || '';
+    setVerifyTitle(initialTitle);
+    setLocalPartTouched(false);
+    setVerifyLocalPart(initialTitle ? deriveLocalPart(fullName, initialTitle) : '');
+    setShowVerifyModal(true);
+  }
+
+  const verifyLocalPartValid = isUsableLocalPart(verifyLocalPart);
+  const canConfirmVerify = (verifyTitle === 'Dr' || verifyTitle === 'Dra') && verifyLocalPartValid;
+
   const st = statusStyles[physician.verification_status as string || 'pending'] || statusStyles.pending;
 
   async function handleForceReVerify() {
@@ -299,13 +336,18 @@ export default function PhysicianDetailPage({
     }
   }
 
-  async function handleSetStatus(status: string) {
+  async function handleSetStatus(
+    status: string,
+    extra?: { title?: PhysicianTitle; mailbox_local_part?: string },
+  ) {
     setIsUpdating(true);
     try {
       const updates: Record<string, unknown> = { verification_status: status };
       if (status === 'verified') {
         updates.verified_at = new Date().toISOString();
         updates.verified_by = `admin:${admin.id}`;
+        if (extra?.title) updates.title = extra.title;
+        if (extra?.mailbox_local_part) updates.mailbox_local_part = extra.mailbox_local_part;
       }
       const res = await fetch(`/api/admin/physicians/${physician.id}`, {
         method: 'PUT',
@@ -313,31 +355,60 @@ export default function PhysicianDetailPage({
         body: JSON.stringify(updates),
       });
 
-      // On a "verified" flip, surface what happened to the activation email so the
-      // admin sees the truth (Option B): a not-yet-provisioned doctor gets no link.
+      // On a "verified" flip, surface what happened to BOTH provisioning and the
+      // activation email so the admin sees the truth (Option A).
       if (status === 'verified' && res.ok) {
         const body = (await res.json().catch(() => ({}))) as {
+          provisioning?: { status?: string; reason?: string; mailboxAddress?: string; detail?: string } | null;
           activation?: { status?: string; reason?: string } | null;
         };
+        const prov = body.provisioning;
         const act = body.activation;
-        if (act?.status === 'sent') {
-          alert('Verified. Activation link sent to the physician’s email.');
-        } else if (act?.status === 'skipped' && act.reason === 'mailbox_not_provisioned') {
+
+        // Provisioning failed → activation can't have fired. Keep the modal open
+        // (do NOT reload) so the admin can fix the input and retry.
+        if (
+          prov?.status === 'failed' &&
+          prov.reason !== 'already_active'
+        ) {
+          const hints: Record<string, string> = {
+            title_required: 'A Doctor/Doctora title is required before a mailbox can be created.',
+            local_part_taken: `${verifyLocalPart}@${MAILBOX_DOMAIN} is already taken — choose a different address.`,
+            invalid_local_part: 'That mailbox address is not allowed (format or reserved name).',
+            no_available_local_part: 'No free address could be derived — enter one manually.',
+            mailcow_not_configured: 'Mail server is not configured (MAILCOW_API_URL/KEY).',
+            mailcow_error: `Mail server rejected the request${prov.detail ? `: ${prov.detail}` : '.'}`,
+            db_error: 'Database error while saving the workspace record.',
+          };
           alert(
-            'Verified — but NO activation link was sent yet: the physician’s mailbox isn’t provisioned.\n\n' +
-              'They must complete workspace setup first (or have their mailbox provisioned). ' +
-              'Once provisioned, use “Resend activation link.”',
+            `Verified, but the mailbox could NOT be provisioned.\n\n${
+              hints[prov.reason ?? ''] ?? `Reason: ${prov.reason ?? 'unknown'}`
+            }\n\nFix and try “Provision & activate” again.`,
           );
+          setIsUpdating(false);
+          return; // modal stays open
+        }
+
+        const mbox = prov?.mailboxAddress ? ` (${prov.mailboxAddress})` : '';
+        if (act?.status === 'sent') {
+          alert(`Verified. Mailbox provisioned${mbox}. Activation link sent to the physician’s email.`);
+        } else if (act?.status === 'skipped' && act.reason === 'already_active') {
+          alert('Verified. This physician’s workspace is already active — no new link was sent.');
         } else if (act?.status === 'skipped' && act.reason === 'token_active') {
-          alert('Verified. A valid activation link was already sent recently — no new email was needed.');
+          alert(`Verified. Mailbox provisioned${mbox}. A valid activation link was already sent recently.`);
+        } else if (act?.status === 'skipped' && act.reason === 'mailbox_not_provisioned') {
+          alert('Verified, but the mailbox is not provisioned yet, so no activation link was sent.');
         } else if (act?.status === 'failed') {
           alert(
-            'Verified, but the activation link could NOT be sent (send error). ' +
+            `Verified and mailbox provisioned${mbox}, but the activation link could NOT be sent. ` +
               'Check email configuration, then use “Resend activation link.”',
           );
+        } else {
+          alert(`Verified. Mailbox provisioned${mbox}.`);
         }
       }
 
+      setShowVerifyModal(false);
       router.reload();
     } catch {
       alert('Failed to update status');
@@ -438,11 +509,11 @@ export default function PhysicianDetailPage({
               Force Re-Verify
             </button>
             <button
-              onClick={() => handleSetStatus('verified')}
+              onClick={openVerifyModal}
               disabled={isUpdating}
               className="font-dm-sans text-sm font-medium py-2 px-4 rounded-[8px] bg-confirm-green text-white hover:bg-confirm-green/90 transition disabled:opacity-50"
             >
-              Manually Verify
+              Verify &amp; provision mailbox
             </button>
             <button
               onClick={() => handleSetStatus('rejected')}
@@ -809,6 +880,98 @@ export default function PhysicianDetailPage({
           )}
         </div>
       </div>
+
+      {/* Option A verify + provision modal */}
+      {showVerifyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-[16px] shadow-xl w-full max-w-md p-6">
+            <h3 className="font-dm-sans text-lg font-bold text-deep-charcoal">
+              Verify &amp; provision mailbox
+            </h3>
+            <p className="font-dm-sans text-sm text-body-slate mt-1">
+              {fullName}
+            </p>
+
+            {/* Honorific — drives the gendered local-part; never guessed from a name */}
+            <div className="mt-5">
+              <label className="font-dm-sans text-sm font-medium text-deep-charcoal block mb-2">
+                How should patients address them? <span className="text-alert-garnet">*</span>
+              </label>
+              <div className="flex gap-3">
+                {(['Dr', 'Dra'] as PhysicianTitle[]).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => selectVerifyTitle(t)}
+                    className={`flex-1 font-dm-sans text-sm font-medium py-2 px-3 rounded-[8px] border transition ${
+                      verifyTitle === t
+                        ? 'border-clinical-teal bg-clinical-teal/10 text-clinical-teal'
+                        : 'border-border-line text-body-slate hover:bg-gray-50'
+                    }`}
+                  >
+                    {t === 'Dr' ? 'Doctor (Dr.)' : 'Doctora (Dra.)'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Mailbox local-part — pre-filled default, editable for double surnames */}
+            <div className="mt-5">
+              <label className="font-dm-sans text-sm font-medium text-deep-charcoal block mb-2">
+                Workspace email address
+              </label>
+              <div className="flex items-center gap-1">
+                <input
+                  type="text"
+                  value={verifyLocalPart}
+                  onChange={(e) => {
+                    setLocalPartTouched(true);
+                    setVerifyLocalPart(e.target.value.trim().toLowerCase());
+                  }}
+                  placeholder={verifyTitle ? 'dr-lastname' : 'select a title first'}
+                  className="flex-1 min-w-0 font-dm-sans text-sm py-2 px-3 rounded-[8px] border border-border-line focus:outline-none focus:border-clinical-teal"
+                />
+                <span className="font-dm-sans text-sm text-body-slate whitespace-nowrap">
+                  @{MAILBOX_DOMAIN}
+                </span>
+              </div>
+              {verifyLocalPart && !verifyLocalPartValid && (
+                <p className="font-dm-sans text-xs text-alert-garnet mt-1">
+                  Use lowercase letters, numbers, dot, hyphen or underscore — and not a reserved name.
+                </p>
+              )}
+              <p className="font-dm-sans text-xs text-body-slate mt-1">
+                A mailbox is created now; the physician sets their own password via the
+                activation link. Edit this for double surnames (e.g. <code>dra-garcia</code>).
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                type="button"
+                onClick={() => setShowVerifyModal(false)}
+                disabled={isUpdating}
+                className="font-dm-sans text-sm font-medium py-2 px-4 rounded-[8px] border border-border-line text-body-slate hover:bg-gray-50 transition disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  handleSetStatus('verified', {
+                    title: verifyTitle as PhysicianTitle,
+                    mailbox_local_part: verifyLocalPart,
+                  })
+                }
+                disabled={isUpdating || !canConfirmVerify}
+                className="font-dm-sans text-sm font-medium py-2 px-4 rounded-[8px] bg-confirm-green text-white hover:bg-confirm-green/90 transition disabled:opacity-50"
+              >
+                {isUpdating ? 'Provisioning…' : 'Provision & activate'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 }

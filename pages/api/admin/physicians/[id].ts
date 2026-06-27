@@ -3,6 +3,7 @@ import { getAdminUser } from '../../../../lib/adminAuth';
 import { supabaseAdmin } from '../../../../lib/supabaseServer';
 import { listRecordsForPhysician } from '../../../../lib/verificationRecordService';
 import { triggerWorkspaceActivation, type ActivationTriggerResult } from '../../../../lib/activationEmail';
+import { provisionWorkspaceMailbox, type ProvisionResult } from '../../../../lib/mailcowProvisioner';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const admin = await getAdminUser(req, res);
@@ -153,6 +154,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'medical_school', 'medical_school_country', 'graduation_year',
         'residency', 'fellowships', 'publications', 'current_institutions',
         'languages', 'licenses', 'honors',
+        // Honorific (Dr/Dra) — identity source-of-truth for the gendered mailbox
+        // local-part. Admin may set/confirm it here at verify time (Option A).
+        'title',
       ];
       const updates: Record<string, unknown> = {};
       for (const field of ALLOWED_FIELDS) {
@@ -188,9 +192,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // at set-password. We return the result so the admin UI can show the truth
       // ("mailbox not provisioned yet") rather than a false "sent" toast.
       // Fault-tolerant: a send failure must NOT fail the status update.
+      //
+      // Option A (any-email onboarding): before activation can fire, the doctor's
+      // Mailcow mailbox must exist — triggerWorkspaceActivation gates on
+      // physician_workspace_accounts.mailbox_local_part. We provision it server-side
+      // here so no Google OAuth / post-login wizard is required. The honorific
+      // (Dr/Dra) drives the gendered local-part and is NEVER guessed from a name
+      // (feedback_dr_dra_title_mexico): it comes from physicians.title (captured at
+      // onboarding) or the admin's pick in this PUT body. provisioning is idempotent.
+      let provisioning:
+        | ProvisionResult
+        | { status: 'skipped'; reason: 'already_active' }
+        | null = null;
       let activation:
         | ActivationTriggerResult
-        | { status: 'skipped'; reason: 'already_active' }
+        | { status: 'skipped'; reason: 'already_active' | 'mailbox_not_provisioned' }
         | null = null;
       if (updates.verification_status === 'verified') {
         try {
@@ -200,22 +216,47 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             .eq('physician_id', physicianId)
             .maybeSingle();
           if (wsAcct?.activation_complete) {
+            provisioning = { status: 'skipped', reason: 'already_active' };
             activation = { status: 'skipped', reason: 'already_active' };
           } else {
-            activation = await triggerWorkspaceActivation(physicianId);
+            const titleFromBody =
+              body.title === 'Dr' || body.title === 'Dra' ? (body.title as 'Dr' | 'Dra') : null;
+            const localPartOverride =
+              typeof body.mailbox_local_part === 'string' ? body.mailbox_local_part : null;
+
+            provisioning = await provisionWorkspaceMailbox({
+              physicianId,
+              title: titleFromBody,
+              localPartOverride,
+            });
+
+            // Only fire the activation email once the mailbox is actually present
+            // (provisioned now or already on file). Otherwise the set-password link
+            // would dead-end (404 + burned token).
+            if (
+              provisioning.status === 'provisioned' ||
+              provisioning.status === 'already_provisioned'
+            ) {
+              activation = await triggerWorkspaceActivation(physicianId);
+            } else {
+              activation = { status: 'skipped', reason: 'mailbox_not_provisioned' };
+            }
           }
         } catch (emailErr) {
           console.error(
-            '[admin/physicians PUT] activation email trigger failed (status update applied):',
+            '[admin/physicians PUT] provisioning/activation failed (status update applied):',
             emailErr instanceof Error ? emailErr.message : String(emailErr),
           );
           activation = { status: 'failed', reason: 'send_error' };
         }
       }
 
-      return res
-        .status(200)
-        .json({ physician: data, activation, activationEmailTriggered: activation?.status === 'sent' });
+      return res.status(200).json({
+        physician: data,
+        provisioning,
+        activation,
+        activationEmailTriggered: activation?.status === 'sent',
+      });
     } catch (err) {
       console.error('Exception updating physician:', err);
       return res.status(500).json({ error: 'Internal error' });
