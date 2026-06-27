@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { getAdminUser } from '../../../../lib/adminAuth';
 import { supabaseAdmin } from '../../../../lib/supabaseServer';
 import { listRecordsForPhysician } from '../../../../lib/verificationRecordService';
-import { triggerWorkspaceActivation } from '../../../../lib/activationEmail';
+import { triggerWorkspaceActivation, type ActivationTriggerResult } from '../../../../lib/activationEmail';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const admin = await getAdminUser(req, res);
@@ -181,8 +181,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // the ONLY caller of triggerWorkspaceActivation, so admin/manual approvals
       // silently produced no email). Gated on activation_complete so re-verifying
       // an already-active physician does not email them a fresh set-password link.
+      //
+      // triggerWorkspaceActivation now ALSO gates on the mailbox being provisioned
+      // (Option B): a verified-but-not-yet-provisioned doctor gets status
+      // 'skipped/mailbox_not_provisioned' instead of an email that would dead-end
+      // at set-password. We return the result so the admin UI can show the truth
+      // ("mailbox not provisioned yet") rather than a false "sent" toast.
       // Fault-tolerant: a send failure must NOT fail the status update.
-      let activationEmailTriggered = false;
+      let activation:
+        | ActivationTriggerResult
+        | { status: 'skipped'; reason: 'already_active' }
+        | null = null;
       if (updates.verification_status === 'verified') {
         try {
           const { data: wsAcct } = await supabaseAdmin
@@ -190,19 +199,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             .select('activation_complete')
             .eq('physician_id', physicianId)
             .maybeSingle();
-          if (!wsAcct?.activation_complete) {
-            await triggerWorkspaceActivation(physicianId);
-            activationEmailTriggered = true;
+          if (wsAcct?.activation_complete) {
+            activation = { status: 'skipped', reason: 'already_active' };
+          } else {
+            activation = await triggerWorkspaceActivation(physicianId);
           }
         } catch (emailErr) {
           console.error(
             '[admin/physicians PUT] activation email trigger failed (status update applied):',
             emailErr instanceof Error ? emailErr.message : String(emailErr),
           );
+          activation = { status: 'failed', reason: 'send_error' };
         }
       }
 
-      return res.status(200).json({ physician: data, activationEmailTriggered });
+      return res
+        .status(200)
+        .json({ physician: data, activation, activationEmailTriggered: activation?.status === 'sent' });
     } catch (err) {
       console.error('Exception updating physician:', err);
       return res.status(500).json({ error: 'Internal error' });

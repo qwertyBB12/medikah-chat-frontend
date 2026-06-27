@@ -34,6 +34,24 @@ export interface ActivationEmailOptions {
   lang?: 'en' | 'es';
 }
 
+/**
+ * Outcome of triggerWorkspaceActivation. Lets callers (admin verify / resend
+ * endpoints) surface the truth instead of a silent no-op that always reads
+ * "sent". 'mailbox_not_provisioned' is the Option B gate — see the function doc.
+ */
+export type ActivationTriggerResult =
+  | { status: 'sent' }
+  | {
+      status: 'skipped';
+      reason:
+        | 'not_configured'
+        | 'physician_not_found'
+        | 'lookup_error'
+        | 'mailbox_not_provisioned'
+        | 'token_active';
+    }
+  | { status: 'failed'; reason: 'token_insert_error' | 'send_error' };
+
 // ---------------------------------------------------------------------------
 // sendEmail — internal Resend helper (mirrors physicianEmail.ts pattern)
 // ---------------------------------------------------------------------------
@@ -289,12 +307,29 @@ Práctikah · Medikah Corporation
  * updatePhysicianVerificationStatus() and approveManualReview() in
  * lib/verification/verificationService.ts.
  *
+ * Option B gate (project_onboarding_identity_flow / AUDIT-onboarding-readiness-2026-06-27):
+ * the activation email lets the physician set their Mailcow MAILBOX password (+TOTP),
+ * which only works once the mailbox actually EXISTS. set-password.ts resolves the
+ * mailbox via physician_workspace_accounts.mailbox_local_part, and NOTHING creates
+ * that row at verify time — only the post-login workspace wizard / provisioning saga
+ * sets mailbox_local_part (on a successful free_pending → free_active transition).
+ * Sending activation before provisioning dead-ends: set-password 404s AND burns the
+ * single-use token. So we do NOT send until the mailbox is provisioned; the caller
+ * surfaces 'mailbox_not_provisioned' to the admin. This is the single chokepoint for
+ * ALL activation senders (admin verify, auto/manual verify flips, resend button,
+ * self-service send-link), so the gate cannot be bypassed by any one path.
+ *
+ * Returns a discriminated result so callers can report sent/skipped/failed rather
+ * than a silent no-op that always reads "sent".
+ *
  * Security: raw token is never console-logged (T-17-02-05).
  */
-export async function triggerWorkspaceActivation(physicianId: string): Promise<void> {
+export async function triggerWorkspaceActivation(
+  physicianId: string,
+): Promise<ActivationTriggerResult> {
   if (!supabaseAdmin) {
     console.error('[activationEmail] supabaseAdmin not configured — cannot trigger activation');
-    return;
+    return { status: 'skipped', reason: 'not_configured' };
   }
 
   // Load physician record (email, name, preferred locale)
@@ -306,7 +341,28 @@ export async function triggerWorkspaceActivation(physicianId: string): Promise<v
 
   if (fetchError || !physician) {
     console.error('[activationEmail] physician not found for activation trigger', { physicianId });
-    return;
+    return { status: 'skipped', reason: 'physician_not_found' };
+  }
+
+  // --- Option B gate: do NOT send until the Mailcow mailbox is provisioned ---
+  // mailbox_local_part is the exact field set-password.ts requires; gating on the
+  // same field means the activation link can never dead-end at set-password (404 +
+  // burned token) for a not-yet-provisioned doctor.
+  const { data: workspace, error: workspaceError } = await supabaseAdmin
+    .from('physician_workspace_accounts')
+    .select('mailbox_local_part')
+    .eq('physician_id', physicianId)
+    .maybeSingle();
+
+  if (workspaceError) {
+    console.error('[activationEmail] error querying workspace account for activation gate', { physicianId });
+    return { status: 'skipped', reason: 'lookup_error' };
+  }
+
+  if (!workspace?.mailbox_local_part) {
+    // Mailbox not provisioned yet — activation would dead-end. Caller surfaces this.
+    console.info('[activationEmail] activation NOT sent — mailbox not provisioned yet', { physicianId });
+    return { status: 'skipped', reason: 'mailbox_not_provisioned' };
   }
 
   // Idempotency check: is there already a valid non-consumed token?
@@ -321,12 +377,12 @@ export async function triggerWorkspaceActivation(physicianId: string): Promise<v
 
   if (tokenFetchError) {
     console.error('[activationEmail] error querying existing tokens', { physicianId });
-    return;
+    return { status: 'skipped', reason: 'lookup_error' };
   }
 
   if (existingToken) {
     // Valid non-consumed token already exists — do not send a duplicate
-    return;
+    return { status: 'skipped', reason: 'token_active' };
   }
 
   // Generate a new single-use token
@@ -353,7 +409,7 @@ export async function triggerWorkspaceActivation(physicianId: string): Promise<v
 
   if (insertError) {
     console.error('[activationEmail] failed to insert activation token row', { physicianId });
-    return;
+    return { status: 'failed', reason: 'token_insert_error' };
   }
 
   // Build absolute activation URL — token embedded in path per 17-02 spec
@@ -361,10 +417,17 @@ export async function triggerWorkspaceActivation(physicianId: string): Promise<v
   const activationUrl = `${baseUrl}/auth/activate/${token}`;
 
   // Send the email
-  await sendActivationEmail({
+  const sendResult = await sendActivationEmail({
     to: physician.email,
     fullName: physician.full_name,
     activationUrl,
     lang,
   });
+
+  if (!sendResult.success) {
+    console.error('[activationEmail] activation email send failed', { physicianId });
+    return { status: 'failed', reason: 'send_error' };
+  }
+
+  return { status: 'sent' };
 }
