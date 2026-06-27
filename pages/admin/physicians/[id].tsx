@@ -307,11 +307,37 @@ export default function PhysicianDetailPage({
         updates.verified_at = new Date().toISOString();
         updates.verified_by = `admin:${admin.id}`;
       }
-      await fetch(`/api/admin/physicians/${physician.id}`, {
+      const res = await fetch(`/api/admin/physicians/${physician.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
       });
+
+      // On a "verified" flip, surface what happened to the activation email so the
+      // admin sees the truth (Option B): a not-yet-provisioned doctor gets no link.
+      if (status === 'verified' && res.ok) {
+        const body = (await res.json().catch(() => ({}))) as {
+          activation?: { status?: string; reason?: string } | null;
+        };
+        const act = body.activation;
+        if (act?.status === 'sent') {
+          alert('Verified. Activation link sent to the physician’s email.');
+        } else if (act?.status === 'skipped' && act.reason === 'mailbox_not_provisioned') {
+          alert(
+            'Verified — but NO activation link was sent yet: the physician’s mailbox isn’t provisioned.\n\n' +
+              'They must complete workspace setup first (or have their mailbox provisioned). ' +
+              'Once provisioned, use “Resend activation link.”',
+          );
+        } else if (act?.status === 'skipped' && act.reason === 'token_active') {
+          alert('Verified. A valid activation link was already sent recently — no new email was needed.');
+        } else if (act?.status === 'failed') {
+          alert(
+            'Verified, but the activation link could NOT be sent (send error). ' +
+              'Check email configuration, then use “Resend activation link.”',
+          );
+        }
+      }
+
       router.reload();
     } catch {
       alert('Failed to update status');
@@ -332,7 +358,13 @@ export default function PhysicianDetailPage({
       });
       const body = await res.json().catch(() => ({} as Record<string, unknown>));
       if (res.ok) {
-        alert(`Activation link sent to ${body.sentTo ?? 'the physician’s email'}.`);
+        if (body.alreadyValid) {
+          alert(
+            `A valid activation link was already sent to ${body.sentTo ?? 'the physician’s email'} and is still active — no new email was needed.`,
+          );
+        } else {
+          alert(`Activation link sent to ${body.sentTo ?? 'the physician’s email'}.`);
+        }
       } else {
         alert(`Could not send activation link: ${body.error ?? `HTTP ${res.status}`}`);
       }

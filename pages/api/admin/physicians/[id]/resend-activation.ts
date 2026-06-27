@@ -78,15 +78,44 @@ export default async function handler(
     }
 
     // Re-fire the activation email (idempotent; sends only to physician.email).
-    await triggerWorkspaceActivation(physicianId);
+    // triggerWorkspaceActivation gates on the mailbox being provisioned (Option B):
+    // if the doctor's Mailcow mailbox does not exist yet, the activation link would
+    // dead-end at set-password (404 + burned token), so surface that to the admin
+    // instead of a misleading "sent" toast.
+    const result = await triggerWorkspaceActivation(physicianId);
 
+    if (result.status === 'skipped' && result.reason === 'mailbox_not_provisioned') {
+      return res.status(409).json({
+        error:
+          'Mailbox not provisioned yet — the physician must complete workspace setup (or have their mailbox provisioned) before an activation link can be issued.',
+        reason: 'mailbox_not_provisioned',
+      });
+    }
+
+    if (result.status === 'failed') {
+      return res.status(502).json({
+        error: 'Activation link could not be sent — check email configuration and try again.',
+        reason: result.reason,
+      });
+    }
+
+    if (result.status === 'skipped' && result.reason !== 'token_active') {
+      // not_configured / physician_not_found / lookup_error — nothing was sent.
+      return res.status(500).json({
+        error: 'Activation link could not be issued.',
+        reason: result.reason,
+      });
+    }
+
+    // result.status === 'sent' (fresh link) or 'skipped/token_active' (a live link
+    // already exists and is still valid) — both are a successful resend outcome.
     const reqCtx = extractRequestContext(req);
     await logEvent({
       physicianId,
       actorId: admin.id,
       actorRole: 'admin',
       action: 'workspace.activation_link_resent',
-      detail: { flow: 'admin_resend', triggered_by: admin.email },
+      detail: { flow: 'admin_resend', triggered_by: admin.email, result: result.status },
       ipAddress: reqCtx.ipAddress,
       userAgent: reqCtx.userAgent,
     });
@@ -94,6 +123,7 @@ export default async function handler(
     return res.status(200).json({
       ok: true,
       sentTo: maskEmail(physician.email as string),
+      alreadyValid: result.status === 'skipped',
     });
   } catch (err) {
     console.error('[resend-activation] exception:', err instanceof Error ? err.message : String(err));
