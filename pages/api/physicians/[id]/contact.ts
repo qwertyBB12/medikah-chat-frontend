@@ -13,6 +13,8 @@ const CONTACT_FIELDS: (keyof ContactInfo)[] = [
   'phoneNumber',
   'officePhone',
   'faxNumber',
+  'personalEmail',
+  'officeEmail',
   'mailingAddressLine1',
   'mailingAddressCity',
   'mailingAddressState',
@@ -30,6 +32,8 @@ const FIELD_TO_COLUMN: Record<keyof ContactInfo, string> = {
   phoneNumber: 'phone_number',
   officePhone: 'office_phone',
   faxNumber: 'fax_number',
+  personalEmail: 'personal_email',
+  officeEmail: 'office_email',
   mailingAddressLine1: 'mailing_address_line1',
   mailingAddressCity: 'mailing_address_city',
   mailingAddressState: 'mailing_address_state',
@@ -88,7 +92,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { data, error } = await supabaseAdmin
         .from('physicians')
         .select(
-          'phone_number, office_phone, fax_number, mailing_address_line1, mailing_address_city, mailing_address_state, mailing_address_postal_code, mailing_address_country, practice_address_line1, practice_address_city, practice_address_state, practice_address_postal_code, practice_address_country'
+          'phone_number, office_phone, fax_number, personal_email, office_email, mailing_address_line1, mailing_address_city, mailing_address_state, mailing_address_postal_code, mailing_address_country, practice_address_line1, practice_address_city, practice_address_state, practice_address_postal_code, practice_address_country'
         )
         .eq('id', physicianId)
         .single();
@@ -103,6 +107,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         phoneNumber: data.phone_number || '',
         officePhone: data.office_phone || '',
         faxNumber: data.fax_number || '',
+        personalEmail: data.personal_email || '',
+        officeEmail: data.office_email || '',
         mailingAddressLine1: data.mailing_address_line1 || '',
         mailingAddressCity: data.mailing_address_city || '',
         mailingAddressState: data.mailing_address_state || '',
@@ -138,6 +144,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // phone_number must be non-empty if provided
       if (field === 'phoneNumber' && typeof value === 'string' && value.trim() === '') {
         return res.status(400).json({ error: 'phoneNumber cannot be empty' });
+      }
+
+      // Email fields: validate basic shape when non-empty (empty clears the field).
+      if (
+        (field === 'personalEmail' || field === 'officeEmail') &&
+        typeof value === 'string' &&
+        value.trim() !== '' &&
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
+      ) {
+        return res.status(400).json({ error: 'Invalid email address' });
       }
 
       const column = FIELD_TO_COLUMN[field as keyof ContactInfo];

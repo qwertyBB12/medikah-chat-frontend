@@ -4,6 +4,8 @@ export interface ContactInfo {
   phoneNumber: string;
   officePhone: string;
   faxNumber: string;
+  personalEmail: string;
+  officeEmail: string;
   mailingAddressLine1: string;
   mailingAddressCity: string;
   mailingAddressState: string;
