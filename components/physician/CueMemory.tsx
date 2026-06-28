@@ -7,8 +7,9 @@
  *
  *  - <CueMemoryConsent>  the one-time aviso de privacidad (PATCH-03). On approve
  *      it POSTs /api/cue/memory/aviso-ack and calls onAck(); memory activates.
- *  - <CueMemoryPanel>    "What Cue remembers" — list / correct / delete the
- *      doctor's own notes (GET/PATCH/DELETE /api/cue/memory[/:id]).
+ *  - <CueMemoryPanel>    "What Cue remembers" — list / delete the doctor's own
+ *      notes (GET/DELETE /api/cue/memory[/:id]). View + delete ONLY: no edit —
+ *      rewriting a note would silently skew Cue's reasoning (decision 2026-06-28).
  *
  * All network goes through the same-origin BFF (never FastAPI directly).
  */
@@ -58,7 +59,6 @@ const SHARED_STYLE = `
   .cue-mem-link { background:transparent; border:none; color:#9fbcc6; font-size:12px; cursor:pointer; padding:2px 6px; border-radius:6px; }
   .cue-mem-link:hover { background:rgba(120,160,175,.1); color:#e8f1f4; }
   .cue-mem-link.danger:hover { color:#f1a3a3; }
-  .cue-mem-edit { width:100%; box-sizing:border-box; background:#0a1620; color:#e8f1f4; border:1px solid rgba(120,160,175,.3); border-radius:10px; padding:9px 11px; font-family:inherit; font-size:13px; line-height:1.5; resize:vertical; min-height:60px; }
   .cue-mem-empty { color:#7e9aa4; font-size:13px; padding:24px 4px; text-align:center; }
 `;
 
@@ -124,8 +124,6 @@ export function CueMemoryPanel({ locale, onClose }: { locale: Locale; onClose: (
   const t = MEMORY_CONSENT[locale];
   const [notes, setNotes] = useState<MemoryNote[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [draft, setDraft] = useState('');
 
   const load = useCallback(async () => {
     setErr(null);
@@ -157,25 +155,6 @@ export function CueMemoryPanel({ locale, onClose }: { locale: Locale; onClose: (
     [t.removeConfirm, load],
   );
 
-  const saveEdit = useCallback(
-    async (id: string) => {
-      const text = draft.trim();
-      if (!text) return;
-      setNotes((prev) => (prev ? prev.map((n) => (n.id === id ? { ...n, note: text } : n)) : prev));
-      setEditingId(null);
-      try {
-        await fetch(`/api/cue/memory/${id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ note: text }),
-        });
-      } catch {
-        load();
-      }
-    },
-    [draft, load],
-  );
-
   const fmtDate = (iso?: string) => (iso ? iso.slice(0, 10) : '');
 
   return (
@@ -197,48 +176,17 @@ export function CueMemoryPanel({ locale, onClose }: { locale: Locale; onClose: (
           <ul className="cue-mem-list">
             {notes.map((n) => (
               <li className="cue-mem-item" key={n.id}>
-                {editingId === n.id ? (
-                  <>
-                    <textarea
-                      className="cue-mem-edit"
-                      value={draft}
-                      onChange={(e) => setDraft(e.target.value)}
-                      autoFocus
-                    />
-                    <div className="cue-mem-meta">
-                      <div className="cue-mem-rowact">
-                        <button className="cue-mem-link" onClick={() => setEditingId(null)}>
-                          {t.cancel}
-                        </button>
-                        <button className="cue-mem-link" onClick={() => saveEdit(n.id)}>
-                          {t.save}
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="cue-mem-note">{n.note}</div>
-                    <div className="cue-mem-meta">
-                      <span className="cue-mem-chip">{n.category}</span>
-                      <span className="cue-mem-date">{fmtDate(n.updated_at || n.appended_at)}</span>
-                      <div className="cue-mem-rowact">
-                        <button
-                          className="cue-mem-link"
-                          onClick={() => {
-                            setEditingId(n.id);
-                            setDraft(n.note);
-                          }}
-                        >
-                          {t.edit}
-                        </button>
-                        <button className="cue-mem-link danger" onClick={() => remove(n.id)}>
-                          {t.remove}
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                )}
+                <div className="cue-mem-note">{n.note}</div>
+                <div className="cue-mem-meta">
+                  <span className="cue-mem-chip">{n.category}</span>
+                  <span className="cue-mem-date">{fmtDate(n.updated_at || n.appended_at)}</span>
+                  <div className="cue-mem-rowact">
+                    {/* View + delete only — no edit, by design (see file header). */}
+                    <button className="cue-mem-link danger" onClick={() => remove(n.id)}>
+                      {t.remove}
+                    </button>
+                  </div>
+                </div>
               </li>
             ))}
           </ul>
