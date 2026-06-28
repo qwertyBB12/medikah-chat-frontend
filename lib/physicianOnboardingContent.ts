@@ -414,6 +414,52 @@ export const MEDICAL_SPECIALTIES = [
   'Vascular Surgery',
 ];
 
+// Spanish display labels for the specialties above. The English entry remains the
+// canonical stored identifier (per Dr. José 2026-06-28: store normalized identifiers,
+// render localized labels for Mexico / Spanish onboarding). Keyed by the English value.
+export const MEDICAL_SPECIALTIES_ES: Record<string, string> = {
+  'Allergy and Immunology': 'Alergia e Inmunología',
+  Anesthesiology: 'Anestesiología',
+  Cardiology: 'Cardiología',
+  Dermatology: 'Dermatología',
+  'Emergency Medicine': 'Medicina de Urgencias',
+  Endocrinology: 'Endocrinología',
+  'Family Medicine': 'Medicina Familiar',
+  Gastroenterology: 'Gastroenterología',
+  'General Surgery': 'Cirugía General',
+  Geriatrics: 'Geriatría',
+  Hematology: 'Hematología',
+  'Infectious Disease': 'Infectología',
+  'Internal Medicine': 'Medicina Interna',
+  Nephrology: 'Nefrología',
+  Neurology: 'Neurología',
+  Neurosurgery: 'Neurocirugía',
+  'Obstetrics and Gynecology': 'Ginecología y Obstetricia',
+  Oncology: 'Oncología',
+  Ophthalmology: 'Oftalmología',
+  'Orthopedic Surgery': 'Ortopedia',
+  'Otolaryngology (ENT)': 'Otorrinolaringología',
+  Pathology: 'Patología',
+  Pediatrics: 'Pediatría',
+  'Physical Medicine and Rehabilitation': 'Medicina Física y Rehabilitación',
+  'Plastic Surgery': 'Cirugía Plástica',
+  Psychiatry: 'Psiquiatría',
+  Pulmonology: 'Neumología',
+  Radiology: 'Radiología',
+  Rheumatology: 'Reumatología',
+  'Sports Medicine': 'Medicina del Deporte',
+  'Thoracic Surgery': 'Cirugía Torácica',
+  Urology: 'Urología',
+  'Vascular Surgery': 'Cirugía Vascular',
+};
+
+// Display label for a specialty in the given language. Falls back to the English
+// identifier when no localized label exists (custom-entered specialties, new additions).
+export function specialtyLabel(value: string, lang: 'en' | 'es'): string {
+  if (lang === 'es') return MEDICAL_SPECIALTIES_ES[value] || value;
+  return value;
+}
+
 // Countries with medical licensing
 export const LICENSED_COUNTRIES = [
   { code: 'MX', name: 'Mexico', licenseType: 'Cédula Profesional' },

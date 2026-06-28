@@ -3,6 +3,7 @@ import { SupportedLang } from '../../../lib/i18n';
 import {
   MEDICAL_SPECIALTIES,
   batchedFormLabels,
+  specialtyLabel,
 } from '../../../lib/physicianOnboardingContent';
 import { BoardCertification } from '../../../lib/physicianClient';
 
@@ -136,7 +137,7 @@ export default function BatchedSpecialtyForm({
           <option value="">{labels.selectPrimarySpecialty}</option>
           {MEDICAL_SPECIALTIES.map((s) => (
             <option key={s} value={s}>
-              {s}
+              {specialtyLabel(s, lang)}
             </option>
           ))}
         </select>
@@ -165,7 +166,7 @@ export default function BatchedSpecialtyForm({
                       : 'bg-gray-100 text-body-slate hover:bg-gray-200'
                   }`}
                 >
-                  {specialty}
+                  {specialtyLabel(specialty, lang)}
                 </button>
               );
             }

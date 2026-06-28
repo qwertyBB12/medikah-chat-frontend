@@ -36,6 +36,18 @@ export interface VADListenerOptions {
 
 const VENDOR_BASE = '/vendor/vad-web/'
 
+// Mic capture constraints. echoCancellation is on by vad-web's default too, but
+// we pin all three explicitly so a future library-default change can't silently
+// regress them. NOTE: browser echo cancellation alone does NOT stop self-barge-in
+// with loud room speakers — that is handled by half-duplex mic-gating in
+// ContinuousFlowController (the mic is paused while Cue speaks).
+const MIC_CONSTRAINTS: MediaTrackConstraints = {
+  channelCount: 1,
+  echoCancellation: true,
+  noiseSuppression: true,
+  autoGainControl: true,
+}
+
 /** Returns true if continuous VAD is likely to work in this browser. */
 export function isContinuousVADSupported(): boolean {
   return diagnoseVADSupport().ok
@@ -88,6 +100,11 @@ export class VADListener {
       workletURL: VENDOR_BASE + 'vad.worklet.bundle.min.js',
       modelURL: VENDOR_BASE + 'silero_vad_legacy.onnx',
 
+      // Pin mic constraints on both initial acquire and post-pause resume.
+      // (vad-web's default pause() does track.stop(), so resume re-acquires.)
+      getStream: () => navigator.mediaDevices.getUserMedia({ audio: MIC_CONSTRAINTS }),
+      resumeStream: () => navigator.mediaDevices.getUserMedia({ audio: MIC_CONSTRAINTS }),
+
       // Sobremesa thresholds
       positiveSpeechThreshold: this.cfg.positiveSpeechThreshold,
       negativeSpeechThreshold: this.cfg.negativeSpeechThreshold,
@@ -127,6 +144,19 @@ export class VADListener {
   pause(): void {
     this.mic?.pause()
     this.running = false
+  }
+
+  /**
+   * Resume listening after a pause() WITHOUT recreating the MicVAD instance.
+   * Used by ContinuousFlowController's half-duplex gating to reopen the mic once
+   * Cue finishes speaking. (start() would re-run MicVAD.new() and re-download the
+   * model; resume() just restarts the existing instance, which re-acquires the
+   * mic stream via resumeStream.)
+   */
+  resume(): void {
+    if (!this.mic) return
+    this.mic.start()
+    this.running = true
   }
 
   destroy(): void {

@@ -83,6 +83,8 @@ export class ContinuousFlowController {
   private opts: ContinuousFlowOptions
   private destroyed = false
   private activeAbort: AbortController | null = null
+  /** Half-duplex: true while the mic is paused because Cue is speaking. */
+  private micPaused = false
 
   constructor(opts: ContinuousFlowOptions) {
     this.opts = opts
@@ -142,7 +144,12 @@ export class ContinuousFlowController {
   async playReply(text: string): Promise<void> {
     if (!text) return
     this.state.send('response-started', { source: 'llm' }) // thinking→speaking (best-effort)
-    await this.tts.play(text)
+    this.pauseMicForSpeech() // half-duplex: close the mic while the greeting plays
+    try {
+      await this.tts.play(text)
+    } finally {
+      this.resumeMicAfterSpeech()
+    }
     this.state.send('response-ended', { source: 'tts' })
   }
 
@@ -157,6 +164,40 @@ export class ContinuousFlowController {
       /* noop */
     }
     this.activeAbort = null
+  }
+
+  /**
+   * Half-duplex mic gating (Phase 47.x — self-barge-in fix).
+   *
+   * Cue's TTS plays through the speakers; with an open mic (especially on loud
+   * room speakers where browser echo cancellation is insufficient) that audio
+   * leaks back in, the VAD reads it as the user talking, and barge-in cuts Cue
+   * off mid-sentence — and the captured audio gets transcribed back as a fake
+   * user utterance. We close the mic while Cue speaks and reopen it after.
+   *
+   * vad-web's pause() does track.stop() (mic indicator goes off); resume()
+   * re-acquires via resumeStream. getUserMedia does not re-prompt for an
+   * already-granted origin, so the reopen is seamless.
+   */
+  private pauseMicForSpeech(): void {
+    if (this.micPaused) return
+    this.micPaused = true
+    try {
+      this.listener?.pause()
+    } catch {
+      /* noop */
+    }
+  }
+
+  private resumeMicAfterSpeech(): void {
+    if (!this.micPaused) return
+    this.micPaused = false
+    if (this.destroyed) return
+    try {
+      this.listener?.resume()
+    } catch {
+      /* noop */
+    }
   }
 
   /** Barge-in hook.  Fires the moment VAD sees new speech. */
@@ -220,83 +261,96 @@ export class ContinuousFlowController {
     const ttsDone = this.tts.beginStreaming()
     let startedSpeaking = false
 
-    let result: CueRespondResult
+    // Outer try/finally guarantees the mic reopens on EVERY exit path once we
+    // have closed it for speech (half-duplex self-barge-in fix).
     try {
-      result = await this.opts.respond(text, {
-        signal: ac.signal,
-        onTextChunk: (chunk) => {
-          if (this.destroyed) return
-          // Only feed/transition while we still own this turn (a barge-in moves
-          // state out of thinking/speaking).
-          const s = this.state.state
-          if (s !== 'thinking' && s !== 'speaking') return
-          if (!startedSpeaking) {
-            startedSpeaking = true
-            this.state.send('response-started', { source: 'llm' }) // thinking → speaking
-          }
-          this.tts.pushText(chunk)
-        },
-      })
-    } catch (err) {
-      this.tts.stop() // tear down the streaming session
-      const name = (err as { name?: string } | null)?.name
-      if (name === 'AbortError') {
-        // Expected cancellation from a barge-in during `thinking`. The barge-in
-        // handler already walked state to `intercepting → listening`.
+      let result: CueRespondResult
+      try {
+        result = await this.opts.respond(text, {
+          signal: ac.signal,
+          onTextChunk: (chunk) => {
+            if (this.destroyed) return
+            // Only feed/transition while we still own this turn (a barge-in moves
+            // state out of thinking/speaking).
+            const s = this.state.state
+            if (s !== 'thinking' && s !== 'speaking') return
+            if (!startedSpeaking) {
+              startedSpeaking = true
+              this.state.send('response-started', { source: 'llm' }) // thinking → speaking
+              // Half-duplex: close the mic the instant Cue starts speaking so her
+              // own audio can't self-trigger barge-in or be transcribed back.
+              this.pauseMicForSpeech()
+            }
+            this.tts.pushText(chunk)
+          },
+        })
+      } catch (err) {
+        this.tts.stop() // tear down the streaming session
+        const name = (err as { name?: string } | null)?.name
+        if (name === 'AbortError') {
+          // Expected cancellation from a barge-in during `thinking`. The barge-in
+          // handler already walked state to `intercepting → listening`.
+          return
+        }
+        this.opts.onError?.(err)
+        this.state.send('error', { source: 'llm' })
+        this.state.send('start', { source: 'internal' })
+        return
+      } finally {
+        if (this.activeAbort === ac) this.activeAbort = null
+      }
+      if (this.destroyed) { this.tts.stop(); return }
+
+      // A barge-in already moved us out of thinking/speaking — don't play a now
+      // stale reply. (Could be `intercepting`/`listening`/`idle`.)
+      if (this.state.state !== 'thinking' && this.state.state !== 'speaking') {
+        this.tts.stop()
         return
       }
-      this.opts.onError?.(err)
-      this.state.send('error', { source: 'llm' })
-      this.state.send('start', { source: 'internal' })
-      return
-    } finally {
-      if (this.activeAbort === ac) this.activeAbort = null
-    }
-    if (this.destroyed) { this.tts.stop(); return }
 
-    // A barge-in already moved us out of thinking/speaking — don't play a now
-    // stale reply. (Could be `intercepting`/`listening`/`idle`.)
-    if (this.state.state !== 'thinking' && this.state.state !== 'speaking') {
-      this.tts.stop()
-      return
-    }
-
-    // D-03: a calendar write was proposed. Cut any streamed preamble audio and
-    // speak a CONTROLLED, interrogative templated line built from the structured
-    // payload (never model prose, never past-tense). The write still requires
-    // the explicit Confirm tap — this line only asks.
-    if (result.pendingConfirm) {
-      this.tts.stop()
-      await ttsDone // let the cut streaming session fully unwind before re-playing
-      if (this.destroyed) return
-      if (this.state.state === 'thinking') {
-        this.state.send('response-started', { source: 'llm' }) // ensure speaking
+      // D-03: a calendar write was proposed. Cut any streamed preamble audio and
+      // speak a CONTROLLED, interrogative templated line built from the structured
+      // payload (never model prose, never past-tense). The write still requires
+      // the explicit Confirm tap — this line only asks.
+      if (result.pendingConfirm) {
+        this.tts.stop()
+        await ttsDone // let the cut streaming session fully unwind before re-playing
+        if (this.destroyed) return
+        if (this.state.state === 'thinking') {
+          this.state.send('response-started', { source: 'llm' }) // ensure speaking
+        }
+        // Keep the mic closed for the templated line too (covers the case where
+        // no preamble streamed, so pauseMicForSpeech never ran above).
+        this.pauseMicForSpeech()
+        const line = buildProposalLine(result.pendingConfirm, this.opts.locale ?? 'en')
+        await this.tts.play(line)
+        if (this.destroyed) return
+        this.state.send('response-ended', { source: 'tts' })
+        return
       }
-      const line = buildProposalLine(result.pendingConfirm, this.opts.locale ?? 'en')
-      await this.tts.play(line)
+
+      // No speakable text at all (empty reply, no chunks streamed) — close out.
+      if (!startedSpeaking && !result.text.trim()) {
+        this.tts.stop()
+        this.state.send('response-ended', { source: 'llm' })
+        return
+      }
+
+      // Normal path: no more text is coming — flush the trailing partial and wait
+      // for the streamed playback to drain.
+      this.tts.endPushing()
+      const outcome = await ttsDone
       if (this.destroyed) return
-      this.state.send('response-ended', { source: 'tts' })
-      return
-    }
-
-    // No speakable text at all (empty reply, no chunks streamed) — close out.
-    if (!startedSpeaking && !result.text.trim()) {
-      this.tts.stop()
-      this.state.send('response-ended', { source: 'llm' })
-      return
-    }
-
-    // Normal path: no more text is coming — flush the trailing partial and wait
-    // for the streamed playback to drain.
-    this.tts.endPushing()
-    const outcome = await ttsDone
-    if (this.destroyed) return
-    if (outcome === 'done') {
-      this.state.send('response-ended', { source: 'tts' })
-    } else {
-      // Interrupted — state machine already advanced to `intercepting`.
-      // Bring it back to listening so the next utterance flows.
-      this.state.send('speech-ended', { source: 'tts' })
+      if (outcome === 'done') {
+        this.state.send('response-ended', { source: 'tts' })
+      } else {
+        // Interrupted — state machine already advanced to `intercepting`.
+        // Bring it back to listening so the next utterance flows.
+        this.state.send('speech-ended', { source: 'tts' })
+      }
+    } finally {
+      // Half-duplex: whatever path we took, reopen the mic if we closed it.
+      this.resumeMicAfterSpeech()
     }
   }
 }
