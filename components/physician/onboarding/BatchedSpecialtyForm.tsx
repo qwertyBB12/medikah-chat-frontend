@@ -228,9 +228,9 @@ export default function BatchedSpecialtyForm({
                   onChange={(e) =>
                     updateCertification(index, 'year', e.target.value)
                   }
-                  placeholder={labels.year}
+                  placeholder={labels.certExpirationYear}
                   min="1950"
-                  max={new Date().getFullYear()}
+                  max="2100"
                   className="flex-1 border border-gray-300 rounded-lg px-3 py-2 font-mulish text-sm text-deep-charcoal focus:outline-none focus:ring-2 focus:ring-clinical-teal/40 focus:border-clinical-teal"
                 />
                 <button
