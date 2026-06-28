@@ -14,8 +14,8 @@ const content = {
     subtitle: 'The specialty patients see on your public profile. Your formal certifications live under the Credentials tab.',
     primary: 'Primary Specialty',
     primaryPlaceholder: 'e.g. Internal Medicine',
-    sub: 'Sub-specialties',
-    subPlaceholder: 'Add a sub-specialty and press Enter',
+    sub: 'Subspecialties',
+    subPlaceholder: 'Add a subspecialty and press Enter',
     save: 'Save Specialties',
     saving: 'Saving...',
     saved: 'Saved',
@@ -100,7 +100,7 @@ export default function SpecialtyEditor({
         className="w-full border border-border-line rounded-lg px-3 py-2 font-dm-sans text-sm text-deep-charcoal focus:outline-none focus:border-clinical-teal mb-4"
       />
 
-      {/* Sub-specialties */}
+      {/* Subspecialties */}
       <label className="block font-dm-sans text-sm font-medium text-body-slate mb-1">
         {t.sub}
       </label>
