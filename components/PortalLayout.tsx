@@ -13,6 +13,7 @@ import { tokens } from '../lib/design-tokens';
 import ChatInput from './ChatInput';
 import Footer from './Footer';
 import PhysicianIconRail, { RailSurface } from './physician/PhysicianIconRail';
+import LanguageToggle from './LanguageToggle';
 import CueSurface from './physician/CueSurface';
 import { useCueSurface } from '../lib/cue/surface';
 import { useBackendToken } from '../lib/useBackendToken';
@@ -162,8 +163,9 @@ export default function PortalLayout({
           </div>
         )}
 
-        {/* Sign out */}
-        <div className={`py-6 mt-auto ${portal === 'physician' ? 'pl-6 pr-16' : 'px-6'}`}>
+        {/* Language toggle + sign out */}
+        <div className={`py-6 mt-auto flex flex-col items-center gap-4 ${portal === 'physician' ? 'pl-6 pr-16' : 'px-6'}`}>
+          <LanguageToggle />
           <button
             onClick={onSignOut}
             className="font-body w-full py-3 text-center text-sm font-medium tracking-wide text-white/60 hover:text-white transition"
@@ -215,27 +217,30 @@ export default function PortalLayout({
                 medikah
               </span>
             </Link>
-            {railOn ? (
-              /* Phase 21: steady-state icon rail (waffle on mobile), white ink on the navy header. */
-              <PhysicianIconRail active={activeSurface} tone="light" lang={lang} onSignOut={onSignOut} />
-            ) : (
-              <div className="flex items-center gap-3">
-                {onNewChat && (
+            <div className="flex items-center gap-2">
+              <LanguageToggle />
+              {railOn ? (
+                /* Phase 21: steady-state icon rail (waffle on mobile), white ink on the navy header. */
+                <PhysicianIconRail active={activeSurface} tone="light" lang={lang} onSignOut={onSignOut} />
+              ) : (
+                <div className="flex items-center gap-3">
+                  {onNewChat && (
+                    <button
+                      onClick={onNewChat}
+                      className="font-body px-3 py-2 text-xs font-semibold tracking-wide text-white/70 hover:text-white transition"
+                    >
+                      New chat
+                    </button>
+                  )}
                   <button
-                    onClick={onNewChat}
-                    className="font-body px-3 py-2 text-xs font-semibold tracking-wide text-white/70 hover:text-white transition"
+                    onClick={onSignOut}
+                    className="font-body px-3 py-2 text-xs font-semibold tracking-wide text-white/80 border border-white/20 hover:text-white hover:border-white/30 transition rounded-sm"
                   >
-                    New chat
+                    Sign out
                   </button>
-                )}
-                <button
-                  onClick={onSignOut}
-                  className="font-body px-3 py-2 text-xs font-semibold tracking-wide text-white/80 border border-white/20 hover:text-white hover:border-white/30 transition rounded-sm"
-                >
-                  Sign out
-                </button>
-              </div>
-            )}
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
