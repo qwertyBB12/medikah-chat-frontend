@@ -5,12 +5,14 @@
  * quick stats, and profile completeness.
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SupportedLang } from '../../lib/i18n';
 import { nameToSlug } from '../../lib/slug';
 import { PHYSICIAN_INQUIRIES_OPEN } from '../../lib/featureFlags';
 import VerificationBadge from './VerificationBadge';
 import type { MissingItem } from '../../lib/completenessService';
+import type { PhysicianSpecialty } from '../../lib/specialtyTypes';
+import { getSpecialties } from '../../lib/specialtyClient';
 
 interface ProfileOverviewProps {
   physicianId: string | null;
@@ -33,6 +35,7 @@ const content = {
     upcomingAppts: 'Upcoming Appointments',
     viewPublicProfile: 'View Public Profile',
     editProfile: 'Edit Profile',
+    addSubspecialty: 'Add subspecialty',
     profileCompleteness: 'Credential Completeness',
     completeProfile: 'Complete your profile to improve visibility.',
     completeMessage: 'Your credential profile is complete.',
@@ -44,6 +47,7 @@ const content = {
     upcomingAppts: 'Citas Proximas',
     viewPublicProfile: 'Ver Perfil Publico',
     editProfile: 'Editar Perfil',
+    addSubspecialty: 'Agregar subespecialidad',
     profileCompleteness: 'Completitud de Credenciales',
     completeProfile: 'Complete su perfil para mejorar su visibilidad.',
     completeMessage: 'Su perfil de credenciales esta completo.',
@@ -81,6 +85,26 @@ export default function ProfileOverview(props: ProfileOverviewProps) {
   const completeness = completenessPercentage !== undefined ? completenessPercentage : computeCompleteness(props);
   const [imgError, setImgError] = useState(false);
 
+  // Canonical specialty (Phase B1, Annotation 2): show primary + subspecialty.
+  // Falls back to the legacy `specialty` prop until the canonical store is populated.
+  const [canonicalSpecialties, setCanonicalSpecialties] = useState<PhysicianSpecialty[]>([]);
+  useEffect(() => {
+    if (!physicianId) return;
+    let active = true;
+    getSpecialties(physicianId).then((r) => {
+      if (active && r.success && r.data) setCanonicalSpecialties(r.data.specialties);
+    });
+    return () => {
+      active = false;
+    };
+  }, [physicianId]);
+
+  const primaryName =
+    canonicalSpecialties.find((s) => s.role === 'primary')?.name || specialty || '';
+  const subNames = canonicalSpecialties
+    .filter((s) => s.role === 'subspecialty' && s.name.trim())
+    .map((s) => s.name);
+
   return (
     <div className="bg-linen-white rounded-md border border-warm-gray-800/[0.06] shadow-sm p-6">
       <div className="flex items-start gap-4">
@@ -110,8 +134,20 @@ export default function ProfileOverview(props: ProfileOverviewProps) {
             </h2>
             <VerificationBadge status={verificationStatus} lang={lang} size="sm" />
           </div>
-          {specialty && (
-            <p className="font-body text-sm text-body-slate mt-0.5">{specialty}</p>
+          {primaryName && (
+            <p className="font-body text-sm text-body-slate mt-0.5">{primaryName}</p>
+          )}
+          {subNames.length > 0 ? (
+            <p className="font-body text-xs text-body-slate/80 mt-0.5">{subNames.join(', ')}</p>
+          ) : (
+            physicianId && primaryName && (
+              <a
+                href="?section=credentials"
+                className="inline-block font-body text-xs text-clinical-teal hover:text-clinical-teal/80 mt-0.5"
+              >
+                {t.addSubspecialty}
+              </a>
+            )
           )}
           {physicianId && (
             <p className="font-body text-xs text-archival-grey mt-1">
