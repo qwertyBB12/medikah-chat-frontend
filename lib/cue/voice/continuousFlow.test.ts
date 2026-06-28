@@ -141,4 +141,43 @@ describe('ContinuousFlowController', () => {
     expect(spoken).toBe('Block 2–3 PM? Confirm below.');
     expect(spoken).not.toContain('prepare'); // never the model's prose
   });
+
+  // ── Wave 3: push-to-talk ────────────────────────────────────────────────────
+
+  it('continuous (default): the mic rests OPEN after start', async () => {
+    const ctrl = new ContinuousFlowController({ respond: ok('x') });
+    await ctrl.start();
+    expect(ctrl.isListening()).toBe(true);
+    expect(vadPause).not.toHaveBeenCalled(); // no idle hold in continuous mode
+  });
+
+  it('ptt: the mic rests CLOSED after start (no continuous listening)', async () => {
+    const ctrl = new ContinuousFlowController({ respond: ok('x'), flowMode: 'ptt' });
+    await ctrl.start();
+    expect(ctrl.isListening()).toBe(false);
+    expect(vadPause).toHaveBeenCalled(); // idle 'ptt' hold closes the mic
+  });
+
+  it('ptt: tap opens a listening window, and the mic re-closes after the turn', async () => {
+    const ctrl = new ContinuousFlowController({ respond: ok('Bien.'), flowMode: 'ptt' });
+    await ctrl.start();
+    vadPause.mockClear(); vadResume.mockClear();
+
+    ctrl.startListeningWindow();
+    expect(vadResume).toHaveBeenCalled();      // window opened
+    expect(ctrl.isListening()).toBe(true);
+
+    await vadHandlers.onUtterance!('hola');     // speak → Cue answers → turn ends
+    expect(ctrl.isListening()).toBe(false);     // PTT returns to idle-closed
+    expect(vadPause).toHaveBeenCalled();        // closed for Cue's speech, stayed closed
+  });
+
+  it('ptt: tapping again cancels an open window without speaking', async () => {
+    const ctrl = new ContinuousFlowController({ respond: ok('x'), flowMode: 'ptt' });
+    await ctrl.start();
+    ctrl.startListeningWindow();
+    expect(ctrl.isListening()).toBe(true);
+    ctrl.stopListeningWindow();
+    expect(ctrl.isListening()).toBe(false);
+  });
 });
