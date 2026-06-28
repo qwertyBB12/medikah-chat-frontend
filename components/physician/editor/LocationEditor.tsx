@@ -1,16 +1,16 @@
 /**
  * LocationEditor — Embedded section in WebsiteEditor
  *
- * Inputs for office address, city, country, phone, email, appointment URL.
+ * Annotation #9 (source-of-truth split): office ADDRESS and PHONE are now
+ * managed in the Credentials tab (Contact & Practice Info) and are the single
+ * source of truth — the public page reads them from there. This editor keeps
+ * only the booking/presentation fields that legitimately live with the website:
+ * office email and appointment URL.
  */
 
 import { SupportedLang } from '../../../lib/i18n';
 
 interface LocationData {
-  office_address: string;
-  office_city: string;
-  office_country: string;
-  office_phone: string;
   office_email: string;
   appointment_url: string;
 }
@@ -23,28 +23,14 @@ interface LocationEditorProps {
 
 const content = {
   en: {
-    address: 'Office Address',
-    addressPlaceholder: '123 Medical Center Blvd, Suite 200',
-    city: 'City',
-    cityPlaceholder: 'Mexico City',
-    country: 'Country',
-    countryPlaceholder: 'Mexico',
-    phone: 'Phone',
-    phonePlaceholder: '+52 55 1234 5678',
+    note: 'Your office address and phone are managed in the Credentials tab, under Contact & Practice Info. They appear here on your public profile automatically.',
     email: 'Office Email',
     emailPlaceholder: 'doctor@clinic.com',
     appointmentUrl: 'Appointment URL',
     appointmentUrlPlaceholder: 'https://calendly.com/your-link',
   },
   es: {
-    address: 'Dirección del Consultorio',
-    addressPlaceholder: 'Av. Centro Médico 123, Consultorio 200',
-    city: 'Ciudad',
-    cityPlaceholder: 'Ciudad de México',
-    country: 'País',
-    countryPlaceholder: 'México',
-    phone: 'Teléfono',
-    phonePlaceholder: '+52 55 1234 5678',
+    note: 'La dirección y el teléfono de su consultorio se gestionan en la pestaña de Credenciales, en Contacto e Información de Práctica. Aparecen aquí en su perfil público automáticamente.',
     email: 'Correo del Consultorio',
     emailPlaceholder: 'doctor@clinica.com',
     appointmentUrl: 'URL de Citas',
@@ -77,15 +63,10 @@ export default function LocationEditor({ data, onChange, lang }: LocationEditorP
 
   return (
     <div className="space-y-4">
-      {field(t.address, 'office_address', t.addressPlaceholder)}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {field(t.city, 'office_city', t.cityPlaceholder)}
-        {field(t.country, 'office_country', t.countryPlaceholder)}
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {field(t.phone, 'office_phone', t.phonePlaceholder, 'tel')}
-        {field(t.email, 'office_email', t.emailPlaceholder, 'email')}
-      </div>
+      <p className="font-dm-sans text-xs text-body-slate bg-clinical-surface/40 border border-border-line rounded-lg px-3 py-2.5 leading-relaxed">
+        {t.note}
+      </p>
+      {field(t.email, 'office_email', t.emailPlaceholder, 'email')}
       {field(t.appointmentUrl, 'appointment_url', t.appointmentUrlPlaceholder, 'url')}
     </div>
   );

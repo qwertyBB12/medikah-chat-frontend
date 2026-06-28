@@ -557,10 +557,6 @@ export default function WebsiteEditor({ physicianId, lang, accessToken }: Websit
         >
           <LocationEditor
             data={{
-              office_address: form.office_address,
-              office_city: form.office_city,
-              office_country: form.office_country,
-              office_phone: form.office_phone,
               office_email: form.office_email,
               appointment_url: form.appointment_url,
             }}

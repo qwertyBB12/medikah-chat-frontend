@@ -55,6 +55,15 @@ export interface DerivedPublicProfile {
   boardCertifications: BoardCertification[];
 }
 
+export interface DerivedContact {
+  officeAddress: string | null;
+  officeCity: string | null;
+  officeCountry: string | null;
+  officePhone: string | null;
+  officeEmail: string | null;
+  appointmentUrl: string | null;
+}
+
 const isVerified = (s: string) => s === 'verified';
 
 export function derivePublicProfile(input: {
@@ -101,5 +110,37 @@ export function derivePublicProfile(input: {
     residency: mapTraining('residency', toggles.residency),
     fellowships: mapTraining('fellowship', toggles.fellowships),
     boardCertifications: toggles.certifications ? flatBoardCertifications : [],
+  };
+}
+
+/**
+ * Derive the public Location & Contact block (Annotation #9).
+ *
+ * Source-of-truth split (decided with Hector 2026-06-28): office address +
+ * phone are canonical in Credentials (physicians.practice_address_* /
+ * phone_number, edited in ContactInfoSection); office email + appointment URL
+ * are booking/presentation and stay in the website store (physician_website).
+ * Contact is self-declared, NOT a verified credential, so every field is gated
+ * by its visibility toggle alone — no verification gate (unlike specialty/
+ * education above).
+ */
+export function deriveContact(input: {
+  practiceAddressLine1: string | null;
+  practiceAddressCity: string | null;
+  practiceAddressCountry: string | null;
+  phoneNumber: string | null;
+  officeEmail: string | null;
+  appointmentUrl: string | null;
+  toggles: ProfileVisibility;
+}): DerivedContact {
+  const { toggles } = input;
+  const showAddress = toggles.officeAddress;
+  return {
+    officeAddress: showAddress ? input.practiceAddressLine1 || null : null,
+    officeCity: showAddress ? input.practiceAddressCity || null : null,
+    officeCountry: showAddress ? input.practiceAddressCountry || null : null,
+    officePhone: toggles.phone ? input.phoneNumber || null : null,
+    officeEmail: toggles.officeEmail ? input.officeEmail || null : null,
+    appointmentUrl: toggles.appointmentUrl ? input.appointmentUrl || null : null,
   };
 }

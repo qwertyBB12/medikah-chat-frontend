@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import { supabaseAdmin } from '../../lib/supabaseServer';
 import { nameToSlug } from '../../lib/slug';
 import { normalizeVisibility } from '../../lib/visibilityTypes';
-import { derivePublicProfile } from '../../lib/publicProfileDerive';
+import { derivePublicProfile, deriveContact } from '../../lib/publicProfileDerive';
 import type {
   DeriveSpecialtyRow,
   DeriveEducationRow,
@@ -286,7 +286,7 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
   try {
     const { data: physicians, error } = await supabaseAdmin
       .from('physicians')
-      .select('id, full_name, title, photo_url, photo_thumb_url, linkedin_url, bio, primary_specialty, sub_specialties, board_certifications, medical_school, medical_school_country, graduation_year, honors, residency, fellowships, publications, current_institutions, available_days, available_hours_start, available_hours_end, timezone, languages, licenses, verification_status')
+      .select('id, full_name, title, photo_url, photo_thumb_url, linkedin_url, bio, primary_specialty, sub_specialties, board_certifications, medical_school, medical_school_country, graduation_year, honors, residency, fellowships, publications, current_institutions, available_days, available_hours_start, available_hours_end, timezone, languages, licenses, verification_status, phone_number, practice_address_line1, practice_address_city, practice_address_country')
       .eq('verification_status', 'verified');
 
     if (error || !physicians) {
@@ -348,8 +348,19 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
       flatBoardCertifications: physician.board_certifications || [],
     });
 
-    // Contact (self-declared website fields, gated by toggle only)
-    const showAddress = toggles.officeAddress && !!websiteData;
+    // Contact (Annotation #9): office address + phone are canonical in
+    // Credentials (physicians.practice_address_* / phone_number); office email +
+    // appointment URL stay in the website store. Self-declared, so gated by
+    // toggle alone — no verification gate.
+    const contact = deriveContact({
+      practiceAddressLine1: physician.practice_address_line1 || null,
+      practiceAddressCity: physician.practice_address_city || null,
+      practiceAddressCountry: physician.practice_address_country || null,
+      phoneNumber: physician.phone_number || null,
+      officeEmail: websiteData?.office_email || null,
+      appointmentUrl: websiteData?.appointment_url || null,
+      toggles,
+    });
 
     return {
       props: {
@@ -383,12 +394,12 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
           value_pillars: websiteData.value_pillars || [],
           services: websiteData.services || [],
           faqs: websiteData.faqs || [],
-          office_address: showAddress ? websiteData.office_address || null : null,
-          office_city: showAddress ? websiteData.office_city || null : null,
-          office_country: showAddress ? websiteData.office_country || null : null,
-          office_phone: toggles.phone ? websiteData.office_phone || null : null,
-          office_email: toggles.officeEmail ? websiteData.office_email || null : null,
-          appointment_url: toggles.appointmentUrl ? websiteData.appointment_url || null : null,
+          office_address: contact.officeAddress,
+          office_city: contact.officeCity,
+          office_country: contact.officeCountry,
+          office_phone: contact.officePhone,
+          office_email: contact.officeEmail,
+          appointment_url: contact.appointmentUrl,
           custom_tagline: websiteData.custom_tagline || null,
           communication_style: websiteData.communication_style || null,
           first_consult_expectation: websiteData.first_consult_expectation || null,
