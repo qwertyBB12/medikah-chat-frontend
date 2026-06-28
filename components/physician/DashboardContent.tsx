@@ -17,6 +17,7 @@ import InquiryList from './InquiryList';
 import AvailabilityEditor from './AvailabilityEditor';
 import ProfileEditor from './editor/ProfileEditor';
 import WebsiteEditor from './editor/WebsiteEditor';
+import { nameToSlug } from '../../lib/slug';
 import USCredentialSection from './credentials/USCredentialSection';
 import MXCredentialSection from './credentials/MXCredentialSection';
 import ContactInfoSection from './ContactInfoSection';
@@ -107,6 +108,12 @@ const content = {
       description: 'You are part of a network of credentialed physicians across the Americas, connecting patients with quality healthcare.',
       launchingCopy: 'Launching across the Americas.',
     },
+    preview: {
+      title: 'Your public profile',
+      hint: 'See exactly what patients see on your live profile page.',
+      button: 'Preview public profile',
+      unavailable: 'Your public profile goes live once your credentials are verified.',
+    },
   },
   es: {
     welcome: 'Bienvenido de nuevo',
@@ -144,6 +151,12 @@ const content = {
       title: 'Red Medikah',
       description: 'Usted es parte de una red de m\u00e9dicos acreditados en las Am\u00e9ricas, conectando pacientes con atenci\u00f3n m\u00e9dica de calidad.',
       launchingCopy: 'Lanzando en todo el continente.',
+    },
+    preview: {
+      title: 'Su perfil p\u00fablico',
+      hint: 'Vea exactamente lo que ven los pacientes en su perfil p\u00fablico.',
+      button: 'Vista previa del perfil p\u00fablico',
+      unavailable: 'Su perfil p\u00fablico se activa una vez que sus credenciales sean verificadas.',
     },
   },
 };
@@ -515,6 +528,30 @@ export default function DashboardContent({
       {/* ── Public Profile tab: what patients see ── */}
       {activeTab === 'profile' && (
         <div className="space-y-6">
+          {/* Preview public profile (Aguirre annotation E). Only verified
+              physicians have a live /dr/[slug]; unverified ones would 404, so the
+              link is shown only when verified. */}
+          <div className="bg-white rounded-md border border-border-line shadow-sm p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 className="font-dm-sans font-semibold text-lg text-deep-charcoal">{t.preview.title}</h2>
+              <p className="font-dm-sans text-sm text-body-slate mt-1">
+                {normalizedStatus === 'verified' ? t.preview.hint : t.preview.unavailable}
+              </p>
+            </div>
+            {normalizedStatus === 'verified' && physicianName && (
+              <a
+                href={`/dr/${nameToSlug(physicianName)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-dm-sans text-sm font-semibold px-5 py-2.5 rounded-lg bg-clinical-teal text-white hover:bg-clinical-teal/90 transition whitespace-nowrap inline-flex items-center gap-2 self-start"
+              >
+                {t.preview.button}
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
+            )}
+          </div>
           {physicianId && <ProfileEditor physicianId={physicianId} lang={lang} accessToken={accessToken} />}
           {physicianId && <WebsiteEditor physicianId={physicianId} lang={lang} accessToken={accessToken} />}
         </div>
