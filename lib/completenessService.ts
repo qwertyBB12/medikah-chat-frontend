@@ -7,6 +7,7 @@
 import type { CredentialResponse } from './credentialTypes';
 import type { MXCredentialResponse } from './mxCredentialTypes';
 import type { ContactInfo } from './contactTypes';
+import type { PhysicianSpecialty } from './specialtyTypes';
 
 export interface MissingItem {
   sectionId: string;      // DOM id for scrollIntoView
@@ -32,8 +33,8 @@ interface WeightEntry {
 const US_WEIGHTS: WeightEntry[] = [
   { weight: 25, sectionId: 'us-npi-panel',           label: '🇺🇸 Enter NPI number',           labelEs: '🇺🇸 Ingresar número NPI' },
   { weight: 20, sectionId: 'us-licenses-panel',      label: '🇺🇸 Add state medical license',   labelEs: '🇺🇸 Agregar licencia médica estatal' },
-  { weight: 15, sectionId: 'us-boardcerts-panel',    label: '🇺🇸 Add board certification',     labelEs: '🇺🇸 Agregar certificación de junta' },
-  { weight: 10, sectionId: 'us-subspecialties-panel', label: '🇺🇸 Add sub-specialty',          labelEs: '🇺🇸 Agregar sub-especialidad' },
+  { weight: 15, sectionId: 'us-credential-section',  label: '🇺🇸 Add primary specialty',       labelEs: '🇺🇸 Agregar especialidad principal' },
+  { weight: 10, sectionId: 'us-credential-section',  label: '🇺🇸 Add subspecialty or board certification', labelEs: '🇺🇸 Agregar subespecialidad o certificación' },
   { weight: 10, sectionId: 'us-credential-section',  label: '🇺🇸 Upload credential documents', labelEs: '🇺🇸 Subir documentos de credenciales' },
   { weight: 10, sectionId: 'contact-info-section',   label: 'Add phone number',                labelEs: 'Agregar número de teléfono' },
 ];
@@ -57,15 +58,19 @@ const MX_WEIGHTS: WeightEntry[] = [
 
 function scoreUS(
   credentials: CredentialResponse | null,
-  contact: Partial<ContactInfo>
+  contact: Partial<ContactInfo>,
+  specialties: PhysicianSpecialty[]
 ): boolean[] {
   // Returns a boolean array (scored in same order as US_WEIGHTS):
-  // [npi, stateLicenses, boardCerts, subSpecialties, documents, contact]
+  // [npi, stateLicenses, primarySpecialty, subOrBoard, documents, contact]
+  // Phase B1: specialty/board signal derives from the canonical physician_specialties
+  // store (country='US'), not the retired per-cert board/sub-specialty forms.
+  const us = specialties.filter(s => s.country === 'US' && s.name.trim());
   return [
     !!(credentials?.npi?.npiNumber),
     !!(credentials && credentials.stateLicenses.length > 0 && credentials.stateLicenses.some(l => l.isPrimary)),
-    !!(credentials && credentials.boardCertifications.length > 0),
-    !!(credentials && credentials.subSpecialties.length > 0),
+    us.some(s => s.role === 'primary'),
+    us.some(s => s.role === 'subspecialty' || s.boardCertified),
     true, // documents placeholder — always 100% in Phase 7
     !!(contact.phoneNumber?.trim()),
   ];
@@ -94,9 +99,10 @@ function scoreMX(
 
 export function computeUSCompleteness(
   credentials: CredentialResponse | null,
-  contact: Partial<ContactInfo>
+  contact: Partial<ContactInfo>,
+  specialties: PhysicianSpecialty[] = []
 ): CompletenessResult {
-  const scores = scoreUS(credentials, contact);
+  const scores = scoreUS(credentials, contact, specialties);
 
   let earnedPoints = 0;
   const missing: Array<WeightEntry & { weight: number }> = [];
@@ -160,14 +166,15 @@ export function computeCompleteness(
   countryOfPractice: string[],
   usCredentials: CredentialResponse | null,
   mxCredentials: MXCredentialResponse | null,
-  contact: Partial<ContactInfo>
+  contact: Partial<ContactInfo>,
+  specialties: PhysicianSpecialty[] = []
 ): CompletenessResult {
   const hasUS = countryOfPractice.includes('US');
   const hasMX = countryOfPractice.includes('MX');
 
   // US-only
   if (hasUS && !hasMX) {
-    return computeUSCompleteness(usCredentials, contact);
+    return computeUSCompleteness(usCredentials, contact, specialties);
   }
 
   // MX-only
@@ -177,7 +184,7 @@ export function computeCompleteness(
 
   // Dual-credential (D-11): 50/50 weighted average
   if (hasUS && hasMX) {
-    const usResult = computeUSCompleteness(usCredentials, contact);
+    const usResult = computeUSCompleteness(usCredentials, contact, specialties);
     const mxResult = computeMXCompleteness(mxCredentials, contact);
 
     const percentage = Math.round(usResult.percentage * 0.5 + mxResult.percentage * 0.5);
@@ -229,5 +236,5 @@ export function computeCompleteness(
   }
 
   // Legacy: no country set — default to US behavior for backward compatibility
-  return computeUSCompleteness(usCredentials, contact);
+  return computeUSCompleteness(usCredentials, contact, specialties);
 }
