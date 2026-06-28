@@ -1,6 +1,6 @@
 /**
  * USCredentialSection — Vertical accordion container for US credential forms.
- * Four panels: NPI, State Licenses, Board Certifications, Sub-specialties/Fellowships.
+ * Four panels: NPI, State Licenses, Board Certifications, Subspecialties/Fellowships.
  * Loads credential data on mount, passes to sub-forms with auto-save callbacks.
  */
 
@@ -28,7 +28,7 @@ const content = {
     npi: 'NPI Number',
     stateLicenses: 'State Medical Licenses',
     boardCerts: 'Board Certifications',
-    subSpecialties: 'Sub-specialties',
+    subSpecialties: 'Subspecialties',
     empty: 'Not started',
     inProgress: 'In progress',
     complete: 'Complete',
@@ -43,7 +43,7 @@ const content = {
     npi: 'Numero NPI',
     stateLicenses: 'Licencias Medicas Estatales',
     boardCerts: 'Certificaciones de Junta',
-    subSpecialties: 'Sub-especialidades',
+    subSpecialties: 'Subespecialidades',
     empty: 'No iniciado',
     inProgress: 'En progreso',
     complete: 'Completo',

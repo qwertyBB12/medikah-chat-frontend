@@ -1,5 +1,5 @@
 /**
- * SubSpecialtyForm — Multi-entry sub-specialty and fellowship form.
+ * SubSpecialtyForm — Multi-entry subspecialty and fellowship form.
  * Auto-saves on blur with 800ms debounce.
  */
 
@@ -17,9 +17,9 @@ interface SubSpecialtyFormProps {
 
 const content = {
   en: {
-    addEntry: '+ Add sub-specialty',
+    addEntry: '+ Add subspecialty',
     type: 'Type',
-    subSpecialty: 'Sub-specialty',
+    subSpecialty: 'Subspecialty',
     fellowship: 'Fellowship',
     name: 'Name',
     certifyingBody: 'Certifying Body / Institution',
@@ -34,9 +34,9 @@ const content = {
     bodyPlaceholder: 'e.g. Cleveland Clinic, ABIM',
   },
   es: {
-    addEntry: '+ Agregar sub-especialidad',
+    addEntry: '+ Agregar subespecialidad',
     type: 'Tipo',
-    subSpecialty: 'Sub-especialidad',
+    subSpecialty: 'Subespecialidad',
     fellowship: 'Beca',
     name: 'Nombre',
     certifyingBody: 'Organismo certificador / Institucion',
