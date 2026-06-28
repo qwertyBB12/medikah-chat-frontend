@@ -20,6 +20,7 @@ import WebsiteEditor from './editor/WebsiteEditor';
 import USCredentialSection from './credentials/USCredentialSection';
 import MXCredentialSection from './credentials/MXCredentialSection';
 import ContactInfoSection from './ContactInfoSection';
+import EducationSection from './EducationSection';
 import WorkspaceTabContainer from './workspace/WorkspaceTabContainer';
 import { PHYSICIAN_INQUIRIES_OPEN, AI_DIAGNOSIS_IN_DASH } from '../../lib/featureFlags';
 import { computeCompleteness } from '../../lib/completenessService';
@@ -447,6 +448,10 @@ export default function DashboardContent({
               onContactChange={handleContactChange}
             />
           )}
+
+          {/* Education & Training — canonical home (Phase B2); country-agnostic.
+              Public Profile becomes a visibility layer over this store. */}
+          {physicianId && <EducationSection physicianId={physicianId} lang={lang} />}
 
           {/* Credential sections with country headers */}
 
