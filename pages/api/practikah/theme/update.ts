@@ -21,6 +21,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth';
 import { getToken } from 'next-auth/jwt';
 import { authOptions } from '../../auth/[...nextauth]';
+import { mintBackendToken } from '../../../../lib/auth/backendToken';
 import { logEvent } from '../../../../lib/workspaceAuditService';
 
 const FASTAPI_URL =
@@ -43,12 +44,25 @@ export default async function handler(
     return res.status(401).json({ error: 'Authentication required' });
   }
 
-  // 3. Extract raw NextAuth HS256 JWT for FastAPI verification (D-04)
-  const tokenRaw = await getToken({
+  // NextAuth v4 issues an encrypted JWE; forwarding it raw 401s the FastAPI
+  // HS256 gate ("Invalid token"). Mint a fresh HS256 JWS from the decrypted
+  // session claims instead — see lib/auth/backendToken.ts (requires the same
+  // NEXTAUTH_SECRET on Netlify (signs) and Render (verifies)).
+  const sessionToken = await getToken({
     req,
     secret: process.env.NEXTAUTH_SECRET,
-    raw: true,
   });
+  const tokenRaw =
+    sessionToken?.userId && sessionToken?.role
+      ? await mintBackendToken({
+          userId: String(sessionToken.userId),
+          role: String(sessionToken.role),
+          email: session.user.email,
+          physicianId: sessionToken.physician_id
+            ? String(sessionToken.physician_id)
+            : undefined,
+        }).catch(() => null)
+      : null;
   if (!tokenRaw) {
     return res.status(401).json({ error: 'Session token unavailable' });
   }
