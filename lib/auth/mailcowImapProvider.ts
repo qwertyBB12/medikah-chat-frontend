@@ -137,6 +137,14 @@ async function probeImap(email: string, password: string): Promise<ImapProbeResu
     secure: true, // TLS-only — no STARTTLS, no plaintext fallback
     auth: { user: email, pass: password },
     logger: false,
+    // Bound EVERY phase of the probe. socketTimeout governs only post-connect
+    // inactivity; the connect (default 90s) and greeting (default 16s) phases
+    // are what hang when the VPS accepts the TCP/TLS connection but stalls — long
+    // past the Netlify function limit, so the function 504s, NextAuth's signIn()
+    // throws on the HTML body, and the /chat spinner never clears. Cap all three
+    // at 5s so a stalled probe fails fast as infra_error and signIn() resolves.
+    connectionTimeout: 5000,
+    greetingTimeout: 5000,
     socketTimeout: 5000,
   });
   try {

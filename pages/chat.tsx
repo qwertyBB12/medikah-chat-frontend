@@ -409,12 +409,22 @@ export default function ChatPage() {
 
     pendingRedirectRef.current = 'doctor';
 
-    const result = await signIn('mailcow-imap', {
-      redirect: false,
-      email: mailcowEmail,
-      password: mailcowPassword,
-    });
-    setIsMailcowSubmitting(false);
+    let result: Awaited<ReturnType<typeof signIn>> | undefined;
+    try {
+      result = await signIn('mailcow-imap', {
+        redirect: false,
+        email: mailcowEmail,
+        password: mailcowPassword,
+      });
+    } catch {
+      // signIn() rejects (rather than resolving with { error }) when the callback
+      // request itself fails — e.g. the function 504s and NextAuth tries to
+      // res.json() an HTML timeout body. Without this catch the spinner would
+      // spin forever. Surface the same locked error as any other failure.
+      result = undefined;
+    } finally {
+      setIsMailcowSubmitting(false);
+    }
 
     if (!result || result.error) {
       // D-05 — single locked string on every failure outcome
