@@ -26,6 +26,7 @@ import CurveDivider from '../../components/landing/CurveDivider';
 
 interface PhysicianData {
   full_name: string;
+  title?: 'Dr' | 'Dra' | null;
   photo_url?: string;
   linkedin_url?: string;
   bio?: string;
@@ -88,22 +89,26 @@ export default function PhysicianProfilePage({ physician, website }: PhysicianPr
     || (isEs ? w?.approved_tagline_es : w?.approved_tagline_en)
     || undefined;
 
+  // Honorific from the physician's chosen title (Dr/Dra matters in Mexico —
+  // never guess gender). Falls back to "Dr." only when no title is set.
+  const honorific = p.title ? `${p.title}.` : 'Dr.';
+
   const slug = nameToSlug(p.full_name);
   const ogImage = buildOGImageURL(ogBaseURL(), {
     surface: 'physician',
     locale: isEs ? 'es' : 'en',
-    physicianName: `Dr. ${p.full_name}`,
+    physicianName: `${honorific} ${p.full_name}`,
     physicianSpecialty: p.primary_specialty,
   });
-  const pageTitle = `Dr. ${p.full_name} - ${p.primary_specialty || (isEs ? 'Médico' : 'Physician')} | Medikah`;
+  const pageTitle = `${honorific} ${p.full_name} - ${p.primary_specialty || (isEs ? 'Médico' : 'Physician')} | Medikah`;
   const pageDescription = isEs
-    ? `Perfil profesional de Dr. ${p.full_name}${p.primary_specialty ? `, especialista en ${p.primary_specialty}` : ''}. Miembro verificado de la Red de Médicos de Medikah.`
-    : `Professional profile of Dr. ${p.full_name}${p.primary_specialty ? `, specializing in ${p.primary_specialty}` : ''}. Verified member of the Medikah Physician Network.`;
+    ? `Perfil profesional de ${honorific} ${p.full_name}${p.primary_specialty ? `, especialista en ${p.primary_specialty}` : ''}. Miembro verificado de la Red de Médicos de Medikah.`
+    : `Professional profile of ${honorific} ${p.full_name}${p.primary_specialty ? `, specializing in ${p.primary_specialty}` : ''}. Verified member of the Medikah Physician Network.`;
 
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': w ? ['Physician', 'MedicalBusiness'] : 'Physician',
-    name: `Dr. ${p.full_name}`,
+    name: `${honorific} ${p.full_name}`,
     url: `https://medikah.health/dr/${slug}`,
     ...(p.photo_url && { image: p.photo_url }),
     ...(p.primary_specialty && { medicalSpecialty: p.primary_specialty }),
@@ -148,6 +153,7 @@ export default function PhysicianProfilePage({ physician, website }: PhysicianPr
     <ProfileLayout title={pageTitle} description={pageDescription} jsonLd={jsonLd} ogImage={ogImage}>
       <ProfileHero
         fullName={p.full_name}
+        honorific={honorific}
         photoUrl={p.photo_url}
         primarySpecialty={p.primary_specialty}
         languages={p.languages}
@@ -280,7 +286,7 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
   try {
     const { data: physicians, error } = await supabaseAdmin
       .from('physicians')
-      .select('id, full_name, photo_url, photo_thumb_url, linkedin_url, bio, primary_specialty, sub_specialties, board_certifications, medical_school, medical_school_country, graduation_year, honors, residency, fellowships, publications, current_institutions, available_days, available_hours_start, available_hours_end, timezone, languages, licenses, verification_status')
+      .select('id, full_name, title, photo_url, photo_thumb_url, linkedin_url, bio, primary_specialty, sub_specialties, board_certifications, medical_school, medical_school_country, graduation_year, honors, residency, fellowships, publications, current_institutions, available_days, available_hours_start, available_hours_end, timezone, languages, licenses, verification_status')
       .eq('verification_status', 'verified');
 
     if (error || !physicians) {
@@ -349,6 +355,7 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
       props: {
         physician: {
           full_name: physician.full_name,
+          title: physician.title || null,
           photo_url: physician.photo_url || null,
           linkedin_url: physician.linkedin_url || null,
           bio: physician.bio || null,
