@@ -124,8 +124,9 @@ export function CueMemoryPanel({ locale, onClose }: { locale: Locale; onClose: (
   const t = MEMORY_CONSENT[locale];
   const [notes, setNotes] = useState<MemoryNote[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [draft, setDraft] = useState('');
+  // NOTE: doctors can VIEW and DELETE only — never edit a note's text. Rewriting a
+  // note would silently change how Cue reasons, with effects the doctor can't see
+  // (product decision 2026-06-28). Delete is a privacy right; edit is withheld.
 
   const load = useCallback(async () => {
     setErr(null);
@@ -157,25 +158,6 @@ export function CueMemoryPanel({ locale, onClose }: { locale: Locale; onClose: (
     [t.removeConfirm, load],
   );
 
-  const saveEdit = useCallback(
-    async (id: string) => {
-      const text = draft.trim();
-      if (!text) return;
-      setNotes((prev) => (prev ? prev.map((n) => (n.id === id ? { ...n, note: text } : n)) : prev));
-      setEditingId(null);
-      try {
-        await fetch(`/api/cue/memory/${id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ note: text }),
-        });
-      } catch {
-        load();
-      }
-    },
-    [draft, load],
-  );
-
   const fmtDate = (iso?: string) => (iso ? iso.slice(0, 10) : '');
 
   return (
@@ -197,48 +179,16 @@ export function CueMemoryPanel({ locale, onClose }: { locale: Locale; onClose: (
           <ul className="cue-mem-list">
             {notes.map((n) => (
               <li className="cue-mem-item" key={n.id}>
-                {editingId === n.id ? (
-                  <>
-                    <textarea
-                      className="cue-mem-edit"
-                      value={draft}
-                      onChange={(e) => setDraft(e.target.value)}
-                      autoFocus
-                    />
-                    <div className="cue-mem-meta">
-                      <div className="cue-mem-rowact">
-                        <button className="cue-mem-link" onClick={() => setEditingId(null)}>
-                          {t.cancel}
-                        </button>
-                        <button className="cue-mem-link" onClick={() => saveEdit(n.id)}>
-                          {t.save}
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="cue-mem-note">{n.note}</div>
-                    <div className="cue-mem-meta">
-                      <span className="cue-mem-chip">{n.category}</span>
-                      <span className="cue-mem-date">{fmtDate(n.updated_at || n.appended_at)}</span>
-                      <div className="cue-mem-rowact">
-                        <button
-                          className="cue-mem-link"
-                          onClick={() => {
-                            setEditingId(n.id);
-                            setDraft(n.note);
-                          }}
-                        >
-                          {t.edit}
-                        </button>
-                        <button className="cue-mem-link danger" onClick={() => remove(n.id)}>
-                          {t.remove}
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                )}
+                <div className="cue-mem-note">{n.note}</div>
+                <div className="cue-mem-meta">
+                  <span className="cue-mem-chip">{n.category}</span>
+                  <span className="cue-mem-date">{fmtDate(n.updated_at || n.appended_at)}</span>
+                  <div className="cue-mem-rowact">
+                    <button className="cue-mem-link danger" onClick={() => remove(n.id)}>
+                      {t.remove}
+                    </button>
+                  </div>
+                </div>
               </li>
             ))}
           </ul>
