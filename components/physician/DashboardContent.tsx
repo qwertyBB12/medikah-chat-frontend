@@ -30,6 +30,7 @@ import { getCredentials } from '../../lib/credentialClient';
 import type { CredentialResponse } from '../../lib/credentialTypes';
 import { getMXCredentials } from '../../lib/mxCredentialClient';
 import type { MXCredentialResponse } from '../../lib/mxCredentialTypes';
+import { toggleCountry } from '../../lib/licensing';
 
 interface DashboardContentProps {
   physicianId: string | null;
@@ -91,7 +92,6 @@ const content = {
       subtitle: 'This determines which credentials we ask for. You can change it anytime.',
       us: 'United States',
       mx: 'Mexico',
-      both: 'Both',
     },
     tabs: {
       credentials: 'Credentials',
@@ -130,7 +130,6 @@ const content = {
       subtitle: 'Esto determina qué credenciales le pedimos. Puede cambiarlo cuando quiera.',
       us: 'Estados Unidos',
       mx: 'México',
-      both: 'Ambos',
     },
     tabs: {
       credentials: 'Credenciales',
@@ -266,16 +265,11 @@ export default function DashboardContent({
   const isDualCredential =
     countryOfPractice.includes('US') && countryOfPractice.includes('MX');
 
-  // U6: dual-credential gate. The physician picks US / Mexico / Both; only the
-  // relevant credential sections render. Persists country_of_practice optimistically.
-  const licensedSelection: 'us' | 'mx' | 'both' = isDualCredential
-    ? 'both'
-    : countryOfPractice.includes('MX')
-    ? 'mx'
-    : 'us';
-  const handleLicensedChange = useCallback(
-    async (selection: 'us' | 'mx' | 'both') => {
-      const codes = selection === 'both' ? ['US', 'MX'] : selection === 'mx' ? ['MX'] : ['US'];
+  // U6: dual-credential gate. The physician checks United States and/or Mexico
+  // (Annotation 1 — "Both" removed). Persists country_of_practice optimistically.
+  const handleCountryToggle = useCallback(
+    async (code: 'US' | 'MX') => {
+      const codes = toggleCountry(countryOfPractice, code);
       setCountryOfPractice(codes);
       if (!physicianId) return;
       try {
@@ -288,7 +282,7 @@ export default function DashboardContent({
         // Optimistic — the UI already reflects the choice; a failed save retries on next change.
       }
     },
-    [physicianId]
+    [countryOfPractice, physicianId]
   );
 
   // Get status description
@@ -413,23 +407,24 @@ export default function DashboardContent({
               </p>
               <div className="flex flex-wrap gap-2">
                 {([
-                  { key: 'us' as const, label: t.licensedIn.us },
-                  { key: 'mx' as const, label: t.licensedIn.mx },
-                  { key: 'both' as const, label: t.licensedIn.both },
-                ]).map(({ key, label }) => {
-                  const isActive = licensedSelection === key;
+                  { code: 'US' as const, label: t.licensedIn.us },
+                  { code: 'MX' as const, label: t.licensedIn.mx },
+                ]).map(({ code, label }) => {
+                  const isOn = countryOfPractice.includes(code);
                   return (
                     <button
-                      key={key}
+                      key={code}
                       type="button"
-                      onClick={() => handleLicensedChange(key)}
-                      aria-pressed={isActive}
-                      className={`px-4 py-2 rounded-md font-body text-sm font-medium transition-all ${
-                        isActive
+                      onClick={() => handleCountryToggle(code)}
+                      role="checkbox"
+                      aria-checked={isOn}
+                      className={`px-4 py-2 rounded-md font-body text-sm font-medium transition-all flex items-center gap-2 ${
+                        isOn
                           ? 'bg-clinical-teal text-white'
                           : 'bg-linen text-body-slate hover:bg-linen/70'
                       }`}
                     >
+                      <span aria-hidden="true">{isOn ? '✓' : '✕'}</span>
                       {label}
                     </button>
                   );
