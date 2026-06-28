@@ -636,6 +636,7 @@ export interface BatchedFormLabels {
   boardCertifications: string;
   certifyingBoard: string;
   certificationName: string;
+  certExpirationYear: string;
   addCertification: string;
 
   // Education form
@@ -707,6 +708,7 @@ export const batchedFormLabels: Record<SupportedLang, BatchedFormLabels> = {
     boardCertifications: 'Board Certifications',
     certifyingBoard: 'Certifying board',
     certificationName: 'Certification name',
+    certExpirationYear: 'Expiration year',
     addCertification: 'Add certification',
 
     // Education
@@ -774,8 +776,9 @@ export const batchedFormLabels: Record<SupportedLang, BatchedFormLabels> = {
     subSpecialties: 'Subespecialidades',
     addCustomSpecialty: 'Escriba para agregar una especialidad...',
     boardCertifications: 'Certificaciones de Consejo',
-    certifyingBoard: 'Consejo certificador',
-    certificationName: 'Nombre de certificaci\u00f3n',
+    certifyingBoard: 'Consejo',
+    certificationName: 'Especialidad certificada',
+    certExpirationYear: 'A\u00f1o de expiraci\u00f3n',
     addCertification: 'Agregar certificaci\u00f3n',
 
     // Education
