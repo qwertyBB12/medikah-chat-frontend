@@ -369,15 +369,23 @@ export default function ChatPage() {
 
     setIsSigningUp(true);
     try {
-      const resp = await fetch('/api/auth/physician-signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: signupEmail, password: signupPassword }),
-      });
+      // Retry transient 5xx (cold-start / network blip to Supabase) so a new doctor
+      // never sees a one-off failure on their first signup. 4xx (409 exists, 422
+      // weak password) are definitive — never retried.
+      let resp: Response | null = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        resp = await fetch('/api/auth/physician-signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: signupEmail, password: signupPassword }),
+        });
+        if (resp.status < 500) break; // success or definitive client error
+        if (attempt < 2) await new Promise((r) => setTimeout(r, 700 * (attempt + 1)));
+      }
 
-      if (!resp.ok) {
-        const body = (await resp.json().catch(() => ({}))) as { error?: string };
-        setSignupError(resp.status === 409 ? t.signupExists[lang] : body.error || t.signupGenericError[lang]);
+      if (!resp || !resp.ok) {
+        const body = (await (resp?.json().catch(() => ({})) ?? Promise.resolve({}))) as { error?: string };
+        setSignupError(resp?.status === 409 ? t.signupExists[lang] : body.error || t.signupGenericError[lang]);
         setIsSigningUp(false);
         return;
       }
