@@ -19,6 +19,7 @@ interface SpecialtyRow {
   role: string;
   board_certified: boolean;
   certifying_board: string | null;
+  certification_number: string | null;
   expiration_year: number | null;
   verification_status: string;
   verification_source: string | null;
@@ -33,6 +34,7 @@ function rowToSpecialty(r: SpecialtyRow): PhysicianSpecialty {
     role: r.role as PhysicianSpecialty['role'],
     boardCertified: r.board_certified,
     certifyingBoard: r.certifying_board ?? undefined,
+    certificationNumber: r.certification_number ?? undefined,
     expirationYear: r.expiration_year ?? undefined,
     verificationStatus:
       r.verification_status as PhysicianSpecialty['verificationStatus'],
@@ -110,6 +112,12 @@ export default async function handler(
       certifying_board: specialty.boardCertified
         ? specialty.certifyingBoard?.trim() || null
         : null,
+      // Certification number is a US-board concept (e.g. ABIM ID). Never captured
+      // for MX rows, per Dr. Aguirre (MX Consejo is a separate path entirely).
+      certification_number:
+        specialty.boardCertified && specialty.country === 'US'
+          ? specialty.certificationNumber?.trim() || null
+          : null,
       expiration_year: specialty.boardCertified
         ? specialty.expirationYear ?? null
         : null,

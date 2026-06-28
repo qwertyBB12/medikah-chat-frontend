@@ -8,7 +8,14 @@ import { sessionOwnsPhysician } from '../../../../lib/physicianAuthz';
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Allowed document types (T-06-06: whitelist validation)
-const ALLOWED_DOCUMENT_TYPES = ['ine_front', 'ine_back', 'diploma_front', 'diploma_back'] as const;
+const ALLOWED_DOCUMENT_TYPES = [
+  'ine_front',
+  'ine_back',
+  'diploma_front',
+  'diploma_back',
+  'us_id_front',
+  'us_id_back',
+] as const;
 type AllowedDocumentType = typeof ALLOWED_DOCUMENT_TYPES[number];
 
 function isAllowedDocumentType(type: string): type is AllowedDocumentType {

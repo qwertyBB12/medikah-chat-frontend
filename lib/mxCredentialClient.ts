@@ -128,7 +128,13 @@ export async function uploadDocument(
   physicianId: string,
   params: {
     dataUrl: string;
-    documentType: 'ine_front' | 'ine_back' | 'diploma_front' | 'diploma_back';
+    documentType:
+      | 'ine_front'
+      | 'ine_back'
+      | 'diploma_front'
+      | 'diploma_back'
+      | 'us_id_front'
+      | 'us_id_back';
     relatedCredentialId?: string;
     fileName?: string;
   }

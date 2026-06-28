@@ -18,6 +18,7 @@ export interface PhysicianSpecialty {
   role: SpecialtyRole;
   boardCertified: boolean;
   certifyingBoard?: string; // only when boardCertified
+  certificationNumber?: string; // only when boardCertified — US boards only (e.g. ABIM ID)
   expirationYear?: number; // only when boardCertified
   verificationStatus: SpecialtyVerificationStatus;
   verificationSource?: SpecialtyVerificationSource;

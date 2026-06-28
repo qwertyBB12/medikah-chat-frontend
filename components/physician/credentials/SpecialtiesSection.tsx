@@ -40,6 +40,8 @@ const content = {
     boardCertified: 'Board certified',
     certifyingBoard: 'Certifying board',
     boardPlaceholder: 'e.g. ABIM',
+    certificationNumber: 'Certification number',
+    certNumberPlaceholder: 'e.g. your ABIM ID',
     expirationYear: 'Expiration year',
     yearPlaceholder: 'e.g. 2030',
     addSub: '+ Add subspecialty',
@@ -59,6 +61,8 @@ const content = {
     boardCertified: 'Certificado por consejo/junta',
     certifyingBoard: 'Junta certificadora',
     boardPlaceholder: 'ej. ABIM',
+    certificationNumber: 'Número de certificación',
+    certNumberPlaceholder: 'ej. su ID de ABIM',
     expirationYear: 'Año de vencimiento',
     yearPlaceholder: 'ej. 2030',
     addSub: '+ Agregar subespecialidad',
@@ -132,6 +136,7 @@ export default function SpecialtiesSection({
             role: row.role,
             boardCertified: row.boardCertified,
             certifyingBoard: row.certifyingBoard,
+            certificationNumber: row.certificationNumber,
             expirationYear: row.expirationYear,
             verificationStatus: row.verificationStatus,
             verificationSource: row.verificationSource ?? null,
@@ -252,6 +257,22 @@ export default function SpecialtiesSection({
                 className={inputCls}
               />
             </div>
+            {/* Certification number — US boards only (e.g. ABIM ID), per Dr. Aguirre. */}
+            {country === 'US' && (
+              <div>
+                <label className="block font-dm-sans text-xs font-medium text-archival-grey mb-1">
+                  {t.certificationNumber}
+                </label>
+                <input
+                  type="text"
+                  value={row.certificationNumber ?? ''}
+                  onChange={(e) => apply({ certificationNumber: e.target.value })}
+                  onBlur={() => persist({ ...row }, apply)}
+                  placeholder={t.certNumberPlaceholder}
+                  className={inputCls}
+                />
+              </div>
+            )}
             <div>
               <label className="block font-dm-sans text-xs font-medium text-archival-grey mb-1">
                 {t.expirationYear}

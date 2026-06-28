@@ -30,6 +30,7 @@ const content = {
     subtitle: 'Used for correspondence and scheduling.',
     phoneNumber: 'Phone Number',
     phonePlaceholder: '+1 (555) 000-0000',
+    officePhone: 'Office Phone',
     faxNumber: 'Fax',
     mailingAddress: 'Mailing Address',
     practiceAddress: 'Practice Address',
@@ -52,6 +53,7 @@ const content = {
     subtitle: 'Utilizada para correspondencia y programacion.',
     phoneNumber: 'Numero de Telefono',
     phonePlaceholder: '+52 (55) 0000-0000',
+    officePhone: 'Telefono del Consultorio',
     faxNumber: 'Fax',
     mailingAddress: 'Direccion Postal',
     practiceAddress: 'Direccion del Consultorio',
@@ -121,8 +123,13 @@ export default function ContactInfoSection({
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof ContactInfo, string>>>({});
   const [sameAsMailing, setSameAsMailing] = useState(false);
   // U2: phone split into dial-code picker (US +1 / MX +52) + national number.
+  // Same treatment applied to office phone and fax (Aguirre credentialing change 1).
   const [phoneDial, setPhoneDial] = useState('+1');
   const [phoneNational, setPhoneNational] = useState('');
+  const [officeDial, setOfficeDial] = useState('+1');
+  const [officeNational, setOfficeNational] = useState('');
+  const [faxDial, setFaxDial] = useState('+1');
+  const [faxNational, setFaxNational] = useState('');
 
   // Load contact info on mount
   useEffect(() => {
@@ -135,6 +142,12 @@ export default function ContactInfoSection({
         const parsed = parsePhone(result.data.phoneNumber);
         setPhoneDial(parsed.dialCode);
         setPhoneNational(parsed.national);
+        const parsedOffice = parsePhone(result.data.officePhone);
+        setOfficeDial(parsedOffice.dialCode);
+        setOfficeNational(parsedOffice.national);
+        const parsedFax = parsePhone(result.data.faxNumber);
+        setFaxDial(parsedFax.dialCode);
+        setFaxNational(parsedFax.national);
         // Detect if practice address matches mailing address
         const d = result.data;
         if (
@@ -207,10 +220,11 @@ export default function ContactInfoSection({
   );
 
   // U2: persist the composed phone string (dial + national → "+1 (555) 000-0000").
+  // Generalized over phone / office phone / fax (Aguirre credentialing change 1).
   const savePhone = useCallback(
-    (dial: string, national: string) => {
+    (field: keyof ContactInfo, dial: string, national: string) => {
       const composed = composePhone(dial, national);
-      void handleBlur('phoneNumber', composed);
+      void handleBlur(field, composed);
     },
     [handleBlur]
   );
@@ -267,21 +281,30 @@ export default function ContactInfoSection({
     'w-full bg-linen-light rounded-sm p-3 font-dm-sans text-sm text-deep-charcoal border border-transparent focus:outline-none focus:border-clinical-teal transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
 
   // U2: phone — dial-code picker (US +1 / MX +52) + auto-formatted national number.
-  const renderPhone = () => {
-    const isSaving = savingFields.has('phoneNumber');
-    const error = fieldErrors['phoneNumber'];
+  // Generalized so phone, office phone, and fax share one treatment (change 1).
+  const renderPhoneField = (
+    field: keyof ContactInfo,
+    label: string,
+    dial: string,
+    setDial: (v: string) => void,
+    national: string,
+    setNational: (v: string) => void
+  ) => {
+    const isSaving = savingFields.has(field);
+    const error = fieldErrors[field];
+    const fieldId = `contact-${field}`;
     return (
       <div>
-        <label htmlFor="contact-phoneNumber" className="block font-dm-sans text-xs font-bold text-deep-charcoal mb-1">
-          {t.phoneNumber}
+        <label htmlFor={fieldId} className="block font-dm-sans text-xs font-bold text-deep-charcoal mb-1">
+          {label}
         </label>
         <div className="relative flex gap-2">
           <select
             aria-label={t.country}
-            value={phoneDial}
+            value={dial}
             onChange={(e) => {
-              setPhoneDial(e.target.value);
-              savePhone(e.target.value, phoneNational);
+              setDial(e.target.value);
+              savePhone(field, e.target.value, national);
             }}
             className={`${selectClass} w-28 flex-none`}
           >
@@ -292,13 +315,13 @@ export default function ContactInfoSection({
             ))}
           </select>
           <input
-            id="contact-phoneNumber"
+            id={fieldId}
             type="tel"
             inputMode="numeric"
-            value={phoneNational}
-            placeholder={phoneDial === '+52' ? '55 0000 0000' : '555 000 0000'}
-            onChange={(e) => setPhoneNational(e.target.value.replace(/\D/g, ''))}
-            onBlur={(e) => savePhone(phoneDial, e.target.value)}
+            value={national}
+            placeholder={dial === '+52' ? '55 0000 0000' : '555 000 0000'}
+            onChange={(e) => setNational(e.target.value.replace(/\D/g, ''))}
+            onBlur={(e) => savePhone(field, dial, e.target.value)}
             className="w-full bg-linen-light rounded-sm p-3 font-dm-sans text-sm text-deep-charcoal border border-transparent focus:outline-none focus:border-clinical-teal transition-colors"
           />
           {isSaving && (
@@ -417,7 +440,10 @@ export default function ContactInfoSection({
               <p className="font-dm-sans text-xs text-archival-grey">{t.subtitle}</p>
 
               {/* Phone Number (U2: dial-code picker + auto-format) */}
-              {renderPhone()}
+              {renderPhoneField('phoneNumber', t.phoneNumber, phoneDial, setPhoneDial, phoneNational, setPhoneNational)}
+
+              {/* Office Phone (change 1: same dial-code + auto-format treatment) */}
+              {renderPhoneField('officePhone', t.officePhone, officeDial, setOfficeDial, officeNational, setOfficeNational)}
 
               {/* Mailing Address (U3: country before state so state scopes to it) */}
               <div>
@@ -457,10 +483,8 @@ export default function ContactInfoSection({
                 </div>
               </div>
 
-              {/* Fax */}
-              {renderField('faxNumber', t.faxNumber, {
-                type: 'tel',
-              })}
+              {/* Fax (change 1: dial-code + auto-format, parity with phone) */}
+              {renderPhoneField('faxNumber', t.faxNumber, faxDial, setFaxDial, faxNational, setFaxNational)}
             </div>
           )}
         </div>

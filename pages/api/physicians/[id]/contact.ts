@@ -11,6 +11,7 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 // Whitelist of valid contact field names (T-07-03 — prevents arbitrary column updates)
 const CONTACT_FIELDS: (keyof ContactInfo)[] = [
   'phoneNumber',
+  'officePhone',
   'faxNumber',
   'mailingAddressLine1',
   'mailingAddressCity',
@@ -27,6 +28,7 @@ const CONTACT_FIELDS: (keyof ContactInfo)[] = [
 // Static camelCase → snake_case lookup — no string manipulation (T-07-03)
 const FIELD_TO_COLUMN: Record<keyof ContactInfo, string> = {
   phoneNumber: 'phone_number',
+  officePhone: 'office_phone',
   faxNumber: 'fax_number',
   mailingAddressLine1: 'mailing_address_line1',
   mailingAddressCity: 'mailing_address_city',
@@ -86,7 +88,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { data, error } = await supabaseAdmin
         .from('physicians')
         .select(
-          'phone_number, fax_number, mailing_address_line1, mailing_address_city, mailing_address_state, mailing_address_postal_code, mailing_address_country, practice_address_line1, practice_address_city, practice_address_state, practice_address_postal_code, practice_address_country'
+          'phone_number, office_phone, fax_number, mailing_address_line1, mailing_address_city, mailing_address_state, mailing_address_postal_code, mailing_address_country, practice_address_line1, practice_address_city, practice_address_state, practice_address_postal_code, practice_address_country'
         )
         .eq('id', physicianId)
         .single();
@@ -99,6 +101,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Manual camelCase mapping — symmetric with PUT's FIELD_TO_COLUMN
       const contact: Partial<ContactInfo> = {
         phoneNumber: data.phone_number || '',
+        officePhone: data.office_phone || '',
         faxNumber: data.fax_number || '',
         mailingAddressLine1: data.mailing_address_line1 || '',
         mailingAddressCity: data.mailing_address_city || '',

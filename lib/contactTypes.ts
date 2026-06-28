@@ -2,6 +2,7 @@
 
 export interface ContactInfo {
   phoneNumber: string;
+  officePhone: string;
   faxNumber: string;
   mailingAddressLine1: string;
   mailingAddressCity: string;
