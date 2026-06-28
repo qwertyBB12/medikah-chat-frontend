@@ -160,6 +160,12 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
   const [orbState, setOrbState] = useState<OrbState>('idle');
   const [spoken, setSpoken] = useState('');           // last user utterance (caption)
   const [response, setResponse] = useState<CueResponse | null>(null);
+  // Conversation history threaded to /cue/chat so each turn has context. Without
+  // it, every turn was sent as a single user message → Cue "forgot" what it just
+  // said mid-conversation ("5 messages" → "what messages?"). Reset on each open
+  // (a fresh session); the backend keeps the last 10 turns. Cross-session memory
+  // to Supabase is Phase 25 (not this).
+  const historyRef = useRef<{ role: 'user' | 'assistant'; content: string }[]>([]);
   const [toolTrace, setToolTrace] = useState<ToolStep[]>([]);
   const [pendingConfirm, setPendingConfirm] = useState<CuePendingConfirm | null>(null);
   const [isWriting, setIsWriting] = useState(false);
@@ -194,10 +200,11 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
   ): Promise<{ text: string; pendingConfirm: CuePendingConfirm | null }> => {
     setResponse(null); setErrorMsg(null); setPendingConfirm(null); setToolTrace([]);
     idempotencyTokenRef.current = null;
+    const outgoing = [...historyRef.current, { role: 'user' as const, content: userText }];
     const res = await fetch('/api/cue/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: [{ role: 'user', content: userText }], locale }),
+      body: JSON.stringify({ messages: outgoing, locale }),
       signal: opts?.signal,
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -213,6 +220,13 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
       },
       (ev) => setToolTrace((prev) => applyToolEvent(prev, ev)),
     );
+
+    // Thread this turn into history so the NEXT turn carries context (backend
+    // keeps the last 10 turns). Runs for both the confirm and plain-answer paths.
+    historyRef.current = [
+      ...outgoing,
+      { role: 'assistant' as const, content: text.trim() || '…' },
+    ].slice(-20);
 
     if (pc && pc.kind === 'confirm') {
       idempotencyTokenRef.current =
@@ -252,6 +266,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
       return;
     }
     prevFocusRef.current = document.activeElement;
+    historyRef.current = []; // fresh conversation each open
     const dialog = dialogRef.current;
     if (dialog) {
       const f = dialog.querySelectorAll<HTMLElement>(FOCUSABLE);
