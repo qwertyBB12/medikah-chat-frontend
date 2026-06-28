@@ -18,7 +18,8 @@ const content = {
     institutionPlaceholder: 'Add an institution and press Enter',
     languages: 'Languages Spoken',
     languagePlaceholder: 'Add a language and press Enter',
-    website: 'Website URL',
+    website: 'External website URL',
+    websiteHint: 'Optional. Your Medikah profile is your default presence — only add this if you have a separate website.',
     websitePlaceholder: 'https://...',
     linkedin: 'LinkedIn URL',
     linkedinPlaceholder: 'https://linkedin.com/in/...',
@@ -34,7 +35,8 @@ const content = {
     institutionPlaceholder: 'Agregue una institución y presione Enter',
     languages: 'Idiomas',
     languagePlaceholder: 'Agregue un idioma y presione Enter',
-    website: 'Sitio Web',
+    website: 'Sitio web externo',
+    websiteHint: 'Opcional. Su perfil de Medikah es su presencia predeterminada — agregue esto solo si tiene un sitio web aparte.',
     websitePlaceholder: 'https://...',
     linkedin: 'LinkedIn',
     linkedinPlaceholder: 'https://linkedin.com/in/...',
@@ -175,15 +177,16 @@ export default function PracticeEditor({
         />
       </div>
 
-      {/* Website URL */}
+      {/* External website URL (Annotation 10 — optional; Medikah profile is default) */}
       <label className="block font-dm-sans text-sm font-medium text-body-slate mb-1">{t.website}</label>
       <input
         type="url"
         value={websiteUrl}
         onChange={(e) => { setWebsiteUrl(e.target.value); setSaveState('idle'); }}
         placeholder={t.websitePlaceholder}
-        className="w-full border border-border-line rounded-lg px-3 py-2 font-dm-sans text-sm text-deep-charcoal focus:outline-none focus:border-clinical-teal mb-4"
+        className="w-full border border-border-line rounded-lg px-3 py-2 font-dm-sans text-sm text-deep-charcoal focus:outline-none focus:border-clinical-teal mb-1"
       />
+      <p className="font-dm-sans text-xs text-archival-grey mb-4">{t.websiteHint}</p>
 
       {/* LinkedIn URL */}
       <label className="block font-dm-sans text-sm font-medium text-body-slate mb-1">{t.linkedin}</label>
