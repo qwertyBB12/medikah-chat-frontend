@@ -21,8 +21,9 @@ const content = {
     certifyingBoard: 'Certifying Board',
     specialty: 'Specialty',
     certificationDate: 'Certification Date',
-    expirationDate: 'Expiration Date',
-    expirationOptional: 'Expiration Date (optional)',
+    expirationDate: 'Expiration Year',
+    expirationOptional: 'Expiration Year (optional)',
+    expirationYearPlaceholder: 'YYYY',
     delete: 'Remove',
     saving: 'Saving...',
     saved: 'Saved',
@@ -36,8 +37,9 @@ const content = {
     certifyingBoard: 'Junta certificadora',
     specialty: 'Especialidad',
     certificationDate: 'Fecha de certificacion',
-    expirationDate: 'Fecha de vencimiento',
-    expirationOptional: 'Fecha de vencimiento (opcional)',
+    expirationDate: 'Año de vencimiento',
+    expirationOptional: 'Año de vencimiento (opcional)',
+    expirationYearPlaceholder: 'AAAA',
     delete: 'Eliminar',
     saving: 'Guardando...',
     saved: 'Guardado',
@@ -228,15 +230,23 @@ export default function BoardCertForm({
               )}
             </div>
 
-            {/* Expiration date (optional) */}
+            {/* Expiration year (optional) — U4: year only, matches ABIM lookup.
+                Stored as YYYY-12-31 to preserve the date column type. */}
             <div>
               <label className="block font-dm-sans text-xs font-medium text-archival-grey mb-1">
                 {t.expirationOptional}
               </label>
               <input
-                type="date"
-                value={row.expirationDate || ''}
-                onChange={e => updateRow(row._localId, { expirationDate: e.target.value || undefined })}
+                type="number"
+                inputMode="numeric"
+                min={1950}
+                max={2100}
+                placeholder={t.expirationYearPlaceholder}
+                value={row.expirationDate ? row.expirationDate.slice(0, 4) : ''}
+                onChange={e => {
+                  const yr = e.target.value.replace(/\D/g, '').slice(0, 4);
+                  updateRow(row._localId, { expirationDate: yr ? `${yr}-12-31` : undefined });
+                }}
                 onBlur={() => handleFieldBlur(row._localId)}
                 className="w-full font-dm-sans text-sm border border-warm-gray-800/[0.15] rounded-sm px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-clinical-teal/40 transition-colors"
               />
