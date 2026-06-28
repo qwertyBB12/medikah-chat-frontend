@@ -19,7 +19,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../api/auth/[...nextauth]';
 import { supabaseAdmin } from '../../../../lib/supabaseServer';
 import { nameToSlug } from '../../../../lib/slug';
-import { useSupabaseToken } from '../../../../lib/useSupabaseToken';
+import { useBackendToken } from '../../../../lib/useBackendToken';
 import OnboardingWizard from '../../../../components/physician/workspace/wizard/OnboardingWizard';
 import type { SupportedLang } from '../../../../lib/i18n';
 import { content as workspaceContent } from '../../../../lib/practikahWorkspaceContent';
@@ -46,7 +46,7 @@ export default function WorkspaceSetupPage({
   lang,
 }: SetupPageProps) {
   const t = workspaceContent[lang];
-  const accessToken = useSupabaseToken();
+  const accessToken = useBackendToken();
 
   return (
     <>

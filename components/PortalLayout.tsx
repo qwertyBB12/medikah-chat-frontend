@@ -15,7 +15,7 @@ import Footer from './Footer';
 import PhysicianIconRail, { RailSurface } from './physician/PhysicianIconRail';
 import CueSurface from './physician/CueSurface';
 import { useCueSurface } from '../lib/cue/surface';
-import { useSupabaseToken } from '../lib/useSupabaseToken';
+import { useBackendToken } from '../lib/useBackendToken';
 
 export type PortalType = 'patient' | 'physician' | 'insurer' | 'employer';
 
@@ -117,7 +117,7 @@ export default function PortalLayout({
   // The surface is mounted once here, at the layout level, and opens on the
   // medikah:cue:open CustomEvent dispatched by CueLauncher or the SOGo injection.
   const { isOpen: isCueOpen, close: closeCue } = useCueSurface();
-  const accessToken = useSupabaseToken();
+  const accessToken = useBackendToken();
 
   return (
     <div className="min-h-screen md:h-screen md:overflow-hidden flex flex-col md:flex-row bg-linen-light text-deep-charcoal">

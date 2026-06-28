@@ -9,7 +9,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { SupportedLang } from '../../lib/i18n';
-import { useSupabaseToken } from '../../lib/useSupabaseToken';
+import { useBackendToken } from '../../lib/useBackendToken';
 import VerificationBadge from './VerificationBadge';
 import ProfileOverview from './ProfileOverview';
 import AIDiagnosisTool from './AIDiagnosisTool';
@@ -158,7 +158,7 @@ export default function DashboardContent({
 }: DashboardContentProps) {
   const t = content[lang];
   const normalizedStatus = verificationStatus?.toLowerCase() || 'pending';
-  const accessToken = useSupabaseToken();
+  const accessToken = useBackendToken();
   const router = useRouter();
 
   // U1: active top-level tab. Defaults to Credentials. Hydrates from `?section=`
