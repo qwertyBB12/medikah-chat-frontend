@@ -38,6 +38,7 @@ interface EspecialidadRow extends CedulaEspecialidadEntry {
 const content = {
   en: {
     specialtyName: 'Specialty Name',
+    subspecialtyName: 'Subspecialty Name',
     institution: 'Institution',
     completionDate: 'Completion Date',
     cedulaNumber: 'Cedula de Especialidad Number',
@@ -70,6 +71,7 @@ const content = {
   },
   es: {
     specialtyName: 'Nombre de Especialidad',
+    subspecialtyName: 'Nombre de Subespecialidad',
     institution: 'Institucion',
     completionDate: 'Fecha de Terminacion',
     cedulaNumber: 'Numero de Cedula de Especialidad',
@@ -453,7 +455,7 @@ export default function EspecialidadesForm({
 
   return (
     <div className="space-y-3">
-      {rows.map(row => (
+      {rows.map((row, idx) => (
         <div
           key={row._localId}
           className="bg-clinical-surface rounded-sm p-4 mb-3 relative"
@@ -467,10 +469,10 @@ export default function EspecialidadesForm({
           </button>
 
           <div className="space-y-3 pr-16">
-            {/* Specialty Name */}
+            {/* Specialty name on the first row; subspecialty name on added rows */}
             <div>
               <label className="block font-dm-sans text-xs font-medium text-archival-grey mb-1">
-                {t.specialtyName} <span className="text-alert-garnet">*</span>
+                {idx === 0 ? t.specialtyName : t.subspecialtyName} <span className="text-alert-garnet">*</span>
               </label>
               <input
                 type="text"
