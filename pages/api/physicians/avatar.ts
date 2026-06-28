@@ -92,21 +92,56 @@ export default async function handler(
   res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=600, stale-while-revalidate=86400');
 
   try {
-    const { data, error } = await supabaseAdmin
+    // Resolve the physician row by email — directly OR via a login alias /
+    // mailbox address. A doctor signs into SOGo as their @medikah.health mailbox,
+    // which is an ALIAS (physician_email_aliases) of a canonical record whose
+    // physicians.email is a DIFFERENT address (e.g. their Google email — where the
+    // photo lives). The direct lookup misses that, so the avatar fell back to
+    // initials even when a photo exists. Same alias gap as the workspace mailbox.
+    type AvatarRow = {
+      full_name: string | null;
+      photo_url: string | null;
+      verification_status: string | null;
+    };
+    let data: AvatarRow | null = null;
+
+    const direct = await supabaseAdmin
       .from('physicians')
       .select('full_name, photo_url, verification_status')
       .ilike('email', email)
       .maybeSingle();
+    if (!direct.error && direct.data) data = direct.data as AvatarRow;
 
-    if (error) {
-      // Don't leak DB errors — return a graceful fallback so the chrome
-      // still renders an initials circle.
-      return res.status(200).json({
-        ok: true,
-        photo_url: null,
-        name: null,
-        initials: deriveInitials(null, email),
-      });
+    if (!data) {
+      // Fallback: resolve the canonical physician_id via the login-alias table,
+      // then the workspace mailbox address, then re-fetch by id.
+      let physicianId: string | null = null;
+      const alias = await supabaseAdmin
+        .from('physician_email_aliases')
+        .select('physician_id')
+        .ilike('email', email)
+        .maybeSingle();
+      if (!alias.error && alias.data?.physician_id) {
+        physicianId = String(alias.data.physician_id);
+      }
+      if (!physicianId) {
+        const wa = await supabaseAdmin
+          .from('physician_workspace_accounts')
+          .select('physician_id')
+          .ilike('mailbox_address', email)
+          .maybeSingle();
+        if (!wa.error && wa.data?.physician_id) {
+          physicianId = String(wa.data.physician_id);
+        }
+      }
+      if (physicianId) {
+        const byId = await supabaseAdmin
+          .from('physicians')
+          .select('full_name, photo_url, verification_status')
+          .eq('id', physicianId)
+          .maybeSingle();
+        if (!byId.error && byId.data) data = byId.data as AvatarRow;
+      }
     }
 
     if (!data) {
