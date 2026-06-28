@@ -63,6 +63,9 @@ export interface PhysicianProfileData {
   // Identity
   fullName: string;
   email: string;
+  /** Honorific captured at onboarding — drives the gendered @medikah.health mailbox
+   *  (dra-/dr-) and the public profile. Never inferred from a name. */
+  title?: 'Dr' | 'Dra';
   bio?: string;
   photoUrl?: string;
   linkedinUrl?: string;
@@ -121,6 +124,7 @@ function toSnakeCase(data: PhysicianProfileData): Record<string, unknown> {
   return {
     full_name: data.fullName,
     email: data.email,
+    title: data.title,
     bio: data.bio,
     photo_url: data.photoUrl,
     linkedin_url: data.linkedinUrl,
