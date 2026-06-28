@@ -11,7 +11,7 @@ interface SpecialtyEditorProps {
 const content = {
   en: {
     title: 'Specialties',
-    subtitle: 'Update your primary specialty and sub-specialties.',
+    subtitle: 'The specialty patients see on your public profile. Your formal certifications live under the Credentials tab.',
     primary: 'Primary Specialty',
     primaryPlaceholder: 'e.g. Internal Medicine',
     sub: 'Sub-specialties',
@@ -23,7 +23,7 @@ const content = {
   },
   es: {
     title: 'Especialidades',
-    subtitle: 'Actualice su especialidad principal y subespecialidades.',
+    subtitle: 'La especialidad que los pacientes ven en su perfil público. Sus certificaciones formales están en la pestaña de Credenciales.',
     primary: 'Especialidad Principal',
     primaryPlaceholder: 'ej. Medicina Interna',
     sub: 'Subespecialidades',
