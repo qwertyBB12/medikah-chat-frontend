@@ -31,6 +31,8 @@ import type { CredentialResponse } from '../../lib/credentialTypes';
 import { getMXCredentials } from '../../lib/mxCredentialClient';
 import type { MXCredentialResponse } from '../../lib/mxCredentialTypes';
 import { toggleCountry } from '../../lib/licensing';
+import { getSpecialties } from '../../lib/specialtyClient';
+import type { PhysicianSpecialty } from '../../lib/specialtyTypes';
 
 interface DashboardContentProps {
   physicianId: string | null;
@@ -190,6 +192,7 @@ export default function DashboardContent({
   const [usCredentials, setUSCredentials] = useState<CredentialResponse | null>(null);
   const [mxCredentials, setMXCredentials] = useState<MXCredentialResponse | null>(null);
   const [completeness, setCompleteness] = useState<CompletenessResult>({ percentage: 0, missingItems: [] });
+  const [specialtiesData, setSpecialtiesData] = useState<PhysicianSpecialty[]>([]);
 
   // Fetch dashboard data from backend
   useEffect(() => {
@@ -228,23 +231,26 @@ export default function DashboardContent({
     if (!physicianId) return;
 
     async function fetchCompletenessData() {
-      const [contactRes, usRes, mxRes] = await Promise.all([
+      const [contactRes, usRes, mxRes, specRes] = await Promise.all([
         getContactInfo(physicianId!),
         getCredentials(physicianId!),
         countryOfPractice.includes('MX')
           ? getMXCredentials(physicianId!)
           : Promise.resolve({ success: true, data: null as MXCredentialResponse | null }),
+        getSpecialties(physicianId!),
       ]);
 
       const contact = contactRes.success ? (contactRes.data || {}) : {};
       const usCreds = usRes.success ? (usRes.data || null) : null;
       const mxCreds = mxRes.success ? (mxRes.data || null) : null;
+      const specs = specRes.success && specRes.data ? specRes.data.specialties : [];
 
       setContactInfo(contact);
       setUSCredentials(usCreds);
       setMXCredentials(mxCreds);
+      setSpecialtiesData(specs);
 
-      const result = computeCompleteness(countryOfPractice, usCreds, mxCreds, contact);
+      const result = computeCompleteness(countryOfPractice, usCreds, mxCreds, contact, specs);
       setCompleteness(result);
     }
 
@@ -255,10 +261,10 @@ export default function DashboardContent({
   const handleContactChange = useCallback(
     (updatedContact: Partial<ContactInfo>) => {
       setContactInfo(updatedContact);
-      const result = computeCompleteness(countryOfPractice, usCredentials, mxCredentials, updatedContact);
+      const result = computeCompleteness(countryOfPractice, usCredentials, mxCredentials, updatedContact, specialtiesData);
       setCompleteness(result);
     },
-    [countryOfPractice, usCredentials, mxCredentials]
+    [countryOfPractice, usCredentials, mxCredentials, specialtiesData]
   );
 
   // Derived: dual-credential flag
