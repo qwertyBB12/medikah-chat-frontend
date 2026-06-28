@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import FadeInSection from './FadeInSection';
+import { formatLanguages } from '../../../lib/formatLanguage';
 
 interface ProfileHeroProps {
   fullName: string;
@@ -95,7 +96,7 @@ export default function ProfileHero({
               {isEs ? 'Agendar Consulta' : 'Schedule Consultation'}
             </button>
             {languages && languages.length > 0 && (
-              <p className="text-sm text-white/50 font-medium">{languages.join(' · ')}</p>
+              <p className="text-sm text-white/50 font-medium">{formatLanguages(languages, isEs)}</p>
             )}
           </div>
 

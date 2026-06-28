@@ -1,4 +1,5 @@
 import FadeInSection from './FadeInSection';
+import { formatLanguages } from '../../../lib/formatLanguage';
 
 interface ProfileCTAProps {
   fullName: string;
@@ -69,7 +70,7 @@ export default function ProfileCTA({
             {languages && languages.length > 0 && (
               <>
                 <span className="hidden sm:inline text-white/20">&middot;</span>
-                <span>{languages.join(' · ')}</span>
+                <span>{formatLanguages(languages, isEs)}</span>
               </>
             )}
           </div>
