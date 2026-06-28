@@ -28,9 +28,9 @@ const content = {
   en: {
     sectionTitle: 'Contact & Practice Info',
     subtitle: 'Used for correspondence and scheduling.',
-    phoneNumber: 'Phone Number',
+    phoneNumber: 'Personal Phone Number',
     phonePlaceholder: '+1 (555) 000-0000',
-    officePhone: 'Office Phone',
+    officePhone: 'Office Phone Number',
     faxNumber: 'Fax',
     personalEmail: 'Personal Email',
     officeEmail: 'Office Email',
@@ -53,7 +53,7 @@ const content = {
   es: {
     sectionTitle: 'Informacion de Contacto y Consultorio',
     subtitle: 'Utilizada para correspondencia y programacion.',
-    phoneNumber: 'Numero de Telefono',
+    phoneNumber: 'Telefono Personal',
     phonePlaceholder: '+52 (55) 0000-0000',
     officePhone: 'Telefono del Consultorio',
     faxNumber: 'Fax',
@@ -310,7 +310,7 @@ export default function ContactInfoSection({
               setDial(e.target.value);
               savePhone(field, e.target.value, national);
             }}
-            className={`${selectClass} w-28 flex-none`}
+            className={`${selectClass.replace('w-full ', '')} w-28 flex-none`}
           >
             {COUNTRIES.map((c) => (
               <option key={c.code} value={c.dialCode}>
@@ -326,7 +326,7 @@ export default function ContactInfoSection({
             placeholder={dial === '+52' ? '55 0000 0000' : '555 000 0000'}
             onChange={(e) => setNational(e.target.value.replace(/\D/g, ''))}
             onBlur={(e) => savePhone(field, dial, e.target.value)}
-            className="w-full bg-linen-light rounded-sm p-3 font-dm-sans text-sm text-deep-charcoal border border-transparent focus:outline-none focus:border-clinical-teal transition-colors"
+            className="w-full min-w-0 bg-linen-light rounded-sm p-3 font-dm-sans text-sm text-deep-charcoal border border-transparent focus:outline-none focus:border-clinical-teal transition-colors"
           />
           {isSaving && (
             <span className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -449,10 +449,9 @@ export default function ContactInfoSection({
               {/* Office Phone (change 1: same dial-code + auto-format treatment) */}
               {renderPhoneField('officePhone', t.officePhone, officeDial, setOfficeDial, officeNational, setOfficeNational)}
 
-              {/* Personal + Office email (José 2026-06-28 change 5 — editable in the
-                  dashboard; some doctors keep separate personal and work addresses) */}
+              {/* Personal email only (José 2026-06-28: office email removed —
+                  doctors in Mexico typically use one address for both) */}
               {renderField('personalEmail', t.personalEmail, { type: 'email', autoComplete: 'off', placeholder: 'nombre@ejemplo.com' })}
-              {renderField('officeEmail', t.officeEmail, { type: 'email', autoComplete: 'off', placeholder: 'consultorio@ejemplo.com' })}
 
               {/* Mailing Address (U3: country before state so state scopes to it) */}
               <div>
