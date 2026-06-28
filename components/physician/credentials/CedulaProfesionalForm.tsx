@@ -10,7 +10,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import type { CedulaProfesionalEntry, RegistroEstatalEntry } from '../../../lib/mxCredentialTypes';
-import { MX_ESTADOS } from '../../../lib/mxCredentialTypes';
+import { MX_ESTADOS, MX_ESTADO_LABELS } from '../../../lib/mxCredentialTypes';
 import { triggerSEPLookup, saveMXCredential } from '../../../lib/mxCredentialClient';
 import type { SupportedLang } from '../../../lib/i18n';
 
@@ -401,7 +401,7 @@ export default function CedulaProfesionalForm({
             <option value="">{t.selectState}</option>
             {MX_ESTADOS.map(estado => (
               <option key={estado} value={estado}>
-                {estado}
+                {MX_ESTADO_LABELS[estado] ?? estado}
               </option>
             ))}
           </select>

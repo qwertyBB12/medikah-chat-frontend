@@ -162,3 +162,42 @@ export const MX_ESTADOS = [
   'PUE', 'QRO', 'QROO', 'SLP', 'SIN', 'SON', 'TAB', 'TAMPS', 'TLAX', 'VER',
   'YUC', 'ZAC',
 ] as const;
+
+// Full Spanish state names for the Registro Estatal "Issuing State" dropdown
+// (Annotation 4 — Aguirre). Keys are the SEP abbreviations stored as values in
+// MX_ESTADOS; the abbreviation remains the persisted value, the full name is
+// display-only. Do NOT reuse geoData.ts MX_STATES — those use different ISO codes.
+export const MX_ESTADO_LABELS: Record<string, string> = {
+  AGS: 'Aguascalientes',
+  BC: 'Baja California',
+  BCS: 'Baja California Sur',
+  CAMP: 'Campeche',
+  CHIS: 'Chiapas',
+  CHIH: 'Chihuahua',
+  CDMX: 'Ciudad de México',
+  COAH: 'Coahuila',
+  COL: 'Colima',
+  DGO: 'Durango',
+  GTO: 'Guanajuato',
+  GRO: 'Guerrero',
+  HGO: 'Hidalgo',
+  JAL: 'Jalisco',
+  MEX: 'Estado de México',
+  MICH: 'Michoacán',
+  MOR: 'Morelos',
+  NAY: 'Nayarit',
+  NL: 'Nuevo León',
+  OAX: 'Oaxaca',
+  PUE: 'Puebla',
+  QRO: 'Querétaro',
+  QROO: 'Quintana Roo',
+  SLP: 'San Luis Potosí',
+  SIN: 'Sinaloa',
+  SON: 'Sonora',
+  TAB: 'Tabasco',
+  TAMPS: 'Tamaulipas',
+  TLAX: 'Tlaxcala',
+  VER: 'Veracruz',
+  YUC: 'Yucatán',
+  ZAC: 'Zacatecas',
+};
