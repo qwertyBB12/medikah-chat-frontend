@@ -86,6 +86,13 @@ const content = {
     },
     usCredentialHeader: '🇺🇸 US Credentials',
     mxCredentialHeader: '🇲🇽 Mexico Credentials',
+    licensedIn: {
+      title: 'Where are you licensed to practice?',
+      subtitle: 'This determines which credentials we ask for. You can change it anytime.',
+      us: 'United States',
+      mx: 'Mexico',
+      both: 'Both',
+    },
     tabs: {
       credentials: 'Credentials',
       profile: 'Public Profile',
@@ -118,6 +125,13 @@ const content = {
     },
     usCredentialHeader: '🇺🇸 Credenciales de EE.UU.',
     mxCredentialHeader: '🇲🇽 Credenciales de Mexico',
+    licensedIn: {
+      title: '¿Dónde tiene licencia para ejercer?',
+      subtitle: 'Esto determina qué credenciales le pedimos. Puede cambiarlo cuando quiera.',
+      us: 'Estados Unidos',
+      mx: 'México',
+      both: 'Ambos',
+    },
     tabs: {
       credentials: 'Credenciales',
       profile: 'Perfil Público',
@@ -252,6 +266,31 @@ export default function DashboardContent({
   const isDualCredential =
     countryOfPractice.includes('US') && countryOfPractice.includes('MX');
 
+  // U6: dual-credential gate. The physician picks US / Mexico / Both; only the
+  // relevant credential sections render. Persists country_of_practice optimistically.
+  const licensedSelection: 'us' | 'mx' | 'both' = isDualCredential
+    ? 'both'
+    : countryOfPractice.includes('MX')
+    ? 'mx'
+    : 'us';
+  const handleLicensedChange = useCallback(
+    async (selection: 'us' | 'mx' | 'both') => {
+      const codes = selection === 'both' ? ['US', 'MX'] : selection === 'mx' ? ['MX'] : ['US'];
+      setCountryOfPractice(codes);
+      if (!physicianId) return;
+      try {
+        await fetch(`/api/physicians/${physicianId}/update-profile`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ countryOfPractice: codes }),
+        });
+      } catch {
+        // Optimistic — the UI already reflects the choice; a failed save retries on next change.
+      }
+    },
+    [physicianId]
+  );
+
   // Get status description
   const getStatusDescription = () => {
     switch (normalizedStatus) {
@@ -362,6 +401,43 @@ export default function DashboardContent({
       {/* ── Credentials tab: contact info + formal credential records ── */}
       {activeTab === 'credentials' && (
         <div className="space-y-6">
+          {/* U6: dual-credential gate — pick US / Mexico / Both; only the
+              relevant credential sections render below. */}
+          {physicianId && (
+            <div className="bg-linen-white rounded-md border border-warm-gray-800/[0.06] p-5">
+              <h3 className="font-body font-semibold text-sm text-deep-charcoal">
+                {t.licensedIn.title}
+              </h3>
+              <p className="font-body text-xs text-body-slate mt-1 mb-3">
+                {t.licensedIn.subtitle}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {([
+                  { key: 'us' as const, label: t.licensedIn.us },
+                  { key: 'mx' as const, label: t.licensedIn.mx },
+                  { key: 'both' as const, label: t.licensedIn.both },
+                ]).map(({ key, label }) => {
+                  const isActive = licensedSelection === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => handleLicensedChange(key)}
+                      aria-pressed={isActive}
+                      className={`px-4 py-2 rounded-md font-body text-sm font-medium transition-all ${
+                        isActive
+                          ? 'bg-clinical-teal text-white'
+                          : 'bg-linen text-body-slate hover:bg-linen/70'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Contact & Practice Info — shared section above credentials (D-05) */}
           {physicianId && (
             <ContactInfoSection

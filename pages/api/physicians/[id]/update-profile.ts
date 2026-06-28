@@ -10,6 +10,7 @@ const FIELD_MAP: Record<string, string> = {
   bio: 'bio',
   primarySpecialty: 'primary_specialty',
   subSpecialties: 'sub_specialties',
+  countryOfPractice: 'country_of_practice',
   boardCertifications: 'board_certifications',
   medicalSchool: 'medical_school',
   medicalSchoolCountry: 'medical_school_country',
