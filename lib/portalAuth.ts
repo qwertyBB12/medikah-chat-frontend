@@ -17,13 +17,28 @@ export async function detectUserRole(email: string): Promise<PortalRole> {
   if (!supabaseAdmin || !email) return 'patient';
 
   try {
+    const canonicalEmail = email.toLowerCase();
+
+    // Step 1: direct match on physicians.email
     const { data: physician } = await supabaseAdmin
       .from('physicians')
       .select('id')
-      .eq('email', email.toLowerCase())
+      .eq('email', canonicalEmail)
       .maybeSingle();
 
     if (physician) return 'physician';
+
+    // Step 2: the login email may be an alias of a canonical physician record
+    // (D-09 funneling). Mirror checkBootstrapDemotion() so physicians who sign
+    // in with a non-canonical email (e.g. personal Google account) are not
+    // misclassified as patients and routed to /patients.
+    const { data: alias } = await supabaseAdmin
+      .from('physician_email_aliases')
+      .select('physician_id')
+      .eq('email', canonicalEmail)
+      .maybeSingle();
+
+    if (alias?.physician_id) return 'physician';
 
     // Future: Check insurers table
     // Future: Check employers table
