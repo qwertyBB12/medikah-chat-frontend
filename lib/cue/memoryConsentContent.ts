@@ -9,7 +9,9 @@
  * shown ONCE (versioned: re-shown only when AVISO_VERSION changes), the doctor
  * acknowledges, and Cue's memory activates. Keep it accurate to what is actually
  * built: thin third-person notes about the DOCTOR's practice, PHI-minimized and
- * free-text-redacted before storage; doctor can see/correct/delete anytime.
+ * free-text-redacted before storage; doctor can see/delete anytime (view + delete
+ * only — there is deliberately no edit; rewriting a note would silently skew Cue's
+ * reasoning, decision 2026-06-28).
  */
 
 export interface MemoryConsentCopy {
@@ -24,9 +26,6 @@ export interface MemoryConsentCopy {
   manageTitle: string;
   manageOpen: string;
   empty: string;
-  edit: string;
-  save: string;
-  cancel: string;
   remove: string;
   removeConfirm: string;
   close: string;
@@ -54,7 +53,7 @@ export const MEMORY_CONSENT: Record<'en' | 'es', MemoryConsentCopy> = {
       },
       {
         label: 'Tu control',
-        text: 'Puedes ver, corregir o borrar todo lo que Cue recuerda, en cualquier momento, desde aquí mismo.',
+        text: 'Puedes ver o borrar todo lo que Cue recuerda, en cualquier momento, desde aquí mismo.',
       },
     ],
     legal: 'Conforme a la LFPDPPP y la NOM-024-SSA3. Tus notas viven en la base de datos de Medikah y son tuyas.',
@@ -63,9 +62,6 @@ export const MEMORY_CONSENT: Record<'en' | 'es', MemoryConsentCopy> = {
     manageTitle: 'Lo que Cue recuerda',
     manageOpen: 'Lo que Cue recuerda',
     empty: 'Cue aún no ha guardado nada sobre tu práctica.',
-    edit: 'Editar',
-    save: 'Guardar',
-    cancel: 'Cancelar',
     remove: 'Borrar',
     removeConfirm: '¿Borrar esta nota?',
     close: 'Cerrar',
@@ -91,7 +87,7 @@ export const MEMORY_CONSENT: Record<'en' | 'es', MemoryConsentCopy> = {
       },
       {
         label: 'Your control',
-        text: 'You can see, correct, or delete everything Cue remembers, at any time, right here.',
+        text: 'You can see or delete everything Cue remembers, at any time, right here.',
       },
     ],
     legal: 'Under Mexico’s LFPDPPP and NOM-024-SSA3. Your notes live in Medikah’s own database and belong to you.',
@@ -100,9 +96,6 @@ export const MEMORY_CONSENT: Record<'en' | 'es', MemoryConsentCopy> = {
     manageTitle: 'What Cue remembers',
     manageOpen: 'What Cue remembers',
     empty: 'Cue has not saved anything about your practice yet.',
-    edit: 'Edit',
-    save: 'Save',
-    cancel: 'Cancel',
     remove: 'Delete',
     removeConfirm: 'Delete this note?',
     close: 'Close',
