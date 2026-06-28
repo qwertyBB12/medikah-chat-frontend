@@ -40,6 +40,8 @@ const content = {
     saving: 'Saving...',
     saved: 'Saved',
     error: 'Failed to save. Please try again.',
+    errorNetwork: 'Could not reach the server — check your connection and try again.',
+    errorStatus: 'Save failed', // suffixed with the HTTP status + server detail
     loading: 'Loading schedule...',
     days: {
       monday: 'Monday',
@@ -64,6 +66,8 @@ const content = {
     saving: 'Guardando...',
     saved: 'Guardado',
     error: 'Error al guardar. Intente de nuevo.',
+    errorNetwork: 'No se pudo conectar con el servidor — verifique su conexión e intente de nuevo.',
+    errorStatus: 'No se pudo guardar', // suffixed with the HTTP status + server detail
     loading: 'Cargando horario...',
     days: {
       monday: 'Lunes',
@@ -117,6 +121,10 @@ export default function AvailabilityEditor({ physicianId, lang, accessToken }: A
   const [timezone, setTimezone] = useState(getDefaultTimezone());
   const [loading, setLoading] = useState(true);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  // Specific failure detail (HTTP status + server message, or a network hint). The
+  // generic "Failed to save" hid whether a save failed on auth (401/403), payload
+  // (422), or the backend (500) — José 2026-06-28 asked for a specific error.
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Load existing availability
   useEffect(() => {
@@ -211,10 +219,22 @@ export default function AvailabilityEditor({ physicianId, lang, accessToken }: A
   };
 
   const handleSave = useCallback(async () => {
+    // Guard: the backend token (useBackendToken) may not have resolved yet. Saving
+    // without it sends no Authorization header and the backend returns 401 — which
+    // previously surfaced as a bare "Failed to save". Tell the doctor to retry.
+    if (!accessToken) {
+      setSaveError(`${t.errorStatus} (auth not ready)`);
+      setSaveState('error');
+      return;
+    }
+
     setSaveState('saving');
+    setSaveError(null);
     try {
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      };
 
       const res = await fetch(
         `${API_URL}/physicians/${physicianId}/availability`,
@@ -232,15 +252,28 @@ export default function AvailabilityEditor({ physicianId, lang, accessToken }: A
         },
       );
       if (res.ok) {
+        setSaveError(null);
         setSaveState('saved');
         setTimeout(() => setSaveState('idle'), 2000);
       } else {
+        // Surface the real status + backend detail so the failure is diagnosable
+        // (auth 401/403, payload 422, backend 500) instead of a generic message.
+        let detail = '';
+        try {
+          const body = await res.json();
+          detail = body?.detail || body?.error || '';
+        } catch {
+          /* non-JSON body — status alone is the signal */
+        }
+        setSaveError(`${t.errorStatus} (${res.status}${detail ? `: ${detail}` : ''})`);
         setSaveState('error');
       }
     } catch {
+      // fetch threw — network failure or the backend never answered (e.g. cold start)
+      setSaveError(t.errorNetwork);
       setSaveState('error');
     }
-  }, [physicianId, timezone, schedule, accessToken]);
+  }, [physicianId, timezone, schedule, accessToken, t]);
 
   if (loading) {
     return (
@@ -396,6 +429,11 @@ export default function AvailabilityEditor({ physicianId, lang, accessToken }: A
             ? t.error
             : t.save}
         </button>
+        {saveState === 'error' && saveError && (
+          <p className="mt-2 font-dm-sans text-xs text-alert-garnet" role="alert">
+            {saveError}
+          </p>
+        )}
       </div>
     </div>
   );
