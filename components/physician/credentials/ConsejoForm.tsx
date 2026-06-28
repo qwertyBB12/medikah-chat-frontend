@@ -39,7 +39,6 @@ const content = {
     specialty: 'Specialty',
     selectSpecialty: 'Select specialty',
     recertificationYear: 'Recertification Year',
-    pointThreshold: 'Point threshold (if known)',
     addAnother: '+ Add another Consejo certification',
     remove: 'Remove',
     saved: 'Saved',
@@ -49,7 +48,6 @@ const content = {
     noSpecialties: 'Add specialties in the Especialidades panel first',
     customEntry: 'Use custom name',
     yearPlaceholder: 'e.g. 2024',
-    pointsPlaceholder: 'e.g. 350',
     noResults: 'No matching Consejos — type to use custom name',
   },
   es: {
@@ -58,7 +56,6 @@ const content = {
     specialty: 'Especialidad',
     selectSpecialty: 'Seleccione especialidad',
     recertificationYear: 'Anio de Recertificacion',
-    pointThreshold: 'Umbral de puntos (si lo conoce)',
     addAnother: '+ Agregar otra certificacion de Consejo',
     remove: 'Eliminar',
     saved: 'Guardado',
@@ -68,7 +65,6 @@ const content = {
     noSpecialties: 'Agregue especialidades en el panel de Especialidades primero',
     customEntry: 'Usar nombre personalizado',
     yearPlaceholder: 'ej. 2024',
-    pointsPlaceholder: 'ej. 350',
     noResults: 'Sin resultados — escriba para usar nombre personalizado',
   },
 };
@@ -94,7 +90,6 @@ function makeEmptyRow(): ConsejoRow {
     consejoName: '',
     specialty: '',
     recertificationYear: undefined,
-    pointThreshold: undefined,
     verificationStatus: 'pending',
     _saveStatus: 'idle',
     _errors: {},
@@ -139,7 +134,6 @@ export default function ConsejoForm({
             consejoName: rowData.consejoName,
             specialty: rowData.specialty,
             recertificationYear: rowData.recertificationYear,
-            pointThreshold: rowData.pointThreshold,
             verificationStatus: rowData.verificationStatus,
           },
         });
@@ -371,44 +365,24 @@ export default function ConsejoForm({
                 )}
               </div>
 
-              {/* Two-column: Recertification Year + Point Threshold */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-dm-sans text-xs font-medium text-archival-grey mb-1">
-                    {t.recertificationYear}
-                  </label>
-                  <input
-                    type="number"
-                    min={1990}
-                    max={2100}
-                    value={row.recertificationYear ?? ''}
-                    onChange={e => {
-                      const val = e.target.value ? parseInt(e.target.value, 10) : undefined;
-                      updateRow(row._localId, { recertificationYear: val });
-                    }}
-                    onBlur={() => handleFieldBlur(row._localId)}
-                    placeholder={t.yearPlaceholder}
-                    className="w-full font-dm-sans text-sm border border-warm-gray-800/[0.15] rounded-sm px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-clinical-teal/40 transition-colors"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-dm-sans text-xs font-medium text-archival-grey mb-1">
-                    {t.pointThreshold}
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={row.pointThreshold ?? ''}
-                    onChange={e => {
-                      const val = e.target.value ? parseInt(e.target.value, 10) : undefined;
-                      updateRow(row._localId, { pointThreshold: val });
-                    }}
-                    onBlur={() => handleFieldBlur(row._localId)}
-                    placeholder={t.pointsPlaceholder}
-                    className="w-full font-dm-sans text-sm border border-warm-gray-800/[0.15] rounded-sm px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-clinical-teal/40 transition-colors"
-                  />
-                </div>
+              {/* Recertification Year */}
+              <div>
+                <label className="block font-dm-sans text-xs font-medium text-archival-grey mb-1">
+                  {t.recertificationYear}
+                </label>
+                <input
+                  type="number"
+                  min={1990}
+                  max={2100}
+                  value={row.recertificationYear ?? ''}
+                  onChange={e => {
+                    const val = e.target.value ? parseInt(e.target.value, 10) : undefined;
+                    updateRow(row._localId, { recertificationYear: val });
+                  }}
+                  onBlur={() => handleFieldBlur(row._localId)}
+                  placeholder={t.yearPlaceholder}
+                  className="w-full font-dm-sans text-sm border border-warm-gray-800/[0.15] rounded-sm px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-clinical-teal/40 transition-colors"
+                />
               </div>
             </div>
 

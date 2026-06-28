@@ -281,7 +281,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           consejoName: c.certifying_body || '',
           specialty: c.specialty || '',
           recertificationYear: c.recertification_year || undefined,
-          pointThreshold: undefined, // Phase 8 concern
           verificationStatus: c.verification_status as ConsejoEntry['verificationStatus'],
         }));
 
