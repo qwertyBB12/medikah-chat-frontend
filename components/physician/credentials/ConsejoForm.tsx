@@ -38,6 +38,8 @@ const content = {
     consejoPlaceholder: 'Search or type Consejo name...',
     specialty: 'Specialty',
     selectSpecialty: 'Select specialty',
+    registrationNumber: 'Registration Number',
+    regNumberPlaceholder: 'Consejo registration / certification no.',
     recertificationYear: 'Expiration Year',
     addAnother: '+ Add another Consejo certification',
     remove: 'Remove',
@@ -55,6 +57,8 @@ const content = {
     consejoPlaceholder: 'Busque o escriba el nombre del Consejo...',
     specialty: 'Especialidad',
     selectSpecialty: 'Seleccione especialidad',
+    registrationNumber: 'Número de registro del Consejo',
+    regNumberPlaceholder: 'No. de registro / certificación del Consejo',
     recertificationYear: 'Año de expiración',
     addAnother: '+ Agregar otra certificacion de Consejo',
     remove: 'Eliminar',
@@ -89,6 +93,7 @@ function makeEmptyRow(): ConsejoRow {
     _localId: makeLocalId(),
     consejoName: '',
     specialty: '',
+    registrationNumber: undefined,
     recertificationYear: undefined,
     verificationStatus: 'pending',
     _saveStatus: 'idle',
@@ -133,6 +138,7 @@ export default function ConsejoForm({
             id: rowData.id,
             consejoName: rowData.consejoName,
             specialty: rowData.specialty,
+            registrationNumber: rowData.registrationNumber,
             recertificationYear: rowData.recertificationYear,
             verificationStatus: rowData.verificationStatus,
           },
@@ -363,6 +369,23 @@ export default function ConsejoForm({
                     {t.noSpecialties}
                   </p>
                 )}
+              </div>
+
+              {/* Registration / certification number (José change 3 — parallels US ABIM id) */}
+              <div>
+                <label className="block font-dm-sans text-xs font-medium text-archival-grey mb-1">
+                  {t.registrationNumber}
+                </label>
+                <input
+                  type="text"
+                  value={row.registrationNumber ?? ''}
+                  onChange={e =>
+                    updateRow(row._localId, { registrationNumber: e.target.value })
+                  }
+                  onBlur={() => handleFieldBlur(row._localId)}
+                  placeholder={t.regNumberPlaceholder}
+                  className="w-full font-dm-sans text-sm border border-warm-gray-800/[0.15] rounded-sm px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-clinical-teal/40 transition-colors"
+                />
               </div>
 
               {/* Recertification Year */}
