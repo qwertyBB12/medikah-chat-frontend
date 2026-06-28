@@ -66,6 +66,7 @@ type QuestionKey =
   | 'country_selection'
   // Identity
   | 'full_name'
+  | 'title'
   | 'email'
   // Specialty (batched form)
   | 'specialty_form'
@@ -185,6 +186,22 @@ const PhysicianOnboardingAgent = forwardRef<
     updateState('awaiting_user');
     stableAppendMessage({ text: message, actions });
   }, [updateState, stableAppendMessage]);
+
+  // Ask the honorific (Dr/Dra). Framed as a form of address, not a gender question —
+  // standard and expected in the Mexican market. Drives the gendered @medikah.health
+  // mailbox (dra-/dr-) and the public profile; NEVER inferred from a name.
+  const askTitle = useCallback(() => {
+    askQuestion(
+      'title',
+      lang === 'en'
+        ? 'How would you like patients to address you?'
+        : '¿Cómo desea que los pacientes se dirijan a usted?',
+      [
+        { label: 'Doctor (Dr.)', value: 'Dr', type: 'primary' },
+        { label: 'Doctora (Dra.)', value: 'Dra', type: 'primary' },
+      ],
+    );
+  }, [askQuestion, lang]);
 
   // Get time-based greeting
   const getTimeBasedGreeting = useCallback(() => {
@@ -340,6 +357,7 @@ const PhysicianOnboardingAgent = forwardRef<
     const profileData: PhysicianProfileData = {
       fullName: dataRef.current.fullName || '',
       email: dataRef.current.email || '',
+      title: dataRef.current.title,
       photoUrl: dataRef.current.photoUrl,
       linkedinUrl: dataRef.current.linkedinUrl,
       linkedinImported: dataRef.current.linkedinImported,
@@ -455,7 +473,7 @@ const PhysicianOnboardingAgent = forwardRef<
           return true;
         }
         data.fullName = input;
-        askQuestion('email', lang === 'en' ? 'What is your professional email address?' : '\u00bfCu\u00e1l es su correo electr\u00f3nico profesional?');
+        askTitle();
         return true;
       }
 
@@ -498,6 +516,16 @@ const PhysicianOnboardingAgent = forwardRef<
         return true;
       }
 
+      // Honorific — choose via the buttons, not free text.
+      case 'title': {
+        stableAppendMessage({
+          text: lang === 'en'
+            ? 'Please tap Doctor (Dr.) or Doctora (Dra.) above.'
+            : 'Por favor toque Doctor (Dr.) o Doctora (Dra.) arriba.',
+        });
+        return true;
+      }
+
       // Batched form phase — text input not expected
       case 'specialty_form': {
         stableAppendMessage({
@@ -522,7 +550,7 @@ const PhysicianOnboardingAgent = forwardRef<
         return false;
     }
   }, [
-    state, question, copy, lang, stableAppendMessage, askQuestion, updateState,
+    state, question, copy, lang, stableAppendMessage, askQuestion, askTitle, updateState,
     startSpecialtyPhase,
   ]);
 
@@ -603,7 +631,7 @@ const PhysicianOnboardingAgent = forwardRef<
               : `Perfecto, ${acceptedName}!`,
           });
           setTimeout(() => {
-            askQuestion('email', lang === 'en' ? 'What is your professional email address?' : '\u00bfCu\u00e1l es su correo electr\u00f3nico profesional?');
+            askTitle();
           }, 400);
           return true;
         } else if (value === '__reject_name__') {
@@ -611,6 +639,28 @@ const PhysicianOnboardingAgent = forwardRef<
           return true;
         }
         break;
+
+      // Honorific (Dr/Dra) \u2014 two-button step between name and email.
+      case 'title': {
+        if (value === 'Dr' || value === 'Dra') {
+          data.title = value;
+          stableAppendMessage({
+            text: lang === 'en'
+              ? `Noted \u2014 ${value}.`
+              : `Anotado \u2014 ${value}.`,
+          });
+          setTimeout(() => {
+            askQuestion(
+              'email',
+              lang === 'en'
+                ? 'What is your professional email address?'
+                : '\u00bfCu\u00e1l es su correo electr\u00f3nico profesional?',
+            );
+          }, 400);
+          return true;
+        }
+        return true;
+      }
 
       case 'attest_confirm': {
         if (value === 'attest_confirm') {
@@ -622,7 +672,7 @@ const PhysicianOnboardingAgent = forwardRef<
 
     return false;
   }, [
-    question, lang, copy, askQuestion, updateState,
+    question, lang, copy, askQuestion, askTitle, updateState,
     startCountrySelectionPhase, startSpecialtyPhase, completeOnboarding,
     stableAppendMessage,
     selectedCountries,
