@@ -21,6 +21,7 @@ import Splash from '../components/Splash';
 import { MAILCOW_ERROR_COPY } from '../lib/auth/mailcowErrorCopy';
 import { LOGO_DARK_SRC } from '../lib/assets';
 import { PATIENT_PORTAL_OPEN } from '../lib/featureFlags';
+import { checkPassword } from '../lib/passwordPolicy';
 
 type PortalSelection = 'doctor' | 'patient' | null;
 
@@ -32,6 +33,41 @@ const t = {
   email: { en: 'Email', es: 'Correo electrónico' },
   password: { en: 'Password', es: 'Contraseña' },
   signIn: { en: 'Sign in', es: 'Iniciar sesión' },
+  // --- New-physician account creation (Option A — email/password entry, no Google) ---
+  newPhysicianTab: { en: 'New physician', es: 'Médico nuevo' },
+  returningTab: { en: 'Returning', es: 'Ya registrado' },
+  createAccountHint: {
+    en: 'Start with any email — your @medikah.health mailbox is created after we verify your credentials.',
+    es: 'Comience con cualquier correo — su buzón @medikah.health se crea tras verificar sus credenciales.',
+  },
+  confirmPassword: { en: 'Confirm password', es: 'Confirme la contraseña' },
+  passwordHint: {
+    en: 'At least 12 characters, mixing 3 of: lowercase, uppercase, number, symbol.',
+    es: 'Al menos 12 caracteres, combinando 3 de: minúscula, mayúscula, número, símbolo.',
+  },
+  createAccountCta: { en: 'Create account & continue', es: 'Crear cuenta y continuar' },
+  creatingAccount: { en: 'Creating your account…', es: 'Creando su cuenta…' },
+  passwordsDontMatch: { en: 'Passwords do not match.', es: 'Las contraseñas no coinciden.' },
+  passwordTooShort: {
+    en: 'Password must be at least 12 characters.',
+    es: 'La contraseña debe tener al menos 12 caracteres.',
+  },
+  passwordNeedsMix: {
+    en: 'Password must mix at least 3 of: lowercase, uppercase, number, symbol.',
+    es: 'La contraseña debe combinar al menos 3 de: minúscula, mayúscula, número, símbolo.',
+  },
+  signupExists: {
+    en: 'An account with this email already exists. Switch to “Returning” to sign in.',
+    es: 'Ya existe una cuenta con este correo. Cambie a "Ya registrado" para iniciar sesión.',
+  },
+  signupGenericError: {
+    en: 'Could not create your account. Please try again.',
+    es: 'No se pudo crear su cuenta. Inténtelo de nuevo.',
+  },
+  returningHint: {
+    en: 'Already have an account? Sign in below.',
+    es: '¿Ya tiene una cuenta? Inicie sesión abajo.',
+  },
   signingIn: { en: 'Signing in…', es: 'Iniciando sesión…' },
   errorCredentials: {
     en: 'Credentials not recognized. Please try again.',
@@ -189,6 +225,16 @@ export default function ChatPage() {
   const [isGraduatedDevice, setIsGraduatedDevice] = useState(false);
   const demotionLoggedRef = useRef(false);
 
+  // Doctor pane sub-mode (Option A): 'new' opens the account-creation form,
+  // 'returning' shows the sign-in forms. Defaults to 'new' so a brand-new
+  // physician — who previously had NO entry path — sees account creation first.
+  const [doctorMode, setDoctorMode] = useState<'new' | 'returning'>('new');
+  const [signupEmail, setSignupEmail] = useState('');
+  const [signupPassword, setSignupPassword] = useState('');
+  const [signupConfirm, setSignupConfirm] = useState('');
+  const [isSigningUp, setIsSigningUp] = useState(false);
+  const [signupError, setSignupError] = useState<string | null>(null);
+
   // Check for role query param (from landing page CTAs)
   const initialRoleRef = useRef(false);
   useEffect(() => {
@@ -224,6 +270,9 @@ export default function ChatPage() {
       .split(';')
       .some((c) => c.trim().startsWith('mk_physician_graduated='));
     setIsGraduatedDevice(graduated);
+    // A graduated device almost certainly belongs to a returning doctor — open the
+    // sign-in side by default rather than the new-account form.
+    if (graduated) setDoctorMode('returning');
   }, []);
 
   // Decision 42b / D-16 — tick the lockout countdown down once per second while a
@@ -299,6 +348,57 @@ export default function ChatPage() {
       pendingRedirectRef.current = null;
       setLoginError(t.errorCredentials[lang]);
       return;
+    }
+  };
+
+  // Option A — create a brand-new physician's entry account (email/password), then
+  // sign them straight in so the redirect effect routes them to /physicians/onboard.
+  const handlePhysicianSignup = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSignupError(null);
+
+    if (signupPassword !== signupConfirm) {
+      setSignupError(t.passwordsDontMatch[lang]);
+      return;
+    }
+    const pw = checkPassword(signupPassword);
+    if (!pw.valid) {
+      setSignupError(pw.reason === 'too_short' ? t.passwordTooShort[lang] : t.passwordNeedsMix[lang]);
+      return;
+    }
+
+    setIsSigningUp(true);
+    try {
+      const resp = await fetch('/api/auth/physician-signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: signupEmail, password: signupPassword }),
+      });
+
+      if (!resp.ok) {
+        const body = (await resp.json().catch(() => ({}))) as { error?: string };
+        setSignupError(resp.status === 409 ? t.signupExists[lang] : body.error || t.signupGenericError[lang]);
+        setIsSigningUp(false);
+        return;
+      }
+
+      // Account created — sign in via credentials; the redirect effect sends them
+      // to /physicians/onboard once the session lands.
+      pendingRedirectRef.current = 'doctor';
+      const result = await signIn('credentials', {
+        redirect: false,
+        email: signupEmail,
+        password: signupPassword,
+      });
+      if (result?.error) {
+        pendingRedirectRef.current = null;
+        setSignupError(t.signupGenericError[lang]);
+        setIsSigningUp(false);
+      }
+      // On success, leave isSigningUp true — the redirect effect navigates away.
+    } catch {
+      setSignupError(t.signupGenericError[lang]);
+      setIsSigningUp(false);
     }
   };
 
@@ -728,6 +828,103 @@ export default function ChatPage() {
         {heading}
       </h3>
 
+      {/* Option A — physician new/returning toggle. A brand-new doctor had NO entry
+          path before (Google is unconfigured, the credentials box only signs in
+          existing accounts). 'new' creates the entry account; 'returning' signs in. */}
+      {portalSelection === 'doctor' && (
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => { setDoctorMode('new'); setLoginError(null); setSignupError(null); }}
+            className={`font-body text-sm font-semibold py-2.5 rounded-sm border transition ${
+              doctorMode === 'new'
+                ? 'bg-clinical-teal text-white border-clinical-teal'
+                : 'bg-transparent text-white/60 border-white/20 hover:text-white'
+            }`}
+          >
+            {t.newPhysicianTab[lang]}
+          </button>
+          <button
+            type="button"
+            onClick={() => { setDoctorMode('returning'); setLoginError(null); setSignupError(null); }}
+            className={`font-body text-sm font-semibold py-2.5 rounded-sm border transition ${
+              doctorMode === 'returning'
+                ? 'bg-clinical-teal text-white border-clinical-teal'
+                : 'bg-transparent text-white/60 border-white/20 hover:text-white'
+            }`}
+          >
+            {t.returningTab[lang]}
+          </button>
+        </div>
+      )}
+
+      {/* NEW PHYSICIAN — create the entry account (email/password), then sign in. */}
+      {portalSelection === 'doctor' && doctorMode === 'new' && (
+        <div className="space-y-3">
+          <p className="font-body text-xs text-white/50">{t.createAccountHint[lang]}</p>
+          <form onSubmit={handlePhysicianSignup} className="space-y-3">
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="signup-email" className="font-body text-xs uppercase tracking-wider text-white/50">
+                {t.email[lang]}
+              </label>
+              <input
+                id="signup-email"
+                type="email"
+                value={signupEmail}
+                onChange={(e) => setSignupEmail(e.target.value)}
+                className="font-body border border-white/20 bg-warm-gray-900/50 px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-clinical-teal rounded-sm"
+                placeholder="you@example.com"
+                autoComplete="email"
+                required
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="signup-password" className="font-body text-xs uppercase tracking-wider text-white/50">
+                {t.password[lang]}
+              </label>
+              <input
+                id="signup-password"
+                type="password"
+                value={signupPassword}
+                onChange={(e) => setSignupPassword(e.target.value)}
+                className="font-body border border-white/20 bg-warm-gray-900/50 px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-clinical-teal rounded-sm"
+                placeholder="********"
+                autoComplete="new-password"
+                required
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="signup-confirm" className="font-body text-xs uppercase tracking-wider text-white/50">
+                {t.confirmPassword[lang]}
+              </label>
+              <input
+                id="signup-confirm"
+                type="password"
+                value={signupConfirm}
+                onChange={(e) => setSignupConfirm(e.target.value)}
+                className="font-body border border-white/20 bg-warm-gray-900/50 px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-clinical-teal rounded-sm"
+                placeholder="********"
+                autoComplete="new-password"
+                required
+              />
+            </div>
+            <p className="font-body text-[11px] text-white/40">{t.passwordHint[lang]}</p>
+            {signupError && (
+              <p className="font-body text-sm text-alert-garnet bg-alert-garnet/10 border border-alert-garnet/20 px-3 py-2 text-center rounded-sm">
+                {signupError}
+              </p>
+            )}
+            <button
+              type="submit"
+              className="font-body w-full px-4 py-3 font-semibold tracking-wide text-sm bg-clinical-teal text-white border border-clinical-teal hover:bg-clinical-teal/90 transition rounded-sm disabled:opacity-50"
+              disabled={isSigningUp}
+            >
+              {isSigningUp ? t.creatingAccount[lang] : t.createAccountCta[lang]}
+            </button>
+          </form>
+        </div>
+      )}
+
       {/* Phase 18 Plan 04 — D-02: On a graduated device (mk_physician_graduated cookie
           present), the Medikah-password form is primary. Google is demoted to a small
           "recover access" link. On a fresh device, normal order applies.
@@ -735,7 +932,7 @@ export default function ChatPage() {
 
       {/* Phase 16 — Medikah-email (Mailcow IMAP) sign-in. Physician tab only.
           Shown FIRST on graduated devices (D-02), after Google on fresh devices. */}
-      {portalSelection === 'doctor' && isGraduatedDevice && (
+      {portalSelection === 'doctor' && isGraduatedDevice && doctorMode === 'returning' && (
         <div className="space-y-3">
           <p className="font-body text-xs text-white/50">{t.medikahEmailHint[lang]}</p>
           <form onSubmit={handleMailcowSignIn} className="space-y-3">
@@ -791,23 +988,15 @@ export default function ChatPage() {
               </>
             )}
           </form>
-          {/* Google demoted to small "recover access" link on graduated devices */}
-          <div className="text-center pt-1">
-            <button
-              type="button"
-              onClick={() => handleSocialSignIn('google')}
-              className="font-body text-xs text-white/40 underline hover:text-white/70 transition"
-            >
-              {t.continueGoogle[lang]}
-            </button>
-          </div>
         </div>
       )}
 
-      {/* Social login buttons — shown for non-graduated devices or non-doctor portals */}
-      {!(portalSelection === 'doctor' && isGraduatedDevice) && (
+      {/* Social login (Google) — PATIENTS ONLY. Google OAuth is not configured for
+          physicians, so showing it on the doctor pane dead-ends. Doctors use the
+          new-account form (above) or the returning sign-in forms (below). */}
+      {portalSelection === 'patient' && (
         <div className="space-y-2">
-          {/* Google — available for both roles */}
+          {/* Google — patient portal only */}
           <button
             type="button"
             onClick={() => handleSocialSignIn('google')}
@@ -826,7 +1015,7 @@ export default function ChatPage() {
 
       {/* Phase 16 — Medikah-email (Mailcow IMAP) sign-in. Physician tab only.
           Added per D-03 two-identity lifecycle. Shown in standard order on fresh devices. */}
-      {portalSelection === 'doctor' && !isGraduatedDevice && (
+      {portalSelection === 'doctor' && !isGraduatedDevice && doctorMode === 'returning' && (
         <div className="space-y-3 pt-2">
           <div className="flex items-center gap-3">
             <div className="flex-1 h-px bg-white/10" />
@@ -892,7 +1081,10 @@ export default function ChatPage() {
         </div>
       )}
 
-      {/* Divider */}
+      {/* Divider + email/password sign-in — patients, and RETURNING doctors only.
+          Hidden in the doctor 'new' mode (the account-creation form replaces it). */}
+      {(portalSelection === 'patient' || (portalSelection === 'doctor' && doctorMode === 'returning')) && (
+      <>
       <div className="flex items-center gap-3">
         <div className="flex-1 h-px bg-white/10" />
         <span className="text-[11px] uppercase tracking-wider text-white/40">{t.or[lang]}</span>
@@ -954,6 +1146,8 @@ export default function ChatPage() {
           {isSubmitting ? t.signingIn[lang] : t.signIn[lang]}
         </button>
       </form>
+      </>
+      )}
     </div>
   ) : null;
 
