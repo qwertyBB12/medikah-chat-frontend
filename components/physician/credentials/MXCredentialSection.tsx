@@ -1,6 +1,6 @@
 /**
  * MXCredentialSection — Vertical accordion container for Mexico credential forms.
- * Five panels: Cedula Profesional, Especialidades, Consejo, Identity (CURP+INE), Colegios.
+ * Four panels: Cedula Profesional, Especialidades, Consejo, Identity (CURP+INE).
  * Loads credential data on mount, passes to sub-forms with refresh callbacks.
  *
  * T-06-15: country_of_practice gating is UX convenience, not security.
@@ -15,7 +15,6 @@ import CedulaProfesionalForm from './CedulaProfesionalForm';
 import IdentityForm from './IdentityForm';
 import EspecialidadesForm from './EspecialidadesForm';
 import ConsejoForm from './ConsejoForm';
-import ColegiosForm from './ColegiosForm';
 import CompletionBadge from './CompletionBadge';
 import type { CompletionStatus } from './CompletionBadge';
 
@@ -24,7 +23,7 @@ interface MXCredentialSectionProps {
   lang: SupportedLang;
 }
 
-type MXPanelId = 'cedulaProfesional' | 'especialidades' | 'consejo' | 'identity' | 'colegios';
+type MXPanelId = 'cedulaProfesional' | 'especialidades' | 'consejo' | 'identity';
 
 const content = {
   en: {
@@ -33,7 +32,6 @@ const content = {
     especialidades: 'Especialidades (Cedulas de Especialidad)',
     consejo: 'Consejo Board Certifications',
     identity: 'Identity (CURP & INE)',
-    colegios: 'Professional Society Memberships',
     empty: 'Not started',
     inProgress: 'In progress',
     complete: 'Complete',
@@ -47,7 +45,6 @@ const content = {
     especialidades: 'Especialidades (Cedulas de Especialidad)',
     consejo: 'Certificaciones de Consejo',
     identity: 'Identidad (CURP e INE)',
-    colegios: 'Membresias de Colegios Profesionales',
     empty: 'No iniciado',
     inProgress: 'En progreso',
     complete: 'Completo',
@@ -81,11 +78,6 @@ function getIdentityCompletion(data: MXCredentialResponse | null): CompletionSta
   const { curp, ineFrontUploaded, ineBackUploaded } = data.identity;
   if (!curp && !ineFrontUploaded && !ineBackUploaded) return 'empty';
   if (curp && ineFrontUploaded && ineBackUploaded) return 'complete';
-  return 'in_progress';
-}
-
-function getColegiosCompletion(data: MXCredentialResponse | null): CompletionStatus {
-  if (!data || data.colegios.length === 0) return 'empty';
   return 'in_progress';
 }
 
@@ -183,12 +175,6 @@ export default function MXCredentialSection({ physicianId, lang }: MXCredentialS
       label: t.identity,
       completion: getIdentityCompletion(data),
     },
-    {
-      id: 'colegios',
-      label: t.colegios,
-      completion: getColegiosCompletion(data),
-      optional: true,
-    },
   ];
 
   return (
@@ -261,14 +247,6 @@ export default function MXCredentialSection({ physicianId, lang }: MXCredentialS
                       physicianId={physicianId}
                       lang={lang}
                       identity={data?.identity ?? { ineFrontUploaded: false, ineBackUploaded: false }}
-                      onRefresh={refreshData}
-                    />
-                  )}
-                  {panel.id === 'colegios' && (
-                    <ColegiosForm
-                      physicianId={physicianId}
-                      lang={lang}
-                      colegios={data?.colegios ?? []}
                       onRefresh={refreshData}
                     />
                   )}
