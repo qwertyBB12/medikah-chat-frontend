@@ -87,6 +87,14 @@ const t = {
     en: 'Use your @medikah.health mailbox.',
     es: 'Usa tu buzón @medikah.health.',
   },
+  // Inline guard against Chrome autofilling a saved Gmail/contact address into
+  // the IMAP-login box (locked out Hector + Dr. Aguirre 2026-06-28). The mailbox
+  // login MUST be the @medikah.health address; a wrong domain is rejected by
+  // IMAP and would otherwise surface only as a confusing generic failure.
+  errorNotMedikahEmail: {
+    en: 'Use your @medikah.health mailbox address, e.g. you@medikah.health',
+    es: 'Usa tu dirección @medikah.health, ej. tu@medikah.health',
+  },
   // Phase 17 — login-time TOTP second-factor prompt (17-04 gate)
   totpHeading: { en: 'Two-step verification', es: 'Verificación en dos pasos' },
   totpHint: {
@@ -420,8 +428,17 @@ export default function ChatPage() {
 
   const handleMailcowSignIn = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setIsMailcowSubmitting(true);
     setLoginError(null);
+
+    // Inline domain guard — flag a non-@medikah.health address BEFORE calling
+    // signIn(). Chrome autofills a saved Gmail/contact email into this box; IMAP
+    // rejects it and the generic failure copy hides the real cause. Catch it here.
+    if (!mailcowEmail.trim().toLowerCase().endsWith('@medikah.health')) {
+      setLoginError(t.errorNotMedikahEmail[lang]);
+      return;
+    }
+
+    setIsMailcowSubmitting(true);
 
     pendingRedirectRef.current = 'doctor';
 
@@ -971,7 +988,9 @@ export default function ChatPage() {
               </label>
               <input
                 id="mailcow-email"
+                name="mailcow-mailbox"
                 type="email"
+                autoComplete="off"
                 value={mailcowEmail}
                 onChange={(e) => setMailcowEmail(e.target.value)}
                 className="font-body border border-white/20 bg-warm-gray-900/50 px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-clinical-teal rounded-sm"
@@ -1061,7 +1080,9 @@ export default function ChatPage() {
               </label>
               <input
                 id="mailcow-email"
+                name="mailcow-mailbox"
                 type="email"
+                autoComplete="off"
                 value={mailcowEmail}
                 onChange={(e) => setMailcowEmail(e.target.value)}
                 className="font-body border border-white/20 bg-warm-gray-900/50 px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-clinical-teal rounded-sm"
