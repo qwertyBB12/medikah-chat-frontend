@@ -1,13 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const vadHandlers: { onSpeechStart?: () => void; onUtterance?: (t: string) => void } = {};
+const vadPause = vi.fn();
+const vadResume = vi.fn();
 vi.mock('./vadListener', () => ({
   isContinuousVADSupported: () => true,
   diagnoseVADSupport: () => ({ ok: true, reasons: [] }),
   VADListener: class {
     constructor(opts: { onSpeechStart?: () => void; onUtterance?: (t: string) => void }) { vadHandlers.onSpeechStart = opts.onSpeechStart; vadHandlers.onUtterance = opts.onUtterance; }
     async start() {}
-    pause() {}
+    pause() { vadPause(); }
+    resume() { vadResume(); }
     destroy() {}
   },
 }));
@@ -44,6 +47,7 @@ const ok = (text: string) => async (_t: string, opts?: { onTextChunk?: (c: strin
 describe('ContinuousFlowController', () => {
   beforeEach(() => {
     ttsStop.mockClear(); pushTextSpy.mockClear(); endPushingSpy.mockClear(); playSpy.mockClear();
+    vadPause.mockClear(); vadResume.mockClear();
     streamMode = 'resolve'; releaseStream = null;
   });
 
@@ -92,6 +96,29 @@ describe('ContinuousFlowController', () => {
     vadHandlers.onSpeechStart!(); // user interrupts mid-speech
     expect(ttsStop).toHaveBeenCalled();
     await turn;
+  });
+
+  it('half-duplex: pauses the mic while Cue speaks, then resumes when the turn ends', async () => {
+    // The mic must be closed while Cue is speaking so her own audio leaking into
+    // an open mic cannot trigger barge-in (self-interruption) or be transcribed
+    // back as a user utterance. It must reopen once playback drains.
+    const ctrl = new ContinuousFlowController({ respond: ok('Hola.') });
+    await ctrl.start();
+    await vadHandlers.onUtterance!('hola');
+    expect(vadPause).toHaveBeenCalled();   // paused on entering `speaking`
+    expect(vadResume).toHaveBeenCalled();  // resumed after the turn ends
+    // resume must come AFTER pause (not the other way round)
+    expect(Math.min(...vadResume.mock.invocationCallOrder))
+      .toBeGreaterThan(Math.min(...vadPause.mock.invocationCallOrder));
+  });
+
+  it('half-duplex: greeting (playReply) also pauses then resumes the mic', async () => {
+    const ctrl = new ContinuousFlowController({ respond: ok('x') });
+    await ctrl.start();
+    vadPause.mockClear(); vadResume.mockClear();
+    await ctrl.playReply('Hola, soy Cue.');
+    expect(vadPause).toHaveBeenCalled();
+    expect(vadResume).toHaveBeenCalled();
   });
 
   it('D-03: speaks a CONTROLLED templated line on a write proposal, not model prose', async () => {
