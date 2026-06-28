@@ -54,6 +54,14 @@ import {
   type CueToolEvent,
 } from '../../lib/cue/cueStream';
 import { CueMemoryConsent, CueMemoryPanel } from './CueMemory';
+import { CueModePicker } from './CueModePicker';
+import {
+  loadCueMode,
+  saveCueMode,
+  controllerFlowMode,
+  DEFAULT_CUE_MODE,
+  type CueMode,
+} from '../../lib/cue/voice/mode';
 
 // ── re-exports kept for tests + custom-sogo.js parity ───────────────────────
 // The pure stream/sentinel helpers live in lib/cue/cueStream.ts (testable,
@@ -85,6 +93,7 @@ const LABELS = {
         confirmBlock: 'Block this time?', confirmClear: 'Clear Cue blocks?',
         confirmEyebrow: 'Confirm before writing', confirm: 'Confirm', cancel: 'Cancel',
         hintLeft: 'Cue · English + Spanish', done: 'Done', memory: 'What Cue remembers',
+        modeSettings: 'Interaction mode', tapToTalk: 'Tap to talk', tapToStop: 'Listening — tap to stop',
         blockedResult: (uid: string) => `Time blocked. (ref ${uid})`,
         clearResult: (deleted: number, kept: number) => `${deleted} removed, ${kept} kept.` },
   es: { close: 'Cerrar', collapse: 'Contraer', you: 'Tú', context: 'Espacio clínico',
@@ -93,6 +102,7 @@ const LABELS = {
         confirmBlock: '¿Bloquear este horario?', confirmClear: '¿Liberar los bloques de Cue?',
         confirmEyebrow: 'Confirmar antes de escribir', confirm: 'Confirmar', cancel: 'Cancelar',
         hintLeft: 'Cue · español + inglés', done: 'Listo', memory: 'Lo que Cue recuerda',
+        modeSettings: 'Modo de interacción', tapToTalk: 'Toca para hablar', tapToStop: 'Escuchando — toca para terminar',
         blockedResult: (uid: string) => `Horario bloqueado. (ref ${uid})`,
         clearResult: (deleted: number, kept: number) => `${deleted} eliminados, ${kept} conservados.` },
 } as const;
@@ -177,6 +187,13 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
   const [avisoAck, setAvisoAck] = useState<boolean | null>(null);
   const [consentDismissed, setConsentDismissed] = useState(false); // "not now" for this session
   const [showMemory, setShowMemory] = useState(false);
+
+  // Wave 3 — interaction mode (voice / push-to-talk / text). null = not resolved
+  // yet (first-run picker showing). pttListening drives the PTT mic button.
+  const [mode, setMode] = useState<CueMode | null>(null);
+  const [showPicker, setShowPicker] = useState(false);
+  const [pttListening, setPttListening] = useState(false);
+  const greetedRef = useRef(false); // greet once per open, not on mode switches
 
   const smRef = useRef<VoiceStateMachine | null>(null);
   if (smRef.current === null) smRef.current = new VoiceStateMachine();
@@ -276,37 +293,61 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
     } catch { /* greeting is best-effort */ }
   }, [locale]);
 
-  // Open: start continuous flow (supported) inside the user gesture; move focus
-  // into the panel. On close: tear down the controller + restore focus.
+  // Open/close housekeeping + first-run mode resolution. The controller itself
+  // is created in the mode-keyed effect below.
   useEffect(() => {
     if (!isOpen) {
-      controllerRef.current?.destroy(); controllerRef.current = null;
       smRef.current?.reset();
       if (prevFocusRef.current) { (prevFocusRef.current as HTMLElement).focus?.(); prevFocusRef.current = null; }
       return;
     }
     prevFocusRef.current = document.activeElement;
     historyRef.current = []; // fresh conversation each open
+    greetedRef.current = false;
+
+    // Resolve the interaction mode. No voice support → text only, no picker.
+    // First run (nothing stored) → show the picker BEFORE any mic/greeting, so
+    // the doctor opts into voice rather than having it start unannounced.
+    if (!voiceSupported) {
+      setMode('text'); setShowPicker(false);
+    } else {
+      const stored = loadCueMode();
+      if (stored) { setMode(stored); setShowPicker(false); }
+      else { setMode(null); setShowPicker(true); }
+    }
+
     const dialog = dialogRef.current;
     if (dialog) {
       const f = dialog.querySelectorAll<HTMLElement>(FOCUSABLE);
       (f.length ? f[0] : dialog).focus();
     }
+  }, [isOpen, voiceSupported]);
 
-    if (voiceSupported) {
-      const ctrl = new ContinuousFlowController({
-        locale,
-        respond,
-        onOrbEvent: (p) => setOrbState(p.state),
-        onUserUtterance: (t) => setSpoken(t),
-        onError: () => setErrorMsg(labels.error),
-      });
-      controllerRef.current = ctrl;
-      ctrl.start().then(() => speakGreeting(ctrl)).catch(() => setErrorMsg(labels.error));
+  // Controller lifecycle — only voice/ptt use it; text has none, and the
+  // first-run picker (mode still null) holds it back until the doctor chooses.
+  // Re-runs on mode switch (recreates the controller) but greets only once/open.
+  useEffect(() => {
+    const flow = mode ? controllerFlowMode(mode) : null;
+    if (!isOpen || !voiceSupported || !flow) {
+      controllerRef.current?.destroy(); controllerRef.current = null;
+      setPttListening(false);
+      return;
     }
+    const ctrl = new ContinuousFlowController({
+      locale,
+      flowMode: flow,
+      respond,
+      onOrbEvent: (p) => setOrbState(p.state),
+      onUserUtterance: (t) => { setSpoken(t); setPttListening(false); },
+      onError: () => setErrorMsg(labels.error),
+    });
+    controllerRef.current = ctrl;
+    ctrl.start()
+      .then(() => { if (!greetedRef.current) { greetedRef.current = true; return speakGreeting(ctrl); } })
+      .catch(() => setErrorMsg(labels.error));
     // Cleanup tears down the controller so a re-run/unmount can't leak one.
     return () => { controllerRef.current?.destroy(); controllerRef.current = null; };
-  }, [isOpen, voiceSupported, locale, respond, speakGreeting, labels.error]);
+  }, [isOpen, voiceSupported, mode, locale, respond, speakGreeting, labels.error]);
 
   // Wave 2a — close the mic while a write-confirm card is up (voice OR text path),
   // so the doctor reading/clicking Confirm isn't captured as a stray utterance.
@@ -370,6 +411,27 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
 
   // Cancel → dismiss the confirm card, NO write (D-03).
   function handleCancelWrite() { setPendingConfirm(null); idempotencyTokenRef.current = null; }
+
+  // Wave 3 — mode picker. Selecting applies + persists immediately; the
+  // mode-keyed effect (re)creates or tears down the controller to match.
+  const handleSelectMode = useCallback((m: CueMode) => {
+    saveCueMode(m); setMode(m); setShowPicker(false);
+  }, []);
+  // Dismissing the picker without choosing: on FIRST run, fall back to the
+  // recommended default so the doctor is never left without a mode; when
+  // reopened from the header, just close (keep the current mode).
+  const handleClosePicker = useCallback(() => {
+    if (mode === null) { saveCueMode(DEFAULT_CUE_MODE); setMode(DEFAULT_CUE_MODE); }
+    setShowPicker(false);
+  }, [mode]);
+
+  // Wave 3 — push-to-talk: tap to open a listening window, tap again to cancel.
+  const handleMicTap = useCallback(() => {
+    const ctrl = controllerRef.current;
+    if (!ctrl) return;
+    if (ctrl.isListening()) { ctrl.stopListeningWindow(); setPttListening(false); }
+    else { ctrl.startListeningWindow(); setPttListening(true); }
+  }, []);
 
   if (!isOpen) return null;
   const isThinking = orbState === 'thinking';
@@ -494,6 +556,21 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
           <span className="mk-dock-name">Cue</span>
           <span className="mk-dock-ctx">· {labels.context}</span>
           <span className="mk-dock-actions">
+            {voiceSupported && (
+              <button
+                type="button"
+                className="mk-icbtn"
+                aria-label={labels.modeSettings}
+                title={labels.modeSettings}
+                onClick={() => setShowPicker(true)}
+              >
+                {/* sliders / interaction-mode glyph */}
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                  <path d="M4 7h7M15 7h5M4 17h3M11 17h9" />
+                  <circle cx="13" cy="7" r="2" /><circle cx="9" cy="17" r="2" />
+                </svg>
+              </button>
+            )}
             {avisoAck === true && (
               <button
                 type="button"
@@ -513,9 +590,20 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
           </span>
         </header>
 
+        {/* Wave 3 — interaction-mode picker (first run, or reopened from header).
+            Takes precedence over the memory aviso so the two never stack. */}
+        {showPicker && (
+          <CueModePicker
+            locale={locale}
+            current={mode}
+            onSelect={handleSelectMode}
+            onClose={handleClosePicker}
+          />
+        )}
+
         {/* Phase 25 Slice 3 — one-time consent overlay + memory management panel.
             Both are position:absolute inset:0 within the dock (see CueMemory.tsx). */}
-        {avisoAck === false && !consentDismissed && (
+        {!showPicker && avisoAck === false && !consentDismissed && (
           <CueMemoryConsent
             locale={locale}
             onAck={() => setAvisoAck(true)}
@@ -599,9 +687,11 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
               spellCheck={false}
             />
             <button
-              type="submit"
-              className={`mk-mic ${orbState === 'listening' ? 'mk-mic-live' : ''}`}
-              aria-label={labels.mic}
+              type={mode === 'ptt' ? 'button' : 'submit'}
+              className={`mk-mic ${(mode === 'ptt' ? pttListening : orbState === 'listening') ? 'mk-mic-live' : ''}`}
+              aria-label={mode === 'ptt' ? (pttListening ? labels.tapToStop : labels.tapToTalk) : labels.mic}
+              title={mode === 'ptt' ? (pttListening ? labels.tapToStop : labels.tapToTalk) : undefined}
+              onClick={mode === 'ptt' ? handleMicTap : undefined}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round">
                 <rect x="9" y="3" width="6" height="11" rx="3" />
