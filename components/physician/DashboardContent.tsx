@@ -7,6 +7,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
 import { SupportedLang } from '../../lib/i18n';
 import { useSupabaseToken } from '../../lib/useSupabaseToken';
 import VerificationBadge from './VerificationBadge';
@@ -52,6 +53,18 @@ interface DashboardData {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
+// U1 (Aguirre audit): split the long mixed dashboard into top-level tabs so
+// credentialing (internal verification) is clearly separated from the public
+// profile (what patients see). Availability + Workspace get their own tabs to
+// tame the long scroll.
+type DashboardTab = 'credentials' | 'profile' | 'availability' | 'workspace';
+const VALID_DASHBOARD_TABS = new Set<DashboardTab>([
+  'credentials',
+  'profile',
+  'availability',
+  'workspace',
+]);
+
 const content = {
   en: {
     welcome: 'Welcome back',
@@ -73,6 +86,12 @@ const content = {
     },
     usCredentialHeader: '🇺🇸 US Credentials',
     mxCredentialHeader: '🇲🇽 Mexico Credentials',
+    tabs: {
+      credentials: 'Credentials',
+      profile: 'Public Profile',
+      availability: 'Availability',
+      workspace: 'Workspace',
+    },
     networkCard: {
       title: 'Medikah Network',
       description: 'You are part of a network of credentialed physicians across the Americas, connecting patients with quality healthcare.',
@@ -99,6 +118,12 @@ const content = {
     },
     usCredentialHeader: '🇺🇸 Credenciales de EE.UU.',
     mxCredentialHeader: '🇲🇽 Credenciales de Mexico',
+    tabs: {
+      credentials: 'Credenciales',
+      profile: 'Perfil Público',
+      availability: 'Disponibilidad',
+      workspace: 'Espacio de Trabajo',
+    },
     networkCard: {
       title: 'Red Medikah',
       description: 'Usted es parte de una red de m\u00e9dicos acreditados en las Am\u00e9ricas, conectando pacientes con atenci\u00f3n m\u00e9dica de calidad.',
@@ -120,6 +145,19 @@ export default function DashboardContent({
   const t = content[lang];
   const normalizedStatus = verificationStatus?.toLowerCase() || 'pending';
   const accessToken = useSupabaseToken();
+  const router = useRouter();
+
+  // U1: active top-level tab. Defaults to Credentials. Hydrates from `?section=`
+  // so deep links (e.g. welcome email → profile) land on the right tab.
+  const [activeTab, setActiveTab] = useState<DashboardTab>('credentials');
+  useEffect(() => {
+    if (!router.isReady) return;
+    const q = router.query.section;
+    const candidate = Array.isArray(q) ? q[0] : q;
+    if (candidate && VALID_DASHBOARD_TABS.has(candidate as DashboardTab)) {
+      setActiveTab(candidate as DashboardTab);
+    }
+  }, [router.isReady, router.query.section]);
 
   const [dashboardData, setDashboardData] = useState<DashboardData>({
     inquiryCount: 0,
@@ -291,93 +329,131 @@ export default function DashboardContent({
         </div>
       </div>
 
-      {/* Row 2: AI Diagnosis Tool - Full width
-          Hidden for soft launch; being repositioned as a Cue feature in the
-          upcoming Cue phases (see AI_DIAGNOSIS_IN_DASH in lib/featureFlags.ts). */}
-      {AI_DIAGNOSIS_IN_DASH && <AIDiagnosisTool lang={lang} accessToken={accessToken} />}
+      {/* U1 (Aguirre audit): top-level tab bar separating Credentials (internal
+          verification) from Public Profile (patient-facing), plus Availability
+          and Workspace. Replaces the long single-scroll mixed form. */}
+      <div className="flex flex-wrap gap-2 border-b border-warm-gray-800/[0.08] pb-2">
+        {([
+          { key: 'credentials', label: t.tabs.credentials },
+          { key: 'profile', label: t.tabs.profile },
+          { key: 'availability', label: t.tabs.availability },
+          ...(normalizedStatus === 'verified'
+            ? [{ key: 'workspace' as DashboardTab, label: t.tabs.workspace }]
+            : []),
+        ] as Array<{ key: DashboardTab; label: string }>).map(({ key, label }) => {
+          const isActive = activeTab === key;
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setActiveTab(key)}
+              className={`px-4 py-2 rounded-md font-body text-sm font-medium transition-all ${
+                isActive
+                  ? 'bg-clinical-teal text-white'
+                  : 'bg-linen text-body-slate hover:bg-linen/70'
+              }`}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
 
-      {/* Row 2.5: Contact & Practice Info — shared section above credentials (D-05) */}
-      {physicianId && (
-        <ContactInfoSection
-          physicianId={physicianId}
-          lang={lang}
-          onContactChange={handleContactChange}
-        />
-      )}
+      {/* ── Credentials tab: contact info + formal credential records ── */}
+      {activeTab === 'credentials' && (
+        <div className="space-y-6">
+          {/* Contact & Practice Info — shared section above credentials (D-05) */}
+          {physicianId && (
+            <ContactInfoSection
+              physicianId={physicianId}
+              lang={lang}
+              onContactChange={handleContactChange}
+            />
+          )}
 
-      {/* Row 3: Credential sections with country headers */}
+          {/* Credential sections with country headers */}
 
-      {/* Dual-credential: both US and MX with country flag headers (DUAL-02, D-10) */}
-      {physicianId && isDualCredential && (
-        <>
-          {/* US Credentials with country header */}
-          <div id="us-credential-section" className="space-y-2">
-            <h2 className="font-body text-base font-bold text-deep-charcoal">
-              {lang === 'es' ? t.usCredentialHeader : t.usCredentialHeader}
-            </h2>
-            <USCredentialSection physicianId={physicianId} lang={lang} />
-          </div>
+          {/* Dual-credential: both US and MX with country flag headers (DUAL-02, D-10) */}
+          {physicianId && isDualCredential && (
+            <>
+              {/* US Credentials with country header */}
+              <div id="us-credential-section" className="space-y-2">
+                <h2 className="font-body text-base font-bold text-deep-charcoal">
+                  {lang === 'es' ? t.usCredentialHeader : t.usCredentialHeader}
+                </h2>
+                <USCredentialSection physicianId={physicianId} lang={lang} />
+              </div>
 
-          {/* MX Credentials with country header — 32px gap (D-10) */}
-          <div id="mx-credential-section" className="space-y-2 mt-8">
-            <h2 className="font-body text-base font-bold text-deep-charcoal">
-              {lang === 'es' ? t.mxCredentialHeader : t.mxCredentialHeader}
-            </h2>
-            <MXCredentialSection physicianId={physicianId} lang={lang} />
-          </div>
-        </>
-      )}
+              {/* MX Credentials with country header — 32px gap (D-10) */}
+              <div id="mx-credential-section" className="space-y-2 mt-8">
+                <h2 className="font-body text-base font-bold text-deep-charcoal">
+                  {lang === 'es' ? t.mxCredentialHeader : t.mxCredentialHeader}
+                </h2>
+                <MXCredentialSection physicianId={physicianId} lang={lang} />
+              </div>
+            </>
+          )}
 
-      {/* Single-country: US-only (or legacy physicians without countryOfPractice) */}
-      {physicianId && !isDualCredential && (countryOfPractice.length === 0 || countryOfPractice.includes('US')) && (
-        <div id="us-credential-section" className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="font-body font-semibold text-lg text-deep-charcoal">
-                {t.credentialSection.title}
-              </h2>
-              <p className="font-body text-sm text-body-slate">
-                {t.credentialSection.subtitle}
-              </p>
+          {/* Single-country: US-only (or legacy physicians without countryOfPractice) */}
+          {physicianId && !isDualCredential && (countryOfPractice.length === 0 || countryOfPractice.includes('US')) && (
+            <div id="us-credential-section" className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="font-body font-semibold text-lg text-deep-charcoal">
+                    {t.credentialSection.title}
+                  </h2>
+                  <p className="font-body text-sm text-body-slate">
+                    {t.credentialSection.subtitle}
+                  </p>
+                </div>
+              </div>
+              <USCredentialSection physicianId={physicianId} lang={lang} />
             </div>
-          </div>
-          <USCredentialSection physicianId={physicianId} lang={lang} />
+          )}
+
+          {/* Single-country: MX-only */}
+          {physicianId && !isDualCredential && countryOfPractice.includes('MX') && (
+            <div id="mx-credential-section" className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="font-body font-semibold text-lg text-deep-charcoal">
+                    {t.mxCredentialSection.title}
+                  </h2>
+                  <p className="font-body text-sm text-body-slate">
+                    {t.mxCredentialSection.subtitle}
+                  </p>
+                </div>
+              </div>
+              <MXCredentialSection physicianId={physicianId} lang={lang} />
+            </div>
+          )}
         </div>
       )}
 
-      {/* Single-country: MX-only */}
-      {physicianId && !isDualCredential && countryOfPractice.includes('MX') && (
-        <div id="mx-credential-section" className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="font-body font-semibold text-lg text-deep-charcoal">
-                {t.mxCredentialSection.title}
-              </h2>
-              <p className="font-body text-sm text-body-slate">
-                {t.mxCredentialSection.subtitle}
-              </p>
-            </div>
-          </div>
-          <MXCredentialSection physicianId={physicianId} lang={lang} />
+      {/* ── Public Profile tab: what patients see ── */}
+      {activeTab === 'profile' && (
+        <div className="space-y-6">
+          {physicianId && <ProfileEditor physicianId={physicianId} lang={lang} accessToken={accessToken} />}
+          {physicianId && <WebsiteEditor physicianId={physicianId} lang={lang} accessToken={accessToken} />}
         </div>
       )}
 
-      {/* Row 4: Inquiry List - Full width
-          Hidden for the physicians-only soft launch (no live patient pipeline
-          yet; see PHYSICIAN_INQUIRIES_OPEN in lib/featureFlags.ts). */}
-      {PHYSICIAN_INQUIRIES_OPEN && physicianId && <InquiryList physicianId={physicianId} lang={lang} accessToken={accessToken} />}
+      {/* ── Availability tab: scheduling + (flag-gated) inquiries / AI tool ── */}
+      {activeTab === 'availability' && (
+        <div className="space-y-6">
+          {/* AI Diagnosis Tool — hidden for soft launch; repositioning as a Cue
+              feature (see AI_DIAGNOSIS_IN_DASH in lib/featureFlags.ts). */}
+          {AI_DIAGNOSIS_IN_DASH && <AIDiagnosisTool lang={lang} accessToken={accessToken} />}
+          {/* Inquiry List — hidden for the physicians-only soft launch
+              (see PHYSICIAN_INQUIRIES_OPEN in lib/featureFlags.ts). */}
+          {PHYSICIAN_INQUIRIES_OPEN && physicianId && <InquiryList physicianId={physicianId} lang={lang} accessToken={accessToken} />}
+          {physicianId && <AvailabilityEditor physicianId={physicianId} lang={lang} accessToken={accessToken} />}
+        </div>
+      )}
 
-      {/* Row 5: Availability Editor - Full width */}
-      {physicianId && <AvailabilityEditor physicianId={physicianId} lang={lang} accessToken={accessToken} />}
-
-      {/* Row 6: Profile Editor - Full width */}
-      {physicianId && <ProfileEditor physicianId={physicianId} lang={lang} accessToken={accessToken} />}
-
-      {/* Row 7: Website Editor - Full width */}
-      {physicianId && <WebsiteEditor physicianId={physicianId} lang={lang} accessToken={accessToken} />}
-
-      {/* Row 8: Workspace (Práctikah) — Mailbox / Calendar / Site / Settings (Phase 12, Plan 12-01) */}
-      {physicianId && normalizedStatus === 'verified' && (
+      {/* ── Workspace tab (Práctikah) — Mailbox / Calendar / Site / Settings.
+          Only verified physicians have a provisioned workspace. ── */}
+      {activeTab === 'workspace' && physicianId && normalizedStatus === 'verified' && (
         <WorkspaceTabContainer
           physicianId={physicianId}
           lang={lang}
