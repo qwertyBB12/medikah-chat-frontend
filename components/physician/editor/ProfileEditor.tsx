@@ -2,11 +2,10 @@ import { useEffect, useState } from 'react';
 import { SupportedLang } from '../../../lib/i18n';
 import BioEditor from './BioEditor';
 import PhotoUploader from './PhotoUploader';
-import SpecialtyEditor from './SpecialtyEditor';
-import EducationEditor from './EducationEditor';
+import ProfileVisibilityPanel from './ProfileVisibilityPanel';
 import PublicationsEditor from './PublicationsEditor';
 import PracticeEditor from './PracticeEditor';
-import { Residency, Fellowship, BoardCertification, Publication } from '../../../lib/physicianClient';
+import { Publication } from '../../../lib/physicianClient';
 
 interface ProfileEditorProps {
   physicianId: string;
@@ -18,14 +17,6 @@ interface ProfileData {
   fullName: string;
   bio: string;
   photoUrl: string;
-  primarySpecialty: string;
-  subSpecialties: string[];
-  boardCertifications: BoardCertification[];
-  medicalSchool: string;
-  medicalSchoolCountry: string;
-  graduationYear?: number;
-  residency: Residency[];
-  fellowships: Fellowship[];
   publications: Publication[];
   currentInstitutions: string[];
   languages: string[];
@@ -65,14 +56,6 @@ export default function ProfileEditor({ physicianId, lang }: ProfileEditorProps)
             fullName: data.fullName || '',
             bio: data.bio || '',
             photoUrl: data.photoUrl || '',
-            primarySpecialty: data.primarySpecialty || '',
-            subSpecialties: data.subSpecialties || [],
-            boardCertifications: data.boardCertifications || [],
-            medicalSchool: data.medicalSchool || '',
-            medicalSchoolCountry: data.medicalSchoolCountry || '',
-            graduationYear: data.graduationYear,
-            residency: data.residency || [],
-            fellowships: data.fellowships || [],
             publications: data.publications || [],
             currentInstitutions: data.currentInstitutions || [],
             languages: data.languages || [],
@@ -139,28 +122,10 @@ export default function ProfileEditor({ physicianId, lang }: ProfileEditorProps)
           />
         </div>
 
-        {/* Specialties */}
+        {/* Specialty & Education visibility — facts are edited in Credentials;
+            here the physician chooses what patients see (Phase B2). */}
         <div className="px-6 py-5">
-          <SpecialtyEditor
-            physicianId={physicianId}
-            lang={lang}
-            initialPrimarySpecialty={profile.primarySpecialty}
-            initialSubSpecialties={profile.subSpecialties}
-          />
-        </div>
-
-        {/* Education & Training */}
-        <div className="px-6 py-5">
-          <EducationEditor
-            physicianId={physicianId}
-            lang={lang}
-            initialMedicalSchool={profile.medicalSchool}
-            initialMedicalSchoolCountry={profile.medicalSchoolCountry}
-            initialGraduationYear={profile.graduationYear}
-            initialResidency={profile.residency}
-            initialFellowships={profile.fellowships}
-            initialBoardCertifications={profile.boardCertifications}
-          />
+          <ProfileVisibilityPanel physicianId={physicianId} lang={lang} />
         </div>
 
         {/* Publications */}
