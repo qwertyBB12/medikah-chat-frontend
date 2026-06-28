@@ -42,7 +42,6 @@ export interface ConsejoEntry {
   consejoName: string; // from CONACEM list or custom entry
   specialty: string; // specialty name this cert covers
   recertificationYear?: number; // year of last recertification cycle (5-year cycles)
-  pointThreshold?: number; // optional numeric threshold per D-09 (e.g., 350 for CMGO)
   verificationStatus: 'pending' | 'verified' | 'failed' | 'manual_review';
 }
 
