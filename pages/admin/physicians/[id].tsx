@@ -105,6 +105,27 @@ interface PhysicianDocumentRow {
   signed_url_error?: string | null;
 }
 
+// B3 admin review — canonical specialty/education rows the physician self-enters.
+interface SpecialtyReviewRow {
+  id: string;
+  name: string;
+  role: string; // 'primary' | 'subspecialty'
+  country: string | null;
+  verification_status: string;
+  verification_source: string | null;
+}
+interface EducationReviewRow {
+  id: string;
+  kind: string; // 'medical_school' | 'residency' | 'fellowship'
+  institution: string;
+  specialty: string | null;
+  country: string | null;
+  start_year: number | null;
+  end_year: number | null;
+  verification_status: string;
+  verification_source: string | null;
+}
+
 interface PhysicianDetailProps {
   admin: AdminUser;
   physician: Record<string, unknown>;
@@ -115,6 +136,8 @@ interface PhysicianDetailProps {
   licenses: PhysicianLicense[];
   certifications: PhysicianCertification[];
   documents: PhysicianDocumentRow[];
+  specialties: SpecialtyReviewRow[];
+  education: EducationReviewRow[];
 }
 
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
@@ -138,7 +161,7 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
     return { notFound: true };
   }
 
-  const [verRes, reviewRes] = await Promise.all([
+  const [verRes, reviewRes, specRes, eduRes] = await Promise.all([
     supabaseAdmin
       .from('physician_verification_results')
       .select('*')
@@ -149,6 +172,17 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
       .select('*')
       .eq('physician_id', physicianId)
       .order('created_at', { ascending: false }),
+    supabaseAdmin
+      .from('physician_specialties')
+      .select('id, name, role, country, verification_status, verification_source')
+      .eq('physician_id', physicianId)
+      .order('role', { ascending: true })
+      .order('created_at', { ascending: true }),
+    supabaseAdmin
+      .from('physician_education')
+      .select('id, kind, institution, specialty, country, start_year, end_year, verification_status, verification_source')
+      .eq('physician_id', physicianId)
+      .order('created_at', { ascending: true }),
   ]);
 
   // Phase 8 evidence + credentials + documents — 5 parallel reads.
@@ -238,6 +272,8 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
       licenses: ((licRes.data as PhysicianLicense[] | null) || []),
       certifications: certs,
       documents,
+      specialties: (specRes.data as SpecialtyReviewRow[] | null) || [],
+      education: (eduRes.data as EducationReviewRow[] | null) || [],
     },
   };
 };
@@ -283,9 +319,12 @@ export default function PhysicianDetailPage({
   licenses,
   certifications,
   documents,
+  specialties,
+  education,
 }: PhysicianDetailProps) {
   const router = useRouter();
   const [isUpdating, setIsUpdating] = useState(false);
+  const [decidingId, setDecidingId] = useState<string | null>(null);
 
   // Option A verify modal — collects the honorific (Dr/Dra) + confirms the
   // gendered mailbox local-part before provisioning. The title is NEVER guessed
@@ -319,6 +358,34 @@ export default function PhysicianDetailPage({
   const canConfirmVerify = (verifyTitle === 'Dr' || verifyTitle === 'Dra') && verifyLocalPartValid;
 
   const st = statusStyles[physician.verification_status as string || 'pending'] || statusStyles.pending;
+
+  // B3: approve/reject a canonical specialty or education row. Approve flips it
+  // to 'verified' (publicly visible via the B2 derive-at-read gate); reject flips
+  // it to 'rejected' (stays hidden). Admin/super_admin only (enforced server-side).
+  async function handleCredentialDecision(
+    table: 'physician_specialties' | 'physician_education',
+    credentialId: string,
+    action: 'approve' | 'reject',
+  ) {
+    setDecidingId(credentialId);
+    try {
+      const res = await fetch(`/api/admin/physicians/${physician.id}/credential-decision`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ table, credentialId, action }),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        alert(`Could not ${action}: ${body.error ?? `HTTP ${res.status}`}`);
+        setDecidingId(null);
+        return;
+      }
+      router.reload();
+    } catch {
+      alert(`Failed to ${action} credential`);
+      setDecidingId(null);
+    }
+  }
 
   async function handleForceReVerify() {
     setIsUpdating(true);
@@ -445,6 +512,35 @@ export default function PhysicianDetailPage({
       setIsUpdating(false);
     }
   }
+
+  const decisionButtons = (
+    table: 'physician_specialties' | 'physician_education',
+    id: string,
+    status: string,
+  ) => (
+    <div className="flex items-center gap-2">
+      {status !== 'verified' && (
+        <button
+          type="button"
+          disabled={decidingId === id}
+          onClick={() => handleCredentialDecision(table, id, 'approve')}
+          className="font-dm-sans text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition"
+        >
+          {decidingId === id ? '…' : 'Approve'}
+        </button>
+      )}
+      {status !== 'rejected' && (
+        <button
+          type="button"
+          disabled={decidingId === id}
+          onClick={() => handleCredentialDecision(table, id, 'reject')}
+          className="font-dm-sans text-xs font-semibold px-3 py-1.5 rounded-lg border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-50 transition"
+        >
+          Reject
+        </button>
+      )}
+    </div>
+  );
 
   return (
     <AdminLayout adminName={admin.fullName}>
@@ -728,6 +824,90 @@ export default function PhysicianDetailPage({
                       {c.recertification_year != null && <>Last recert: {c.recertification_year} · </>}
                       {c.expiration_date && <>Expires: {c.expiration_date}</>}
                     </p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Section B2 — Specialties & Education (admin review, B3) */}
+        <div className="bg-white rounded-[12px] border border-border-line shadow-sm p-6 mt-6">
+          <h2 className="font-dm-sans font-semibold text-deep-charcoal text-lg mb-1">
+            Specialties &amp; Education — Review
+          </h2>
+          <p className="font-dm-sans text-sm text-body-slate mb-4">
+            Self-entered by the physician. Approve to publish a row on their public profile
+            (/dr/[slug]); reject to keep it hidden. Only verified rows appear publicly.
+          </p>
+
+          <h3 className="font-dm-sans font-semibold text-sm text-deep-charcoal mb-2">
+            Specialties <span className="font-normal text-body-slate">({specialties.length})</span>
+          </h3>
+          {specialties.length === 0 ? (
+            <p className="font-dm-sans text-sm text-body-slate mb-6">None on file</p>
+          ) : (
+            <div className="space-y-2 mb-6">
+              {specialties.map((s) => {
+                const sStatus = statusStyles[s.verification_status] || statusStyles.pending;
+                return (
+                  <div
+                    key={s.id}
+                    className="border border-border-line/50 rounded-[8px] p-3 flex items-center justify-between gap-3 flex-wrap"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-dm-sans text-sm font-semibold text-deep-charcoal">
+                        <span className="capitalize">{s.role}</span> · {s.name}
+                        {s.country && <span className="text-body-slate"> · {s.country}</span>}
+                      </p>
+                      {s.verification_source && (
+                        <p className="font-dm-sans text-xs text-body-slate">Source: {s.verification_source}</p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`inline-flex items-center font-dm-sans font-medium text-xs rounded-full px-2 py-0.5 ${sStatus.bg} ${sStatus.text}`}>
+                        {sStatus.label}
+                      </span>
+                      {decisionButtons('physician_specialties', s.id, s.verification_status)}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <h3 className="font-dm-sans font-semibold text-sm text-deep-charcoal mb-2">
+            Education <span className="font-normal text-body-slate">({education.length})</span>
+          </h3>
+          {education.length === 0 ? (
+            <p className="font-dm-sans text-sm text-body-slate">None on file</p>
+          ) : (
+            <div className="space-y-2">
+              {education.map((e) => {
+                const eStatus = statusStyles[e.verification_status] || statusStyles.pending;
+                const years = [e.start_year, e.end_year].filter(Boolean).join('–');
+                return (
+                  <div
+                    key={e.id}
+                    className="border border-border-line/50 rounded-[8px] p-3 flex items-center justify-between gap-3 flex-wrap"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-dm-sans text-sm font-semibold text-deep-charcoal">
+                        <span className="capitalize">{e.kind.replace(/_/g, ' ')}</span> · {e.institution}
+                      </p>
+                      <p className="font-dm-sans text-xs text-body-slate">
+                        {e.specialty && <>{e.specialty} · </>}
+                        {e.country && <>{e.country} · </>}
+                        {years && <>{years} · </>}
+                        {e.verification_source && <>Source: {e.verification_source}</>}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`inline-flex items-center font-dm-sans font-medium text-xs rounded-full px-2 py-0.5 ${eStatus.bg} ${eStatus.text}`}>
+                        {eStatus.label}
+                      </span>
+                      {decisionButtons('physician_education', e.id, e.verification_status)}
+                    </div>
                   </div>
                 );
               })}
