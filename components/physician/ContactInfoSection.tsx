@@ -295,8 +295,7 @@ export default function ContactInfoSection({
             id="contact-phoneNumber"
             type="tel"
             inputMode="numeric"
-            defaultValue={phoneNational}
-            key={`phone-${phoneDial}-${phoneNational}`}
+            value={phoneNational}
             placeholder={phoneDial === '+52' ? '55 0000 0000' : '555 000 0000'}
             onChange={(e) => setPhoneNational(e.target.value.replace(/\D/g, ''))}
             onBlur={(e) => savePhone(phoneDial, e.target.value)}
