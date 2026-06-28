@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { derivePublicProfile } from '../lib/publicProfileDerive';
+import { derivePublicProfile, deriveContact } from '../lib/publicProfileDerive';
 import type {
   DeriveSpecialtyRow,
   DeriveEducationRow,
@@ -113,5 +113,74 @@ describe('derivePublicProfile (Phase B2 derive-at-read)', () => {
     expect(out.residency).toEqual([]);
     expect(out.fellowships).toEqual([]);
     expect(out.boardCertifications).toEqual([]);
+  });
+});
+
+describe('deriveContact (Annotation #9 source-of-truth split)', () => {
+  const canonical = {
+    practiceAddressLine1: '123 Medical Center Blvd, Suite 200',
+    practiceAddressCity: 'Mexico City',
+    practiceAddressCountry: 'Mexico',
+    phoneNumber: '+52 55 1234 5678',
+    officeEmail: 'doctor@clinic.com',
+    appointmentUrl: 'https://calendly.com/dr',
+  };
+
+  it('address + phone come from Credentials; email + appt URL from website store', () => {
+    const out = deriveContact({ ...canonical, toggles: DEFAULT_VISIBILITY });
+    expect(out.officeAddress).toBe('123 Medical Center Blvd, Suite 200');
+    expect(out.officeCity).toBe('Mexico City');
+    expect(out.officeCountry).toBe('Mexico');
+    expect(out.officePhone).toBe('+52 55 1234 5678');
+    expect(out.officeEmail).toBe('doctor@clinic.com');
+    expect(out.appointmentUrl).toBe('https://calendly.com/dr');
+  });
+
+  it('each field is gated by its own toggle (no verification gate — self-declared)', () => {
+    const out = deriveContact({
+      ...canonical,
+      toggles: {
+        ...DEFAULT_VISIBILITY,
+        officeAddress: false,
+        phone: false,
+        officeEmail: false,
+        appointmentUrl: false,
+      },
+    });
+    expect(out.officeAddress).toBeNull();
+    expect(out.officeCity).toBeNull();
+    expect(out.officeCountry).toBeNull();
+    expect(out.officePhone).toBeNull();
+    expect(out.officeEmail).toBeNull();
+    expect(out.appointmentUrl).toBeNull();
+  });
+
+  it('officeAddress toggle gates the whole address (line/city/country) together', () => {
+    const out = deriveContact({
+      ...canonical,
+      toggles: { ...DEFAULT_VISIBILITY, officeAddress: false },
+    });
+    expect(out.officeAddress).toBeNull();
+    expect(out.officeCity).toBeNull();
+    expect(out.officeCountry).toBeNull();
+    expect(out.officePhone).toBe('+52 55 1234 5678'); // phone unaffected
+  });
+
+  it('empty stores yield nulls, not empty strings (no crash)', () => {
+    const out = deriveContact({
+      practiceAddressLine1: '',
+      practiceAddressCity: null,
+      practiceAddressCountry: '',
+      phoneNumber: null,
+      officeEmail: '',
+      appointmentUrl: null,
+      toggles: DEFAULT_VISIBILITY,
+    });
+    expect(out.officeAddress).toBeNull();
+    expect(out.officeCity).toBeNull();
+    expect(out.officeCountry).toBeNull();
+    expect(out.officePhone).toBeNull();
+    expect(out.officeEmail).toBeNull();
+    expect(out.appointmentUrl).toBeNull();
   });
 });

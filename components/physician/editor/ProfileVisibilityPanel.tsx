@@ -9,18 +9,22 @@
  * show/hide toggle. Reminder: a field appears publicly only if its toggle is on
  * AND the underlying credential is verified.
  *
- * Contact-field visibility (office address/phone/email/appointment URL) is left
- * for a follow-up — those toggles default on and are already honored by the
- * public page; their editing still lives in the website settings.
+ * Contact-field visibility (Annotation #9): office address + phone are canonical
+ * in the Credentials Contact section; office email + appointment URL live in the
+ * website settings. Both groups are surfaced here as preview + toggle. Contact is
+ * self-declared, so — unlike the credential rows above — it is gated by its
+ * toggle alone, with no verification requirement.
  */
 import { useEffect, useState, useCallback } from 'react';
 import type { SupportedLang } from '../../../lib/i18n';
 import type { PhysicianSpecialty } from '../../../lib/specialtyTypes';
 import type { PhysicianEducation } from '../../../lib/educationTypes';
+import type { ContactInfo } from '../../../lib/contactTypes';
 import type { ProfileVisibility, VisibilityKey } from '../../../lib/visibilityTypes';
 import { DEFAULT_VISIBILITY } from '../../../lib/visibilityTypes';
 import { getSpecialties } from '../../../lib/specialtyClient';
 import { getEducation } from '../../../lib/educationClient';
+import { getContactInfo } from '../../../lib/contactClient';
 import { getVisibility, saveVisibility } from '../../../lib/visibilityClient';
 
 interface ProfileVisibilityPanelProps {
@@ -48,6 +52,13 @@ const content = {
     loadError: 'Could not load. Please refresh.',
     verified: 'verified',
     unverified: 'not yet verified',
+    contactTitle: 'Contact details',
+    contactSubtitle:
+      'Address and phone come from the Credentials tab; office email and appointment link are edited in the Website settings below. These are shown as entered — no verification needed.',
+    officeAddress: 'Office address',
+    phone: 'Phone',
+    officeEmail: 'Office email',
+    appointmentUrl: 'Appointment link',
   },
   es: {
     title: 'Lo que ven los pacientes',
@@ -68,6 +79,13 @@ const content = {
     loadError: 'No se pudo cargar. Por favor recargue.',
     verified: 'verificado',
     unverified: 'sin verificar',
+    contactTitle: 'Datos de contacto',
+    contactSubtitle:
+      'La dirección y el teléfono provienen de la pestaña de Credenciales; el correo del consultorio y el enlace de citas se editan en la configuración del Sitio Web más abajo. Se muestran tal como los ingresa, sin verificación.',
+    officeAddress: 'Dirección del consultorio',
+    phone: 'Teléfono',
+    officeEmail: 'Correo del consultorio',
+    appointmentUrl: 'Enlace de citas',
   },
 };
 
@@ -106,21 +124,38 @@ export default function ProfileVisibilityPanel({ physicianId, lang }: ProfileVis
   const [loadError, setLoadError] = useState(false);
   const [specialties, setSpecialties] = useState<PhysicianSpecialty[]>([]);
   const [education, setEducation] = useState<PhysicianEducation[]>([]);
+  const [contact, setContact] = useState<Partial<ContactInfo>>({});
+  const [websiteContact, setWebsiteContact] = useState<{ office_email: string; appointment_url: string }>({
+    office_email: '',
+    appointment_url: '',
+  });
   const [toggles, setToggles] = useState<ProfileVisibility>(DEFAULT_VISIBILITY);
 
   useEffect(() => {
     let active = true;
     setLoading(true);
+    const websiteReq = fetch(`/api/physicians/${physicianId}/website`)
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null);
     Promise.all([
       getSpecialties(physicianId),
       getEducation(physicianId),
       getVisibility(physicianId),
-    ]).then(([specRes, eduRes, visRes]) => {
+      getContactInfo(physicianId),
+      websiteReq,
+    ]).then(([specRes, eduRes, visRes, contactRes, websiteRes]) => {
       if (!active) return;
       setLoading(false);
       if (specRes.success && specRes.data) setSpecialties(specRes.data.specialties);
       if (eduRes.success && eduRes.data) setEducation(eduRes.data.education);
       if (visRes.success && visRes.data) setToggles(visRes.data.toggles);
+      if (contactRes.success && contactRes.data) setContact(contactRes.data);
+      if (websiteRes?.data) {
+        setWebsiteContact({
+          office_email: websiteRes.data.office_email || '',
+          appointment_url: websiteRes.data.appointment_url || '',
+        });
+      }
       if (!specRes.success && !eduRes.success && !visRes.success) setLoadError(true);
     });
     return () => {
@@ -201,6 +236,44 @@ export default function ProfileVisibilityPanel({ physicianId, lang }: ProfileVis
     },
   ];
 
+  const addressPreview = [
+    contact.practiceAddressLine1,
+    contact.practiceAddressCity,
+    contact.practiceAddressCountry,
+  ]
+    .map((s) => s?.trim())
+    .filter(Boolean)
+    .join(', ');
+
+  const contactRows: {
+    key: VisibilityKey;
+    label: string;
+    preview: React.ReactNode;
+  }[] = [
+    { key: 'officeAddress', label: t.officeAddress, preview: addressPreview || t.none },
+    { key: 'phone', label: t.phone, preview: contact.phoneNumber?.trim() || t.none },
+    { key: 'officeEmail', label: t.officeEmail, preview: websiteContact.office_email.trim() || t.none },
+    {
+      key: 'appointmentUrl',
+      label: t.appointmentUrl,
+      preview: websiteContact.appointment_url.trim() || t.none,
+    },
+  ];
+
+  const renderRow = (row: { key: VisibilityKey; label: string; preview: React.ReactNode }) => (
+    <div key={row.key} className="flex items-center justify-between gap-4 px-4 py-3 bg-white">
+      <div className="min-w-0">
+        <p className="font-dm-sans text-sm font-medium text-deep-charcoal">{row.label}</p>
+        <p className="font-dm-sans text-xs text-body-slate truncate">{row.preview}</p>
+      </div>
+      <Toggle
+        on={toggles[row.key]}
+        onChange={(v) => setToggle(row.key, v)}
+        labels={{ shown: t.shown, hidden: t.hidden }}
+      />
+    </div>
+  );
+
   return (
     <div>
       <h3 className="font-dm-sans font-semibold text-base text-deep-charcoal">{t.title}</h3>
@@ -210,24 +283,19 @@ export default function ProfileVisibilityPanel({ physicianId, lang }: ProfileVis
       {loadError && <p className="font-dm-sans text-sm text-alert-garnet">{t.loadError}</p>}
 
       {!loading && !loadError && (
-        <div className="divide-y divide-border-line border border-border-line rounded-lg overflow-hidden">
-          {rows.map((row) => (
-            <div
-              key={row.key}
-              className="flex items-center justify-between gap-4 px-4 py-3 bg-white"
-            >
-              <div className="min-w-0">
-                <p className="font-dm-sans text-sm font-medium text-deep-charcoal">{row.label}</p>
-                <p className="font-dm-sans text-xs text-body-slate truncate">{row.preview}</p>
-              </div>
-              <Toggle
-                on={toggles[row.key]}
-                onChange={(v) => setToggle(row.key, v)}
-                labels={{ shown: t.shown, hidden: t.hidden }}
-              />
-            </div>
-          ))}
-        </div>
+        <>
+          <div className="divide-y divide-border-line border border-border-line rounded-lg overflow-hidden">
+            {rows.map(renderRow)}
+          </div>
+
+          <h3 className="font-dm-sans font-semibold text-base text-deep-charcoal mt-6">
+            {t.contactTitle}
+          </h3>
+          <p className="font-dm-sans text-sm text-body-slate mt-1 mb-3">{t.contactSubtitle}</p>
+          <div className="divide-y divide-border-line border border-border-line rounded-lg overflow-hidden">
+            {contactRows.map(renderRow)}
+          </div>
+        </>
       )}
     </div>
   );
