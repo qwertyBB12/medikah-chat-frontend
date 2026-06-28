@@ -1,5 +1,6 @@
 import FadeInSection from './FadeInSection';
 import { DAYS_OF_WEEK } from '../../../lib/physicianOnboardingContent';
+import { formatLanguages } from '../../../lib/formatLanguage';
 
 interface ProfileAvailabilityProps {
   availableDays?: string[];
@@ -89,7 +90,7 @@ export default function ProfileAvailability({
                 <h3 className="font-bold text-lg text-deep-charcoal mb-4">
                   {isEs ? 'Idiomas' : 'Languages'}
                 </h3>
-                <p className="text-body-slate text-lg">{languages!.join(', ')}</p>
+                <p className="text-body-slate text-lg">{formatLanguages(languages, isEs, ', ')}</p>
               </div>
             )}
 
