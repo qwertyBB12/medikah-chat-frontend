@@ -2,6 +2,12 @@ import type { GetServerSideProps } from 'next';
 import { useRouter } from 'next/router';
 import { supabaseAdmin } from '../../lib/supabaseServer';
 import { nameToSlug } from '../../lib/slug';
+import { normalizeVisibility } from '../../lib/visibilityTypes';
+import { derivePublicProfile } from '../../lib/publicProfileDerive';
+import type {
+  DeriveSpecialtyRow,
+  DeriveEducationRow,
+} from '../../lib/publicProfileDerive';
 import { buildOGImageURL, ogBaseURL } from '../../lib/og-meta';
 import ProfileLayout from '../../components/physician/profile/ProfileLayout';
 import ProfileHero from '../../components/physician/profile/ProfileHero';
@@ -289,13 +295,55 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
       return { notFound: true };
     }
 
-    // Fetch website data if it exists and is enabled
-    const { data: websiteData } = await supabaseAdmin
-      .from('physician_website')
-      .select('*')
-      .eq('physician_id', physician.id)
-      .eq('enabled', true)
-      .maybeSingle();
+    // Derive-at-read (Phase B2): the public page reads canonical specialty +
+    // education and the per-field visibility toggles, instead of the flat
+    // physicians columns. A field shows iff its toggle is on AND the underlying
+    // row is verified (spec §5). Board certifications stay flat for now (no
+    // canonical board-cert store yet) and are gated by the certifications toggle
+    // only. Contact (physician_website office_*) is self-declared, not a
+    // credential, so it is gated by its toggle alone.
+    //
+    // No-regression: an already-verified physician had their specialty/education
+    // backfilled as verified (migrations 033/035) and every toggle defaults on,
+    // so the derived output is identical to the prior flat-column render.
+    const [
+      { data: websiteData },
+      { data: specialtyRows },
+      { data: educationRows },
+      { data: visibilityRow },
+    ] = await Promise.all([
+      supabaseAdmin
+        .from('physician_website')
+        .select('*')
+        .eq('physician_id', physician.id)
+        .eq('enabled', true)
+        .maybeSingle(),
+      supabaseAdmin
+        .from('physician_specialties')
+        .select('name, role, verification_status')
+        .eq('physician_id', physician.id),
+      supabaseAdmin
+        .from('physician_education')
+        .select('kind, institution, country, specialty, start_year, end_year, verification_status')
+        .eq('physician_id', physician.id),
+      supabaseAdmin
+        .from('physician_profile_visibility')
+        .select('toggles')
+        .eq('physician_id', physician.id)
+        .maybeSingle(),
+    ]);
+
+    const toggles = normalizeVisibility(visibilityRow?.toggles);
+
+    const derived = derivePublicProfile({
+      specialties: (specialtyRows || []) as DeriveSpecialtyRow[],
+      education: (educationRows || []) as DeriveEducationRow[],
+      toggles,
+      flatBoardCertifications: physician.board_certifications || [],
+    });
+
+    // Contact (self-declared website fields, gated by toggle only)
+    const showAddress = toggles.officeAddress && !!websiteData;
 
     return {
       props: {
@@ -304,15 +352,15 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
           photo_url: physician.photo_url || null,
           linkedin_url: physician.linkedin_url || null,
           bio: physician.bio || null,
-          primary_specialty: physician.primary_specialty || null,
-          sub_specialties: physician.sub_specialties || [],
-          board_certifications: physician.board_certifications || [],
-          medical_school: physician.medical_school || null,
-          medical_school_country: physician.medical_school_country || null,
-          graduation_year: physician.graduation_year || null,
+          primary_specialty: derived.primarySpecialty,
+          sub_specialties: derived.subSpecialties,
+          board_certifications: derived.boardCertifications,
+          medical_school: derived.medicalSchool,
+          medical_school_country: derived.medicalSchoolCountry,
+          graduation_year: derived.graduationYear,
           honors: physician.honors || [],
-          residency: physician.residency || [],
-          fellowships: physician.fellowships || [],
+          residency: derived.residency,
+          fellowships: derived.fellowships,
           publications: physician.publications || [],
           current_institutions: physician.current_institutions || [],
           available_days: physician.available_days || [],
@@ -328,12 +376,12 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
           value_pillars: websiteData.value_pillars || [],
           services: websiteData.services || [],
           faqs: websiteData.faqs || [],
-          office_address: websiteData.office_address || null,
-          office_city: websiteData.office_city || null,
-          office_country: websiteData.office_country || null,
-          office_phone: websiteData.office_phone || null,
-          office_email: websiteData.office_email || null,
-          appointment_url: websiteData.appointment_url || null,
+          office_address: showAddress ? websiteData.office_address || null : null,
+          office_city: showAddress ? websiteData.office_city || null : null,
+          office_country: showAddress ? websiteData.office_country || null : null,
+          office_phone: toggles.phone ? websiteData.office_phone || null : null,
+          office_email: toggles.officeEmail ? websiteData.office_email || null : null,
+          appointment_url: toggles.appointmentUrl ? websiteData.appointment_url || null : null,
           custom_tagline: websiteData.custom_tagline || null,
           communication_style: websiteData.communication_style || null,
           first_consult_expectation: websiteData.first_consult_expectation || null,
