@@ -17,7 +17,7 @@ interface SubSpecialtyFormProps {
 
 const content = {
   en: {
-    addEntry: '+ Add sub-specialty or fellowship',
+    addEntry: '+ Add sub-specialty',
     type: 'Type',
     subSpecialty: 'Sub-specialty',
     fellowship: 'Fellowship',
@@ -34,7 +34,7 @@ const content = {
     bodyPlaceholder: 'e.g. Cleveland Clinic, ABIM',
   },
   es: {
-    addEntry: '+ Agregar sub-especialidad o beca',
+    addEntry: '+ Agregar sub-especialidad',
     type: 'Tipo',
     subSpecialty: 'Sub-especialidad',
     fellowship: 'Beca',
@@ -174,43 +174,8 @@ export default function SubSpecialtyForm({
           key={row._localId}
           className="border border-warm-gray-800/[0.06] rounded-sm p-4 space-y-3 bg-white"
         >
-          {/* Type toggle */}
-          <div>
-            <label className="block font-dm-sans text-xs font-medium text-archival-grey mb-1.5">
-              {t.type}
-            </label>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  updateRow(row._localId, { type: 'sub_specialty' });
-                  handleFieldBlur(row._localId);
-                }}
-                className={`font-dm-sans text-sm px-4 py-1.5 rounded-sm border transition-colors ${
-                  row.type === 'sub_specialty'
-                    ? 'bg-inst-blue text-white border-inst-blue'
-                    : 'bg-white text-body-slate border-warm-gray-800/[0.15] hover:border-clinical-teal'
-                }`}
-              >
-                {t.subSpecialty}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  updateRow(row._localId, { type: 'fellowship' });
-                  handleFieldBlur(row._localId);
-                }}
-                className={`font-dm-sans text-sm px-4 py-1.5 rounded-sm border transition-colors ${
-                  row.type === 'fellowship'
-                    ? 'bg-inst-blue text-white border-inst-blue'
-                    : 'bg-white text-body-slate border-warm-gray-800/[0.15] hover:border-clinical-teal'
-                }`}
-              >
-                {t.fellowship}
-              </button>
-            </div>
-          </div>
-
+          {/* U4: Fellowship type removed — a subspecialty implies fellowship.
+              All entries are stored as 'sub_specialty'. */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Name */}
             <div>
