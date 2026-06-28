@@ -51,5 +51,7 @@ declare module 'next-auth/jwt' {
     // via Google or original email-password. /chat renders the demotion wall;
     // no dashboard access is granted on this session.
     bootstrap_demoted?: boolean;
+    // P0 self-heal — epoch seconds of the last role re-resolution (TTL throttle).
+    role_checked_at?: number;
   }
 }
