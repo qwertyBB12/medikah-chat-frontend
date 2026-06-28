@@ -10,6 +10,12 @@ import { getContactCompletionStatus } from '../../lib/contactTypes';
 import { getContactInfo, saveContactField } from '../../lib/contactClient';
 import CompletionBadge from './credentials/CompletionBadge';
 import type { SupportedLang } from '../../lib/i18n';
+import {
+  COUNTRIES,
+  statesForCountry,
+  composePhone,
+  parsePhone,
+} from '../../lib/geoData';
 
 interface ContactInfoSectionProps {
   physicianId: string;
@@ -114,6 +120,9 @@ export default function ContactInfoSection({
   const [savingFields, setSavingFields] = useState<Set<keyof ContactInfo>>(new Set());
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof ContactInfo, string>>>({});
   const [sameAsMailing, setSameAsMailing] = useState(false);
+  // U2: phone split into dial-code picker (US +1 / MX +52) + national number.
+  const [phoneDial, setPhoneDial] = useState('+1');
+  const [phoneNational, setPhoneNational] = useState('');
 
   // Load contact info on mount
   useEffect(() => {
@@ -122,6 +131,10 @@ export default function ContactInfoSection({
       setLoading(false);
       if (result.success && result.data) {
         setContact(result.data);
+        // U2: seed the split phone inputs from the stored value.
+        const parsed = parsePhone(result.data.phoneNumber);
+        setPhoneDial(parsed.dialCode);
+        setPhoneNational(parsed.national);
         // Detect if practice address matches mailing address
         const d = result.data;
         if (
@@ -193,6 +206,15 @@ export default function ContactInfoSection({
     [contact, physicianId, onContactChange]
   );
 
+  // U2: persist the composed phone string (dial + national → "+1 (555) 000-0000").
+  const savePhone = useCallback(
+    (dial: string, national: string) => {
+      const composed = composePhone(dial, national);
+      void handleBlur('phoneNumber', composed);
+    },
+    [handleBlur]
+  );
+
   const completionStatus = getContactCompletionStatus(contact);
   const badgeLabel =
     completionStatus === 'complete'
@@ -241,6 +263,129 @@ export default function ContactInfoSection({
     );
   };
 
+  const selectClass =
+    'w-full bg-linen-light rounded-sm p-3 font-dm-sans text-sm text-deep-charcoal border border-transparent focus:outline-none focus:border-clinical-teal transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
+
+  // U2: phone — dial-code picker (US +1 / MX +52) + auto-formatted national number.
+  const renderPhone = () => {
+    const isSaving = savingFields.has('phoneNumber');
+    const error = fieldErrors['phoneNumber'];
+    return (
+      <div>
+        <label htmlFor="contact-phoneNumber" className="block font-dm-sans text-xs font-bold text-deep-charcoal mb-1">
+          {t.phoneNumber}
+        </label>
+        <div className="relative flex gap-2">
+          <select
+            aria-label={t.country}
+            value={phoneDial}
+            onChange={(e) => {
+              setPhoneDial(e.target.value);
+              savePhone(e.target.value, phoneNational);
+            }}
+            className={`${selectClass} w-28 flex-none`}
+          >
+            {COUNTRIES.map((c) => (
+              <option key={c.code} value={c.dialCode}>
+                {c.flag} {c.dialCode}
+              </option>
+            ))}
+          </select>
+          <input
+            id="contact-phoneNumber"
+            type="tel"
+            inputMode="numeric"
+            defaultValue={phoneNational}
+            key={`phone-${phoneDial}-${phoneNational}`}
+            placeholder={phoneDial === '+52' ? '55 0000 0000' : '555 000 0000'}
+            onChange={(e) => setPhoneNational(e.target.value.replace(/\D/g, ''))}
+            onBlur={(e) => savePhone(phoneDial, e.target.value)}
+            className="w-full bg-linen-light rounded-sm p-3 font-dm-sans text-sm text-deep-charcoal border border-transparent focus:outline-none focus:border-clinical-teal transition-colors"
+          />
+          {isSaving && (
+            <span className="absolute right-3 top-1/2 -translate-y-1/2">
+              <Spinner />
+            </span>
+          )}
+        </div>
+        {error && <p className="font-dm-sans text-xs text-alert-garnet mt-1">{error}</p>}
+      </div>
+    );
+  };
+
+  // U3: country — US/MX only for launch. Stores the ISO code ('US' | 'MX').
+  const renderCountry = (field: keyof ContactInfo, label: string) => {
+    const isSaving = savingFields.has(field);
+    const disabled = sameAsMailing && field.startsWith('practiceAddress');
+    return (
+      <div>
+        <label htmlFor={`contact-${field}`} className="block font-dm-sans text-xs font-bold text-deep-charcoal mb-1">
+          {label}
+        </label>
+        <div className="relative">
+          <select
+            id={`contact-${field}`}
+            value={(contact[field] as string) || ''}
+            disabled={disabled}
+            onChange={(e) => handleBlur(field, e.target.value)}
+            className={selectClass}
+          >
+            <option value="">—</option>
+            {COUNTRIES.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.flag} {lang === 'es' ? c.nameEs : c.nameEn}
+              </option>
+            ))}
+          </select>
+          {isSaving && (
+            <span className="absolute right-8 top-1/2 -translate-y-1/2">
+              <Spinner />
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // U3: state/province — scoped to the chosen country (50 US / 32 MX). Stores name.
+  const renderState = (field: keyof ContactInfo, countryField: keyof ContactInfo, label: string) => {
+    const isSaving = savingFields.has(field);
+    const disabled = sameAsMailing && field.startsWith('practiceAddress');
+    const options = statesForCountry(contact[countryField] as string);
+    const current = (contact[field] as string) || '';
+    // Legacy free-text values that aren't in the scoped list still render as an option.
+    const hasCurrentInList = options.some((s) => s.name === current);
+    return (
+      <div>
+        <label htmlFor={`contact-${field}`} className="block font-dm-sans text-xs font-bold text-deep-charcoal mb-1">
+          {label}
+        </label>
+        <div className="relative">
+          <select
+            id={`contact-${field}`}
+            value={current}
+            disabled={disabled || options.length === 0}
+            onChange={(e) => handleBlur(field, e.target.value)}
+            className={selectClass}
+          >
+            <option value="">{options.length === 0 ? '— ' + t.country + ' —' : '—'}</option>
+            {!hasCurrentInList && current && <option value={current}>{current}</option>}
+            {options.map((s) => (
+              <option key={s.code} value={s.name}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+          {isSaving && (
+            <span className="absolute right-8 top-1/2 -translate-y-1/2">
+              <Spinner />
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div id="contact-info-section" className="border border-warm-gray-800/[0.06] rounded-md overflow-hidden">
       {/* Accordion header — min 44px touch target per UI-SPEC */}
@@ -272,13 +417,10 @@ export default function ContactInfoSection({
             <div className="space-y-5">
               <p className="font-dm-sans text-xs text-archival-grey">{t.subtitle}</p>
 
-              {/* Phone Number */}
-              {renderField('phoneNumber', t.phoneNumber, {
-                type: 'tel' as const,
-                placeholder: t.phonePlaceholder,
-              })}
+              {/* Phone Number (U2: dial-code picker + auto-format) */}
+              {renderPhone()}
 
-              {/* Mailing Address */}
+              {/* Mailing Address (U3: country before state so state scopes to it) */}
               <div>
                 <p className="font-dm-sans text-xs font-bold text-deep-charcoal mb-2 uppercase tracking-wide">
                   {t.mailingAddress}
@@ -286,9 +428,9 @@ export default function ContactInfoSection({
                 <div className="space-y-3">
                   {renderField('mailingAddressLine1', t.addressLine1)}
                   {renderField('mailingAddressCity', t.city)}
-                  {renderField('mailingAddressState', t.stateProvince)}
+                  {renderCountry('mailingAddressCountry', t.country)}
+                  {renderState('mailingAddressState', 'mailingAddressCountry', t.stateProvince)}
                   {renderField('mailingAddressPostalCode', t.postalCode)}
-                  {renderField('mailingAddressCountry', t.country)}
                 </div>
               </div>
 
@@ -310,9 +452,9 @@ export default function ContactInfoSection({
                 <div className="space-y-3">
                   {renderField('practiceAddressLine1', t.addressLine1)}
                   {renderField('practiceAddressCity', t.city)}
-                  {renderField('practiceAddressState', t.stateProvince)}
+                  {renderCountry('practiceAddressCountry', t.country)}
+                  {renderState('practiceAddressState', 'practiceAddressCountry', t.stateProvince)}
                   {renderField('practiceAddressPostalCode', t.postalCode)}
-                  {renderField('practiceAddressCountry', t.country)}
                 </div>
               </div>
 
