@@ -32,6 +32,8 @@ const content = {
     phonePlaceholder: '+1 (555) 000-0000',
     officePhone: 'Office Phone',
     faxNumber: 'Fax',
+    personalEmail: 'Personal Email',
+    officeEmail: 'Office Email',
     mailingAddress: 'Mailing Address',
     practiceAddress: 'Practice Address',
     sameAsMailing: 'Same as mailing address',
@@ -55,6 +57,8 @@ const content = {
     phonePlaceholder: '+52 (55) 0000-0000',
     officePhone: 'Telefono del Consultorio',
     faxNumber: 'Fax',
+    personalEmail: 'Correo Personal',
+    officeEmail: 'Correo del Consultorio',
     mailingAddress: 'Direccion Postal',
     practiceAddress: 'Direccion del Consultorio',
     sameAsMailing: 'Igual que la direccion postal',
@@ -444,6 +448,11 @@ export default function ContactInfoSection({
 
               {/* Office Phone (change 1: same dial-code + auto-format treatment) */}
               {renderPhoneField('officePhone', t.officePhone, officeDial, setOfficeDial, officeNational, setOfficeNational)}
+
+              {/* Personal + Office email (José 2026-06-28 change 5 — editable in the
+                  dashboard; some doctors keep separate personal and work addresses) */}
+              {renderField('personalEmail', t.personalEmail, { type: 'email', autoComplete: 'off', placeholder: 'nombre@ejemplo.com' })}
+              {renderField('officeEmail', t.officeEmail, { type: 'email', autoComplete: 'off', placeholder: 'consultorio@ejemplo.com' })}
 
               {/* Mailing Address (U3: country before state so state scopes to it) */}
               <div>
