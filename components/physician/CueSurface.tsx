@@ -308,6 +308,18 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
     return () => { controllerRef.current?.destroy(); controllerRef.current = null; };
   }, [isOpen, voiceSupported, locale, respond, speakGreeting, labels.error]);
 
+  // Wave 2a — close the mic while a write-confirm card is up (voice OR text path),
+  // so the doctor reading/clicking Confirm isn't captured as a stray utterance.
+  // The voice path also holds the mic from inside the controller; the Set-based
+  // hold is idempotent, and this is the single RELEASE point when the card
+  // resolves (Confirm or Cancel → pendingConfirm back to null → mic reopens).
+  useEffect(() => {
+    const ctrl = controllerRef.current;
+    if (!ctrl) return;
+    if (pendingConfirm) ctrl.holdMicForConfirm();
+    else ctrl.releaseMicAfterConfirm();
+  }, [pendingConfirm]);
+
   // Non-destructive close: only when the text input is empty.
   const tryClose = useCallback(() => {
     if (inputValue.trim() === '') onClose();

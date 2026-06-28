@@ -91,6 +91,13 @@ export class StreamingTTSPlayer {
     return this.playing
   }
 
+  /** The shared (unlocked) AudioContext, once unlock() has run — else null.
+   *  Lets sibling audio (e.g. the chime player) reuse the same already-unlocked
+   *  context and speaker output instead of creating a second one. */
+  get audioContext(): AudioContext | null {
+    return this.ctx
+  }
+
   /**
    * Play a full reply.  Splits on sentence boundaries and streams each chunk.
    * Resolves when playback completes (or is interrupted).
