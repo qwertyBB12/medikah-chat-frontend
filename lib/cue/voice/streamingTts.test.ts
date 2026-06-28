@@ -150,7 +150,10 @@ describe('StreamingTTSPlayer resilience (no silent sentence drops)', () => {
 
 describe('StreamingTTSPlayer pronunciation', () => {
   afterEach(() => vi.restoreAllMocks());
-  it('respells brand words in the request body before TTS', async () => {
+  it('sends the brand name "Cue" verbatim — never respelled to "Kew"', async () => {
+    // Wave-1 (keep 'Cue' spelling verbatim for TTS) dropped the ported BeNeXT
+    // "Kew" respelling — pronunciation.ts documents the respell list as
+    // intentionally EMPTY. The body must carry "Cue" untouched.
     const bodies: string[] = [];
     vi.stubGlobal('fetch', vi.fn(async (_url: string, init: RequestInit) => {
       bodies.push(JSON.parse(init.body as string).text);
@@ -159,6 +162,7 @@ describe('StreamingTTSPlayer pronunciation', () => {
     const player = new StreamingTTSPlayer({ locale: 'en' });
     // No AudioContext in jsdom → unlock is a no-op guard; play still issues fetches.
     await player.play('Cue here.');
-    expect(bodies[0]).toContain('Kew');
+    expect(bodies[0]).toContain('Cue');
+    expect(bodies[0]).not.toContain('Kew');
   });
 });
