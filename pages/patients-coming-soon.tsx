@@ -10,6 +10,8 @@ import Head from 'next/head';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import { useSession } from 'next-auth/react';
+import { useEffect } from 'react';
 import { LOGO_SRC } from '../lib/assets';
 
 const COPY = {
@@ -28,8 +30,19 @@ const COPY = {
 } as const;
 
 export default function PatientsComingSoon() {
-  const { locale } = useRouter();
+  const router = useRouter();
+  const { locale } = router;
   const t = COPY[locale === 'es' ? 'es' : 'en'];
+  const { data: session } = useSession();
+
+  // Recovery: a physician stranded on the wall (e.g. a stale 'patient' JWT that
+  // has since self-healed to 'physician') is bounced to their portal. Patients
+  // stay put — physician-only, so no /chat <-> /patients loop.
+  useEffect(() => {
+    if (session?.user?.role === 'physician') {
+      router.replace('/physicians');
+    }
+  }, [session, router]);
 
   return (
     <>

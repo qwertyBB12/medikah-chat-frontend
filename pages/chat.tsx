@@ -318,10 +318,18 @@ export default function ChatPage() {
       }
 
       if (pendingRedirectRef.current) {
-        const redirect = pendingRedirectRef.current === 'doctor'
-          ? '/physicians/onboard'
-          : PATIENT_PORTAL_OPEN ? '/patients' : '/patients-coming-soon';
+        const selection = pendingRedirectRef.current;
         pendingRedirectRef.current = null;
+        let redirect: string;
+        if (session.user.role === 'physician') {
+          // A resolved physician is never sent to a patient surface, even if
+          // they picked the patient pane at the gateway.
+          redirect = '/physicians';
+        } else if (selection === 'doctor') {
+          redirect = '/physicians/onboard';
+        } else {
+          redirect = PATIENT_PORTAL_OPEN ? '/patients' : '/patients-coming-soon';
+        }
         router.replace(redirect);
       } else {
         const role = session.user.role || 'patient';
@@ -454,7 +462,10 @@ export default function ChatPage() {
   };
 
   const handleSocialSignIn = (provider: 'google') => {
-    const callbackUrl = portalSelection === 'doctor' ? '/physicians/onboard' : '/patients';
+    // Return to /chat (not a hardcoded /patients) so the redirect effect routes
+    // by the resolved/self-healed role. A direct /patients callback would hit
+    // the role-agnostic PATIENT_PORTAL_OPEN flag-wall even for a physician.
+    const callbackUrl = portalSelection === 'doctor' ? '/physicians/onboard' : '/chat';
     signIn(provider, { callbackUrl });
   };
 

@@ -300,6 +300,54 @@ export const authOptions: NextAuthOptions = {
         }
       }
 
+      // ── Self-healing role (P0 stuck-physician rescue) ──────────────────
+      // Stale JWTs minted before the physician record existed carry
+      // role='patient' and never re-resolve (role is written only under
+      // if(user)/if(account), both false on a refresh). Re-resolve from the
+      // provider-verified, tamper-proof token.email and UPGRADE
+      // patient->physician ONLY. NEVER downgrade.
+      //  - TOTP-pending tokens early-return in the mailcow-imap branch above
+      //    and never reach here.
+      //  - session_iat is NOT touched: the Phase 21 SSO revocation watermark
+      //    must stay pinned at sign-in; re-stamping would un-revoke copied tokens.
+      //  - TTL stamp bounds DB load on the hot /api/auth/session path; stamped
+      //    BEFORE the query so a failed/slow lookup still throttles.
+      {
+        const SELF_HEAL_TTL = 60; // seconds — bounds query amplification
+        const lastChecked = token.role_checked_at ?? 0;
+        const now = nowEpochSeconds();
+        if (
+          (!token.role || token.role === 'patient') &&
+          token.needs_totp !== true &&
+          now - lastChecked >= SELF_HEAL_TTL
+        ) {
+          token.role_checked_at = now; // stamp BEFORE the query (idempotent throttle)
+          const email = token.email || '';
+          if (email) {
+            // fail-open: detectUserRole returns 'patient' on any error => no upgrade
+            const resolved = await detectUserRole(email);
+            if (resolved === 'physician') {
+              // ONLY ever upgrade to physician
+              token.role = 'physician';
+              // Re-evaluate the bootstrap-demotion wall on upgrade: the
+              // sign-in-only gates above do NOT run on a refresh, so without
+              // this a graduated physician healed from a stale 'patient' token
+              // would bypass the demotion wall.
+              const demotedPhysicianId = await checkBootstrapDemotion(email);
+              if (demotedPhysicianId) {
+                token.bootstrap_demoted = true;
+                void logEvent({
+                  physicianId: demotedPhysicianId,
+                  actorRole: 'system',
+                  action: 'workspace.bootstrap_demotion_hit',
+                  detail: { provider: 'self_heal', trigger: 'jwt_refresh' },
+                });
+              }
+            }
+          }
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {

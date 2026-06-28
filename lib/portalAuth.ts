@@ -18,27 +18,39 @@ export async function detectUserRole(email: string): Promise<PortalRole> {
 
   try {
     const canonicalEmail = email.toLowerCase();
+    let lookupError: unknown = null;
 
     // Step 1: direct match on physicians.email
-    const { data: physician } = await supabaseAdmin
+    const { data: physician, error: physErr } = await supabaseAdmin
       .from('physicians')
       .select('id')
       .eq('email', canonicalEmail)
       .maybeSingle();
-
+    if (physErr) {
+      console.error('detectUserRole: physicians lookup error', physErr);
+      lookupError = physErr;
+    }
     if (physician) return 'physician';
 
     // Step 2: the login email may be an alias of a canonical physician record
     // (D-09 funneling). Mirror checkBootstrapDemotion() so physicians who sign
     // in with a non-canonical email (e.g. personal Google account) are not
     // misclassified as patients and routed to /patients.
-    const { data: alias } = await supabaseAdmin
+    const { data: alias, error: aliasErr } = await supabaseAdmin
       .from('physician_email_aliases')
       .select('physician_id')
       .eq('email', canonicalEmail)
       .maybeSingle();
-
+    if (aliasErr) {
+      console.error('detectUserRole: alias lookup error', aliasErr);
+      lookupError = aliasErr;
+    }
     if (alias?.physician_id) return 'physician';
+
+    // Neither matched. If a query errored, surface it so an upgrade-only caller
+    // retries next cycle instead of caching a wrong 'patient'. A clean no-match
+    // (no error) is a legitimate patient.
+    if (lookupError) throw lookupError;
 
     // Future: Check insurers table
     // Future: Check employers table
