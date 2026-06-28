@@ -53,6 +53,7 @@ import {
   type CuePendingConfirm,
   type CueToolEvent,
 } from '../../lib/cue/cueStream';
+import { CueMemoryConsent, CueMemoryPanel } from './CueMemory';
 
 // ── re-exports kept for tests + custom-sogo.js parity ───────────────────────
 // The pure stream/sentinel helpers live in lib/cue/cueStream.ts (testable,
@@ -83,7 +84,7 @@ const LABELS = {
         error: 'Something went wrong. Please try again.', mic: 'Send message',
         confirmBlock: 'Block this time?', confirmClear: 'Clear Cue blocks?',
         confirmEyebrow: 'Confirm before writing', confirm: 'Confirm', cancel: 'Cancel',
-        hintLeft: 'Cue · English + Spanish', done: 'Done',
+        hintLeft: 'Cue · English + Spanish', done: 'Done', memory: 'What Cue remembers',
         blockedResult: (uid: string) => `Time blocked. (ref ${uid})`,
         clearResult: (deleted: number, kept: number) => `${deleted} removed, ${kept} kept.` },
   es: { close: 'Cerrar', collapse: 'Contraer', you: 'Tú', context: 'Espacio clínico',
@@ -91,7 +92,7 @@ const LABELS = {
         error: 'Algo salió mal. Inténtalo de nuevo.', mic: 'Enviar mensaje',
         confirmBlock: '¿Bloquear este horario?', confirmClear: '¿Liberar los bloques de Cue?',
         confirmEyebrow: 'Confirmar antes de escribir', confirm: 'Confirmar', cancel: 'Cancelar',
-        hintLeft: 'Cue · español + inglés', done: 'Listo',
+        hintLeft: 'Cue · español + inglés', done: 'Listo', memory: 'Lo que Cue recuerda',
         blockedResult: (uid: string) => `Horario bloqueado. (ref ${uid})`,
         clearResult: (deleted: number, kept: number) => `${deleted} eliminados, ${kept} conservados.` },
 } as const;
@@ -171,6 +172,12 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
   const [isWriting, setIsWriting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // Phase 25 Slice 3 — cross-session memory consent + management surface.
+  // avisoAck: null = unknown/loading, false = needs the one-time consent, true = active.
+  const [avisoAck, setAvisoAck] = useState<boolean | null>(null);
+  const [consentDismissed, setConsentDismissed] = useState(false); // "not now" for this session
+  const [showMemory, setShowMemory] = useState(false);
+
   const smRef = useRef<VoiceStateMachine | null>(null);
   if (smRef.current === null) smRef.current = new VoiceStateMachine();
   const controllerRef = useRef<ContinuousFlowController | null>(null);
@@ -188,6 +195,19 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
     setOrbState(sm.state);
     return sm.subscribeOrbEvents((p) => setOrbState(p.state));
   }, []);
+
+  // Phase 25 Slice 3 — load the memory aviso status each time the dock opens.
+  // null on any failure → no consent prompt (fail-quiet; memory stays dark).
+  useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+    setShowMemory(false);
+    fetch('/api/cue/memory/aviso')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (!cancelled && d) setAvisoAck(Boolean(d.acknowledged)); })
+      .catch(() => { /* leave null — memory dark, no prompt */ });
+    return () => { cancelled = true; };
+  }, [isOpen]);
 
   // respond() — the brain turn the controller (and text submit) call. Posts the
   // canonical messages[] shape to /api/cue/chat and STREAM-READS the reply
@@ -462,10 +482,37 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
           <span className="mk-dock-name">Cue</span>
           <span className="mk-dock-ctx">· {labels.context}</span>
           <span className="mk-dock-actions">
+            {avisoAck === true && (
+              <button
+                type="button"
+                className="mk-icbtn"
+                aria-label={labels.memory}
+                title={labels.memory}
+                onClick={() => setShowMemory((v) => !v)}
+              >
+                {/* bookmark/memory glyph */}
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                  <path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z" />
+                </svg>
+              </button>
+            )}
             <button type="button" className="mk-icbtn" aria-label={labels.collapse} onClick={onClose}>⌄</button>
             <button type="button" className="mk-icbtn" aria-label={labels.close} onClick={onClose}>&times;</button>
           </span>
         </header>
+
+        {/* Phase 25 Slice 3 — one-time consent overlay + memory management panel.
+            Both are position:absolute inset:0 within the dock (see CueMemory.tsx). */}
+        {avisoAck === false && !consentDismissed && (
+          <CueMemoryConsent
+            locale={locale}
+            onAck={() => setAvisoAck(true)}
+            onDecline={() => setConsentDismissed(true)}
+          />
+        )}
+        {showMemory && avisoAck === true && (
+          <CueMemoryPanel locale={locale} onClose={() => setShowMemory(false)} />
+        )}
 
         <div className="mk-thread" aria-live="polite" aria-atomic="false">
           {spoken && (
