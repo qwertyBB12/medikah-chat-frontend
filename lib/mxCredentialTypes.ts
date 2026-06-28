@@ -41,6 +41,7 @@ export interface ConsejoEntry {
   id?: string;
   consejoName: string; // from CONACEM list or custom entry
   specialty: string; // specialty name this cert covers
+  registrationNumber?: string; // Consejo registration/certification number (José change 3) — parallels US ABIM id
   recertificationYear?: number; // year of last recertification cycle (5-year cycles)
   verificationStatus: 'pending' | 'verified' | 'failed' | 'manual_review';
 }

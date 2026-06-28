@@ -40,6 +40,7 @@ const MX_CERTIFICATION_WATCH_FIELDS = [
   'certifying_body',
   'specialty',
   'certification_type',
+  'registration_number',
   'recertification_year',
   'point_threshold_met',
   'member_number',
@@ -280,6 +281,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           id: c.id,
           consejoName: c.certifying_body || '',
           specialty: c.specialty || '',
+          registrationNumber: c.registration_number || undefined,
           recertificationYear: c.recertification_year || undefined,
           verificationStatus: c.verification_status as ConsejoEntry['verificationStatus'],
         }));
@@ -677,6 +679,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             .update({
               certifying_body: consejoData.consejoName.trim(),
               specialty: consejoData.specialty.trim(),
+              registration_number: consejoData.registrationNumber?.trim() || null,
               recertification_year: consejoData.recertificationYear || null,
               point_threshold_met: null, // Phase 8 concern (admin-driven evaluation in Phase 9)
               updated_at: new Date().toISOString(),
@@ -717,6 +720,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               certification_type: 'consejo',
               certifying_body: consejoData.consejoName.trim(),
               specialty: consejoData.specialty.trim(),
+              registration_number: consejoData.registrationNumber?.trim() || null,
               recertification_year: consejoData.recertificationYear || null,
               point_threshold_met: null, // Phase 8 concern (admin-driven evaluation in Phase 9)
               verification_status: 'pending',
