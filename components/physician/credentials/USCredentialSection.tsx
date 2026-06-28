@@ -1,17 +1,21 @@
 /**
  * USCredentialSection — Vertical accordion container for US credential forms.
- * Four panels: NPI, State Licenses, Board Certifications, Subspecialties/Fellowships.
- * Loads credential data on mount, passes to sub-forms with auto-save callbacks.
+ * Four panels: NPI, State Licenses, Specialties (unified primary + subspecialties
+ * with per-row board-certified), and — historically — separate board/sub panels.
+ * Phase B1 (Annotation 3) collapsed Board Certifications + Sub-specialties into the
+ * single canonical Specialties panel backed by physician_specialties.
+ * Loads credential + specialty data on mount, passes to sub-forms with auto-save.
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import type { CredentialResponse } from '../../../lib/credentialTypes';
 import { getCredentials } from '../../../lib/credentialClient';
+import type { PhysicianSpecialty } from '../../../lib/specialtyTypes';
+import { getSpecialties } from '../../../lib/specialtyClient';
 import type { SupportedLang } from '../../../lib/i18n';
 import NPIForm from './NPIForm';
 import StateLicenseForm from './StateLicenseForm';
-import BoardCertForm from './BoardCertForm';
-import SubSpecialtyForm from './SubSpecialtyForm';
+import SpecialtiesSection from './SpecialtiesSection';
 import CompletionBadge from './CompletionBadge';
 import type { CompletionStatus } from './CompletionBadge';
 
@@ -20,21 +24,17 @@ interface USCredentialSectionProps {
   lang: SupportedLang;
 }
 
-type PanelId = 'npi' | 'stateLicenses' | 'boardCerts' | 'subSpecialties';
+type PanelId = 'npi' | 'stateLicenses' | 'specialties';
 
 const content = {
   en: {
     sectionTitle: 'US Credentials',
     npi: 'NPI Number',
     stateLicenses: 'State Medical Licenses',
-    boardCerts: 'Board Certifications',
-    subSpecialties: 'Subspecialties',
+    specialties: 'Specialties',
     empty: 'Not started',
     inProgress: 'In progress',
     complete: 'Complete',
-    fsmbClear: 'Disciplinary check: Clear',
-    fsmbFlagged: 'Disciplinary check: Flagged — our team will follow up.',
-    fsmbPending: 'Disciplinary check: Pending',
     loading: 'Loading credentials...',
     loadError: 'Could not load credentials. Please refresh.',
   },
@@ -42,14 +42,10 @@ const content = {
     sectionTitle: 'Credenciales de EE.UU.',
     npi: 'Numero NPI',
     stateLicenses: 'Licencias Medicas Estatales',
-    boardCerts: 'Certificaciones de Junta',
-    subSpecialties: 'Subespecialidades',
+    specialties: 'Especialidades',
     empty: 'No iniciado',
     inProgress: 'En progreso',
     complete: 'Completo',
-    fsmbClear: 'Verificacion disciplinaria: Sin hallazgos',
-    fsmbFlagged: 'Verificacion disciplinaria: Marcado — nuestro equipo dara seguimiento.',
-    fsmbPending: 'Verificacion disciplinaria: Pendiente',
     loading: 'Cargando credenciales...',
     loadError: 'No se pudieron cargar las credenciales. Por favor recargue.',
   },
@@ -63,18 +59,15 @@ function getNPICompletion(data: CredentialResponse | null): CompletionStatus {
 
 function getLicenseCompletion(data: CredentialResponse | null): CompletionStatus {
   if (!data || data.stateLicenses.length === 0) return 'empty';
-  if (data.stateLicenses.some(l => l.isPrimary)) return 'complete';
+  if (data.stateLicenses.some((l) => l.isPrimary)) return 'complete';
   return 'in_progress';
 }
 
-function getBoardCertCompletion(data: CredentialResponse | null): CompletionStatus {
-  if (!data || data.boardCertifications.length === 0) return 'empty';
-  return 'complete';
-}
-
-function getSubSpecCompletion(data: CredentialResponse | null): CompletionStatus {
-  if (!data || data.subSpecialties.length === 0) return 'empty';
-  return 'complete';
+function getSpecialtiesCompletion(specialties: PhysicianSpecialty[]): CompletionStatus {
+  const us = specialties.filter((s) => s.country === 'US');
+  if (us.length === 0) return 'empty';
+  if (us.some((s) => s.role === 'primary' && s.name.trim())) return 'complete';
+  return 'in_progress';
 }
 
 interface ChevronProps {
@@ -98,12 +91,17 @@ export default function USCredentialSection({ physicianId, lang }: USCredentialS
   const t = content[lang];
   const [openPanel, setOpenPanel] = useState<PanelId | null>('npi');
   const [credentials, setCredentials] = useState<CredentialResponse | null>(null);
+  const [specialties, setSpecialties] = useState<PhysicianSpecialty[]>([]);
   const [loadStatus, setLoadStatus] = useState<'loading' | 'loaded' | 'error'>('loading');
 
   const fetchCredentials = useCallback(async () => {
-    const result = await getCredentials(physicianId);
-    if (result.success && result.data) {
-      setCredentials(result.data);
+    const [credResult, specResult] = await Promise.all([
+      getCredentials(physicianId),
+      getSpecialties(physicianId),
+    ]);
+    if (credResult.success && credResult.data) {
+      setCredentials(credResult.data);
+      setSpecialties(specResult.success && specResult.data ? specResult.data.specialties : []);
       setLoadStatus('loaded');
     } else {
       setLoadStatus('error');
@@ -114,8 +112,13 @@ export default function USCredentialSection({ physicianId, lang }: USCredentialS
     fetchCredentials();
   }, [fetchCredentials]);
 
+  const refreshSpecialties = useCallback(async () => {
+    const specResult = await getSpecialties(physicianId);
+    if (specResult.success && specResult.data) setSpecialties(specResult.data.specialties);
+  }, [physicianId]);
+
   const togglePanel = (panelId: PanelId) => {
-    setOpenPanel(prev => (prev === panelId ? null : panelId));
+    setOpenPanel((prev) => (prev === panelId ? null : panelId));
   };
 
   const handleSave = useCallback(() => {
@@ -138,48 +141,18 @@ export default function USCredentialSection({ physicianId, lang }: USCredentialS
     );
   }
 
-  const panels: { id: PanelId; label: string; completion: CompletionStatus; completionLabel: string }[] = [
-    {
-      id: 'npi',
-      label: t.npi,
-      completion: getNPICompletion(credentials),
-      completionLabel: getNPICompletion(credentials) === 'complete'
-        ? t.complete
-        : getNPICompletion(credentials) === 'in_progress'
-        ? t.inProgress
-        : t.empty,
-    },
-    {
-      id: 'stateLicenses',
-      label: t.stateLicenses,
-      completion: getLicenseCompletion(credentials),
-      completionLabel: getLicenseCompletion(credentials) === 'complete'
-        ? t.complete
-        : getLicenseCompletion(credentials) === 'in_progress'
-        ? t.inProgress
-        : t.empty,
-    },
-    {
-      id: 'boardCerts',
-      label: t.boardCerts,
-      completion: getBoardCertCompletion(credentials),
-      completionLabel: getBoardCertCompletion(credentials) === 'complete'
-        ? t.complete
-        : t.empty,
-    },
-    {
-      id: 'subSpecialties',
-      label: t.subSpecialties,
-      completion: getSubSpecCompletion(credentials),
-      completionLabel: getSubSpecCompletion(credentials) === 'complete'
-        ? t.complete
-        : t.empty,
-    },
+  const completionLabel = (c: CompletionStatus): string =>
+    c === 'complete' ? t.complete : c === 'in_progress' ? t.inProgress : t.empty;
+
+  const panels: { id: PanelId; label: string; completion: CompletionStatus }[] = [
+    { id: 'npi', label: t.npi, completion: getNPICompletion(credentials) },
+    { id: 'stateLicenses', label: t.stateLicenses, completion: getLicenseCompletion(credentials) },
+    { id: 'specialties', label: t.specialties, completion: getSpecialtiesCompletion(specialties) },
   ];
 
   return (
     <div className="space-y-3">
-      {panels.map(panel => {
+      {panels.map((panel) => {
         const isOpen = openPanel === panel.id;
         return (
           <div
@@ -197,7 +170,7 @@ export default function USCredentialSection({ physicianId, lang }: USCredentialS
                 <span className="font-dm-sans text-sm font-semibold text-deep-charcoal">
                   {panel.label}
                 </span>
-                <CompletionBadge status={panel.completion} label={panel.completionLabel} />
+                <CompletionBadge status={panel.completion} label={completionLabel(panel.completion)} />
               </div>
               <Chevron open={isOpen} />
             </button>
@@ -223,20 +196,13 @@ export default function USCredentialSection({ physicianId, lang }: USCredentialS
                       lang={lang}
                     />
                   )}
-                  {panel.id === 'boardCerts' && (
-                    <BoardCertForm
+                  {panel.id === 'specialties' && (
+                    <SpecialtiesSection
                       physicianId={physicianId}
-                      certifications={credentials?.boardCertifications ?? []}
-                      onSave={handleSave}
                       lang={lang}
-                    />
-                  )}
-                  {panel.id === 'subSpecialties' && (
-                    <SubSpecialtyForm
-                      physicianId={physicianId}
-                      entries={credentials?.subSpecialties ?? []}
-                      onSave={handleSave}
-                      lang={lang}
+                      country="US"
+                      specialties={specialties}
+                      onRefresh={refreshSpecialties}
                     />
                   )}
                 </div>
