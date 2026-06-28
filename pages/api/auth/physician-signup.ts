@@ -93,12 +93,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // Create the Supabase Auth user with the chosen password. email_confirm:true so
   // they can sign in immediately (they reached this endpoint from our own site).
   // NOTE: password is passed straight to Supabase over TLS and is NEVER logged.
-  const { data, error } = await supabaseAdmin.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: { role: 'physician' },
-  });
+  //
+  // The whole call is wrapped: createUser can REJECT (not just return {error}) on a
+  // transient network blip / cold-start slowness to Supabase. An unhandled rejection
+  // crashes the serverless function → the client sees a raw 502 instead of a clean,
+  // retryable error. Always return JSON so the UI (and its auto-retry) can recover.
+  let data: Awaited<ReturnType<typeof supabaseAdmin.auth.admin.createUser>>['data'] | null = null;
+  let error: Awaited<ReturnType<typeof supabaseAdmin.auth.admin.createUser>>['error'] | null = null;
+  try {
+    const result = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { role: 'physician' },
+    });
+    data = result.data;
+    error = result.error;
+  } catch (err) {
+    console.error('[physician-signup] createUser threw:', err instanceof Error ? err.message : err);
+    return res.status(503).json({ error: 'Could not create account. Please try again.', reason: 'transient' });
+  }
 
   if (error) {
     const msg = error.message || '';
@@ -113,5 +127,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(500).json({ error: 'Could not create account. Please try again.' });
   }
 
-  return res.status(201).json({ ok: true, email: data.user?.email ?? email });
+  return res.status(201).json({ ok: true, email: data?.user?.email ?? email });
 }
