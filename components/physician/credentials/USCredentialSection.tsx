@@ -16,15 +16,18 @@ import type { SupportedLang } from '../../../lib/i18n';
 import NPIForm from './NPIForm';
 import StateLicenseForm from './StateLicenseForm';
 import SpecialtiesSection from './SpecialtiesSection';
+import USIdentityForm from './USIdentityForm';
 import CompletionBadge from './CompletionBadge';
 import type { CompletionStatus } from './CompletionBadge';
+import { getUSIdentity } from '../../../lib/usIdentityClient';
+import type { USIdentity } from '../../../lib/usIdentityTypes';
 
 interface USCredentialSectionProps {
   physicianId: string;
   lang: SupportedLang;
 }
 
-type PanelId = 'npi' | 'stateLicenses' | 'specialties';
+type PanelId = 'npi' | 'stateLicenses' | 'specialties' | 'identity';
 
 const content = {
   en: {
@@ -32,6 +35,7 @@ const content = {
     npi: 'NPI Number',
     stateLicenses: 'State Medical Licenses',
     specialties: 'Specialties',
+    identity: 'State ID / Driver License',
     empty: 'Not started',
     inProgress: 'In progress',
     complete: 'Complete',
@@ -43,6 +47,7 @@ const content = {
     npi: 'Numero NPI',
     stateLicenses: 'Licencias Medicas Estatales',
     specialties: 'Especialidades',
+    identity: 'Identificación estatal / licencia de conducir',
     empty: 'No iniciado',
     inProgress: 'En progreso',
     complete: 'Completo',
@@ -70,6 +75,16 @@ function getSpecialtiesCompletion(specialties: PhysicianSpecialty[]): Completion
   return 'in_progress';
 }
 
+function getIdentityCompletion(identity: USIdentity | null): CompletionStatus {
+  if (!identity) return 'empty';
+  const hasState = !!identity.issuingState?.trim();
+  const hasNumber = !!identity.idNumber?.trim();
+  if (hasState && hasNumber) return 'complete';
+  if (hasState || hasNumber || identity.idFrontUploaded || identity.idBackUploaded)
+    return 'in_progress';
+  return 'empty';
+}
+
 interface ChevronProps {
   open: boolean;
 }
@@ -92,20 +107,28 @@ export default function USCredentialSection({ physicianId, lang }: USCredentialS
   const [openPanel, setOpenPanel] = useState<PanelId | null>('npi');
   const [credentials, setCredentials] = useState<CredentialResponse | null>(null);
   const [specialties, setSpecialties] = useState<PhysicianSpecialty[]>([]);
+  const [usIdentity, setUSIdentity] = useState<USIdentity | null>(null);
   const [loadStatus, setLoadStatus] = useState<'loading' | 'loaded' | 'error'>('loading');
 
   const fetchCredentials = useCallback(async () => {
-    const [credResult, specResult] = await Promise.all([
+    const [credResult, specResult, identityResult] = await Promise.all([
       getCredentials(physicianId),
       getSpecialties(physicianId),
+      getUSIdentity(physicianId),
     ]);
     if (credResult.success && credResult.data) {
       setCredentials(credResult.data);
       setSpecialties(specResult.success && specResult.data ? specResult.data.specialties : []);
+      setUSIdentity(identityResult.success && identityResult.data ? identityResult.data : null);
       setLoadStatus('loaded');
     } else {
       setLoadStatus('error');
     }
+  }, [physicianId]);
+
+  const refreshIdentity = useCallback(async () => {
+    const result = await getUSIdentity(physicianId);
+    if (result.success && result.data) setUSIdentity(result.data);
   }, [physicianId]);
 
   useEffect(() => {
@@ -148,6 +171,7 @@ export default function USCredentialSection({ physicianId, lang }: USCredentialS
     { id: 'npi', label: t.npi, completion: getNPICompletion(credentials) },
     { id: 'stateLicenses', label: t.stateLicenses, completion: getLicenseCompletion(credentials) },
     { id: 'specialties', label: t.specialties, completion: getSpecialtiesCompletion(specialties) },
+    { id: 'identity', label: t.identity, completion: getIdentityCompletion(usIdentity) },
   ];
 
   return (
@@ -203,6 +227,17 @@ export default function USCredentialSection({ physicianId, lang }: USCredentialS
                       country="US"
                       specialties={specialties}
                       onRefresh={refreshSpecialties}
+                    />
+                  )}
+                  {panel.id === 'identity' && (
+                    <USIdentityForm
+                      physicianId={physicianId}
+                      lang={lang}
+                      identity={usIdentity ?? {
+                        idFrontUploaded: false,
+                        idBackUploaded: false,
+                      }}
+                      onRefresh={refreshIdentity}
                     />
                   )}
                 </div>
