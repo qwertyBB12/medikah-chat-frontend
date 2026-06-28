@@ -92,7 +92,8 @@ export default function CedulaProfesionalForm({
   // Registro Estatal state
   const [numeroRegistro, setNumeroRegistro] = useState(registroEstatal?.numeroRegistro || '');
   const [issuingState, setIssuingState] = useState(registroEstatal?.issuingState || '');
-  const [degreeType, setDegreeType] = useState(registroEstatal?.degreeType || '');
+  // U5: Degree Type is no longer editable in the UI; preserve the stored value on save.
+  const degreeType = registroEstatal?.degreeType || '';
   const [registrationDate, setRegistrationDate] = useState(registroEstatal?.registrationDate || '');
   const [registroSaveStatus, setRegistroSaveStatus] = useState<SaveStatus>('idle');
 
@@ -406,19 +407,8 @@ export default function CedulaProfesionalForm({
           </select>
         </div>
 
-        {/* Degree Type */}
-        <div>
-          <label className="block font-dm-sans text-sm font-medium text-deep-charcoal mb-1.5">
-            {t.degreeType}
-          </label>
-          <input
-            type="text"
-            value={degreeType}
-            onChange={e => setDegreeType(e.target.value)}
-            onBlur={saveRegistroEstatal}
-            className="w-full font-dm-sans text-sm border rounded-sm px-3 py-2 border-warm-gray-800/[0.15] bg-white focus:outline-none focus:ring-2 focus:ring-clinical-teal/40"
-          />
-        </div>
+        {/* U5: Degree Type input removed — meaningless field (we only onboard
+            physicians). The stored value is preserved on save but no longer shown. */}
 
         {/* Registration Date (optional) */}
         <div>
