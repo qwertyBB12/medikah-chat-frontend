@@ -3,6 +3,7 @@ import FadeInSection from './FadeInSection';
 
 interface ProfileHeroProps {
   fullName: string;
+  honorific?: string;
   photoUrl?: string;
   tagline?: string;
   primarySpecialty?: string;
@@ -14,6 +15,7 @@ interface ProfileHeroProps {
 
 export default function ProfileHero({
   fullName,
+  honorific,
   photoUrl,
   tagline,
   primarySpecialty,
@@ -49,7 +51,7 @@ export default function ProfileHero({
               </div>
 
               <h1 className="font-heading text-[clamp(2.5rem,8vw,4.5rem)] font-medium uppercase tracking-[-0.02em] leading-[0.95] text-white">
-                {fullName}
+                {honorific ? `${honorific} ${fullName}` : fullName}
               </h1>
               {tagline && tagline.trim().length > 0 && (
                 <p className="text-white/60 text-lg font-body mt-3">{tagline}</p>
