@@ -78,6 +78,13 @@ export interface ContinuousFlowOptions {
   chimes?: boolean
   /** Which earcon to play (default DEFAULT_CHIME). Founder-tunable. */
   chimeSpec?: ChimeSpec
+  /**
+   * Wave 3: mic cadence.
+   *   'continuous' (default) — the mic rests OPEN; Cue listens hands-free.
+   *   'ptt'                  — the mic rests CLOSED; it opens only for a window
+   *                            the doctor taps open (push-to-talk).
+   */
+  flowMode?: 'continuous' | 'ptt'
 }
 
 export { isContinuousVADSupported, diagnoseVADSupport }
@@ -96,7 +103,9 @@ export class ContinuousFlowController {
    * reopens once BOTH clear — fixing the bug where the speech-end `finally`
    * reopened the mic while a confirm card was still up.
    */
-  private micHolds = new Set<'speech' | 'confirm'>()
+  private micHolds = new Set<'speech' | 'confirm' | 'ptt'>()
+  /** Wave 3: mic cadence — 'continuous' rests open, 'ptt' rests closed. */
+  private flowMode: 'continuous' | 'ptt'
   /** Wave 2: have we played an OPEN chime yet this session? Gates the close
    *  chime so the very first earcon a doctor hears is the OPEN one after the
    *  greeting — never a lone close chime before Cue has even spoken. */
@@ -112,6 +121,7 @@ export class ContinuousFlowController {
       onSentence: opts.onCueSentence,   // Phase 55: caption strip (D-08)
     })
     this.chimesEnabled = opts.chimes !== false
+    this.flowMode = opts.flowMode ?? 'continuous'
     // Earcons share the TTS player's already-unlocked AudioContext (sourced
     // lazily — it is created in tts.unlock() during start()).
     this.chimes = new ChimePlayer(
@@ -151,6 +161,10 @@ export class ContinuousFlowController {
     }
     await this.listener.start()
     this.state.send('start', { source: 'user' })
+    // Wave 3: in push-to-talk the mic rests CLOSED — close it immediately so it
+    // only ever opens for a window the doctor taps. (chimedOpen is false here, so
+    // no close earcon fires before the greeting.)
+    if (this.flowMode === 'ptt') this.addMicHold('ptt')
   }
 
   stop(): void {
@@ -212,7 +226,7 @@ export class ContinuousFlowController {
    * The close chime is suppressed until the first open chime has played, so the
    * opening greeting is never preceded by a lone close earcon.
    */
-  private addMicHold(reason: 'speech' | 'confirm'): void {
+  private addMicHold(reason: 'speech' | 'confirm' | 'ptt'): void {
     const wasOpen = this.micHolds.size === 0
     this.micHolds.add(reason)
     if (!wasOpen) return // already closed — nothing to pause/chime
@@ -224,10 +238,18 @@ export class ContinuousFlowController {
     if (this.chimesEnabled && this.chimedOpen) this.chimes.playClose()
   }
 
-  private releaseMicHold(reason: 'speech' | 'confirm'): void {
+  private releaseMicHold(reason: 'speech' | 'confirm' | 'ptt'): void {
     if (!this.micHolds.has(reason)) return
     this.micHolds.delete(reason)
     if (this.micHolds.size > 0) return // still held by another reason
+    // Wave 3: push-to-talk rests CLOSED. When a turn ends (speech/confirm
+    // clears), don't reopen to continuous listening — fall back to the idle
+    // 'ptt' hold so the doctor taps to talk again. Releasing 'ptt' itself IS the
+    // tap-to-talk, so that one falls through and reopens.
+    if (this.flowMode === 'ptt' && reason !== 'ptt') {
+      this.micHolds.add('ptt') // mic is already physically paused — keep it closed, no chime
+      return
+    }
     if (this.destroyed) return
     try {
       this.listener?.resume()
@@ -265,6 +287,27 @@ export class ContinuousFlowController {
   /** Wave 2a: the confirm card was resolved (Confirm or Cancel) — reopen. */
   releaseMicAfterConfirm(): void {
     this.releaseMicHold('confirm')
+  }
+
+  /**
+   * Wave 3 (push-to-talk): the doctor tapped "talk" — open a bounded listening
+   * window (mic opens, open earcon). VAD captures the utterance; the turn then
+   * returns the mic to its idle-closed PTT rest automatically. No-op outside ptt.
+   */
+  startListeningWindow(): void {
+    if (this.destroyed || this.flowMode !== 'ptt') return
+    this.releaseMicHold('ptt')
+  }
+
+  /** Wave 3 (push-to-talk): tap again to cancel an open window without speaking. */
+  stopListeningWindow(): void {
+    if (this.destroyed || this.flowMode !== 'ptt') return
+    this.addMicHold('ptt')
+  }
+
+  /** Is the mic currently open and listening (no holds)? Drives the PTT button. */
+  isListening(): boolean {
+    return !this.destroyed && this.micHolds.size === 0
   }
 
   /** Barge-in hook.  Fires the moment VAD sees new speech. */
