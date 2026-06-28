@@ -34,6 +34,7 @@
 import { VADListener, isContinuousVADSupported, diagnoseVADSupport } from './vadListener'
 import { StreamingTTSPlayer } from './streamingTts'
 import { buildProposalLine, type CueProposal } from './proposalLine'
+import { ChimePlayer, DEFAULT_CHIME, type ChimeSpec } from './chimes'
 import {
   VoiceStateMachine,
   type VoiceState,
@@ -72,6 +73,11 @@ export interface ContinuousFlowOptions {
   audioContext?: AudioContext
   /** Latency telemetry — emits ms from barge-in to TTS-stop */
   onInterruptionLatency?: (ms: number) => void
+  /** Wave 2: play audible open/close earcons at listening-window boundaries.
+   *  Default true. The chime player is null-safe, so this is purely a mute. */
+  chimes?: boolean
+  /** Which earcon to play (default DEFAULT_CHIME). Founder-tunable. */
+  chimeSpec?: ChimeSpec
 }
 
 export { isContinuousVADSupported, diagnoseVADSupport }
@@ -83,8 +89,20 @@ export class ContinuousFlowController {
   private opts: ContinuousFlowOptions
   private destroyed = false
   private activeAbort: AbortController | null = null
-  /** Half-duplex: true while the mic is paused because Cue is speaking. */
-  private micPaused = false
+  /**
+   * Reasons the mic is currently held closed. The mic is physically open iff this
+   * set is empty. Reference-counted by reason so two independent holders (Cue
+   * speaking + a confirm card awaiting a click) can overlap and the mic only
+   * reopens once BOTH clear — fixing the bug where the speech-end `finally`
+   * reopened the mic while a confirm card was still up.
+   */
+  private micHolds = new Set<'speech' | 'confirm'>()
+  /** Wave 2: have we played an OPEN chime yet this session? Gates the close
+   *  chime so the very first earcon a doctor hears is the OPEN one after the
+   *  greeting — never a lone close chime before Cue has even spoken. */
+  private chimedOpen = false
+  private chimes: ChimePlayer
+  private chimesEnabled: boolean
 
   constructor(opts: ContinuousFlowOptions) {
     this.opts = opts
@@ -93,6 +111,13 @@ export class ContinuousFlowController {
       onSentenceStart: opts.onCueSentence,
       onSentence: opts.onCueSentence,   // Phase 55: caption strip (D-08)
     })
+    this.chimesEnabled = opts.chimes !== false
+    // Earcons share the TTS player's already-unlocked AudioContext (sourced
+    // lazily — it is created in tts.unlock() during start()).
+    this.chimes = new ChimePlayer(
+      () => this.tts.audioContext,
+      opts.chimeSpec ?? DEFAULT_CHIME,
+    )
     if (opts.onStateChange) {
       this.state.subscribe((s) => opts.onStateChange!(s))
     }
@@ -167,37 +192,79 @@ export class ContinuousFlowController {
   }
 
   /**
-   * Half-duplex mic gating (Phase 47.x — self-barge-in fix).
+   * Mic gating — half-duplex self-barge-in fix (Phase 47.x) + confirm-card hold
+   * (Wave 2). Reference-counted by reason: the mic physically closes on the
+   * FIRST hold and reopens only when the LAST hold clears.
    *
    * Cue's TTS plays through the speakers; with an open mic (especially on loud
    * room speakers where browser echo cancellation is insufficient) that audio
    * leaks back in, the VAD reads it as the user talking, and barge-in cuts Cue
    * off mid-sentence — and the captured audio gets transcribed back as a fake
-   * user utterance. We close the mic while Cue speaks and reopen it after.
+   * user utterance. So we close the mic while Cue speaks (reason 'speech') AND
+   * while a write-confirm card awaits a click (reason 'confirm').
    *
    * vad-web's pause() does track.stop() (mic indicator goes off); resume()
    * re-acquires via resumeStream. getUserMedia does not re-prompt for an
    * already-granted origin, so the reopen is seamless.
+   *
+   * Wave 2 earcons: a CLOSE chime on the open→closed edge and an OPEN chime on
+   * the closed→open edge make the listening window audible (VoiceMode style).
+   * The close chime is suppressed until the first open chime has played, so the
+   * opening greeting is never preceded by a lone close earcon.
    */
-  private pauseMicForSpeech(): void {
-    if (this.micPaused) return
-    this.micPaused = true
+  private addMicHold(reason: 'speech' | 'confirm'): void {
+    const wasOpen = this.micHolds.size === 0
+    this.micHolds.add(reason)
+    if (!wasOpen) return // already closed — nothing to pause/chime
     try {
       this.listener?.pause()
     } catch {
       /* noop */
     }
+    if (this.chimesEnabled && this.chimedOpen) this.chimes.playClose()
   }
 
-  private resumeMicAfterSpeech(): void {
-    if (!this.micPaused) return
-    this.micPaused = false
+  private releaseMicHold(reason: 'speech' | 'confirm'): void {
+    if (!this.micHolds.has(reason)) return
+    this.micHolds.delete(reason)
+    if (this.micHolds.size > 0) return // still held by another reason
     if (this.destroyed) return
     try {
       this.listener?.resume()
     } catch {
       /* noop */
     }
+    if (this.chimesEnabled) {
+      this.chimes.playOpen()
+      this.chimedOpen = true
+    }
+  }
+
+  /** Half-duplex: close the mic while Cue speaks. */
+  private pauseMicForSpeech(): void {
+    this.addMicHold('speech')
+  }
+
+  /** Half-duplex: reopen the mic once Cue's speech drains — UNLESS a confirm
+   *  card is still holding it closed. */
+  private resumeMicAfterSpeech(): void {
+    this.releaseMicHold('speech')
+  }
+
+  /**
+   * Wave 2a: keep the mic closed while a write-confirm card awaits a click, so
+   * the doctor reading/clicking Confirm isn't captured as an utterance. Driven
+   * by CueSurface for the text path AND deterministically by handleUtterance on
+   * the voice path (so the speech-end `finally` can't reopen mid-card). Public.
+   */
+  holdMicForConfirm(): void {
+    if (this.destroyed) return
+    this.addMicHold('confirm')
+  }
+
+  /** Wave 2a: the confirm card was resolved (Confirm or Cancel) — reopen. */
+  releaseMicAfterConfirm(): void {
+    this.releaseMicHold('confirm')
   }
 
   /** Barge-in hook.  Fires the moment VAD sees new speech. */
@@ -326,6 +393,10 @@ export class ContinuousFlowController {
         await this.tts.play(line)
         if (this.destroyed) return
         this.state.send('response-ended', { source: 'tts' })
+        // Wave 2a: hand the mic-closed state off from 'speech' to 'confirm' BEFORE
+        // the outer finally releases 'speech', so the mic never flickers open while
+        // the confirm card is up. CueSurface releases this on Confirm/Cancel.
+        this.holdMicForConfirm()
         return
       }
 
