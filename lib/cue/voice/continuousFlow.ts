@@ -362,6 +362,16 @@ export class ContinuousFlowController {
     if (!text) return
     this.opts.onUserUtterance?.(text)
     this.state.send('speech-ended', { source: 'vad' }) // listening → thinking
+    // Half-duplex (diagnosis 2026-06-28): close the mic the MOMENT the doctor
+    // stops talking — for the whole `thinking` gap, not just once Cue starts
+    // speaking. Before, the mic stayed live through the (slow) model/tool wait,
+    // so a cough or side-remark fired barge-in and silently aborted the very
+    // reply the doctor just asked for, and the mic indicator stayed lit ("it
+    // left my mic on"). Closing here also guarantees the 'speech' hold is set
+    // before ANY error/empty path, so push-to-talk reliably returns to its
+    // idle-closed rest (no leaked-open mic), and the close earcon lands at
+    // speech-end ("got it") instead of colliding with Cue's first word.
+    this.pauseMicForSpeech()
 
     const ac = new AbortController()
     this.activeAbort = ac
@@ -387,9 +397,8 @@ export class ContinuousFlowController {
             if (!startedSpeaking) {
               startedSpeaking = true
               this.state.send('response-started', { source: 'llm' }) // thinking → speaking
-              // Half-duplex: close the mic the instant Cue starts speaking so her
-              // own audio can't self-trigger barge-in or be transcribed back.
-              this.pauseMicForSpeech()
+              // Mic was already closed at speech-end (above) — it stays closed
+              // straight through thinking → speaking, no reopen in between.
             }
             this.tts.pushText(chunk)
           },
