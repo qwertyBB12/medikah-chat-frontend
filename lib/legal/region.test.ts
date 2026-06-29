@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { detectRegion } from './region';
 
 function ctx(headers: Record<string, string> = {}, query: Record<string, string> = {}) {
-  return { req: { headers }, query } as any;
+  return { req: { headers }, query } as unknown as Parameters<typeof detectRegion>[0];
 }
 
 function nfGeo(code: string): string {
