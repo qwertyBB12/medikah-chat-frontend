@@ -238,10 +238,14 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
     setResponse(null); setErrorMsg(null); setPendingConfirm(null); setToolTrace([]);
     idempotencyTokenRef.current = null;
     const outgoing = [...historyRef.current, { role: 'user' as const, content: userText }];
+    // Tell the backend whether this turn is spoken: voice/ptt -> 'voice' loads
+    // the brevity + no-markdown voice directives so Cue doesn't read long,
+    // text-style answers aloud (diagnosis 2026-06-28). Text submit stays 'text'.
+    const turnMode = mode === 'text' ? 'text' : 'voice';
     const res = await fetch('/api/cue/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: outgoing, locale }),
+      body: JSON.stringify({ messages: outgoing, locale, mode: turnMode }),
       signal: opts?.signal,
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -276,7 +280,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
     }
     if (text.trim()) setResponse({ title: 'Cue', summary: text });
     return { text, pendingConfirm: null };
-  }, [locale]);
+  }, [locale, mode]);
 
   // Greeting (brain turn) — fetched on open, spoken via the controller's TTS so
   // it shares the unlocked AudioContext from the user gesture. Tool-free (opening
@@ -285,7 +289,8 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
     try {
       const res = await fetch('/api/cue/chat', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ opening: true, messages: [], locale }),
+        // The greeting is only ever spoken (it runs from the voice controller).
+        body: JSON.stringify({ opening: true, messages: [], locale, mode: 'voice' }),
       });
       if (!res.ok) return;
       const { text } = await readCueStream(res);
