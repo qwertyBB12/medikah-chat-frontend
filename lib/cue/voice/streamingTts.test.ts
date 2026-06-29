@@ -37,6 +37,39 @@ describe('splitSentencesIncremental', () => {
       pending: 'Start',
     });
   });
+
+  // Fix #5b — false-boundary merging (decimals, abbreviations, clock meridiems)
+  it('does not split a decimal mid-number', () => {
+    expect(splitSentencesIncremental('Toma 2.5 mg.')).toEqual({
+      complete: ['Toma 2.5 mg.'],
+      pending: '',
+    });
+  });
+  it('keeps a Dr. / Dra. abbreviation attached to the name', () => {
+    expect(splitSentencesIncremental('Dr. Aguirre confirmó.')).toEqual({
+      complete: ['Dr. Aguirre confirmó.'],
+      pending: '',
+    });
+  });
+  it('keeps a clock meridiem (p.m.) whole and still splits the next sentence', () => {
+    expect(splitSentencesIncremental('Te veo a las 2 p.m. Nos vemos.')).toEqual({
+      complete: ['Te veo a las 2 p.m.', 'Nos vemos.'],
+      pending: '',
+    });
+  });
+  it('does NOT mis-treat an ordinary word ending in a/p/m as an abbreviation', () => {
+    // "Hola." ends in "a." but is a normal word — must split normally.
+    expect(splitSentencesIncremental('Hola. ¿Cómo estás?')).toEqual({
+      complete: ['Hola.', '¿Cómo estás?'],
+      pending: '',
+    });
+  });
+  it('carries a trailing decimal fragment into pending until completed', () => {
+    expect(splitSentencesIncremental('Toma 2.')).toEqual({
+      complete: [],
+      pending: 'Toma 2.',
+    });
+  });
 });
 
 describe('StreamingTTSPlayer incremental session', () => {
