@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/router';
 
 import { LOGO_DARK_SRC } from '../lib/assets';
+import LanguageToggle from '../components/LanguageToggle';
 import LegalDocument from '../components/legal/LegalDocument';
 import { PRIVACY_NOTICE } from '../lib/legal/privacyContent';
 
@@ -47,12 +48,15 @@ export default function PrivacyNotice() {
               medikah
             </span>
           </Link>
-          <Link
-            href="/"
-            className="font-bold text-[15px] tracking-[0.02em] text-deep-charcoal hover:text-clinical-teal transition-colors"
-          >
-            {back}
-          </Link>
+          <div className="flex items-center gap-4">
+            <LanguageToggle tone="light" />
+            <Link
+              href="/"
+              className="font-bold text-[15px] tracking-[0.02em] text-deep-charcoal hover:text-clinical-teal transition-colors"
+            >
+              {back}
+            </Link>
+          </div>
         </div>
       </nav>
 
