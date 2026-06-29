@@ -55,6 +55,7 @@ import {
   type CueCard,
 } from '../../lib/cue/cueStream';
 import { CLINICAL_SUPPORT_COPY, confidenceLabel } from '../../lib/cue/clinicalSupportContent';
+import { buildClinicalSupportSummaryHtml } from '../../lib/cue/clinicalSupportSummary';
 import { CueMemoryConsent, CueMemoryPanel } from './CueMemory';
 import { CueModePicker } from './CueModePicker';
 import {
@@ -187,6 +188,9 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
   // Phase 24 — clinical decision-support cards surfaced this turn (additive: the
   // conversation continues; see lib/cue/cueStream.ts \x1d frames). Reset per turn.
   const [cards, setCards] = useState<CueCard[]>([]);
+  // Slice 3 — export (email / save-as-PDF) transient state for the support card.
+  const [exportMsg, setExportMsg] = useState<string | null>(null);
+  const [emailing, setEmailing] = useState(false);
   const [isWriting, setIsWriting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -247,6 +251,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
     opts?: { signal?: AbortSignal; onTextChunk?: (chunk: string) => void },
   ): Promise<{ text: string; pendingConfirm: CuePendingConfirm | null }> => {
     setResponse(null); setErrorMsg(null); setPendingConfirm(null); setToolTrace([]); setCards([]);
+    setExportMsg(null); setEmailing(false);
     idempotencyTokenRef.current = null;
     const outgoing = [...historyRef.current, { role: 'user' as const, content: userText }];
     // Tell the backend whether this turn is spoken: voice/ptt -> 'voice' loads
@@ -434,6 +439,39 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
   // Cancel → dismiss the confirm card, NO write (D-03).
   function handleCancelWrite() { setPendingConfirm(null); idempotencyTokenRef.current = null; }
 
+  // Slice 3 — email the clinical decision-support summary to the doctor's OWN
+  // @medikah.health mailbox (recipient resolved server-side; never sent from here).
+  const handleEmailSummary = useCallback(async (card: CueCard) => {
+    const copy = CLINICAL_SUPPORT_COPY[locale];
+    setExportMsg(null); setEmailing(true);
+    try {
+      const r = await fetch('/api/cue/clinical-support/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ card, locale }),
+      });
+      setExportMsg(r.ok ? copy.emailSent : copy.emailFailed);
+    } catch {
+      setExportMsg(copy.emailFailed);
+    } finally {
+      setEmailing(false);
+    }
+  }, [locale]);
+
+  // Slice 3 — "Save as PDF": open the branded summary in a new window and invoke
+  // the browser's print dialog (print-to-PDF; no PDF dependency, sovereign).
+  const handleSavePdf = useCallback((card: CueCard) => {
+    const copy = CLINICAL_SUPPORT_COPY[locale];
+    const html = buildClinicalSupportSummaryHtml(card, { locale, physicianName: null });
+    const w = window.open('', '_blank');
+    if (!w) { setExportMsg(copy.popupBlocked); return; }
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    // Let the brand fonts load before printing; the doctor can also print manually.
+    setTimeout(() => { try { w.print(); } catch { /* manual print fallback */ } }, 400);
+  }, [locale]);
+
   // Wave 3 — mode picker. Selecting applies + persists immediately; the
   // mode-keyed effect (re)creates or tears down the controller to match.
   const handleSelectMode = useCallback((m: CueMode) => {
@@ -556,6 +594,13 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
         .mk-flags-list li { font-size:12px; color:#e7c2c2; line-height:1.4; }
         .mk-disc { margin-top:10px; font-size:10.5px; line-height:1.45; color:#8fa9b3;
           border-top:1px solid rgba(127,199,212,.12); padding-top:8px; white-space:pre-wrap; }
+        .mk-cds-acts { display:flex; gap:8px; margin-top:12px; }
+        .mk-cds-btn { flex:1; border:1px solid rgba(127,199,212,.28); background:rgba(255,255,255,.04); color:#cfe2e8;
+          border-radius:9px; padding:9px; font:inherit; font-weight:600; font-size:12px; min-height:40px; cursor:pointer; }
+        .mk-cds-btn:hover { background:rgba(255,255,255,.08); }
+        .mk-cds-btn:disabled { opacity:.6; cursor:default; }
+        .mk-cds-btn:focus-visible { outline:2px solid #7fc7d4; outline-offset:2px; }
+        .mk-cds-msg { margin-top:7px; font-size:11px; color:#90b4bf; }
 
         .mk-cmd { flex:none; padding:11px 14px 14px; border-top:1px solid rgba(127,199,212,.1); position:relative; z-index:2; }
         /* PHI / de-identification notice — muted caution tone, always visible */
@@ -742,6 +787,22 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
                   )}
 
                   {card.disclaimer && <div className="mk-disc">{card.disclaimer}</div>}
+
+                  {/* Slice 3 — export: email to the doctor's Medikah inbox / save as PDF. */}
+                  <div className="mk-cds-acts">
+                    <button
+                      type="button"
+                      className="mk-cds-btn"
+                      disabled={emailing}
+                      onClick={() => handleEmailSummary(card)}
+                    >
+                      {emailing ? cds.emailSending : cds.emailAction}
+                    </button>
+                    <button type="button" className="mk-cds-btn" onClick={() => handleSavePdf(card)}>
+                      {cds.pdfAction}
+                    </button>
+                  </div>
+                  {exportMsg && <div className="mk-cds-msg" role="status">{exportMsg}</div>}
                 </div>
               ))}
 

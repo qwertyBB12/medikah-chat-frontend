@@ -488,4 +488,24 @@ describe('CueSurface — clinical decision support card', () => {
     render(<CueSurface isOpen onClose={vi.fn()} accessToken="t" locale="en" />);
     expect(screen.getByText(/de-identified information only/i)).toBeTruthy();
   });
+
+  it('offers Email + Save-as-PDF actions and posts the card to the email endpoint', async () => {
+    const fetchMock = streamFetch([cardFrame, 'Walkthrough.']);
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<CueSurface isOpen onClose={vi.fn()} accessToken="t" locale="en" />);
+    const input = screen.getByRole('textbox');
+    fireEvent.change(input, { target: { value: 'support: sore throat' } });
+    fireEvent.submit(input.closest('form') as HTMLFormElement);
+
+    const emailBtn = await screen.findByText('Email to me');
+    expect(screen.getByText('Save as PDF')).toBeTruthy();
+
+    fireEvent.click(emailBtn);
+    await waitFor(() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const urls = (fetchMock as any).mock.calls.map((c: any[]) => c[0]);
+      expect(urls).toContain('/api/cue/clinical-support/email');
+    });
+  });
 });
