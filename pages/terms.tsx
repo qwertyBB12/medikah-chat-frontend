@@ -4,6 +4,7 @@ import Image from 'next/image';
 import type { GetServerSideProps } from 'next';
 
 import { LOGO_DARK_SRC } from '../lib/assets';
+import LanguageToggle from '../components/LanguageToggle';
 import LegalDocument from '../components/legal/LegalDocument';
 import { TERMS_CONTENT, type TermsRegion, type TermsLocale } from '../lib/legal/termsContent';
 import { detectRegion, type Region } from '../lib/legal/region';
@@ -62,12 +63,15 @@ export default function TermsOfService({ region, locale }: Props) {
               medikah
             </span>
           </Link>
-          <Link
-            href="/"
-            className="font-bold text-[15px] tracking-[0.02em] text-deep-charcoal hover:text-clinical-teal transition-colors"
-          >
-            {t.back}
-          </Link>
+          <div className="flex items-center gap-4">
+            <LanguageToggle tone="light" />
+            <Link
+              href="/"
+              className="font-bold text-[15px] tracking-[0.02em] text-deep-charcoal hover:text-clinical-teal transition-colors"
+            >
+              {t.back}
+            </Link>
+          </div>
         </div>
       </nav>
 
