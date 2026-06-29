@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { getAdminFromContext, AdminUser } from '../../../lib/adminAuth';
 import { supabaseAdmin } from '../../../lib/supabaseServer';
 import AdminLayout from '../../../components/admin/AdminLayout';
+import CedulaVerifyPanel from '../../../components/admin/CedulaVerifyPanel';
 import { listRecordsForPhysician } from '../../../lib/verificationRecordService';
 import type { VerificationRecordRow } from '../../../lib/verificationTypes';
 import { daysUntilExpiration } from '../../../lib/expirationFlags';
@@ -771,6 +772,16 @@ export default function PhysicianDetailPage({
                       {l.expiration_date && <>Expires: {l.expiration_date} · </>}
                       {l.verification_source && <>Source: {l.verification_source}</>}
                     </p>
+                    {l.license_type.startsWith('cedula') && (
+                      <CedulaVerifyPanel
+                        physicianId={physician.id as string}
+                        licenseId={l.id}
+                        licenseNumber={l.license_number}
+                        countryCode={l.country_code}
+                        currentStatus={l.verification_status}
+                        onCommitted={() => router.replace(router.asPath)}
+                      />
+                    )}
                   </div>
                 );
               })}
