@@ -112,6 +112,48 @@ describe('ContinuousFlowController', () => {
       .toBeGreaterThan(Math.min(...vadPause.mock.invocationCallOrder));
   });
 
+  it('closes the mic at speech-end (during thinking), before the reply streams', async () => {
+    // Fix #6 (diagnosis 2026-06-28): the mic must close the instant the doctor
+    // stops talking — through the whole thinking gap — so room noise can't fire
+    // barge-in and abort the in-flight reply. Asserted by checking the mic is
+    // already paused by the time respond() is first invoked.
+    let pausedWhenRespondRan = false;
+    const ctrl = new ContinuousFlowController({
+      respond: async (_t, opts) => {
+        pausedWhenRespondRan = vadPause.mock.calls.length > 0;
+        opts?.onTextChunk?.('Bien.');
+        return { text: 'Bien.', pendingConfirm: null };
+      },
+    });
+    await ctrl.start();
+    await vadHandlers.onUtterance!('hola');
+    expect(pausedWhenRespondRan).toBe(true);
+  });
+
+  it('ptt: an ERRORED turn still returns the mic to idle-closed (no leaked-open mic)', async () => {
+    const ctrl = new ContinuousFlowController({
+      respond: async () => { throw new Error('boom'); },
+      flowMode: 'ptt',
+      onError: () => {},
+    });
+    await ctrl.start();
+    ctrl.startListeningWindow();
+    expect(ctrl.isListening()).toBe(true);
+    await vadHandlers.onUtterance!('hola'); // respond throws before any token
+    expect(ctrl.isListening()).toBe(false); // mic returned to ptt idle-closed
+  });
+
+  it('ptt: an EMPTY reply still returns the mic to idle-closed', async () => {
+    const ctrl = new ContinuousFlowController({
+      respond: async () => ({ text: '', pendingConfirm: null }), // no chunks, empty
+      flowMode: 'ptt',
+    });
+    await ctrl.start();
+    ctrl.startListeningWindow();
+    await vadHandlers.onUtterance!('hola');
+    expect(ctrl.isListening()).toBe(false);
+  });
+
   it('half-duplex: greeting (playReply) also pauses then resumes the mic', async () => {
     const ctrl = new ContinuousFlowController({ respond: ok('x') });
     await ctrl.start();
