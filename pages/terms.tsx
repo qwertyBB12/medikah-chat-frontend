@@ -6,7 +6,8 @@ import type { GetServerSideProps } from 'next';
 import { LOGO_DARK_SRC } from '../lib/assets';
 import LanguageToggle from '../components/LanguageToggle';
 import LegalDocument from '../components/legal/LegalDocument';
-import { TERMS_CONTENT, type TermsRegion, type TermsLocale } from '../lib/legal/termsContent';
+import UsLegacyTerms from '../components/legal/UsLegacyTerms';
+import { TERMS_CONTENT, type TermsLocale } from '../lib/legal/termsContent';
 import { detectRegion, type Region } from '../lib/legal/region';
 
 const LOGO_DARK = LOGO_DARK_SRC;
@@ -36,7 +37,10 @@ const COPY = {
 
 export default function TermsOfService({ region, locale }: Props) {
   const t = COPY[locale];
-  const blocks = TERMS_CONTENT[region as TermsRegion][locale];
+  // Mexico is served the counsel-final terms. The United States is served the
+  // pre-counsel legacy terms (founder decision 2026-06-29) until the EN/US
+  // finals are redlined — see components/legal/UsLegacyTerms.tsx.
+  const mxBlocks = TERMS_CONTENT.MX[locale];
   const other: Region = region === 'US' ? 'MX' : 'US';
 
   return (
@@ -91,7 +95,7 @@ export default function TermsOfService({ region, locale }: Props) {
             </span>
           </div>
 
-          <LegalDocument blocks={blocks} />
+          {region === 'US' ? <UsLegacyTerms /> : <LegalDocument blocks={mxBlocks} />}
 
         </div>
       </main>
