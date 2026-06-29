@@ -94,7 +94,7 @@ const LABELS = {
         confirmEyebrow: 'Confirm before writing', confirm: 'Confirm', cancel: 'Cancel',
         hintLeft: 'Cue · English + Spanish', done: 'Done', memory: 'What Cue remembers',
         modeSettings: 'Interaction mode', tapToTalk: 'Tap to talk', tapToStop: 'Listening — tap to stop',
-        blockedResult: (uid: string) => `Time blocked. (ref ${uid})`,
+        blockedResult: () => `Time blocked.`,
         clearResult: (deleted: number, kept: number) => `${deleted} removed, ${kept} kept.` },
   es: { close: 'Cerrar', collapse: 'Contraer', you: 'Tú', context: 'Espacio clínico',
         thinking: 'Cue está pensando…', placeholder: 'Escribe un comando…',
@@ -103,7 +103,7 @@ const LABELS = {
         confirmEyebrow: 'Confirmar antes de escribir', confirm: 'Confirmar', cancel: 'Cancelar',
         hintLeft: 'Cue · español + inglés', done: 'Listo', memory: 'Lo que Cue recuerda',
         modeSettings: 'Modo de interacción', tapToTalk: 'Toca para hablar', tapToStop: 'Escuchando — toca para terminar',
-        blockedResult: (uid: string) => `Horario bloqueado. (ref ${uid})`,
+        blockedResult: () => `Horario bloqueado.`,
         clearResult: (deleted: number, kept: number) => `${deleted} eliminados, ${kept} conservados.` },
 } as const;
 
@@ -406,7 +406,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
       setResponse({
         title: labels.done,
         summary: pendingConfirm.action === 'block'
-          ? labels.blockedResult(r.uid ?? '')
+          ? labels.blockedResult()
           : labels.clearResult(r.deleted ?? 0, r.skipped ?? 0),
       });
       setPendingConfirm(null);
