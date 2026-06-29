@@ -54,16 +54,55 @@ export interface CueToolEvent {
   items?: number;
 }
 
-/** U+001E (RECORD SEPARATOR) — the canonical pending_confirm sentinel byte. */
+/**
+ * One clinical CONSIDERATION inside a clinical-decision-support card.
+ *
+ * NAMING / LEGAL (Hector, 2026-06-29): this is a doctor decision-SUPPORT surface —
+ * a ranked list of considerations to weigh, NEVER named or framed as an "(official)
+ * diagnosis". The only place the word "diagnosis" appears is the disclaimer's denial.
+ */
+export interface CueConsideration {
+  condition: string;
+  rationale: string;
+  /** 'HIGH' | 'MODERATE' | 'LOW' — kept as a string for forward-compat. */
+  confidence: string;
+  distinguishing_factors: string;
+}
+
+/**
+ * The {kind:'clinical_support', ...} structured card emitted by the engine and
+ * carried on the /api/cue/chat stream as a \x1d (GS) NON-TERMINAL frame. ADDITIVE:
+ * the card renders in the dock AND Cue keeps narrating/conversing (unlike the
+ * terminal confirm card). The card is keyed off THIS payload, never off model prose.
+ */
+export interface CueClinicalSupportCard {
+  kind: 'clinical_support';
+  considerations: CueConsideration[];
+  red_flags: string[];
+  disclaimer: string;
+}
+
+/** A structured Cue card. Open union — room for future non-confirm card kinds. */
+export type CueCard = CueClinicalSupportCard;
+
+/** U+001E (RECORD SEPARATOR) — the canonical pending_confirm sentinel byte (terminal). */
 export const PENDING_CONFIRM_SENTINEL = '\x1e';
 
 /** U+001F (UNIT SEPARATOR) — the tool-event frame prefix (terminated by \n). */
 export const TOOL_EVENT_SENTINEL = '\x1f';
 
+/**
+ * U+001D (GROUP SEPARATOR) — the structured-card frame prefix (terminated by \n).
+ * NON-TERMINAL (a sibling of \x1f tool frames): text and even a later \x1e confirm
+ * tail may follow it, so it must NOT be treated like the terminal \x1e confirm byte.
+ */
+export const CARD_SENTINEL = '\x1d';
+
 interface ParsedCueBuffer {
   text: string;
   pendingConfirm: CuePendingConfirm | null;
   toolEvents: CueToolEvent[];
+  cards: CueCard[];
 }
 
 /** Parse a tool-event frame's JSON; returns null if malformed or missing `tool`. */
@@ -72,6 +111,20 @@ function parseToolFrame(json: string): CueToolEvent | null {
     const ev = JSON.parse(json) as CueToolEvent;
     if (ev && typeof ev.tool === 'string' && (ev.phase === 'start' || ev.phase === 'end')) {
       return ev;
+    }
+  } catch {
+    /* malformed frame — ignore */
+  }
+  return null;
+}
+
+/** Parse a \x1d card frame's JSON ({"card":{…}}); null if malformed or not a known kind. */
+function parseCardFrame(json: string): CueCard | null {
+  try {
+    const parsed = JSON.parse(json) as { card?: CueCard };
+    const card = parsed?.card ?? null;
+    if (card && card.kind === 'clinical_support' && Array.isArray(card.considerations)) {
+      return card;
     }
   } catch {
     /* malformed frame — ignore */
@@ -102,26 +155,43 @@ function parseCueBuffer(full: string): ParsedCueBuffer {
     confirmIdx === -1 ? null : parseConfirmTail(full.slice(confirmIdx + 1));
 
   const toolEvents: CueToolEvent[] = [];
+  const cards: CueCard[] = [];
   let text = '';
   let i = 0;
   while (i < head.length) {
     const us = head.indexOf(TOOL_EVENT_SENTINEL, i);
-    if (us === -1) {
+    const gs = head.indexOf(CARD_SENTINEL, i);
+    // Earliest of the two NON-TERMINAL frame bytes (US tool / GS card) comes next.
+    let ctrl = -1;
+    let isCard = false;
+    if (us !== -1 && (gs === -1 || us < gs)) {
+      ctrl = us;
+    } else if (gs !== -1) {
+      ctrl = gs;
+      isCard = true;
+    }
+    if (ctrl === -1) {
       text += head.slice(i);
       break;
     }
-    text += head.slice(i, us);
-    const nl = head.indexOf('\n', us + 1);
+    text += head.slice(i, ctrl);
+    const nl = head.indexOf('\n', ctrl + 1);
     if (nl === -1) {
       // Incomplete trailing frame (server closed mid-frame) — drop it; never text.
       break;
     }
-    const ev = parseToolFrame(head.slice(us + 1, nl));
-    if (ev) toolEvents.push(ev);
+    const json = head.slice(ctrl + 1, nl);
+    if (isCard) {
+      const c = parseCardFrame(json);
+      if (c) cards.push(c);
+    } else {
+      const ev = parseToolFrame(json);
+      if (ev) toolEvents.push(ev);
+    }
     i = nl + 1;
   }
 
-  return { text, pendingConfirm, toolEvents };
+  return { text, pendingConfirm, toolEvents, cards };
 }
 
 /**
@@ -152,6 +222,7 @@ export async function readCueStream(
   res: Response,
   onTextChunk?: (chunk: string) => void,
   onToolEvent?: (event: CueToolEvent) => void,
+  onCard?: (card: CueCard) => void,
 ): Promise<ParsedCueBuffer> {
   if (!res.body || typeof res.body.getReader !== 'function') {
     return parseCueBuffer(await res.text());
@@ -167,16 +238,21 @@ export async function readCueStream(
   const pump = () => {
     while (cursor < full.length && !confirmSeen) {
       const usIdx = full.indexOf(TOOL_EVENT_SENTINEL, cursor);
+      const gsIdx = full.indexOf(CARD_SENTINEL, cursor);
       const rsIdx = full.indexOf(PENDING_CONFIRM_SENTINEL, cursor);
 
       // Earliest control byte at/after cursor decides what comes next.
       let ctrlIdx = -1;
-      let ctrlIsConfirm = false;
-      if (usIdx !== -1 && (rsIdx === -1 || usIdx < rsIdx)) {
-        ctrlIdx = usIdx;
-      } else if (rsIdx !== -1) {
-        ctrlIdx = rsIdx;
-        ctrlIsConfirm = true;
+      let ctrlKind: 'tool' | 'card' | 'confirm' = 'tool';
+      for (const cand of [
+        { idx: usIdx, kind: 'tool' as const },
+        { idx: gsIdx, kind: 'card' as const },
+        { idx: rsIdx, kind: 'confirm' as const },
+      ]) {
+        if (cand.idx !== -1 && (ctrlIdx === -1 || cand.idx < ctrlIdx)) {
+          ctrlIdx = cand.idx;
+          ctrlKind = cand.kind;
+        }
       }
 
       if (ctrlIdx === -1) {
@@ -189,21 +265,27 @@ export async function readCueStream(
       // Emit any text up to the control byte.
       if (onTextChunk && ctrlIdx > cursor) onTextChunk(full.slice(cursor, ctrlIdx));
 
-      if (ctrlIsConfirm) {
-        // Confirm tail begins — stop emitting; buffer the remainder for final parse.
+      if (ctrlKind === 'confirm') {
+        // Confirm tail begins (terminal) — stop emitting; buffer the rest for final parse.
         cursor = ctrlIdx;
         confirmSeen = true;
         return;
       }
 
-      // Tool frame — needs its terminating \n before we can parse it.
+      // Tool / card frame (NON-terminal) — needs its terminating \n before we parse it.
       const nl = full.indexOf('\n', ctrlIdx + 1);
       if (nl === -1) {
         cursor = ctrlIdx; // hold the partial frame; re-scan when more data arrives
         return;
       }
-      const ev = parseToolFrame(full.slice(ctrlIdx + 1, nl));
-      if (ev) onToolEvent?.(ev);
+      const json = full.slice(ctrlIdx + 1, nl);
+      if (ctrlKind === 'card') {
+        const c = parseCardFrame(json);
+        if (c) onCard?.(c);
+      } else {
+        const ev = parseToolFrame(json);
+        if (ev) onToolEvent?.(ev);
+      }
       cursor = nl + 1;
     }
   };

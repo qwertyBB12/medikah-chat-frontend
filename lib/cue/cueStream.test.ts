@@ -4,11 +4,14 @@ import {
   readCueStream,
   PENDING_CONFIRM_SENTINEL,
   TOOL_EVENT_SENTINEL,
+  CARD_SENTINEL,
   type CueToolEvent,
+  type CueCard,
 } from './cueStream';
 
 const SENTINEL = PENDING_CONFIRM_SENTINEL;
 const US = TOOL_EVENT_SENTINEL;
+const GS = CARD_SENTINEL;
 
 /** Build one \x1f tool-event frame (US + compact JSON + \n). */
 function toolFrame(ev: CueToolEvent): string {
@@ -35,7 +38,7 @@ function streamResponse(chunks: string[]): Response {
 
 describe('splitCueStream', () => {
   it('returns plain text + null when there is no sentinel', () => {
-    expect(splitCueStream('Just text.')).toEqual({ text: 'Just text.', pendingConfirm: null, toolEvents: [] });
+    expect(splitCueStream('Just text.')).toEqual({ text: 'Just text.', pendingConfirm: null, toolEvents: [], cards: [] });
   });
 
   it('parses the pending_confirm payload after the sentinel', () => {
@@ -175,5 +178,73 @@ describe('cueStream tool-event frames', () => {
     const { text, toolEvents } = await readCueStream(res);
     expect(text).toBe('Just text.');
     expect(toolEvents).toEqual([]);
+  });
+});
+
+// ─── clinical-support card frames (\x1d, non-terminal) ────────────────────────
+
+describe('cueStream clinical-support card frames', () => {
+  const CARD: CueCard = {
+    kind: 'clinical_support',
+    considerations: [
+      { condition: 'X', rationale: 'r', confidence: 'HIGH', distinguishing_factors: 'd' },
+    ],
+    red_flags: ['flag'],
+    disclaimer: 'Clinical decision support only — not a diagnosis.',
+  };
+  const cardFrame = GS + JSON.stringify({ card: CARD }) + '\n';
+
+  it('splitCueStream strips the \\x1d card frame from text and collects it in cards', () => {
+    const body = 'Un momento. ' + cardFrame + 'Aquí están las consideraciones.';
+    const { text, cards, pendingConfirm } = splitCueStream(body);
+    expect(text).toBe('Un momento. Aquí están las consideraciones.'); // frame never leaks into text
+    expect(pendingConfirm).toBeNull();
+    expect(cards).toHaveLength(1);
+    expect(cards[0].kind).toBe('clinical_support');
+    expect(cards[0].considerations[0].condition).toBe('X');
+    expect(cards[0].red_flags).toEqual(['flag']);
+  });
+
+  it('plain-text stream yields empty cards (backward compat)', () => {
+    expect(splitCueStream('Just text.').cards).toEqual([]);
+  });
+
+  it('readCueStream forwards the card via onCard, never to onTextChunk', async () => {
+    const res = streamResponse(['Un momento. ', cardFrame, 'Listo.']);
+    const textChunks: string[] = [];
+    const cards: CueCard[] = [];
+    const { text, cards: finalCards } = await readCueStream(
+      res,
+      (c) => textChunks.push(c),
+      undefined,
+      (card) => cards.push(card),
+    );
+    expect(textChunks.join('')).toBe('Un momento. Listo.'); // no \x1d / JSON ever spoken
+    expect(text).toBe('Un momento. Listo.');
+    expect(cards).toHaveLength(1);
+    expect(cards[0].considerations[0].condition).toBe('X');
+    expect(finalCards).toEqual(cards);
+  });
+
+  it('readCueStream parses a card frame straddling a chunk boundary', async () => {
+    const mid = Math.floor(cardFrame.length / 2);
+    const res = streamResponse(['Hola. ', cardFrame.slice(0, mid), cardFrame.slice(mid), 'Fin.']);
+    const cards: CueCard[] = [];
+    const { text } = await readCueStream(res, undefined, undefined, (c) => cards.push(c));
+    expect(text).toBe('Hola. Fin.');
+    expect(cards).toHaveLength(1);
+    expect(cards[0].kind).toBe('clinical_support');
+  });
+
+  it('readCueStream handles a card frame THEN a confirm tail (card is non-terminal)', async () => {
+    const json = JSON.stringify({
+      pending_confirm: { kind: 'confirm', action: 'block', title: 't', summary: 's', start_iso: 'a', end_iso: 'b' },
+    });
+    const res = streamResponse([cardFrame, 'Texto.', SENTINEL + json + '\n']);
+    const cards: CueCard[] = [];
+    const { text, pendingConfirm } = await readCueStream(res, undefined, undefined, (c) => cards.push(c));
+    expect(text).toBe('Texto.');
+    expect(cards).toHaveLength(1);
+    expect(pendingConfirm?.action).toBe('block');
   });
 });

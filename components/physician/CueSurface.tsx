@@ -52,7 +52,9 @@ import {
   PENDING_CONFIRM_SENTINEL,
   type CuePendingConfirm,
   type CueToolEvent,
+  type CueCard,
 } from '../../lib/cue/cueStream';
+import { CLINICAL_SUPPORT_COPY, confidenceLabel } from '../../lib/cue/clinicalSupportContent';
 import { CueMemoryConsent, CueMemoryPanel } from './CueMemory';
 import { CueModePicker } from './CueModePicker';
 import {
@@ -168,6 +170,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
   const dialogRef = useRef<HTMLDivElement>(null);
   const prevFocusRef = useRef<Element | null>(null);
   const labels = LABELS[locale];
+  const cds = CLINICAL_SUPPORT_COPY[locale]; // Phase 24 — clinical decision-support card copy
 
   const [inputValue, setInputValue] = useState('');
   const [orbState, setOrbState] = useState<OrbState>('idle');
@@ -181,6 +184,9 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
   const historyRef = useRef<{ role: 'user' | 'assistant'; content: string }[]>([]);
   const [toolTrace, setToolTrace] = useState<ToolStep[]>([]);
   const [pendingConfirm, setPendingConfirm] = useState<CuePendingConfirm | null>(null);
+  // Phase 24 — clinical decision-support cards surfaced this turn (additive: the
+  // conversation continues; see lib/cue/cueStream.ts \x1d frames). Reset per turn.
+  const [cards, setCards] = useState<CueCard[]>([]);
   const [isWriting, setIsWriting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -240,7 +246,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
     userText: string,
     opts?: { signal?: AbortSignal; onTextChunk?: (chunk: string) => void },
   ): Promise<{ text: string; pendingConfirm: CuePendingConfirm | null }> => {
-    setResponse(null); setErrorMsg(null); setPendingConfirm(null); setToolTrace([]);
+    setResponse(null); setErrorMsg(null); setPendingConfirm(null); setToolTrace([]); setCards([]);
     idempotencyTokenRef.current = null;
     const outgoing = [...historyRef.current, { role: 'user' as const, content: userText }];
     // Tell the backend whether this turn is spoken: voice/ptt -> 'voice' loads
@@ -257,7 +263,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
 
     // Live-update the answer line + the thinking trace as the stream arrives.
     let acc = '';
-    const { text, pendingConfirm: pc } = await readCueStream(
+    const { text, pendingConfirm: pc, cards: turnCards } = await readCueStream(
       res,
       (chunk) => {
         acc += chunk;
@@ -265,7 +271,11 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
         opts?.onTextChunk?.(chunk);
       },
       (ev) => setToolTrace((prev) => applyToolEvent(prev, ev)),
+      // Phase 24: a clinical decision-support card streamed in — show it live.
+      (card) => setCards((prev) => [...prev, card]),
     );
+    // Authoritative set (covers the buffered fallback path where onCard never fires).
+    setCards(turnCards);
 
     // Thread this turn into history so the NEXT turn carries context (backend
     // keeps the last 10 turns). Runs for both the confirm and plain-answer paths.
@@ -454,7 +464,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
   if (!isOpen) return null;
   const isThinking = orbState === 'thinking';
   const isSpeaking = orbState === 'speaking';
-  const hasCueTurn = toolTrace.length > 0 || response != null || pendingConfirm != null || errorMsg != null || isThinking;
+  const hasCueTurn = toolTrace.length > 0 || response != null || pendingConfirm != null || cards.length > 0 || errorMsg != null || isThinking;
 
   return (
     <>
@@ -527,7 +537,30 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
         .mk-btn.mk-go:disabled { opacity:.6; cursor:default; }
         .mk-btn.mk-no { background:rgba(255,255,255,.06); color:#cfe2e8; border:1px solid rgba(127,199,212,.2); }
 
+        /* Phase 24 clinical decision-support card (reuses .mk-card surface) */
+        .mk-cds-h { font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:#9fbcc6; margin:9px 0 5px; }
+        .mk-cons-list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
+        .mk-cons { background:rgba(127,199,212,.06); border:1px solid rgba(127,199,212,.14); border-radius:10px; padding:8px 10px; }
+        .mk-cons-top { display:flex; align-items:center; gap:8px; }
+        .mk-cons-name { font-weight:700; font-size:13.5px; color:#eaf2f5; flex:1; }
+        .mk-chip { font-size:10px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; padding:2px 7px;
+          border-radius:999px; flex:none; }
+        .mk-chip-high { background:rgba(115,194,166,.16); color:#9fe0c6; border:1px solid rgba(115,194,166,.4); }
+        .mk-chip-moderate { background:rgba(184,134,11,.16); color:#e0c178; border:1px solid rgba(184,134,11,.4); }
+        .mk-chip-low { background:rgba(127,166,178,.14); color:#b6cdd4; border:1px solid rgba(127,166,178,.3); }
+        .mk-cons-line { font-size:12px; color:#b6cdd4; margin-top:4px; line-height:1.4; }
+        .mk-cons-lbl { color:#7fc7d4; font-weight:700; }
+        .mk-flags { margin-top:5px; }
+        .mk-flags-h { color:#f0b4b4; }
+        .mk-flags-list { margin:0; padding-left:16px; display:flex; flex-direction:column; gap:3px; }
+        .mk-flags-list li { font-size:12px; color:#e7c2c2; line-height:1.4; }
+        .mk-disc { margin-top:10px; font-size:10.5px; line-height:1.45; color:#8fa9b3;
+          border-top:1px solid rgba(127,199,212,.12); padding-top:8px; white-space:pre-wrap; }
+
         .mk-cmd { flex:none; padding:11px 14px 14px; border-top:1px solid rgba(127,199,212,.1); position:relative; z-index:2; }
+        /* PHI / de-identification notice — muted caution tone, always visible */
+        .mk-phi { display:flex; gap:6px; align-items:flex-start; margin-bottom:9px; font-size:10.5px; line-height:1.4; color:#cdb88a; }
+        .mk-phi span[aria-hidden] { line-height:1.3; }
         .mk-cmd-row { display:flex; align-items:center; gap:9px; background:rgba(255,255,255,.045);
           border:1px solid rgba(127,199,212,.22); border-radius:12px; padding:9px 11px; }
         .mk-cmd-row:focus-within { border-color:#7fc7d4; box-shadow:0 0 0 3px rgba(127,199,212,.15); }
@@ -663,6 +696,55 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
 
               {errorMsg && <p className="mk-err">{errorMsg}</p>}
 
+              {/* Phase 24 — clinical DECISION-SUPPORT card(s). Rendered off the
+                  parsed \x1d payload (never model prose). ADDITIVE: Cue's narration
+                  below keeps the conversation going. NEVER labeled a "diagnosis"; the
+                  payload disclaimer denies it. */}
+              {cards.map((card, ci) => (
+                <div className="mk-card mk-cds" key={ci} role="group" aria-label={cds.title}>
+                  <div className="mk-card-k">&#9670; {cds.title}</div>
+
+                  {card.considerations.length > 0 && (
+                    <>
+                      <div className="mk-cds-h">{cds.considerations}</div>
+                      <ol className="mk-cons-list">
+                        {card.considerations.map((c, i) => (
+                          <li className="mk-cons" key={i}>
+                            <div className="mk-cons-top">
+                              <span className="mk-cons-name">{c.condition}</span>
+                              <span className={`mk-chip mk-chip-${(c.confidence || '').toLowerCase()}`}>
+                                {confidenceLabel(locale, c.confidence)}
+                              </span>
+                            </div>
+                            {c.rationale && (
+                              <div className="mk-cons-line">
+                                <span className="mk-cons-lbl">{cds.rationale}:</span> {c.rationale}
+                              </div>
+                            )}
+                            {c.distinguishing_factors && (
+                              <div className="mk-cons-line">
+                                <span className="mk-cons-lbl">{cds.distinguishing}:</span> {c.distinguishing_factors}
+                              </div>
+                            )}
+                          </li>
+                        ))}
+                      </ol>
+                    </>
+                  )}
+
+                  {card.red_flags.length > 0 && (
+                    <div className="mk-flags">
+                      <div className="mk-cds-h mk-flags-h">{cds.redFlags}</div>
+                      <ul className="mk-flags-list">
+                        {card.red_flags.map((f, i) => <li key={i}>{f}</li>)}
+                      </ul>
+                    </div>
+                  )}
+
+                  {card.disclaimer && <div className="mk-disc">{card.disclaimer}</div>}
+                </div>
+              ))}
+
               {response && (
                 <div className="mk-line">
                   {response.summary}
@@ -692,6 +774,12 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
         </div>
 
         <form className="mk-cmd" onSubmit={handleSubmit}>
+          {/* Phase 24 — always-visible PHI/de-identification notice (trains doctors
+              never to type patient identifiers). Not stream-dependent. */}
+          <div className="mk-phi" role="note">
+            <span aria-hidden="true">&#9888;</span>
+            <span>{cds.phiNotice}</span>
+          </div>
           <div className="mk-cmd-row">
             <span className="mk-prompt" aria-hidden="true">&rsaquo;</span>
             <input

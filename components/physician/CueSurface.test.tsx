@@ -416,3 +416,76 @@ describe('CueSurface — thinking trace', () => {
     await waitFor(() => expect(screen.getByText(/3\s+nuevos/)).toBeTruthy());
   });
 });
+
+// ─── clinical decision support card (Phase 24) ────────────────────────────────
+
+describe('CueSurface — clinical decision support card', () => {
+  beforeEach(() => stubReducedMotion(false));
+  afterEach(() => { vi.restoreAllMocks(); cleanup(); });
+
+  const GS = '\x1d';
+
+  /** A streaming fetch mock whose /api/cue/chat body yields the given chunks. */
+  function streamFetch(chunks: string[]) {
+    const enc = new TextEncoder();
+    let i = 0;
+    return vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      headers: new Headers(),
+      body: {
+        getReader: () => ({
+          read: async () =>
+            i < chunks.length
+              ? { done: false, value: enc.encode(chunks[i++]) }
+              : { done: true, value: undefined },
+          cancel: async () => {},
+        }),
+      },
+      text: async () => chunks.join(''),
+    }));
+  }
+
+  const cardFrame =
+    GS +
+    JSON.stringify({
+      card: {
+        kind: 'clinical_support',
+        considerations: [
+          {
+            condition: 'Acute viral pharyngitis',
+            rationale: 'Sore throat with low-grade fever',
+            confidence: 'HIGH',
+            distinguishing_factors: 'Centor criteria; rapid strep antigen',
+          },
+        ],
+        red_flags: ['Difficulty breathing or drooling (possible epiglottitis)'],
+        disclaimer: 'Clinical decision support only — not a diagnosis.',
+      },
+    }) +
+    '\n';
+
+  it('renders the card off a \\x1d frame (condition, red flag, disclaimer) + the narration after it', async () => {
+    vi.stubGlobal('fetch', streamFetch([cardFrame, 'Quick walkthrough below.']));
+
+    render(<CueSurface isOpen onClose={vi.fn()} accessToken="t" locale="en" />);
+    const input = screen.getByRole('textbox');
+    fireEvent.change(input, { target: { value: 'decision support: sore throat, fever 3 days' } });
+    fireEvent.submit(input.closest('form') as HTMLFormElement);
+
+    // The structured card renders off the parsed payload (never model prose).
+    expect(await screen.findByText('Acute viral pharyngitis')).toBeTruthy();
+    expect(screen.getByText(/Difficulty breathing/)).toBeTruthy();
+    // The on-card disclaimer (from the payload) DENIES being a diagnosis.
+    expect(screen.getByText(/not a diagnosis/i)).toBeTruthy();
+    // The card is additive — Cue's narration after it is still shown.
+    expect(screen.getByText('Quick walkthrough below.')).toBeTruthy();
+  });
+
+  it('shows the input-side PHI / de-identification notice', () => {
+    // The dock's aviso effect fetches on open — return a thenable so it no-ops.
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: false })));
+    render(<CueSurface isOpen onClose={vi.fn()} accessToken="t" locale="en" />);
+    expect(screen.getByText(/de-identified information only/i)).toBeTruthy();
+  });
+});
