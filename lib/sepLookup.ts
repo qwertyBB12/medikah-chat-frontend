@@ -5,6 +5,16 @@
 // Source: github.com/fmacias64/cedulas-sep-api, github.com/LuisEduardoHernandez/cedulas-de-la-sep-API
 const SEP_SOLR_BASE = 'http://search.sep.gob.mx/solr/cedulasCore/select';
 
+// The legacy SEP Solr host was decommissioned (2026): it resolves in DNS but no
+// longer answers, so every live lookup just burned the full timeout before
+// falling to manual review. The replacement RNP service
+// (cedulaprofesional.sep.gob.mx/api) is reCAPTCHA-v3 gated and cannot be called
+// server-side. Until cédula verification is restored via SEP's OPEN DATASET,
+// skip the dead live call so doctors don't wait seconds for a guaranteed
+// failure — they fall straight to graceful manual review (D-05: never blocked).
+// Set SEP_LIVE_LOOKUP=1 to re-enable the legacy fetch if the host ever returns.
+const SEP_LIVE_LOOKUP = process.env.SEP_LIVE_LOOKUP === '1';
+
 export interface SEPLookupResult {
   found: boolean;
   cedulaNumber?: string;
@@ -28,6 +38,12 @@ export async function lookupCedula(cedulaNumber: string): Promise<SEPLookupResul
     return { found: false, error: 'Cedula number must be digits only' };
   }
 
+  // Legacy live endpoint is dead (see SEP_LIVE_LOOKUP note above). Short-circuit
+  // to graceful manual review instead of hanging on a guaranteed timeout.
+  if (!SEP_LIVE_LOOKUP) {
+    return { found: false, error: 'SEP live lookup disabled — cedula queued for manual review' };
+  }
+
   // 2. Build Solr query URL — exact match on numCedula field
   const url = `${SEP_SOLR_BASE}?fl=*,score&q=numCedula:${encodeURIComponent(cedulaNumber.trim())}&start=0&rows=3&wt=json`;
 
@@ -37,7 +53,7 @@ export async function lookupCedula(cedulaNumber: string): Promise<SEPLookupResul
     //    NOTE: SEP may be unreachable from non-Mexico IPs — always handle gracefully (D-05)
     const response = await fetch(url, {
       headers: { Accept: 'application/json' },
-      signal: AbortSignal.timeout(7000),
+      signal: AbortSignal.timeout(2500),
     });
 
     if (!response.ok) {
