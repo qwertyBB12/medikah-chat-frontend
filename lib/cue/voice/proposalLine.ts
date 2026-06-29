@@ -22,31 +22,24 @@ export interface CueProposal {
 }
 
 /**
- * Build the spoken proposal line. Leads with a question derived from the
- * structured payload (the human-readable `summary` when present) and closes with
- * an explicit call to confirm. Never past-tense, never "done".
+ * Build the spoken proposal line. Spoken aloud, reading the raw ISO date/time and
+ * the event title sounded robotic (founder feedback 2026-06-28: "the narration of
+ * the block doesn't work, it sounds robotic"). The card on screen ALREADY shows
+ * every detail (date, range, title) — so the spoken line is just a short, natural
+ * pointer to that card. Never past-tense, never "done": it asks the doctor to
+ * approve, so it can't imply the write already happened. The structured payload
+ * (summary/start/end) stays on the visual card; it is intentionally not narrated.
  */
 export function buildProposalLine(
   pc: CueProposal,
   locale: 'en' | 'es' = 'en',
 ): string {
-  const summary = (pc.summary ?? '').trim();
-
   if (locale === 'es') {
-    const cta = 'Confírmalo abajo.';
-    if (pc.action === 'block') {
-      return summary
-        ? `¿Bloqueo ${summary}? ${cta}`
-        : `¿Bloqueo este horario? ${cta}`;
-    }
-    return summary
-      ? `¿Libero ${summary}? ${cta}`
-      : `¿Libero los bloques de Cue? ${cta}`;
+    return pc.action === 'block'
+      ? 'Revisa la tarjeta en tu pantalla para aprobar el bloque.'
+      : 'Revisa la tarjeta en tu pantalla para aprobar el cambio.';
   }
-
-  const cta = 'Confirm below.';
-  if (pc.action === 'block') {
-    return summary ? `Block ${summary}? ${cta}` : `Block this time? ${cta}`;
-  }
-  return summary ? `Clear ${summary}? ${cta}` : `Clear Cue's blocks? ${cta}`;
+  return pc.action === 'block'
+    ? 'Check the card on your screen to approve the block.'
+    : 'Check the card on your screen to approve the change.';
 }
