@@ -94,6 +94,7 @@ const LABELS = {
         confirmEyebrow: 'Confirm before writing', confirm: 'Confirm', cancel: 'Cancel',
         hintLeft: 'Cue · English + Spanish', done: 'Done', memory: 'What Cue remembers',
         modeSettings: 'Interaction mode', tapToTalk: 'Tap to talk', tapToStop: 'Listening — tap to stop',
+        resume: 'Paused — tap to resume',
         blockedResult: () => `Time blocked.`,
         clearResult: (deleted: number, kept: number) => `${deleted} removed, ${kept} kept.` },
   es: { close: 'Cerrar', collapse: 'Contraer', you: 'Tú', context: 'Espacio clínico',
@@ -103,6 +104,7 @@ const LABELS = {
         confirmEyebrow: 'Confirmar antes de escribir', confirm: 'Confirmar', cancel: 'Cancelar',
         hintLeft: 'Cue · español + inglés', done: 'Listo', memory: 'Lo que Cue recuerda',
         modeSettings: 'Modo de interacción', tapToTalk: 'Toca para hablar', tapToStop: 'Escuchando — toca para terminar',
+        resume: 'En pausa — toca para reanudar',
         blockedResult: () => `Horario bloqueado.`,
         clearResult: (deleted: number, kept: number) => `${deleted} eliminados, ${kept} conservados.` },
 } as const;
@@ -193,6 +195,9 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
   const [mode, setMode] = useState<CueMode | null>(null);
   const [showPicker, setShowPicker] = useState(false);
   const [pttListening, setPttListening] = useState(false);
+  // Idle auto-suspend (continuous): Cue closed the mic after a silence window;
+  // the dock shows "tap to resume" and one tap wakes her.
+  const [suspended, setSuspended] = useState(false);
   const greetedRef = useRef(false); // greet once per open, not on mode switches
 
   const smRef = useRef<VoiceStateMachine | null>(null);
@@ -335,7 +340,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
     const flow = mode ? controllerFlowMode(mode) : null;
     if (!isOpen || !voiceSupported || !flow) {
       controllerRef.current?.destroy(); controllerRef.current = null;
-      setPttListening(false);
+      setPttListening(false); setSuspended(false);
       return;
     }
     const ctrl = new ContinuousFlowController({
@@ -345,8 +350,10 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
       onOrbEvent: (p) => setOrbState(p.state),
       onUserUtterance: (t) => { setSpoken(t); setPttListening(false); },
       onError: () => setErrorMsg(labels.error),
+      onSuspendChange: (s) => setSuspended(s),
     });
     controllerRef.current = ctrl;
+    setSuspended(false);
     ctrl.start()
       .then(() => { if (!greetedRef.current) { greetedRef.current = true; return speakGreeting(ctrl); } })
       .catch(() => setErrorMsg(labels.error));
@@ -436,6 +443,12 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
     if (!ctrl) return;
     if (ctrl.isListening()) { ctrl.stopListeningWindow(); setPttListening(false); }
     else { ctrl.startListeningWindow(); setPttListening(true); }
+  }, []);
+
+  // Idle auto-suspend: one tap wakes Cue (reopens the mic, open chime).
+  const handleResumeTap = useCallback(() => {
+    controllerRef.current?.resumeFromIdle();
+    setSuspended(false);
   }, []);
 
   if (!isOpen) return null;
@@ -692,11 +705,11 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
               spellCheck={false}
             />
             <button
-              type={mode === 'ptt' ? 'button' : 'submit'}
-              className={`mk-mic ${(mode === 'ptt' ? pttListening : orbState === 'listening') ? 'mk-mic-live' : ''}`}
-              aria-label={mode === 'ptt' ? (pttListening ? labels.tapToStop : labels.tapToTalk) : labels.mic}
-              title={mode === 'ptt' ? (pttListening ? labels.tapToStop : labels.tapToTalk) : undefined}
-              onClick={mode === 'ptt' ? handleMicTap : undefined}
+              type={mode === 'ptt' || suspended ? 'button' : 'submit'}
+              className={`mk-mic ${(suspended || (mode === 'ptt' ? pttListening : orbState === 'listening')) ? 'mk-mic-live' : ''}`}
+              aria-label={suspended ? labels.resume : mode === 'ptt' ? (pttListening ? labels.tapToStop : labels.tapToTalk) : labels.mic}
+              title={suspended ? labels.resume : mode === 'ptt' ? (pttListening ? labels.tapToStop : labels.tapToTalk) : undefined}
+              onClick={suspended ? handleResumeTap : mode === 'ptt' ? handleMicTap : undefined}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round">
                 <rect x="9" y="3" width="6" height="11" rx="3" />

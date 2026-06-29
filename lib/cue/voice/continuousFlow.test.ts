@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const vadHandlers: { onSpeechStart?: () => void; onUtterance?: (t: string) => void } = {};
 const vadPause = vi.fn();
@@ -50,6 +50,9 @@ describe('ContinuousFlowController', () => {
     vadPause.mockClear(); vadResume.mockClear();
     streamMode = 'resolve'; releaseStream = null;
   });
+
+  // Always restore real timers (idle-suspend tests use fake timers).
+  afterEach(() => { vi.useRealTimers(); });
 
   it('runs a turn: listening → thinking → speaking', async () => {
     const states: OrbState[] = [];
@@ -180,8 +183,11 @@ describe('ContinuousFlowController', () => {
     expect(ttsStop).toHaveBeenCalled();
     expect(playSpy).toHaveBeenCalledTimes(1);
     const spoken = playSpy.mock.calls[0][0] as string;
-    expect(spoken).toBe('Block 2–3 PM? Confirm below.');
+    // The spoken line points to the card (block-narration de-robotified 2026-06-28);
+    // it never narrates the model's prose or the raw payload.
+    expect(spoken).toBe('Check the card on your screen to approve the block.');
     expect(spoken).not.toContain('prepare'); // never the model's prose
+    expect(spoken).not.toMatch(/2[–-]3 PM/); // never the raw payload
   });
 
   // ── Wave 3: push-to-talk ────────────────────────────────────────────────────
@@ -221,5 +227,59 @@ describe('ContinuousFlowController', () => {
     expect(ctrl.isListening()).toBe(true);
     ctrl.stopListeningWindow();
     expect(ctrl.isListening()).toBe(false);
+  });
+
+  // ── Idle auto-suspend (continuous mode) ─────────────────────────────────────
+
+  it('continuous: auto-suspends after the idle window (mic closes + onSuspendChange)', async () => {
+    vi.useFakeTimers();
+    const onSuspend = vi.fn();
+    const ctrl = new ContinuousFlowController({
+      respond: ok('x'), idleSuspendMs: 45000, onSuspendChange: onSuspend,
+    });
+    await ctrl.start();
+    expect(ctrl.isSuspended()).toBe(false);
+    vi.advanceTimersByTime(45000);
+    expect(ctrl.isSuspended()).toBe(true);
+    expect(vadPause).toHaveBeenCalled();            // mic genuinely closed
+    expect(onSuspend).toHaveBeenCalledWith(true);
+    ctrl.destroy();
+  });
+
+  it('resumeFromIdle reopens the mic and clears the suspended state', async () => {
+    vi.useFakeTimers();
+    const onSuspend = vi.fn();
+    const ctrl = new ContinuousFlowController({
+      respond: ok('x'), idleSuspendMs: 1000, onSuspendChange: onSuspend,
+    });
+    await ctrl.start();
+    vi.advanceTimersByTime(1000);
+    expect(ctrl.isSuspended()).toBe(true);
+    vadResume.mockClear();
+    ctrl.resumeFromIdle();
+    expect(ctrl.isSuspended()).toBe(false);
+    expect(vadResume).toHaveBeenCalled();           // mic reopened
+    expect(onSuspend).toHaveBeenLastCalledWith(false);
+    ctrl.destroy();
+  });
+
+  it('idleSuspendMs: 0 disables auto-suspend (always-on)', async () => {
+    vi.useFakeTimers();
+    const ctrl = new ContinuousFlowController({ respond: ok('x'), idleSuspendMs: 0 });
+    await ctrl.start();
+    vi.advanceTimersByTime(600000);
+    expect(ctrl.isSuspended()).toBe(false);
+    ctrl.destroy();
+  });
+
+  it('ptt mode never idle-suspends (it already rests closed)', async () => {
+    vi.useFakeTimers();
+    const ctrl = new ContinuousFlowController({
+      respond: ok('x'), flowMode: 'ptt', idleSuspendMs: 1000,
+    });
+    await ctrl.start();
+    vi.advanceTimersByTime(60000);
+    expect(ctrl.isSuspended()).toBe(false);
+    ctrl.destroy();
   });
 });

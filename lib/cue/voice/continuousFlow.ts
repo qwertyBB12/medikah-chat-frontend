@@ -85,6 +85,16 @@ export interface ContinuousFlowOptions {
    *                            the doctor taps open (push-to-talk).
    */
   flowMode?: 'continuous' | 'ptt'
+  /**
+   * Idle auto-suspend (continuous mode only): after this many ms of silence with
+   * no active turn, close the mic — a settling chime, the mic genuinely OFF (OS
+   * indicator dark, not just muted), and onSuspendChange(true) so the UI can show
+   * a "tap to resume" affordance. One tap resumes. Default 45000. Set 0 to disable
+   * (always-on). No effect in ptt mode (it already rests closed).
+   */
+  idleSuspendMs?: number
+  /** Fires when idle auto-suspend toggles: true = suspended/dormant, false = resumed. */
+  onSuspendChange?: (suspended: boolean) => void
 }
 
 export { isContinuousVADSupported, diagnoseVADSupport }
@@ -103,9 +113,15 @@ export class ContinuousFlowController {
    * reopens once BOTH clear — fixing the bug where the speech-end `finally`
    * reopened the mic while a confirm card was still up.
    */
-  private micHolds = new Set<'speech' | 'confirm' | 'ptt'>()
+  private micHolds = new Set<'speech' | 'confirm' | 'ptt' | 'idle'>()
   /** Wave 3: mic cadence — 'continuous' rests open, 'ptt' rests closed. */
   private flowMode: 'continuous' | 'ptt'
+  // Idle auto-suspend (continuous mode): the mic is never left open indefinitely.
+  // The timer runs only while the mic is OPEN and at rest; it is cleared on any
+  // activity (speech / mic-close) and re-armed each time the mic reopens.
+  private idleTimer: ReturnType<typeof setTimeout> | null = null
+  private suspended = false
+  private readonly idleSuspendMs: number
   /** Wave 2: have we played an OPEN chime yet this session? Gates the close
    *  chime so the very first earcon a doctor hears is the OPEN one after the
    *  greeting — never a lone close chime before Cue has even spoken. */
@@ -122,6 +138,7 @@ export class ContinuousFlowController {
     })
     this.chimesEnabled = opts.chimes !== false
     this.flowMode = opts.flowMode ?? 'continuous'
+    this.idleSuspendMs = opts.idleSuspendMs ?? 45000
     // Earcons share the TTS player's already-unlocked AudioContext (sourced
     // lazily — it is created in tts.unlock() during start()).
     this.chimes = new ChimePlayer(
@@ -165,9 +182,13 @@ export class ContinuousFlowController {
     // only ever opens for a window the doctor taps. (chimedOpen is false here, so
     // no close earcon fires before the greeting.)
     if (this.flowMode === 'ptt') this.addMicHold('ptt')
+    // Continuous: bound the open mic with idle auto-suspend. (The greeting's
+    // mic close/reopen re-arms this; arming here covers the no-greeting case.)
+    else this._armIdleTimer()
   }
 
   stop(): void {
+    this._clearIdleTimer()
     this.tts.stop()
     this.listener?.pause()
     this.state.send('stop', { source: 'user' })
@@ -194,6 +215,7 @@ export class ContinuousFlowController {
 
   destroy(): void {
     this.destroyed = true
+    this._clearIdleTimer()
     this.tts.stop()
     this.listener?.destroy()
     this.listener = null
@@ -226,10 +248,12 @@ export class ContinuousFlowController {
    * The close chime is suppressed until the first open chime has played, so the
    * opening greeting is never preceded by a lone close earcon.
    */
-  private addMicHold(reason: 'speech' | 'confirm' | 'ptt'): void {
+  private addMicHold(reason: 'speech' | 'confirm' | 'ptt' | 'idle'): void {
     const wasOpen = this.micHolds.size === 0
     this.micHolds.add(reason)
     if (!wasOpen) return // already closed — nothing to pause/chime
+    // The mic is closing — stop the idle countdown (it re-arms when it reopens).
+    this._clearIdleTimer()
     try {
       this.listener?.pause()
     } catch {
@@ -238,7 +262,7 @@ export class ContinuousFlowController {
     if (this.chimesEnabled && this.chimedOpen) this.chimes.playClose()
   }
 
-  private releaseMicHold(reason: 'speech' | 'confirm' | 'ptt'): void {
+  private releaseMicHold(reason: 'speech' | 'confirm' | 'ptt' | 'idle'): void {
     if (!this.micHolds.has(reason)) return
     this.micHolds.delete(reason)
     if (this.micHolds.size > 0) return // still held by another reason
@@ -260,6 +284,58 @@ export class ContinuousFlowController {
       this.chimes.playOpen()
       this.chimedOpen = true
     }
+    // The mic is open and at rest again — (re)start the idle auto-suspend
+    // countdown (continuous only; no-op in ptt / when disabled).
+    this._armIdleTimer()
+  }
+
+  // ── Idle auto-suspend (continuous mode) ─────────────────────────────────────
+  // A world-class voice product never leaves an open mic unbounded. After a
+  // silence window with no active turn, the mic genuinely closes (indicator dark,
+  // not just muted) with a settling chime; one tap resumes. Honest mic state,
+  // privacy-respecting (patients in the room), and no chime fatigue.
+
+  private _armIdleTimer(): void {
+    this._clearIdleTimer()
+    if (this.destroyed || this.flowMode !== 'continuous' || this.idleSuspendMs <= 0) return
+    this.idleTimer = setTimeout(() => this._onIdleTimeout(), this.idleSuspendMs)
+  }
+
+  private _clearIdleTimer(): void {
+    if (this.idleTimer) {
+      clearTimeout(this.idleTimer)
+      this.idleTimer = null
+    }
+  }
+
+  private _onIdleTimeout(): void {
+    this.idleTimer = null
+    // Only suspend if genuinely idle: continuous, mic open (no holds), at rest.
+    if (this.destroyed || this.flowMode !== 'continuous' || this.suspended) return
+    if (this.micHolds.size !== 0) return
+    if (this.state.state !== 'listening' && this.state.state !== 'idle') return
+    this.suspendForIdle()
+  }
+
+  /** Idle auto-suspend fired (or a manual sleep): close the mic + settling chime. */
+  suspendForIdle(): void {
+    if (this.destroyed || this.suspended) return
+    this.suspended = true
+    this.addMicHold('idle') // closes the mic + plays the settling (close) chime
+    this.opts.onSuspendChange?.(true)
+  }
+
+  /** The doctor tapped to wake Cue: reopen the mic (open chime) and re-arm idle. */
+  resumeFromIdle(): void {
+    if (this.destroyed || !this.suspended) return
+    this.suspended = false
+    this.releaseMicHold('idle') // reopens the mic, open chime, re-arms the idle timer
+    this.opts.onSuspendChange?.(false)
+  }
+
+  /** Is Cue dormant (idle auto-suspended)? Drives the "tap to resume" affordance. */
+  isSuspended(): boolean {
+    return this.suspended
   }
 
   /** Half-duplex: close the mic while Cue speaks. */
@@ -312,6 +388,9 @@ export class ContinuousFlowController {
 
   /** Barge-in hook.  Fires the moment VAD sees new speech. */
   private handleSpeechStart(): void {
+    // The doctor is talking — cancel the idle countdown (it re-arms when the mic
+    // next reopens at rest). Guards the rare case of a 45s+ utterance.
+    this._clearIdleTimer()
     const current = this.state.state
     // If Cue is mid-utterance, this is a barge-in.
     if (current === 'speaking' || current === 'thinking') {
