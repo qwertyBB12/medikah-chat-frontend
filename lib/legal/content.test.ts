@@ -6,14 +6,16 @@ import { PRIVACY_NOTICE } from './privacyContent';
 /** Flatten a document's blocks to one searchable string. */
 function flat(blocks: LegalBlock[]): string {
   const out: string[] = [];
-  const walk = (b: any) => {
-    if (typeof b?.t === 'string') out.push(b.t);
-    if (Array.isArray(b?.items)) out.push(...b.items);
-    if (Array.isArray(b?.titles)) out.push(...b.titles);
-    if (Array.isArray(b?.blocks)) b.blocks.forEach(walk);
-    if (Array.isArray(b?.rows)) b.rows.forEach((row: string[][]) => row.forEach((cell) => out.push(...cell)));
+  const walk = (node: Record<string, unknown>) => {
+    if (typeof node.t === 'string') out.push(node.t);
+    if (Array.isArray(node.items)) out.push(...(node.items as string[]));
+    if (Array.isArray(node.titles)) out.push(...(node.titles as string[]));
+    if (Array.isArray(node.blocks)) (node.blocks as Record<string, unknown>[]).forEach(walk);
+    if (Array.isArray(node.rows)) {
+      (node.rows as string[][][]).forEach((row) => row.forEach((cell) => out.push(...cell)));
+    }
   };
-  blocks.forEach(walk);
+  blocks.forEach((b) => walk(b as unknown as Record<string, unknown>));
   return out.join('\n');
 }
 
@@ -34,8 +36,9 @@ describe('legal content — structure', () => {
 
   it('each document leads with a MEDIKAH masthead title', () => {
     for (const doc of ALL) {
-      expect(doc[0].k).toBe('title');
-      expect((doc[0] as any).t).toMatch(/MEDIKAH/i);
+      const first = doc[0];
+      expect(first.k).toBe('title');
+      expect('t' in first ? first.t : '').toMatch(/MEDIKAH/i);
     }
   });
 
