@@ -28,6 +28,13 @@ export interface ClinicalSupportCopy {
   confidence: Record<'HIGH' | 'MODERATE' | 'LOW', string>;
   /** Always-visible input notice — trains de-identification (PHI hygiene). */
   phiNotice: string;
+  /** Slice-3 export actions + transient states. */
+  emailAction: string;
+  pdfAction: string;
+  emailSending: string;
+  emailSent: string;
+  emailFailed: string;
+  popupBlocked: string;
 }
 
 export const CLINICAL_SUPPORT_COPY: Record<CueLocale, ClinicalSupportCopy> = {
@@ -40,6 +47,12 @@ export const CLINICAL_SUPPORT_COPY: Record<CueLocale, ClinicalSupportCopy> = {
     confidence: { HIGH: 'High', MODERATE: 'Moderate', LOW: 'Low' },
     phiNotice:
       'De-identified information only — no names or identifiers. You’re responsible for anonymizing before sending.',
+    emailAction: 'Email to me',
+    pdfAction: 'Save as PDF',
+    emailSending: 'Sending…',
+    emailSent: 'Sent to your Medikah inbox',
+    emailFailed: 'Couldn’t send — try again',
+    popupBlocked: 'Allow pop-ups to save as PDF',
   },
   es: {
     title: 'Apoyo a la decisión clínica',
@@ -50,6 +63,12 @@ export const CLINICAL_SUPPORT_COPY: Record<CueLocale, ClinicalSupportCopy> = {
     confidence: { HIGH: 'Alta', MODERATE: 'Moderada', LOW: 'Baja' },
     phiNotice:
       'Solo información anonimizada — sin nombres ni identificadores. Usted es responsable de anonimizar antes de enviar.',
+    emailAction: 'Enviar a mi correo',
+    pdfAction: 'Guardar PDF',
+    emailSending: 'Enviando…',
+    emailSent: 'Enviado a tu bandeja Medikah',
+    emailFailed: 'No se pudo enviar — inténtalo de nuevo',
+    popupBlocked: 'Permite ventanas emergentes para guardar el PDF',
   },
 };
 
