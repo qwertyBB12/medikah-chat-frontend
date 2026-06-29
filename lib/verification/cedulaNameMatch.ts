@@ -41,7 +41,9 @@ export function matchCedulaName(extractedName: string, profileName: string): Nam
   if (a.size === 0 || b.size === 0) return { verdict: 'mismatch', score: 0 };
 
   let common = 0;
-  for (const t of a) if (b.has(t)) common++;
+  // forEach, not for…of: the project's tsconfig target predates Set iteration
+  // (TS2802) — a for…of over a Set fails `next build` (broke the 4a98aa2 deploy).
+  a.forEach((t) => { if (b.has(t)) common += 1; });
 
   const overlap = common / Math.max(a.size, b.size);
   const coverage = common / Math.min(a.size, b.size);
