@@ -244,19 +244,21 @@ describe('CueSurface — D-03 sentinel split + confirm card', () => {
       }) +
       '\n';
 
-    const fetchMock = vi
-      .fn()
-      // 1st call: /api/cue/chat → returns the sentinel body
-      .mockResolvedValueOnce({
-        ok: true,
-        text: async () => blockBody,
-      })
-      // 2nd call: /api/cue/calendar/confirm-write → returns the write result
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ blocked: true, uid: 'cue-fixed-uid-1' }),
-        text: async () => '',
-      });
+    // Route by URL — the dock's Phase-25 aviso effect also fetches on open,
+    // so order-dependent mockResolvedValueOnce chains get eaten by it.
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url === '/api/cue/chat') {
+        return { ok: true, text: async () => blockBody };
+      }
+      if (url === '/api/cue/calendar/confirm-write') {
+        return {
+          ok: true,
+          json: async () => ({ blocked: true, uid: 'cue-fixed-uid-1' }),
+          text: async () => '',
+        };
+      }
+      return { ok: false, text: async () => '', json: async () => ({}) }; // aviso no-op
+    });
     vi.stubGlobal('fetch', fetchMock);
     vi.stubGlobal('crypto', { randomUUID: () => 'tok-fixed-uuid' });
 
@@ -278,17 +280,17 @@ describe('CueSurface — D-03 sentinel split + confirm card', () => {
     // Click Confirm → POSTs to /api/cue/calendar/confirm-write.
     fireEvent.click(confirmBtn);
 
+    const callsTo = (target: string) =>
+      fetchMock.mock.calls.filter((c) => c[0] === target);
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(callsTo('/api/cue/calendar/confirm-write').length).toBe(1);
     });
     // The chat call routes through the same-origin BFF proxy (NextAuth-JWT auth),
     // never straight to FastAPI with a Supabase token (would 401 in prod).
-    const firstCall = fetchMock.mock.calls[0];
-    expect(firstCall[0]).toBe('/api/cue/chat');
+    expect(callsTo('/api/cue/chat').length).toBe(1);
 
-    const secondCall = fetchMock.mock.calls[1];
-    expect(secondCall[0]).toBe('/api/cue/calendar/confirm-write');
-    const sentBody = JSON.parse(secondCall[1].body);
+    const writeCall = callsTo('/api/cue/calendar/confirm-write')[0];
+    const sentBody = JSON.parse(writeCall[1].body);
     expect(sentBody.action).toBe('block');
     expect(sentBody.idempotency_token).toBe('tok-fixed-uuid');
     expect(sentBody.start_iso).toBe('2026-07-01T14:00:00+00:00');
@@ -310,9 +312,12 @@ describe('CueSurface — D-03 sentinel split + confirm card', () => {
       }) +
       '\n';
 
-    const fetchMock = vi.fn().mockResolvedValueOnce({
-      ok: true,
-      text: async () => clearBody,
+    // Route by URL (see the Confirm test above — aviso effect eats ordered mocks).
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url === '/api/cue/chat') {
+        return { ok: true, text: async () => clearBody };
+      }
+      return { ok: false, text: async () => '', json: async () => ({}) }; // aviso no-op
     });
     vi.stubGlobal('fetch', fetchMock);
     vi.stubGlobal('crypto', { randomUUID: () => 'tok-clear-uuid' });
@@ -332,7 +337,13 @@ describe('CueSurface — D-03 sentinel split + confirm card', () => {
     await waitFor(() => {
       expect(screen.queryByText('Cancel')).toBeNull();
     });
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const writeCalls = fetchMock.mock.calls.filter(
+      (c) => c[0] === '/api/cue/calendar/confirm-write'
+    );
+    expect(writeCalls.length).toBe(0);
+    expect(
+      fetchMock.mock.calls.filter((c) => c[0] === '/api/cue/chat').length
+    ).toBe(1);
   });
 });
 
