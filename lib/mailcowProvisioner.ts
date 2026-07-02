@@ -38,7 +38,13 @@ import {
 export { slugifySegment, deriveLocalPart, isUsableLocalPart, MAILBOX_DOMAIN } from './mailcowLocalPart';
 export type { PhysicianTitle } from './mailcowLocalPart';
 
-const DEFAULT_QUOTA_MB = 10240; // 10 GB — matches MAIL-08 / wizard free tier
+// 5 GB per-mailbox free tier. Dropped from 10 GB (2026-07-02) after 10 GB/doctor
+// repeatedly exhausted the Mailcow medikah.health DOMAIN quota during onboarding
+// (mailbox_quota_left_exceeded): a smaller default fits far more doctors per GB of
+// VPS disk and stops the recurring provisioning failures. The Mailcow per-mailbox
+// CAP may stay higher; this is only what we REQUEST. Keep in sync with the backend
+// provisioner + the "5 GB" workspace copy.
+const DEFAULT_QUOTA_MB = 5120;
 const MAX_COLLISION_SUFFIX = 9;
 
 export type ProvisionResult =
