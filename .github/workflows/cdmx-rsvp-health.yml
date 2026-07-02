@@ -10,12 +10,15 @@
 #
 # Post-event: relax the cron to hourly/daily or disable.
 # Watch ownership: COO desk (kah-operations Paperclip tracker).
+#
+# DISABLED 2026-07-02 (Paperclip remnant cleanup): the CDMX launch window
+# (2026-06-22 event + Jun 28-29 weekend sessions) has passed. Schedule
+# removed; manual runs still available via workflow_dispatch. Re-add a
+# schedule block for the next event window.
 
 name: CDMX RSVP health
 
 on:
-  schedule:
-    - cron: '*/30 * * * *' # every 30 min during the launch window
   workflow_dispatch:
 
 jobs:
