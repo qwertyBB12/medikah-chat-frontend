@@ -119,6 +119,9 @@ export default function UpgradeWizard({
   // Phase 13-07: resolve Stripe session_id → saga run_id for SSE consumer.
   const [resolvedRunId, setResolvedRunId] = useState<string | null>(null);
   const [runResolveError, setRunResolveError] = useState<string | null>(null);
+  // Retry counter for the run-id lookup: bumping it re-arms the resolve effect
+  // (audit P1 2026-07-02 — a charged doctor was stranded on a dead error state).
+  const [resolveAttempt, setResolveAttempt] = useState(0);
 
   // Stripe success_url returns to this page with ?session_id=cs_test_...
   const sessionIdQuery = useMemo(() => {
@@ -196,6 +199,7 @@ export default function UpgradeWizard({
     step,
     sessionIdQuery,
     resolvedRunId,
+    resolveAttempt,
     t.upgrade.wizard.errors.generic,
     t.upgrade.wizard.errors.network,
   ]);
@@ -267,6 +271,20 @@ export default function UpgradeWizard({
             data-testid="provisioning-resolve-error"
           >
             <p className="font-body text-alert-garnet">{runResolveError}</p>
+            <p className="font-body text-body-slate text-sm mt-2">
+              {provisioningCopy.resolveFailedBody}
+            </p>
+            <button
+              type="button"
+              data-testid="provisioning-resolve-retry"
+              className="mt-4 font-body text-sm font-semibold px-5 py-2.5 rounded-md bg-clinical-teal text-white hover:bg-clinical-teal/90 transition"
+              onClick={() => {
+                setRunResolveError(null);
+                setResolveAttempt((n) => n + 1);
+              }}
+            >
+              {provisioningCopy.resolveRetry}
+            </button>
           </div>
         ) : !resolvedRunId ? (
           <div
