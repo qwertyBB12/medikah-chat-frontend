@@ -103,7 +103,7 @@ export default function EditorialLayout({ physician, website, theme, isEs, slug 
               {p.full_name}
             </h1>
             {tagline && (
-              <p className="font-dm-serif text-white/60 text-lg italic">{tagline}</p>
+              <p className="font-body text-white/60 text-lg italic">{tagline}</p>
             )}
             {p.languages && p.languages.length > 0 && (
               <p className="mt-3 font-body text-sm text-white/40">{p.languages.join(' · ')}</p>
@@ -257,7 +257,7 @@ export default function EditorialLayout({ physician, website, theme, isEs, slug 
                 {isEs ? 'Ubicación' : 'Location'}
               </p>
             </div>
-            <p className="font-dm-sans text-body-slate text-lg">
+            <p className="font-body text-body-slate text-lg">
               {[w.office_city, w.office_country].filter(Boolean).join(', ')}
               {w.office_phone && (
                 <>

@@ -355,7 +355,7 @@ export default function WebsiteEditor({ physicianId, lang, accessToken }: Websit
     return (
       <div className="bg-white rounded-md border border-border-line shadow-sm p-6">
         <div className="flex items-center justify-center py-8">
-          <span className="font-dm-sans text-sm text-body-slate">{t.loading}</span>
+          <span className="font-body text-sm text-body-slate">{t.loading}</span>
         </div>
       </div>
     );
@@ -365,8 +365,8 @@ export default function WebsiteEditor({ physicianId, lang, accessToken }: Websit
     <div className="bg-white rounded-md border border-border-line shadow-sm">
       {/* Header */}
       <div className="px-6 pt-6 pb-4">
-        <h2 className="font-dm-sans font-semibold text-lg text-deep-charcoal">{t.title}</h2>
-        <p className="font-dm-sans text-sm text-body-slate mt-1">{t.subtitle}</p>
+        <h2 className="font-body font-semibold text-lg text-deep-charcoal">{t.title}</h2>
+        <p className="font-body text-sm text-body-slate mt-1">{t.subtitle}</p>
       </div>
 
       {/* Enable toggle */}
@@ -386,10 +386,10 @@ export default function WebsiteEditor({ physicianId, lang, accessToken }: Websit
             />
           </button>
           <div>
-            <span className="font-dm-sans text-sm font-medium text-deep-charcoal">
+            <span className="font-body text-sm font-medium text-deep-charcoal">
               {t.enableLabel}
             </span>
-            <p className="font-dm-sans text-xs text-archival-grey">{t.enableDesc}</p>
+            <p className="font-body text-xs text-archival-grey">{t.enableDesc}</p>
           </div>
         </div>
       </div>
@@ -403,9 +403,9 @@ export default function WebsiteEditor({ physicianId, lang, accessToken }: Websit
         >
           <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="font-dm-sans text-sm text-body-slate">{generationStatusMessage}</p>
+              <p className="font-body text-sm text-body-slate">{generationStatusMessage}</p>
               {isApproved && (
-                <span className="inline-flex items-center rounded-full bg-confirm-green/10 text-confirm-green px-2.5 py-1 text-xs font-dm-sans font-semibold">
+                <span className="inline-flex items-center rounded-full bg-confirm-green/10 text-confirm-green px-2.5 py-1 text-xs font-body font-semibold">
                   {t.approvedBadge}
                 </span>
               )}
@@ -414,19 +414,19 @@ export default function WebsiteEditor({ physicianId, lang, accessToken }: Websit
             {canShowPreview && (
               <>
                 <div>
-                  <p className="font-dm-sans text-xs font-semibold uppercase tracking-[0.04em] text-archival-grey mb-1.5">
+                  <p className="font-body text-xs font-semibold uppercase tracking-[0.04em] text-archival-grey mb-1.5">
                     {t.generatedTagline}
                   </p>
-                  <div className="rounded-lg border border-border-line bg-clinical-surface/20 px-3 py-2 font-dm-sans text-sm text-deep-charcoal">
+                  <div className="rounded-lg border border-border-line bg-clinical-surface/20 px-3 py-2 font-body text-sm text-deep-charcoal">
                     {selectedTagline || t.generatedPlaceholder}
                   </div>
                 </div>
 
                 <div>
-                  <p className="font-dm-sans text-xs font-semibold uppercase tracking-[0.04em] text-archival-grey mb-1.5">
+                  <p className="font-body text-xs font-semibold uppercase tracking-[0.04em] text-archival-grey mb-1.5">
                     {t.generatedBio}
                   </p>
-                  <div className="rounded-lg border border-border-line bg-clinical-surface/20 px-3 py-2 font-dm-sans text-sm text-deep-charcoal whitespace-pre-line leading-relaxed">
+                  <div className="rounded-lg border border-border-line bg-clinical-surface/20 px-3 py-2 font-body text-sm text-deep-charcoal whitespace-pre-line leading-relaxed">
                     {selectedBio || t.generatedPlaceholder}
                   </div>
                 </div>
@@ -439,7 +439,7 @@ export default function WebsiteEditor({ physicianId, lang, accessToken }: Websit
                   type="button"
                   onClick={handleRegenerate}
                   disabled={generationState === 'generating' || isApprovalBusy}
-                  className="font-dm-sans text-sm font-semibold px-4 py-2 rounded-lg bg-clinical-teal text-white hover:bg-clinical-teal/90 disabled:opacity-50 transition"
+                  className="font-body text-sm font-semibold px-4 py-2 rounded-lg bg-clinical-teal text-white hover:bg-clinical-teal/90 disabled:opacity-50 transition"
                 >
                   {generationState === 'generating' ? t.regenerating : (canShowPreview ? t.regenerate : t.generate)}
                 </button>
@@ -450,7 +450,7 @@ export default function WebsiteEditor({ physicianId, lang, accessToken }: Websit
                       type="button"
                       onClick={handleApprove}
                       disabled={generationState === 'generating' || isApprovalBusy}
-                      className="font-dm-sans text-sm font-semibold px-4 py-2 rounded-lg bg-confirm-green text-white hover:bg-confirm-green/90 disabled:opacity-50 transition"
+                      className="font-body text-sm font-semibold px-4 py-2 rounded-lg bg-confirm-green text-white hover:bg-confirm-green/90 disabled:opacity-50 transition"
                     >
                       {approvalState === 'approving' ? t.approving : t.approvePublish}
                     </button>
@@ -458,7 +458,7 @@ export default function WebsiteEditor({ physicianId, lang, accessToken }: Websit
                       type="button"
                       onClick={handleReject}
                       disabled={generationState === 'generating' || isApprovalBusy}
-                      className="font-dm-sans text-sm font-semibold px-4 py-2 rounded-lg border border-alert-garnet text-alert-garnet hover:bg-alert-garnet/5 disabled:opacity-50 transition"
+                      className="font-body text-sm font-semibold px-4 py-2 rounded-lg border border-alert-garnet text-alert-garnet hover:bg-alert-garnet/5 disabled:opacity-50 transition"
                     >
                       {approvalState === 'rejecting' ? t.rejecting : t.rejectReanswer}
                     </button>
@@ -468,20 +468,20 @@ export default function WebsiteEditor({ physicianId, lang, accessToken }: Websit
             )}
 
             {isApproved && (
-              <p className="font-dm-sans text-xs text-archival-grey">{t.regenerateWarning}</p>
+              <p className="font-body text-xs text-archival-grey">{t.regenerateWarning}</p>
             )}
 
             {approvalMessage === 'approve' && (
-              <p className="font-dm-sans text-xs text-confirm-green">{t.approveSuccess}</p>
+              <p className="font-body text-xs text-confirm-green">{t.approveSuccess}</p>
             )}
             {approvalMessage === 'reject' && (
-              <p className="font-dm-sans text-xs text-body-slate">{t.rejectSuccess}</p>
+              <p className="font-body text-xs text-body-slate">{t.rejectSuccess}</p>
             )}
             {generationState === 'error' && (
-              <p className="font-dm-sans text-xs text-alert-garnet">{t.regenerateError}</p>
+              <p className="font-body text-xs text-alert-garnet">{t.regenerateError}</p>
             )}
             {approvalState === 'error' && (
-              <p className="font-dm-sans text-xs text-alert-garnet">{t.approvalError}</p>
+              <p className="font-body text-xs text-alert-garnet">{t.approvalError}</p>
             )}
           </div>
         </CollapsibleSection>
@@ -489,7 +489,7 @@ export default function WebsiteEditor({ physicianId, lang, accessToken }: Websit
 
       {/* Custom tagline */}
       <div className="px-6 pb-4">
-        <label className="block font-dm-sans text-sm font-medium text-deep-charcoal mb-1">
+        <label className="block font-body text-sm font-medium text-deep-charcoal mb-1">
           {t.taglineLabel}
         </label>
         <input
@@ -497,7 +497,7 @@ export default function WebsiteEditor({ physicianId, lang, accessToken }: Websit
           value={form.custom_tagline}
           onChange={(e) => updateField('custom_tagline', e.target.value)}
           placeholder={t.taglinePlaceholder}
-          className="w-full border border-border-line rounded-lg px-3 py-2 font-dm-sans text-sm text-deep-charcoal focus:outline-none focus:border-clinical-teal"
+          className="w-full border border-border-line rounded-lg px-3 py-2 font-body text-sm text-deep-charcoal focus:outline-none focus:border-clinical-teal"
         />
       </div>
 
@@ -571,7 +571,7 @@ export default function WebsiteEditor({ physicianId, lang, accessToken }: Websit
         <button
           onClick={handleSave}
           disabled={saveState === 'saving'}
-          className={`font-dm-sans text-sm font-semibold px-6 py-2.5 rounded-lg transition ${
+          className={`font-body text-sm font-semibold px-6 py-2.5 rounded-lg transition ${
             saveState === 'saved'
               ? 'bg-confirm-green text-white'
               : saveState === 'error'
@@ -611,7 +611,7 @@ function CollapsibleSection({
         onClick={onToggle}
         className="w-full flex items-center justify-between px-4 py-3 bg-clinical-surface/30 hover:bg-clinical-surface/50 transition"
       >
-        <span className="font-dm-sans text-sm font-medium text-deep-charcoal">{title}</span>
+        <span className="font-body text-sm font-medium text-deep-charcoal">{title}</span>
         <svg
           className={`w-4 h-4 text-archival-grey transition-transform duration-200 ${
             open ? 'rotate-180' : ''

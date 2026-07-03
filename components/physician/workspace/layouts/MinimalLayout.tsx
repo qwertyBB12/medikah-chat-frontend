@@ -231,7 +231,7 @@ export default function MinimalLayout({ physician, website, theme, isEs, slug }:
           </h2>
           <button
             onClick={handleScheduleClick}
-            className="inline-flex items-center justify-center font-dm-sans text-sm font-medium uppercase tracking-[0.04em] px-12 py-4 text-white rounded-md transition-all duration-300 hover:-translate-y-[2px] hover:shadow-[0_8px_24px_rgba(0,0,0,0.2)]"
+            className="inline-flex items-center justify-center font-body text-sm font-medium uppercase tracking-[0.04em] px-12 py-4 text-white rounded-md transition-all duration-300 hover:-translate-y-[2px] hover:shadow-[0_8px_24px_rgba(0,0,0,0.2)]"
             style={{ backgroundColor: accent }}
           >
             {isEs ? 'Agendar Consulta' : 'Schedule Consultation'}
