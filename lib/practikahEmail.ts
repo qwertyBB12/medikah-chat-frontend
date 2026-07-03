@@ -420,6 +420,54 @@ export async function sendProLiveEmail(params: SendProLiveEmailParams): Promise<
   return sendEmail({ to, subject: content.subject, html });
 }
 
+// ---------- Pro setup stalled (step-replay slice) ----------
+
+export interface SendProStalledEmailParams {
+  to: string;
+  lang: 'en' | 'es';
+  domain: string;
+  firstName?: string;
+  lastName?: string;
+}
+
+/**
+ * Honest "your site setup is delayed" email — fired once, when the pro
+ * finish-later retry loop exhausts its attempts. The doctor's payment is
+ * safe, the domain is theirs, and our ops team is already on it; the email
+ * says exactly that and asks nothing of the doctor. No compliance claims.
+ */
+export async function sendProStalledEmail(params: SendProStalledEmailParams): Promise<SendEmailResult> {
+  const { to, lang, domain, lastName } = params;
+  const greeting = lastName ? `Dr. ${lastName}` : 'Doctor';
+
+  const content = lang === 'es' ? {
+    subject: `La configuración de ${domain} está tomando más tiempo de lo normal`,
+    preheader: `Tu pago está seguro y tu dominio es tuyo — estamos terminando la configuración.`,
+    heading: 'Estamos terminando tu configuración',
+    body: `<p>${greeting}, la configuración de <strong>${domain}</strong> está tomando más tiempo de lo esperado.</p>
+      <p>Tu pago está seguro y tu dominio ya está registrado a tu nombre. Nuestro equipo ya fue notificado y está terminando la configuración manualmente.</p>
+      <p>No necesitas hacer nada — te avisaremos por correo en cuanto tu sitio esté activo.</p>`,
+    footer: 'Práctikah • Care Without Distance',
+  } : {
+    subject: `Setting up ${domain} is taking longer than usual`,
+    preheader: `Your payment is safe and your domain is yours — we're finishing setup.`,
+    heading: "We're finishing your setup",
+    body: `<p>${greeting}, setting up <strong>${domain}</strong> is taking longer than expected.</p>
+      <p>Your payment is safe and your domain is already registered in your name. Our team has been notified and is finishing the setup manually.</p>
+      <p>There's nothing you need to do — we'll email you the moment your site is live.</p>`,
+    footer: 'Práctikah • Care Without Distance',
+  };
+
+  const html = renderBrandedEmail({
+    preheader: content.preheader,
+    heading: content.heading,
+    bodyHtml: content.body,
+    footer: content.footer,
+    locale: lang,
+  });
+  return sendEmail({ to, subject: content.subject, html });
+}
+
 // ---------- Dunning supplement (D-27) ----------
 
 export interface SendDunningSupplementEmailParams {

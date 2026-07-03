@@ -33,6 +33,7 @@ const STEP_ORDER = [
   'pro.provision_pro_mailbox',
   'pro.attach_saas_hostname',
   'pro.migrate_theme',
+  'pro.verify_live',
 ] as const;
 
 type SagaStep = (typeof STEP_ORDER)[number];
