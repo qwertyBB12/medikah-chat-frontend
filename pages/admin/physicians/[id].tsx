@@ -406,7 +406,7 @@ export default function PhysicianDetailPage({
 
   async function handleSetStatus(
     status: string,
-    extra?: { title?: PhysicianTitle; mailbox_local_part?: string },
+    extra?: { title?: PhysicianTitle; mailbox_local_part?: string; rejection_reason?: string },
   ) {
     setIsUpdating(true);
     try {
@@ -416,6 +416,11 @@ export default function PhysicianDetailPage({
         updates.verified_by = `admin:${admin.id}`;
         if (extra?.title) updates.title = extra.title;
         if (extra?.mailbox_local_part) updates.mailbox_local_part = extra.mailbox_local_part;
+      }
+      if (status === 'rejected' && extra?.rejection_reason) {
+        // Passed to the rejection email only — the API whitelist never
+        // persists it to the physicians row.
+        updates.rejection_reason = extra.rejection_reason;
       }
       const res = await fetch(`/api/admin/physicians/${physician.id}`, {
         method: 'PUT',
@@ -473,6 +478,22 @@ export default function PhysicianDetailPage({
           );
         } else {
           alert(`Verified. Mailbox provisioned${mbox}.`);
+        }
+      }
+
+      // On a "rejected" flip, tell the admin whether the doctor was notified —
+      // silence here is exactly the ghosting this feature exists to end.
+      if (status === 'rejected' && res.ok) {
+        const body = (await res.json().catch(() => ({}))) as {
+          rejection?: { status?: string; reason?: string } | null;
+        };
+        const rej = body.rejection;
+        if (rej?.status === 'sent') {
+          alert('Rejected. Notification email sent to the physician.');
+        } else if (rej?.status === 'failed') {
+          alert('Rejected, but the notification email could NOT be sent — contact the physician manually.');
+        } else {
+          alert('Rejected. Notification email is currently disabled (REJECTION_EMAIL_ENABLED) — the physician was NOT notified.');
         }
       }
 
@@ -613,7 +634,15 @@ export default function PhysicianDetailPage({
               Verify &amp; provision mailbox
             </button>
             <button
-              onClick={() => handleSetStatus('rejected')}
+              onClick={() => {
+                const reason = window.prompt(
+                  'Reason for rejection (included in the notification email to the physician — leave blank to omit):',
+                );
+                if (reason === null) return; // admin cancelled
+                handleSetStatus('rejected', {
+                  rejection_reason: reason.trim() || undefined,
+                });
+              }}
               disabled={isUpdating}
               className="font-dm-sans text-sm font-medium py-2 px-4 rounded-[8px] bg-alert-garnet text-white hover:bg-alert-garnet/90 transition disabled:opacity-50"
             >

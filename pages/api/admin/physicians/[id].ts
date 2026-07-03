@@ -4,6 +4,7 @@ import { supabaseAdmin } from '../../../../lib/supabaseServer';
 import { listRecordsForPhysician } from '../../../../lib/verificationRecordService';
 import { triggerWorkspaceActivation, type ActivationTriggerResult } from '../../../../lib/activationEmail';
 import { provisionWorkspaceMailbox, type ProvisionResult } from '../../../../lib/mailcowProvisioner';
+import { sendPhysicianRejectionEmail } from '../../../../lib/physicianEmail';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const admin = await getAdminUser(req, res);
@@ -251,10 +252,52 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       }
 
+      // Rejection notification (doctor-journey fix wave 2026-07): rejected
+      // doctors were ghosted — only the 'verified' flip sent anything. Send a
+      // bilingual email with the admin's reason + a resubmission path.
+      // DARK until Dr. Aguirre approves the copy: gated on
+      // REJECTION_EMAIL_ENABLED === 'true'. body.rejection_reason is passed to
+      // the email only (not in ALLOWED_FIELDS, never persisted to physicians).
+      // Fault-tolerant: a send failure must NOT fail the status update.
+      let rejection:
+        | { status: 'sent' }
+        | { status: 'skipped'; reason: 'disabled' }
+        | { status: 'failed'; reason?: string }
+        | null = null;
+      if (updates.verification_status === 'rejected') {
+        if (process.env.REJECTION_EMAIL_ENABLED !== 'true') {
+          rejection = { status: 'skipped', reason: 'disabled' };
+        } else {
+          try {
+            const reason =
+              typeof body.rejection_reason === 'string' && body.rejection_reason.trim()
+                ? body.rejection_reason.trim().slice(0, 1000)
+                : null;
+            const sendResult = await sendPhysicianRejectionEmail({
+              fullName: (data.full_name as string) || '',
+              email: data.email as string,
+              title: data.title === 'Dr' || data.title === 'Dra' ? data.title : null,
+              reason,
+              lang: data.onboarding_language === 'es' ? 'es' : 'en',
+            });
+            rejection = sendResult.success
+              ? { status: 'sent' }
+              : { status: 'failed', reason: sendResult.error };
+          } catch (rejErr) {
+            console.error(
+              '[admin/physicians PUT] rejection email failed (status update applied):',
+              rejErr instanceof Error ? rejErr.message : String(rejErr),
+            );
+            rejection = { status: 'failed', reason: 'send_error' };
+          }
+        }
+      }
+
       return res.status(200).json({
         physician: data,
         provisioning,
         activation,
+        rejection,
         activationEmailTriggered: activation?.status === 'sent',
       });
     } catch (err) {
