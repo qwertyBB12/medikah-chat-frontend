@@ -101,7 +101,7 @@ export default function DashboardWelcomeCard({
   if (!visible) return null;
 
   return (
-    <div className="bg-linen rounded-md border border-warm-gray-800/[0.06] p-6 shadow-sm relative">
+    <div className="bg-linen-white rounded-md border border-warm-gray-800/[0.06] p-6 shadow-sm relative">
       <button
         type="button"
         onClick={handleDismiss}
