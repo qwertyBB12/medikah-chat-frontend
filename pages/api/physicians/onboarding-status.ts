@@ -25,11 +25,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const physicianIdClaim = session.user.physician_id;
     const email = session.user.email?.toLowerCase();
 
+    // D-09 alias funneling: a session email may be an alias of a canonical
+    // physician record (e.g. a secondary Google identity). Resolve via
+    // physician_email_aliases BEFORE falling back to physicians.email —
+    // otherwise an aliased sign-in reads as "not onboarded" and gets routed
+    // back through the onboarding wizard (the ghost-row 884c failure mode).
+    let resolvedId = physicianIdClaim ?? null;
+    if (!resolvedId && email) {
+      const { data: alias, error: aliasErr } = await supabaseAdmin
+        .from('physician_email_aliases')
+        .select('physician_id')
+        .eq('email', email)
+        .maybeSingle();
+      if (aliasErr) {
+        console.error('onboarding-status: alias lookup error', aliasErr);
+      }
+      if (alias?.physician_id) resolvedId = alias.physician_id;
+    }
+
     let query = supabaseAdmin
       .from('physicians')
       .select('id, verification_status, onboarding_completed_at, consent_signed_at');
-    query = physicianIdClaim
-      ? query.eq('id', physicianIdClaim)
+    query = resolvedId
+      ? query.eq('id', resolvedId)
       : query.eq('email', email!);
     const { data: physician, error } = await query.maybeSingle();
 
