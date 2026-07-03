@@ -1,0 +1,40 @@
+# Verification clerk — daily queue sweep (sprint task #27)
+#
+# Sweeps the pending credential queue and emails the reviewer (Dr. Aguirre)
+# one digest with signed one-tap approve links for clean cases. DARK until
+# VERIFICATION_CLERK_ENABLED=true + CLERK_REVIEWER_EMAIL are set in Netlify
+# env — until then the endpoint answers { status: "disabled" } and this cron
+# stays green. Requires the INTERNAL_API_SHARED_SECRET repo secret (same value
+# as the Netlify env var); skips with a notice when unset.
+#
+# Watch ownership: COO desk (kah-operations Paperclip tracker).
+
+name: Verification clerk sweep
+
+on:
+  schedule:
+    - cron: '0 13 * * 1-6' # 13:00 UTC (07:00 CDMX) Mon-Sat — docket before the workday
+  workflow_dispatch:
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger clerk sweep
+        env:
+          INTERNAL_SECRET: ${{ secrets.INTERNAL_API_SHARED_SECRET }}
+        run: |
+          if [ -z "$INTERNAL_SECRET" ]; then
+            echo '::notice::INTERNAL_API_SHARED_SECRET repo secret not set — skipping (clerk stays dark).'
+            exit 0
+          fi
+          code=$(curl -s -o /tmp/body -w '%{http_code}' --max-time 90 \
+            -X POST \
+            -H "X-Internal-Secret: $INTERNAL_SECRET" \
+            'https://medikah.health/api/internal/verification-clerk')
+          echo "HTTP $code"
+          cat /tmp/body
+          if [ "$code" != "200" ]; then
+            echo 'Clerk endpoint returned an error.'
+            exit 1
+          fi
