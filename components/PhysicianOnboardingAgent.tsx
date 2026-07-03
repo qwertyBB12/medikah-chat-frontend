@@ -114,7 +114,11 @@ interface PhysicianOnboardingAgentProps {
   lang: SupportedLang;
   appendMessage: (message: OnboardingBotMessage) => void;
   onStateChange?: (state: OnboardingAgentState) => void;
-  onProfileReady?: (physicianId: string, physicianName: string) => void;
+  onProfileReady?: (
+    physicianId: string,
+    physicianName: string,
+    title?: 'Dr' | 'Dra' | null,
+  ) => void;
   onPhaseChange?: (phase: string) => void;
 }
 
@@ -408,7 +412,7 @@ const PhysicianOnboardingAgent = forwardRef<
       stableAppendMessage({ text: successMessage });
 
       setTimeout(() => {
-        onProfileReady?.(physicianId, profileData.fullName);
+        onProfileReady?.(physicianId, profileData.fullName, profileData.title ?? null);
       }, 800);
     } else {
       stableAppendMessage({
