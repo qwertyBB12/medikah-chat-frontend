@@ -428,6 +428,62 @@ describe('CueSurface — thinking trace', () => {
   });
 });
 
+// ─── history scrollback ──────────────────────────────────────────────────────
+
+describe('CueSurface — history scrollback', () => {
+  beforeEach(() => stubReducedMotion(false));
+  afterEach(() => { vi.restoreAllMocks(); cleanup(); });
+
+  /** Streaming fetch mock: each /api/cue/chat call streams the next turn's
+   *  chunks; other endpoints (memory aviso) get a quiet 404. */
+  function multiTurnFetch(turns: string[][]) {
+    const enc = new TextEncoder();
+    let call = 0;
+    return vi.fn(async (url: unknown) => {
+      if (!String(url).includes('/api/cue/chat')) {
+        return { ok: false, status: 404, json: async () => ({}) };
+      }
+      const chunks = turns[Math.min(call++, turns.length - 1)];
+      let i = 0;
+      return {
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        body: {
+          getReader: () => ({
+            read: async () =>
+              i < chunks.length
+                ? { done: false, value: enc.encode(chunks[i++]) }
+                : { done: true, value: undefined },
+            cancel: async () => {},
+          }),
+        },
+        text: async () => chunks.join(''),
+      };
+    });
+  }
+
+  it('keeps the previous exchange visible when a new turn starts', async () => {
+    vi.stubGlobal('fetch', multiTurnFetch([['First answer.'], ['Second answer.']]));
+    render(<CueSurface isOpen onClose={vi.fn()} accessToken="t" locale="en" />);
+    const input = screen.getByRole('textbox');
+
+    fireEvent.change(input, { target: { value: 'first question' } });
+    fireEvent.submit(input.closest('form') as HTMLFormElement);
+    expect(await screen.findByText('First answer.')).toBeTruthy();
+
+    fireEvent.change(input, { target: { value: 'second question' } });
+    fireEvent.submit(input.closest('form') as HTMLFormElement);
+    expect(await screen.findByText('Second answer.')).toBeTruthy();
+
+    // Scrollback: the first exchange is STILL on screen above the live turn…
+    expect(screen.getByText('first question')).toBeTruthy();
+    expect(screen.getByText('First answer.')).toBeTruthy();
+    // …and the live turn shows the new user bubble.
+    expect(screen.getByText('second question')).toBeTruthy();
+  });
+});
+
 // ─── clinical decision support card (Phase 24) ────────────────────────────────
 
 describe('CueSurface — clinical decision support card', () => {

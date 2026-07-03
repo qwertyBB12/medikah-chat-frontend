@@ -96,6 +96,7 @@ const LABELS = {
         confirmBlock: 'Block this time?', confirmClear: 'Clear Cue blocks?',
         confirmEyebrow: 'Confirm before writing', confirm: 'Confirm', cancel: 'Cancel',
         hintLeft: 'Cue · English + Spanish', done: 'Done', memory: 'What Cue remembers',
+        stepsDone: (n: number) => (n === 1 ? '1 step ✓' : `${n} steps ✓`),
         modeSettings: 'Interaction mode', tapToTalk: 'Tap to talk', tapToStop: 'Listening — tap to stop',
         resume: 'Paused — tap to resume',
         blockedResult: () => `Time blocked.`,
@@ -106,6 +107,7 @@ const LABELS = {
         confirmBlock: '¿Bloquear este horario?', confirmClear: '¿Liberar los bloques de Cue?',
         confirmEyebrow: 'Confirmar antes de escribir', confirm: 'Confirmar', cancel: 'Cancelar',
         hintLeft: 'Cue · español + inglés', done: 'Listo', memory: 'Lo que Cue recuerda',
+        stepsDone: (n: number) => (n === 1 ? '1 paso ✓' : `${n} pasos ✓`),
         modeSettings: 'Modo de interacción', tapToTalk: 'Toca para hablar', tapToStop: 'Escuchando — toca para terminar',
         resume: 'En pausa — toca para reanudar',
         blockedResult: () => `Horario bloqueado.`,
@@ -140,6 +142,17 @@ function toolLabel(locale: 'en' | 'es', tool: string): { verb: string; unit: str
 
 interface CueResponse { title: string; summary: string; }
 
+/** One completed exchange kept for scrollback. The live turn stays in the
+ *  existing response/toolTrace/cards state; it is archived here when the NEXT
+ *  turn starts (history-scrollback slice — before it, each turn wiped the
+ *  previous one and the doctor lost the thread they could still see). */
+interface CompletedTurn {
+  user: string; // '' for the spoken greeting (no user bubble)
+  trace: ToolStep[];
+  text: string;
+  cards: CueCard[];
+}
+
 /** One cascading trace step. The engine runs tools sequentially, so at most one
  *  step is 'run' at a time; an 'end' frame resolves the last running step. */
 interface ToolStep { tool: string; status: 'run' | 'done' | 'err'; items?: number; }
@@ -165,6 +178,88 @@ function stepResultText(s: ToolStep, unit: string): string {
   return unit ? `✓ ${s.items} ${unit}` : `✓ ${s.items}`;
 }
 
+type ClinicalCopy = (typeof CLINICAL_SUPPORT_COPY)['en'];
+
+/** Phase 24 decision-support card, shared by the live turn (with export
+ *  actions) and scrollback turns (read-only — the export state is transient
+ *  and single-turn; re-asking re-arms it). Rendered off the parsed \x1d
+ *  payload (never model prose); NEVER labeled a "diagnosis". */
+function SupportCardView({ card, cds, locale, actions }: {
+  card: CueCard;
+  cds: ClinicalCopy;
+  locale: 'en' | 'es';
+  actions?: {
+    emailing: boolean;
+    exportMsg: string | null;
+    onEmail: (c: CueCard) => void;
+    onPdf: (c: CueCard) => void;
+  };
+}) {
+  return (
+    <div className="mk-card mk-cds" role="group" aria-label={cds.title}>
+      <div className="mk-card-k">&#9670; {cds.title}</div>
+
+      {card.considerations.length > 0 && (
+        <>
+          <div className="mk-cds-h">{cds.considerations}</div>
+          <ol className="mk-cons-list">
+            {card.considerations.map((c, i) => (
+              <li className="mk-cons" key={i}>
+                <div className="mk-cons-top">
+                  <span className="mk-cons-name">{c.condition}</span>
+                  <span className={`mk-chip mk-chip-${(c.confidence || '').toLowerCase()}`}>
+                    {confidenceLabel(locale, c.confidence)}
+                  </span>
+                </div>
+                {c.rationale && (
+                  <div className="mk-cons-line">
+                    <span className="mk-cons-lbl">{cds.rationale}:</span> {c.rationale}
+                  </div>
+                )}
+                {c.distinguishing_factors && (
+                  <div className="mk-cons-line">
+                    <span className="mk-cons-lbl">{cds.distinguishing}:</span> {c.distinguishing_factors}
+                  </div>
+                )}
+              </li>
+            ))}
+          </ol>
+        </>
+      )}
+
+      {card.red_flags.length > 0 && (
+        <div className="mk-flags">
+          <div className="mk-cds-h mk-flags-h">{cds.redFlags}</div>
+          <ul className="mk-flags-list">
+            {card.red_flags.map((f, i) => <li key={i}>{f}</li>)}
+          </ul>
+        </div>
+      )}
+
+      {card.disclaimer && <div className="mk-disc">{card.disclaimer}</div>}
+
+      {actions && (
+        <>
+          <div className="mk-cds-acts">
+            <button
+              type="button"
+              className="mk-cds-btn"
+              disabled={actions.emailing}
+              onClick={() => actions.onEmail(card)}
+            >
+              {actions.emailing ? cds.emailSending : cds.emailAction}
+            </button>
+            <button type="button" className="mk-cds-btn" onClick={() => actions.onPdf(card)}>
+              {cds.pdfAction}
+            </button>
+          </div>
+          {actions.exportMsg && <div className="mk-cds-msg" role="status">{actions.exportMsg}</div>}
+        </>
+      )}
+    </div>
+  );
+}
+
 // ── Component ───────────────────────────────────────────────────────────────
 
 export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en' }: CueSurfaceProps) {
@@ -183,6 +278,12 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
   // (a fresh session); the backend keeps the last 10 turns. Cross-session memory
   // to Supabase is Phase 25 (not this).
   const historyRef = useRef<{ role: 'user' | 'assistant'; content: string }[]>([]);
+  // History scrollback: completed exchanges, oldest first. The mirror ref
+  // accumulates the LIVE turn (respond() is a stale closure over the render
+  // state, so archiving reads the ref, not the state).
+  const [turns, setTurns] = useState<CompletedTurn[]>([]);
+  const liveTurnRef = useRef<CompletedTurn | null>(null);
+  const threadRef = useRef<HTMLDivElement>(null);
   const [toolTrace, setToolTrace] = useState<ToolStep[]>([]);
   const [pendingConfirm, setPendingConfirm] = useState<CuePendingConfirm | null>(null);
   // Phase 24 — clinical decision-support cards surfaced this turn (additive: the
@@ -250,6 +351,12 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
     userText: string,
     opts?: { signal?: AbortSignal; onTextChunk?: (chunk: string) => void },
   ): Promise<{ text: string; pendingConfirm: CuePendingConfirm | null }> => {
+    // Scrollback: archive the previous exchange before this turn wipes it.
+    const prev = liveTurnRef.current;
+    if (prev && (prev.text || prev.trace.length || prev.cards.length)) {
+      setTurns((t) => [...t, prev]);
+    }
+    liveTurnRef.current = { user: userText, trace: [], text: '', cards: [] };
     setResponse(null); setErrorMsg(null); setPendingConfirm(null); setToolTrace([]); setCards([]);
     setExportMsg(null); setEmailing(false);
     idempotencyTokenRef.current = null;
@@ -272,15 +379,24 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
       res,
       (chunk) => {
         acc += chunk;
+        if (liveTurnRef.current) liveTurnRef.current.text = acc;
         setResponse({ title: 'Cue', summary: acc });
         opts?.onTextChunk?.(chunk);
       },
-      (ev) => setToolTrace((prev) => applyToolEvent(prev, ev)),
+      (ev) => setToolTrace((prevTrace) => {
+        const next = applyToolEvent(prevTrace, ev);
+        if (liveTurnRef.current) liveTurnRef.current.trace = next;
+        return next;
+      }),
       // Phase 24: a clinical decision-support card streamed in — show it live.
-      (card) => setCards((prev) => [...prev, card]),
+      (card) => setCards((prevCards) => [...prevCards, card]),
     );
     // Authoritative set (covers the buffered fallback path where onCard never fires).
     setCards(turnCards);
+    if (liveTurnRef.current) {
+      liveTurnRef.current.cards = turnCards;
+      liveTurnRef.current.text = text.trim();
+    }
 
     // Thread this turn into history so the NEXT turn carries context (backend
     // keeps the last 10 turns). Runs for both the confirm and plain-answer paths.
@@ -314,7 +430,12 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
       });
       if (!res.ok) return;
       const { text } = await readCueStream(res);
-      if (text.trim()) { setResponse({ title: 'Cue', summary: text }); await ctrl.playReply(text); }
+      if (text.trim()) {
+        // Archivable like any turn, but with no user bubble.
+        liveTurnRef.current = { user: '', trace: [], text: text.trim(), cards: [] };
+        setResponse({ title: 'Cue', summary: text });
+        await ctrl.playReply(text);
+      }
     } catch { /* greeting is best-effort */ }
   }, [locale]);
 
@@ -328,6 +449,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
     }
     prevFocusRef.current = document.activeElement;
     historyRef.current = []; // fresh conversation each open
+    setTurns([]); liveTurnRef.current = null; // scrollback resets with it
     greetedRef.current = false;
 
     // Resolve the interaction mode. No voice support → text only, no picker.
@@ -388,6 +510,19 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
     else ctrl.releaseMicAfterConfirm();
   }, [pendingConfirm]);
 
+  // Scrollback: keep the newest content pinned in view, but never yank the
+  // doctor back down while they're reading history. stickBottomRef tracks
+  // whether they were near the bottom BEFORE this render grew the thread.
+  const stickBottomRef = useRef(true);
+  const handleThreadScroll = useCallback(() => {
+    const el = threadRef.current;
+    if (el) stickBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+  }, []);
+  useEffect(() => {
+    const el = threadRef.current;
+    if (el && stickBottomRef.current) el.scrollTop = el.scrollHeight;
+  });
+
   // Non-destructive close: only when the text input is empty.
   const tryClose = useCallback(() => {
     if (inputValue.trim() === '') onClose();
@@ -425,12 +560,11 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const r = (await res.json()) as { uid?: string; deleted?: number; skipped?: number };
-      setResponse({
-        title: labels.done,
-        summary: pendingConfirm.action === 'block'
-          ? labels.blockedResult()
-          : labels.clearResult(r.deleted ?? 0, r.skipped ?? 0),
-      });
+      const summary = pendingConfirm.action === 'block'
+        ? labels.blockedResult()
+        : labels.clearResult(r.deleted ?? 0, r.skipped ?? 0);
+      if (liveTurnRef.current) liveTurnRef.current.text = summary;
+      setResponse({ title: labels.done, summary });
       setPendingConfirm(null);
     } catch { setErrorMsg(labels.error); }
     finally { setIsWriting(false); }
@@ -539,6 +673,10 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
         .mk-icbtn:focus-visible { outline:2px solid #7fc7d4; outline-offset:2px; }
 
         .mk-thread { flex:1; overflow:auto; padding:6px 16px 8px; display:flex; flex-direction:column; gap:14px; position:relative; z-index:2; }
+        /* scrollback: prior exchanges sit muted above the live turn */
+        .mk-turn-prev { display:flex; flex-direction:column; gap:14px; opacity:.82; }
+        .mk-think-sum { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12px; color:#7fa6b2; }
+        .mk-think-sum .mk-pr { color:#7fc7d4; }
         .mk-thread::-webkit-scrollbar { width:8px; }
         .mk-thread::-webkit-scrollbar-thumb { background:rgba(127,199,212,.18); border-radius:8px; }
         .mk-turn { display:flex; flex-direction:column; gap:6px; }
@@ -720,7 +858,33 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
           <CueMemoryPanel locale={locale} onClose={() => setShowMemory(false)} />
         )}
 
-        <div className="mk-thread" aria-live="polite" aria-atomic="false">
+        <div className="mk-thread" aria-live="polite" aria-atomic="false" ref={threadRef} onScroll={handleThreadScroll}>
+          {/* History scrollback — completed exchanges, oldest first. Prior
+              traces collapse to a one-line preview; prior cards are read-only. */}
+          {turns.map((t, ti) => (
+            <div className="mk-turn-prev" key={ti}>
+              {t.user && (
+                <div className="mk-turn mk-you">
+                  <div className="mk-who">{labels.you}</div>
+                  <div className="mk-bubble">{t.user}</div>
+                </div>
+              )}
+              <div className="mk-turn mk-cue">
+                <div className="mk-who">Cue</div>
+                {t.trace.length > 0 && (
+                  <div className="mk-think-sum">
+                    <span className="mk-pr">&rsaquo;</span> {labels.stepsDone(t.trace.length)}
+                    {t.trace.some((s) => s.status === 'err') ? ' ⚠' : ''}
+                  </div>
+                )}
+                {t.cards.map((card, ci) => (
+                  <SupportCardView key={ci} card={card} cds={cds} locale={locale} />
+                ))}
+                {t.text && <div className="mk-line">{t.text}</div>}
+              </div>
+            </div>
+          ))}
+
           {spoken && (
             <div className="mk-turn mk-you">
               <div className="mk-who">{labels.you}</div>
@@ -751,69 +915,17 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
 
               {errorMsg && <p className="mk-err">{errorMsg}</p>}
 
-              {/* Phase 24 — clinical DECISION-SUPPORT card(s). Rendered off the
-                  parsed \x1d payload (never model prose). ADDITIVE: Cue's narration
-                  below keeps the conversation going. NEVER labeled a "diagnosis"; the
-                  payload disclaimer denies it. */}
+              {/* Phase 24 — clinical DECISION-SUPPORT card(s). ADDITIVE: Cue's
+                  narration below keeps the conversation going. Markup lives in
+                  SupportCardView (shared with scrollback). */}
               {cards.map((card, ci) => (
-                <div className="mk-card mk-cds" key={ci} role="group" aria-label={cds.title}>
-                  <div className="mk-card-k">&#9670; {cds.title}</div>
-
-                  {card.considerations.length > 0 && (
-                    <>
-                      <div className="mk-cds-h">{cds.considerations}</div>
-                      <ol className="mk-cons-list">
-                        {card.considerations.map((c, i) => (
-                          <li className="mk-cons" key={i}>
-                            <div className="mk-cons-top">
-                              <span className="mk-cons-name">{c.condition}</span>
-                              <span className={`mk-chip mk-chip-${(c.confidence || '').toLowerCase()}`}>
-                                {confidenceLabel(locale, c.confidence)}
-                              </span>
-                            </div>
-                            {c.rationale && (
-                              <div className="mk-cons-line">
-                                <span className="mk-cons-lbl">{cds.rationale}:</span> {c.rationale}
-                              </div>
-                            )}
-                            {c.distinguishing_factors && (
-                              <div className="mk-cons-line">
-                                <span className="mk-cons-lbl">{cds.distinguishing}:</span> {c.distinguishing_factors}
-                              </div>
-                            )}
-                          </li>
-                        ))}
-                      </ol>
-                    </>
-                  )}
-
-                  {card.red_flags.length > 0 && (
-                    <div className="mk-flags">
-                      <div className="mk-cds-h mk-flags-h">{cds.redFlags}</div>
-                      <ul className="mk-flags-list">
-                        {card.red_flags.map((f, i) => <li key={i}>{f}</li>)}
-                      </ul>
-                    </div>
-                  )}
-
-                  {card.disclaimer && <div className="mk-disc">{card.disclaimer}</div>}
-
-                  {/* Slice 3 — export: email to the doctor's Medikah inbox / save as PDF. */}
-                  <div className="mk-cds-acts">
-                    <button
-                      type="button"
-                      className="mk-cds-btn"
-                      disabled={emailing}
-                      onClick={() => handleEmailSummary(card)}
-                    >
-                      {emailing ? cds.emailSending : cds.emailAction}
-                    </button>
-                    <button type="button" className="mk-cds-btn" onClick={() => handleSavePdf(card)}>
-                      {cds.pdfAction}
-                    </button>
-                  </div>
-                  {exportMsg && <div className="mk-cds-msg" role="status">{exportMsg}</div>}
-                </div>
+                <SupportCardView
+                  key={ci}
+                  card={card}
+                  cds={cds}
+                  locale={locale}
+                  actions={{ emailing, exportMsg, onEmail: handleEmailSummary, onPdf: handleSavePdf }}
+                />
               ))}
 
               {isThinking && !response && (
