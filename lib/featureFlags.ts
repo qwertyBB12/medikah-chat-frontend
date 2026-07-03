@@ -39,18 +39,19 @@ export const PATIENT_PORTAL_OPEN = false;
 export const PHYSICIAN_INQUIRIES_OPEN = false;
 
 /**
- * AI DIAGNOSIS TOOL — GPT-4o differential tool, currently mounted on the
- * physician dashboard (components/physician/AIDiagnosisTool.tsx → backend
- * /ai/diagnosis).
+ * CLINICAL SUPPORT TOOL — dashboard mount of the AI clinical decision-support
+ * form (components/physician/ClinicalSupportTool.tsx → backend
+ * /ai/clinical-support, which runs the same single-source generator as the
+ * Cue clinical-support card). Renamed from AI_DIAGNOSIS_IN_DASH 2026-07-02:
+ * nothing may be named or inferable as a "diagnosis" (naming/legal rule,
+ * Hector 2026-06-29).
  *
  * While false: the tool is not rendered on /physicians/dashboard.
  *
  * ⚠️ ARCHITECTURAL NOTE (Hector, 2026-06-22): this tool does NOT belong on the
- * physician dashboard long-term. It is being repositioned as a **feature of Cue**
- * and will be rebuilt/surfaced inside the upcoming Cue phases — not re-enabled
- * here. Do NOT simply flip this back to `true`; the dashboard mount is a
- * temporary home that the Cue work retires. Kept flag-gated (not deleted) so the
- * existing, working component stays available as the reference implementation
- * the Cue phase ports from.
+ * physician dashboard long-term. The Cue clinical-support card (shipped
+ * 2026-07-02) IS the repositioned feature. Do NOT simply flip this back to
+ * `true`; the dashboard mount is a temporary home the Cue surface retires.
+ * Kept flag-gated (not deleted) as the standalone-form fallback.
  */
-export const AI_DIAGNOSIS_IN_DASH = false;
+export const CLINICAL_SUPPORT_IN_DASH = false;
