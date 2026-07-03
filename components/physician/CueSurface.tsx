@@ -557,6 +557,16 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
         .mk-step.mk-run .mk-ok { color:#7fa6b2; }
         .mk-dotpulse { width:6px; height:6px; border-radius:50%; background:#7fc7d4; animation:mk-pulse 1s ease-in-out infinite; }
 
+        /* Prominent processing indicator (voice QA 2026-07-02): the tiny
+           bottom-right hint read as "maybe disconnected" during long waits.
+           This pill sits in the thread where the answer will materialize. */
+        .mk-thinkrow { display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:12px;
+          background:rgba(127,199,212,.08); border:1px solid rgba(127,199,212,.16); align-self:flex-start;
+          font-size:12.5px; color:#cfe6ec; }
+        .mk-thinkrow .mk-dotpulse:nth-of-type(2) { animation-delay:.18s; }
+        .mk-thinkrow .mk-dotpulse:nth-of-type(3) { animation-delay:.36s; }
+        .mk-hint-think { color:#7fc7d4; font-weight:700; animation:mk-pulse 1.4s ease-in-out infinite; }
+
         .mk-line { font-size:14px; line-height:1.5; color:#eaf2f5; white-space:pre-wrap; }
         .mk-cur { display:inline-block; width:8px; height:15px; vertical-align:-2px; margin-left:2px; border-radius:1px;
           background:#7fc7d4; animation:mk-blink 1s steps(2) infinite; }
@@ -806,6 +816,15 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
                 </div>
               ))}
 
+              {isThinking && !response && (
+                <div className="mk-thinkrow" role="status">
+                  <span className="mk-dotpulse" />
+                  <span className="mk-dotpulse" />
+                  <span className="mk-dotpulse" />
+                  <span>{labels.thinking}</span>
+                </div>
+              )}
+
               {response && (
                 <div className="mk-line">
                   {response.summary}
@@ -868,7 +887,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
           </div>
           <div className="mk-hint">
             <span>{labels.hintLeft}</span>
-            <span>{isThinking ? labels.thinking : ''}</span>
+            <span className={isThinking ? 'mk-hint-think' : ''}>{isThinking ? labels.thinking : ''}</span>
           </div>
         </form>
       </aside>
