@@ -44,12 +44,13 @@ jobs:
           check "cdmx landing"        'https://medikah.health/cdmx'                                        '200'
           check "chat auth gateway"   'https://medikah.health/chat'                                        '200'
           check "physician by-slug"   'https://medikah.health/api/physicians/by-slug?slug=smoke-probe'     '404'
-          # Backend serves at the Render hostname. api.medikah.health has had
-          # NO DNS record since at least 2026-06-26 (8+ days of failed smokes)
-          # — restore the CNAME in Cloudflare if the vanity host is wanted
-          # again, then re-point this check.
-          check "backend health"      'https://medikah-chat-api.onrender.com/health'                       '200'
-          check "cue gate"            'https://medikah-chat-api.onrender.com/cue/health'                   '200'
+          # api.medikah.health CNAME restored 2026-07-02 (Cloudflare grey-cloud
+          # -> medikah-chat-api.onrender.com, Render cert issued + verified).
+          # Probe BOTH hosts: vanity failing while direct passes = DNS/edge
+          # problem; both failing = backend down.
+          check "backend health"      'https://api.medikah.health/health'                                  '200'
+          check "cue gate"            'https://api.medikah.health/cue/health'                              '200'
+          check "backend direct"      'https://medikah-chat-api.onrender.com/health'                       '200'
           check "sogo login"          'https://practikah.medikah.health/SOGo/'                             '200'
           check "privacy"             'https://medikah.health/privacy'                                     '200'
           check "terms"               'https://medikah.health/terms'                                       '200'

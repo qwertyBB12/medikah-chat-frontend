@@ -12,7 +12,7 @@ import { SupportedLang } from '../../lib/i18n';
 import { useBackendToken } from '../../lib/useBackendToken';
 import VerificationBadge from './VerificationBadge';
 import ProfileOverview from './ProfileOverview';
-import AIDiagnosisTool from './AIDiagnosisTool';
+import ClinicalSupportTool from './ClinicalSupportTool';
 import InquiryList from './InquiryList';
 import AvailabilityEditor from './AvailabilityEditor';
 import ProfileEditor from './editor/ProfileEditor';
@@ -23,7 +23,7 @@ import MXCredentialSection from './credentials/MXCredentialSection';
 import ContactInfoSection from './ContactInfoSection';
 import EducationSection from './EducationSection';
 import WorkspaceTabContainer from './workspace/WorkspaceTabContainer';
-import { PHYSICIAN_INQUIRIES_OPEN, AI_DIAGNOSIS_IN_DASH } from '../../lib/featureFlags';
+import { PHYSICIAN_INQUIRIES_OPEN, CLINICAL_SUPPORT_IN_DASH } from '../../lib/featureFlags';
 import { computeCompleteness } from '../../lib/completenessService';
 import type { CompletenessResult } from '../../lib/completenessService';
 import { getContactInfo } from '../../lib/contactClient';
@@ -560,9 +560,10 @@ export default function DashboardContent({
       {/* ── Availability tab: scheduling + (flag-gated) inquiries / AI tool ── */}
       {activeTab === 'availability' && (
         <div className="space-y-6">
-          {/* AI Diagnosis Tool — hidden for soft launch; repositioning as a Cue
-              feature (see AI_DIAGNOSIS_IN_DASH in lib/featureFlags.ts). */}
-          {AI_DIAGNOSIS_IN_DASH && <AIDiagnosisTool lang={lang} accessToken={accessToken} />}
+          {/* Clinical Support Tool — hidden for soft launch; the Cue
+              clinical-support card is the live surface
+              (see CLINICAL_SUPPORT_IN_DASH in lib/featureFlags.ts). */}
+          {CLINICAL_SUPPORT_IN_DASH && <ClinicalSupportTool lang={lang} accessToken={accessToken} />}
           {/* Inquiry List — hidden for the physicians-only soft launch
               (see PHYSICIAN_INQUIRIES_OPEN in lib/featureFlags.ts). */}
           {PHYSICIAN_INQUIRIES_OPEN && physicianId && <InquiryList physicianId={physicianId} lang={lang} accessToken={accessToken} />}
