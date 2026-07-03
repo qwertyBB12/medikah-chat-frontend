@@ -68,6 +68,33 @@ function getLastName(fullName: string): string {
   return parts.length > 1 ? parts[parts.length - 1] : parts[0];
 }
 
+export type PhysicianEmailTitle = 'Dr' | 'Dra';
+
+/**
+ * Honorific-correct address line. The title comes from physicians.title
+ * (captured at onboarding / confirmed by admin) and is NEVER guessed from
+ * the name. When no title is on file we address by full name — no honorific.
+ */
+function addressedName(
+  fullName: string,
+  title: PhysicianEmailTitle | null | undefined
+): string {
+  if (title === 'Dr' || title === 'Dra') {
+    return `${title}. ${getLastName(fullName)}`;
+  }
+  return fullName.trim();
+}
+
+// Minimal HTML escape for admin/free-text values interpolated into templates
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // Helper to format languages
 function formatLanguages(langs: string[]): string {
   const langNames: Record<string, string> = {
@@ -93,82 +120,97 @@ export interface PhysicianWelcomeEmailData {
   email: string;
   primarySpecialty?: string;
   languages: string[];
-  magicLink: string | null;
+  /** Honorific from physicians.title — never guessed (feedback_dr_dra_title_mexico). */
+  title?: PhysicianEmailTitle | null;
   lang?: 'en' | 'es';
 }
 
 /**
- * Send welcome email to newly onboarded physician
+ * Send welcome email to newly onboarded physician.
+ *
+ * 2026-07 refresh (doctor-journey fix wave):
+ * - Honorific-correct greeting (Dr./Dra. from captured title; full name when absent).
+ * - Honest verification timeline (manual credential review, 2-5 business days) —
+ *   the old "24-48 hours" promise predated manual cédula review.
+ * - No magic-link/password block: Option A doctors already sign in via /chat
+ *   with the method they signed up with; the @medikah.health activation email
+ *   arrives separately once verified.
  */
 export async function sendPhysicianWelcomeEmail(
   data: PhysicianWelcomeEmailData
 ): Promise<SendEmailResult> {
-  const { physicianId, fullName, email, primarySpecialty, languages, magicLink, lang = 'en' } = data;
+  const { fullName, email, primarySpecialty, languages, title, lang = 'en' } = data;
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://medikah.health';
-  const lastName = getLastName(fullName);
+  const name = addressedName(fullName, title);
+  const hasTitle = title === 'Dr' || title === 'Dra';
   const formattedLanguages = formatLanguages(languages);
+  const dashboardUrl = `${baseUrl}${lang === 'es' ? '/es' : ''}/chat`;
 
   // Bilingual content
   const content =
     lang === 'es'
       ? {
-          subject: `Bienvenido a Medikah, Dr. ${lastName} — Configure su cuenta`,
-          greeting: `Bienvenido a Medikah, Dr. ${lastName}!`,
-          intro: `Gracias por unirse a la red de Medikah. Su perfil ha sido creado exitosamente y está siendo preparado para verificación.`,
-          profileCreated: `Su perfil de médico está activo`,
+          subject: hasTitle
+            ? `${title === 'Dra' ? 'Bienvenida' : 'Bienvenido'} a Medikah, ${name} — Su perfil está en revisión`
+            : `Le damos la bienvenida a Medikah — Su perfil está en revisión`,
+          greeting: hasTitle
+            ? `¡${title === 'Dra' ? 'Bienvenida' : 'Bienvenido'} a Medikah, ${name}!`
+            : `¡Le damos la bienvenida a Medikah, ${name}!`,
+          intro: `Gracias por unirse a la red de Medikah. Su perfil ha sido creado exitosamente y su expediente está listo para revisión.`,
+          profileCreated: `Su perfil de médico está creado`,
           specialty: 'Especialidad',
           languagesLabel: 'Idiomas',
           verificationNote:
-            'Su licencia médica está siendo verificada. Este proceso típicamente toma 24-48 horas. Le notificaremos cuando su insignia de verificación esté activa.',
-          setupPassword: 'Configure su contraseña',
-          setupPasswordNote:
-            'Use el botón de abajo para crear su contraseña y acceder a su panel de control de Medikah.',
-          setupPasswordButton: 'Crear Contraseña y Acceder',
-          noMagicLink:
-            'Si necesita configurar su contraseña más tarde, puede usar la opción "Olvidé mi contraseña" en la página de inicio de sesión.',
+            'Nuestro equipo revisa sus credenciales de forma manual (cédula profesional o licencia médica). Este proceso típicamente toma de 2 a 5 días hábiles. Le notificaremos en cuanto la verificación esté completa.',
+          dashboardHeading: 'Acceda a su panel',
+          dashboardNote:
+            'Mientras tanto, puede entrar a su panel de Medikah iniciando sesión de la misma forma en que creó su cuenta.',
+          dashboardButton: 'Ir a mi panel',
           whatsNext: 'Qué sigue:',
-          step1: 'Verificación de credenciales (24-48 horas)',
-          step1Detail: 'Verificaremos su licencia con las autoridades correspondientes.',
-          step2: 'Su perfil público',
+          step1: 'Verificación de credenciales (2 a 5 días hábiles)',
+          step1Detail:
+            'Nuestro equipo verifica su cédula o licencia con las autoridades correspondientes.',
+          step2: 'Su correo @medikah.health',
           step2Detail:
-            'Una vez verificado, los pacientes podrán encontrarlo en la red de Medikah.',
-          step3: 'Comience a recibir pacientes',
+            'Al completarse la verificación, recibirá un correo de activación con su cuenta profesional @medikah.health y su espacio de trabajo.',
+          step3: 'Su perfil público y sus primeros pacientes',
           step3Detail:
-            'Los pacientes podrán agendar consultas por video directamente con usted.',
+            'Una vez en línea, los pacientes podrán encontrar su perfil en la red de Medikah y agendar consultas por video.',
           profileNote:
             'Su perfil de Medikah está siendo preparado. Le notificaremos cuando esté disponible públicamente.',
           questions: '¿Preguntas? Responda a este correo o escríbanos a',
-          closing: 'Bienvenido al equipo.',
+          closing: 'Gracias por su confianza.',
           team: '— El Equipo de Medikah',
         }
       : {
-          subject: `Welcome to Medikah, Dr. ${lastName} — Set Up Your Account`,
-          greeting: `Welcome to Medikah, Dr. ${lastName}!`,
-          intro: `Thank you for joining the Medikah network. Your profile has been successfully created and is being prepared for verification.`,
-          profileCreated: `Your physician profile is active`,
+          subject: hasTitle
+            ? `Welcome to Medikah, ${name} — Your profile is in review`
+            : `Welcome to Medikah — Your profile is in review`,
+          greeting: `Welcome to Medikah, ${name}!`,
+          intro: `Thank you for joining the Medikah network. Your profile has been successfully created and your credentials are ready for review.`,
+          profileCreated: `Your physician profile is created`,
           specialty: 'Specialty',
           languagesLabel: 'Languages',
           verificationNote:
-            'Your medical license is being verified. This process typically takes 24-48 hours. We\'ll notify you when your verification badge is active.',
-          setupPassword: 'Set up your password',
-          setupPasswordNote:
-            'Use the button below to create your password and access your Medikah dashboard.',
-          setupPasswordButton: 'Create Password & Sign In',
-          noMagicLink:
-            'If you need to set up your password later, you can use the "Forgot password" option on the login page.',
+            'Our team manually reviews your credentials (professional license or cédula). This typically takes 2 to 5 business days. We\'ll notify you as soon as verification is complete.',
+          dashboardHeading: 'Access your dashboard',
+          dashboardNote:
+            'In the meantime, you can access your Medikah dashboard by signing in the same way you created your account.',
+          dashboardButton: 'Go to my dashboard',
           whatsNext: "What's next:",
-          step1: 'Credential verification (24-48 hours)',
-          step1Detail: "We'll verify your license with the appropriate authorities.",
-          step2: 'Your public profile',
+          step1: 'Credential verification (2 to 5 business days)',
+          step1Detail:
+            'Our team verifies your license or cédula with the appropriate authorities.',
+          step2: 'Your @medikah.health email',
           step2Detail:
-            'Once verified, patients will be able to find you on the Medikah network.',
-          step3: 'Start seeing patients',
+            'Once verified, you\'ll receive an activation email with your professional @medikah.health account and workspace.',
+          step3: 'Your public profile and first patients',
           step3Detail:
-            'Patients will be able to book video consultations directly with you.',
+            'Once live, patients will be able to find your profile on the Medikah network and book video consultations.',
           profileNote:
             "Your Medikah profile is being prepared. We'll notify you when it's publicly available.",
           questions: 'Questions? Reply to this email or reach us at',
-          closing: 'Welcome to the team.',
+          closing: 'Thank you for your trust.',
           team: '— The Medikah Team',
         };
 
@@ -219,29 +261,19 @@ ${emailHeader({ variant: 'linen', locale: lang, wordmark: 'medikah' })}
           </td>
         </tr>
 
-        <!-- Password Setup Section -->
+        <!-- Dashboard Access Section -->
         <tr>
           <td class="email-pad" style="padding:0 32px 32px 32px;">
             <div style="background-color:${tokens.colors.instBlue};border-radius:${tokens.radii.md};padding:28px;text-align:center;">
               <h2 style="font-family:${tokens.fonts.body};color:${tokens.colors.white};font-size:18px;font-weight:700;margin:0 0 12px 0;">
-                ${content.setupPassword}
+                ${content.dashboardHeading}
               </h2>
               <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.creamOnDark};font-size:14px;line-height:1.6;margin:0 0 20px 0;">
-                ${content.setupPasswordNote}
+                ${content.dashboardNote}
               </p>
-              ${
-                magicLink
-                  ? `
-              <a href="${magicLink}" style="display:inline-block;background-color:${tokens.colors.clinicalTeal};color:${tokens.colors.white};font-family:${tokens.fonts.ui};font-size:16px;font-weight:700;text-decoration:none;padding:16px 32px;border-radius:${tokens.radii.sm};">
-                ${content.setupPasswordButton}
+              <a href="${dashboardUrl}" style="display:inline-block;background-color:${tokens.colors.clinicalTeal};color:${tokens.colors.white};font-family:${tokens.fonts.ui};font-size:16px;font-weight:700;text-decoration:none;padding:16px 32px;border-radius:${tokens.radii.sm};">
+                ${content.dashboardButton}
               </a>
-              `
-                  : `
-              <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.creamOnDark};font-size:13px;margin:0;">
-                ${content.noMagicLink}
-              </p>
-              `
-              }
             </div>
           </td>
         </tr>
@@ -314,11 +346,11 @@ ${content.verificationNote}
 
 ---
 
-${content.setupPassword}
+${content.dashboardHeading}
 
-${content.setupPasswordNote}
+${content.dashboardNote}
 
-${magicLink ? `${content.setupPasswordButton}: ${magicLink}` : content.noMagicLink}
+${content.dashboardButton}: ${dashboardUrl}
 
 ---
 
@@ -340,6 +372,283 @@ ${content.profileNote}
 ${content.questions} doctors@medikah.health
 
 ${content.closing}
+
+${content.team}
+
+---
+Medikah Corporation
+${baseUrl}
+  `.trim();
+
+  return sendEmail({
+    to: email,
+    subject: content.subject,
+    html,
+    text,
+  });
+}
+
+export interface PhysicianRejectionEmailData {
+  fullName: string;
+  email: string;
+  title?: PhysicianEmailTitle | null;
+  /** Admin-provided reason, shown verbatim (HTML-escaped). Optional. */
+  reason?: string | null;
+  lang?: 'en' | 'es';
+}
+
+/**
+ * Notify a physician that verification could not be completed.
+ *
+ * DRAFT COPY — pending Dr. Aguirre's review; sending is gated behind
+ * REJECTION_EMAIL_ENABLED in the admin route, so this stays dark until the
+ * copy is approved. Tone: this is a review outcome with a path forward,
+ * not a door slammed shut — most rejections are missing/illegible documents.
+ */
+export async function sendPhysicianRejectionEmail(
+  data: PhysicianRejectionEmailData
+): Promise<SendEmailResult> {
+  const { fullName, email, title, reason, lang = 'en' } = data;
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://medikah.health';
+  const name = addressedName(fullName, title);
+  const greetingPrefix =
+    lang === 'es'
+      ? title === 'Dra'
+        ? 'Estimada'
+        : title === 'Dr'
+          ? 'Estimado'
+          : 'Estimado(a)'
+      : 'Dear';
+  const safeReason = reason && reason.trim() ? escapeHtml(reason.trim()) : null;
+
+  const content =
+    lang === 'es'
+      ? {
+          subject: 'Actualización sobre su solicitud en Medikah',
+          greeting: `${greetingPrefix} ${name}:`,
+          intro:
+            'Gracias por su interés en formar parte de la red de Medikah. Después de revisar su expediente, no pudimos completar la verificación de sus credenciales en esta ocasión.',
+          reasonLabel: 'Motivo de la revisión',
+          pathHeading: 'Esto no es definitivo',
+          pathBody:
+            'En la mayoría de los casos se trata de información incompleta o documentos ilegibles. Puede responder a este correo con documentación adicional o corregida, y nuestro equipo revisará su caso nuevamente.',
+          contact: '¿Preguntas? Responda a este correo o escríbanos a',
+          closing: 'Agradecemos su interés en Medikah.',
+          team: '— El Equipo de Medikah',
+        }
+      : {
+          subject: 'An update on your Medikah application',
+          greeting: `${greetingPrefix} ${name}:`,
+          intro:
+            'Thank you for your interest in joining the Medikah network. After reviewing your file, we were unable to complete the verification of your credentials at this time.',
+          reasonLabel: 'Review notes',
+          pathHeading: 'This is not final',
+          pathBody:
+            'In most cases this is due to incomplete information or illegible documents. You can reply to this email with additional or corrected documentation, and our team will review your case again.',
+          contact: 'Questions? Reply to this email or reach us at',
+          closing: 'We appreciate your interest in Medikah.',
+          team: '— The Medikah Team',
+        };
+
+  const html = `<!DOCTYPE html>
+<html lang="${lang}">
+${emailHead()}
+<body style="margin:0;padding:0;background-color:${tokens.pageBg};font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};">
+${emailHeader({ variant: 'linen', locale: lang, wordmark: 'medikah' })}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${tokens.pageBg};padding:40px 20px;">
+  <tr>
+    <td align="center">
+      <table role="presentation" class="email-container" width="600" cellpadding="0" cellspacing="0" style="background-color:${tokens.colors.white};border-radius:${tokens.radii.md};overflow:hidden;">
+
+        <tr>
+          <td class="email-pad" style="padding:40px 32px 24px 32px;">
+            <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.clinicalTeal};font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 12px 0;">
+              ${lang === 'es' ? 'Red de Médicos' : 'Physician Network'}
+            </p>
+            <h1 style="font-family:${tokens.fonts.body};color:${tokens.colors.deepCharcoal};font-size:22px;font-weight:700;margin:0 0 16px 0;">${content.greeting}</h1>
+            <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};font-size:16px;line-height:1.7;margin:0;">
+              ${content.intro}
+            </p>
+          </td>
+        </tr>
+
+        ${
+          safeReason
+            ? `
+        <tr>
+          <td class="email-pad" style="padding:0 32px 24px 32px;">
+            <div style="background-color:${tokens.colors.linen};border-left:4px solid ${tokens.colors.instBlue};padding:20px 24px;border-radius:${tokens.radii.sm};">
+              <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.instBlue};font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 8px 0;">
+                ${content.reasonLabel}
+              </p>
+              <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};font-size:15px;line-height:1.6;margin:0;">
+                ${safeReason}
+              </p>
+            </div>
+          </td>
+        </tr>
+        `
+            : ''
+        }
+
+        <tr>
+          <td class="email-pad" style="padding:0 32px 32px 32px;">
+            <h3 style="font-family:${tokens.fonts.body};color:${tokens.colors.instBlue};font-size:17px;font-weight:700;margin:0 0 8px 0;">${content.pathHeading}</h3>
+            <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};font-size:15px;line-height:1.7;margin:0;">
+              ${content.pathBody}
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="email-pad" style="padding:0 32px 32px 32px;">
+            <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};font-size:14px;line-height:1.6;margin:0 0 8px 0;">
+              ${content.contact} <a href="mailto:doctors@medikah.health" style="color:${tokens.colors.clinicalTeal};text-decoration:none;font-weight:600;">doctors@medikah.health</a>
+            </p>
+            <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};font-size:15px;margin:20px 0 4px 0;">${content.closing}</p>
+            <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.instBlue};font-size:15px;font-weight:700;margin:0;">${content.team}</p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+${emailFooter({ locale: lang })}
+</body>
+</html>`;
+
+  const text = `
+${content.greeting}
+
+${content.intro}
+${safeReason ? `\n${content.reasonLabel}: ${reason?.trim()}\n` : ''}
+${content.pathHeading}
+
+${content.pathBody}
+
+${content.contact} doctors@medikah.health
+
+${content.closing}
+
+${content.team}
+
+---
+Medikah Corporation
+${baseUrl}
+  `.trim();
+
+  return sendEmail({
+    to: email,
+    subject: content.subject,
+    html,
+    text,
+  });
+}
+
+export interface OnboardingNudgeEmailData {
+  email: string;
+  lang?: 'en' | 'es';
+}
+
+/**
+ * Gentle reminder to a doctor who started onboarding (email captured) but
+ * never completed the profile. At the 'started' audit point we only have the
+ * email address — no name, no title — so the greeting is deliberately generic.
+ * Sending is gated behind STALLED_NUDGE_ENABLED (dark until Hector flips it).
+ */
+export async function sendOnboardingNudgeEmail(
+  data: OnboardingNudgeEmailData
+): Promise<SendEmailResult> {
+  const { email, lang = 'es' } = data;
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://medikah.health';
+  const onboardUrl = `${baseUrl}${lang === 'es' ? '/es' : ''}/physicians/onboard`;
+
+  const content =
+    lang === 'es'
+      ? {
+          subject: 'Su registro en Medikah está casi listo',
+          greeting: 'Hola:',
+          intro:
+            'Notamos que comenzó su registro como médico en la red de Medikah, pero quedó pendiente. Completarlo toma alrededor de 10 minutos.',
+          benefit:
+            'Al completar su perfil, nuestro equipo verifica sus credenciales y usted recibe su cuenta profesional @medikah.health, su perfil público y acceso a pacientes de toda América.',
+          button: 'Completar mi registro',
+          help: 'Si tuvo algún problema durante el registro, responda a este correo — con gusto le ayudamos.',
+          team: '— El Equipo de Medikah',
+        }
+      : {
+          subject: 'Your Medikah registration is almost complete',
+          greeting: 'Hello:',
+          intro:
+            'We noticed you started your physician registration on the Medikah network but didn\'t get to finish. Completing it takes about 10 minutes.',
+          benefit:
+            'Once your profile is complete, our team verifies your credentials and you receive your professional @medikah.health account, your public profile, and access to patients across the Americas.',
+          button: 'Complete my registration',
+          help: 'If you ran into any trouble during registration, reply to this email — we\'re happy to help.',
+          team: '— The Medikah Team',
+        };
+
+  const html = `<!DOCTYPE html>
+<html lang="${lang}">
+${emailHead()}
+<body style="margin:0;padding:0;background-color:${tokens.pageBg};font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};">
+${emailHeader({ variant: 'linen', locale: lang, wordmark: 'medikah' })}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${tokens.pageBg};padding:40px 20px;">
+  <tr>
+    <td align="center">
+      <table role="presentation" class="email-container" width="600" cellpadding="0" cellspacing="0" style="background-color:${tokens.colors.white};border-radius:${tokens.radii.md};overflow:hidden;">
+
+        <tr>
+          <td class="email-pad" style="padding:40px 32px 24px 32px;">
+            <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.clinicalTeal};font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 12px 0;">
+              ${lang === 'es' ? 'Red de Médicos' : 'Physician Network'}
+            </p>
+            <h1 style="font-family:${tokens.fonts.body};color:${tokens.colors.deepCharcoal};font-size:22px;font-weight:700;margin:0 0 16px 0;">${content.greeting}</h1>
+            <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};font-size:16px;line-height:1.7;margin:0 0 16px 0;">
+              ${content.intro}
+            </p>
+            <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};font-size:15px;line-height:1.7;margin:0;">
+              ${content.benefit}
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="email-pad" style="padding:0 32px 32px 32px;" align="center">
+            <a href="${onboardUrl}" style="display:inline-block;background-color:${tokens.colors.clinicalTeal};color:${tokens.colors.white};font-family:${tokens.fonts.ui};font-size:16px;font-weight:700;text-decoration:none;padding:16px 32px;border-radius:${tokens.radii.sm};">
+              ${content.button}
+            </a>
+          </td>
+        </tr>
+
+        <tr>
+          <td class="email-pad" style="padding:0 32px 32px 32px;">
+            <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.bodySlate};font-size:14px;line-height:1.6;margin:0 0 16px 0;">
+              ${content.help}
+            </p>
+            <p style="font-family:${tokens.fonts.ui};color:${tokens.colors.instBlue};font-size:15px;font-weight:700;margin:0;">${content.team}</p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+${emailFooter({ locale: lang })}
+</body>
+</html>`;
+
+  const text = `
+${content.greeting}
+
+${content.intro}
+
+${content.benefit}
+
+${content.button}: ${onboardUrl}
+
+${content.help}
 
 ${content.team}
 
