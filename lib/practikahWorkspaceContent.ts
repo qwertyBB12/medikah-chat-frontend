@@ -308,6 +308,10 @@ export interface WorkspaceContent {
         failedPreporBody: string;
         resolving: string;
         missingSession: string;
+        /** Run-id lookup failed AFTER a successful charge — the doctor must
+         * never read this as "my money vanished". Reassure + offer retry. */
+        resolveFailedBody: string;
+        resolveRetry: string;
       };
       errors: {
         generic: string;
@@ -744,6 +748,9 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
           resolving: 'Resolving your upgrade…',
           missingSession:
             'Missing checkout session — please return to the upgrade page.',
+          resolveFailedBody:
+            "Your payment went through — we just couldn't load your setup status. Your upgrade is safe; try again in a moment.",
+          resolveRetry: 'Try again',
         },
         errors: {
           generic: 'Something went wrong starting checkout. Please try again.',
@@ -1214,6 +1221,9 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
           resolving: 'Resolviendo tu actualización…',
           missingSession:
             'Falta la sesión de pago — por favor regresa a la página de actualización.',
+          resolveFailedBody:
+            'Tu pago se procesó correctamente — solo no pudimos cargar el estado de tu configuración. Tu actualización está segura; intenta de nuevo en un momento.',
+          resolveRetry: 'Intentar de nuevo',
         },
         errors: {
           generic: 'Hubo un problema al iniciar el pago. Inténtalo de nuevo.',
