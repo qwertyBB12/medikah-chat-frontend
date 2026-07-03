@@ -102,10 +102,13 @@ export default function ProfileHero({
 
           {/* Trust badges */}
           <div className="flex flex-wrap gap-3">
+            {/* No compliance-framework badges here: "HIPAA Compliant" was a
+                wrong-jurisdiction claim on LatAm doctors' public pages
+                (Mexico = LFPDPPP/COFEPRIS, no BAA). Replacement copy is
+                counsel-gated — flagged to Luis before anything goes back. */}
             {[
               { en: 'Verified Physician', es: 'Médico Verificado' },
               { en: 'Medikah Network', es: 'Red Medikah' },
-              { en: 'HIPAA Compliant', es: 'Cumple HIPAA' },
             ].map((badge) => (
               <span
                 key={badge.en}

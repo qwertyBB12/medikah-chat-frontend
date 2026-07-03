@@ -220,17 +220,21 @@ export default function ProfileLayout({ children, title, description, jsonLd, og
               <span className="font-body text-2xl font-medium text-white lowercase tracking-[0.04em]">
                 medikah
               </span>
+              {/* No compliance-framework claims on doctors' public pages:
+                  "HIPAA" was wrong-jurisdiction for LatAm physicians
+                  (Mexico = LFPDPPP/COFEPRIS). Replacement copy is
+                  counsel-gated — flagged to Luis. */}
               <p className="text-white/50 text-[0.9375rem] mt-5 max-w-[320px] leading-[1.7]">
                 {isEs
-                  ? 'Plataforma de coordinación de salud que cumple con HIPAA. Médicos verificados, en su idioma, en sus condiciones.'
-                  : 'HIPAA-compliant healthcare coordination platform. Verified physicians, in your language, on your terms.'}
+                  ? 'Plataforma de coordinación de salud. Médicos verificados, en su idioma, en sus condiciones.'
+                  : 'Healthcare coordination platform. Verified physicians, in your language, on your terms.'}
               </p>
               <div className="font-body text-[0.8125rem] font-medium tracking-[0.04em] text-teal-400 mt-8">
                 {isEs ? 'Cuidado humano sin distancia.' : 'Human care without distance.'}
               </div>
               {/* Trust badges */}
               <div className="flex gap-3 mt-5 flex-wrap">
-                {['HIPAA', isEs ? 'Bilingüe' : 'Bilingual', isEs ? 'Cifrado' : 'Encrypted'].map((badge) => (
+                {[isEs ? 'Bilingüe' : 'Bilingual', isEs ? 'Cifrado' : 'Encrypted'].map((badge) => (
                   <span
                     key={badge}
                     className="inline-flex items-center text-[0.6875rem] font-medium uppercase tracking-[0.04em] text-teal-300 bg-[rgba(44,122,140,0.15)] px-3.5 py-[5px] rounded-lg"
