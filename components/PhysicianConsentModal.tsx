@@ -25,6 +25,8 @@ export interface PhysicianConsentData {
 interface PhysicianConsentModalProps {
   physicianId: string;
   physicianName: string;
+  /** Honorific from onboarding (Dr/Dra) — omitted = no honorific, never guessed. */
+  title?: 'Dr' | 'Dra' | null;
   lang: SupportedLang;
   onComplete: (consentData: PhysicianConsentData) => void;
   onCancel?: () => void;
@@ -33,6 +35,7 @@ interface PhysicianConsentModalProps {
 export default function PhysicianConsentModal({
   physicianId,
   physicianName,
+  title,
   lang: initialLang,
   onComplete,
   onCancel,
@@ -93,7 +96,7 @@ export default function PhysicianConsentModal({
               {copy.modalTitle}
             </h2>
             <p className="font-dm-sans text-white/70 text-sm mt-1">
-              {lang === 'en' ? `Dr. ${physicianName}` : `Dr. ${physicianName}`}
+              {title ? `${title}. ${physicianName}` : physicianName}
             </p>
           </div>
           <button
@@ -190,6 +193,16 @@ export default function PhysicianConsentModal({
             </span>
           </label>
 
+          {/* Decline path: the profile is already saved at this point, so
+              "not now" must read as a safe postponement, not a dead end. */}
+          {onCancel && (
+            <p className="font-dm-sans text-xs text-body-slate leading-relaxed">
+              {lang === 'en'
+                ? 'Your profile is already saved. If you’re not ready to sign now, you can review the agreement later — signing is required before you appear on the network.'
+                : 'Su perfil ya está guardado. Si no está listo para firmar ahora, puede revisar el acuerdo más tarde — la firma es necesaria antes de aparecer en la red.'}
+            </p>
+          )}
+
           {/* Buttons */}
           <div className="flex gap-3">
             {onCancel && (
@@ -198,7 +211,7 @@ export default function PhysicianConsentModal({
                 onClick={onCancel}
                 className="font-dm-sans flex-1 py-3.5 rounded-[12px] font-semibold text-sm tracking-wide border border-border-line text-body-slate hover:text-inst-blue hover:border-inst-blue transition-all duration-200"
               >
-                {lang === 'en' ? 'Go Back' : 'Regresar'}
+                {lang === 'en' ? 'Review Later' : 'Revisar más tarde'}
               </button>
             )}
             <button

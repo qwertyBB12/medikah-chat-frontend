@@ -72,6 +72,7 @@ export default function PhysicianOnboardingPage() {
   const [showConsentModal, setShowConsentModal] = useState(false);
   const [pendingPhysicianId, setPendingPhysicianId] = useState<string | null>(null);
   const [pendingPhysicianName, setPendingPhysicianName] = useState<string>('');
+  const [pendingTitle, setPendingTitle] = useState<'Dr' | 'Dra' | null>(null);
 
   // Toggle button selections for multi-select (days, languages)
   const [toggleSelections, setToggleSelections] = useState<Set<string>>(new Set());
@@ -236,11 +237,15 @@ export default function PhysicianOnboardingPage() {
   }, []);
 
   // Handle profile ready - show consent modal
-  const handleProfileReady = useCallback((physicianId: string, physicianName: string) => {
-    setPendingPhysicianId(physicianId);
-    setPendingPhysicianName(physicianName);
-    setShowConsentModal(true);
-  }, []);
+  const handleProfileReady = useCallback(
+    (physicianId: string, physicianName: string, title?: 'Dr' | 'Dra' | null) => {
+      setPendingPhysicianId(physicianId);
+      setPendingPhysicianName(physicianName);
+      setPendingTitle(title ?? null);
+      setShowConsentModal(true);
+    },
+    [],
+  );
 
   // Handle consent completion
   const handleConsentComplete = useCallback(async (consentData: PhysicianConsentData) => {
@@ -274,12 +279,27 @@ export default function PhysicianOnboardingPage() {
     }, 4000);
   }, [lang, router]);
 
-  // Handle consent cancel
+  // Handle consent cancel ("Review Later"): the profile row already exists,
+  // so KEEP pendingPhysicianId — the doctor can reopen the agreement from the
+  // chat without redoing anything. On a later visit the auth guard re-shows
+  // the modal automatically (isOnboarded && !hasConsent).
   const handleConsentCancel = useCallback(() => {
     setShowConsentModal(false);
-    setPendingPhysicianId(null);
-    setPendingPhysicianName('');
-  }, []);
+    messageQueueRef.current.push({
+      text:
+        lang === 'en'
+          ? 'No problem — your profile is saved. When you’re ready, sign the network agreement to appear on the Medikah network. You can also come back to this page anytime.'
+          : 'No hay problema — su perfil está guardado. Cuando esté listo, firme el acuerdo de la red para aparecer en la red de Medikah. También puede volver a esta página en cualquier momento.',
+      actions: [
+        {
+          label: lang === 'en' ? 'Review & sign agreement' : 'Revisar y firmar el acuerdo',
+          value: '__reopen_consent__',
+          type: 'primary',
+        },
+      ],
+    });
+    triggerQueueProcessing();
+  }, [lang, triggerQueueProcessing]);
 
   // Send user message
   const sendMessage = async (text: string): Promise<void> => {
@@ -308,6 +328,12 @@ export default function PhysicianOnboardingPage() {
 
   // Handle action button clicks
   const handleActionClick = async (value: string) => {
+    // Page-level action: reopen the consent modal after "Review Later".
+    // Runs BEFORE the awaiting-input guard — the agent is already done here.
+    if (value === '__reopen_consent__') {
+      if (pendingPhysicianId) setShowConsentModal(true);
+      return;
+    }
     if (!agentRef.current?.isAwaitingInput()) return;
 
     setIsSending(true);
@@ -368,6 +394,7 @@ export default function PhysicianOnboardingPage() {
         <PhysicianConsentModal
           physicianId={pendingPhysicianId}
           physicianName={pendingPhysicianName}
+          title={pendingTitle}
           lang={lang}
           onComplete={handleConsentComplete}
           onCancel={handleConsentCancel}
@@ -481,7 +508,9 @@ export default function PhysicianOnboardingPage() {
                                   handleActionClick(action.value);
                                 }
                               }}
-                              disabled={!isAwaitingInput}
+                              // Page-level actions (reopen consent) stay live
+                              // after the agent completes and stops awaiting.
+                              disabled={!isAwaitingInput && action.value !== '__reopen_consent__'}
                               className={`font-body text-sm font-medium px-5 py-2.5 rounded-[10px] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
                                 action.type === 'primary'
                                   ? 'bg-teal-500 text-white hover:bg-teal-600 hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(44,122,140,0.3)]'
