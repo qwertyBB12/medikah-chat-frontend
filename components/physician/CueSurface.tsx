@@ -97,6 +97,7 @@ const LABELS = {
         confirmEyebrow: 'Confirm before writing', confirm: 'Confirm', cancel: 'Cancel',
         hintLeft: 'Cue · English + Spanish', done: 'Done', memory: 'What Cue remembers',
         stepsDone: (n: number) => (n === 1 ? '1 step ✓' : `${n} steps ✓`),
+        noFiles: "Cue can't receive files yet — describe it in text and Cue will help.",
         modeSettings: 'Interaction mode', tapToTalk: 'Tap to talk', tapToStop: 'Listening — tap to stop',
         resume: 'Paused — tap to resume',
         blockedResult: () => `Time blocked.`,
@@ -108,6 +109,7 @@ const LABELS = {
         confirmEyebrow: 'Confirmar antes de escribir', confirm: 'Confirmar', cancel: 'Cancelar',
         hintLeft: 'Cue · español + inglés', done: 'Listo', memory: 'Lo que Cue recuerda',
         stepsDone: (n: number) => (n === 1 ? '1 paso ✓' : `${n} pasos ✓`),
+        noFiles: 'Cue aún no puede recibir archivos — descríbelo en texto y Cue te ayudará.',
         modeSettings: 'Modo de interacción', tapToTalk: 'Toca para hablar', tapToStop: 'Escuchando — toca para terminar',
         resume: 'En pausa — toca para reanudar',
         blockedResult: () => `Horario bloqueado.`,
@@ -532,6 +534,23 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
     if (e.key === 'Escape') tryClose();
   }
 
+  // File-share defect (sprint QA): dropping a file on the dock made the
+  // browser NAVIGATE to the file — the session vanished and it read as a
+  // broken upload. Cue has no file intake yet (real document understanding
+  // needs the PHI/de-identification design first), so catch drag/drop and
+  // file-paste and answer honestly instead of losing the doctor's session.
+  const rejectFiles = useCallback(() => setErrorMsg(labels.noFiles), [labels.noFiles]);
+  function handleDragOver(e: React.DragEvent<HTMLElement>) {
+    e.preventDefault(); // required to receive drop (and stop the navigation)
+  }
+  function handleDrop(e: React.DragEvent<HTMLElement>) {
+    e.preventDefault();
+    if (e.dataTransfer?.files?.length) rejectFiles();
+  }
+  function handlePaste(e: React.ClipboardEvent<HTMLInputElement>) {
+    if (e.clipboardData?.files?.length) { e.preventDefault(); rejectFiles(); }
+  }
+
   // Text submit (always available; the only path when !voiceSupported).
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -781,6 +800,8 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
         aria-label="Cue"
         className="mk-dock"
         onKeyDown={handleDialogKeyDown}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
         tabIndex={-1}
       >
         {/* self-contained wave lip — flows from an arc (brand direction: arcs up
@@ -980,6 +1001,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
               placeholder={labels.placeholder}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
+              onPaste={handlePaste}
               aria-label={labels.placeholder}
               autoComplete="off"
               spellCheck={false}

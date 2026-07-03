@@ -484,6 +484,28 @@ describe('CueSurface — history scrollback', () => {
   });
 });
 
+// ─── file share (defect: drop navigated the browser away) ────────────────────
+
+describe('CueSurface — file share graceful rejection', () => {
+  beforeEach(() => stubReducedMotion(false));
+  afterEach(() => { vi.restoreAllMocks(); cleanup(); });
+
+  it('a file dropped on the dock shows the honest no-files message (ES)', () => {
+    render(<CueSurface isOpen onClose={vi.fn()} accessToken="t" locale="es" />);
+    const dialog = screen.getByRole('dialog');
+    const file = new File(['x'], 'presentacion.pptx');
+    fireEvent.drop(dialog, { dataTransfer: { files: [file] } });
+    expect(screen.getByText(/aún no puede recibir archivos/)).toBeTruthy();
+  });
+
+  it('a non-file drop (text drag) is ignored', () => {
+    render(<CueSurface isOpen onClose={vi.fn()} accessToken="t" locale="en" />);
+    const dialog = screen.getByRole('dialog');
+    fireEvent.drop(dialog, { dataTransfer: { files: [] } });
+    expect(screen.queryByText(/can't receive files/)).toBeNull();
+  });
+});
+
 // ─── clinical decision support card (Phase 24) ────────────────────────────────
 
 describe('CueSurface — clinical decision support card', () => {
