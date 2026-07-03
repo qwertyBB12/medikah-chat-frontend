@@ -26,12 +26,17 @@ jobs:
           check() {
             local name="$1" url="$2" expected="$3"
             local code
-            code=$(curl -sL -o /tmp/body -w '%{http_code}' --max-time 30 "$url")
+            # `|| echo 000` — a DNS/connect failure must register as a FAIL
+            # for THIS check, not abort the whole script under bash -e and
+            # leave the remaining surfaces unchecked (bug found 2026-07-02:
+            # a dead hostname at position 5 silently skipped sogo/privacy/
+            # terms for 8+ days).
+            code=$(curl -sL -o /tmp/body -w '%{http_code}' --max-time 30 "$url" || echo 000)
             if echo "$expected" | grep -qw "$code"; then
               echo "OK   $name ($code)"
             else
               echo "FAIL $name — got $code, expected one of: $expected"
-              head -c 300 /tmp/body; echo
+              head -c 300 /tmp/body 2>/dev/null; echo
               fail=1
             fi
           }
@@ -39,7 +44,12 @@ jobs:
           check "cdmx landing"        'https://medikah.health/cdmx'                                        '200'
           check "chat auth gateway"   'https://medikah.health/chat'                                        '200'
           check "physician by-slug"   'https://medikah.health/api/physicians/by-slug?slug=smoke-probe'     '404'
-          check "backend health"      'https://api.medikah.health/health'                                  '200'
+          # Backend serves at the Render hostname. api.medikah.health has had
+          # NO DNS record since at least 2026-06-26 (8+ days of failed smokes)
+          # — restore the CNAME in Cloudflare if the vanity host is wanted
+          # again, then re-point this check.
+          check "backend health"      'https://medikah-chat-api.onrender.com/health'                       '200'
+          check "cue gate"            'https://medikah-chat-api.onrender.com/cue/health'                   '200'
           check "sogo login"          'https://practikah.medikah.health/SOGo/'                             '200'
           check "privacy"             'https://medikah.health/privacy'                                     '200'
           check "terms"               'https://medikah.health/terms'                                       '200'
