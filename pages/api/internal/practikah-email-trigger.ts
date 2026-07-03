@@ -28,6 +28,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import {
   sendPracikahLiveEmail,
   sendProLiveEmail,
+  sendProStalledEmail,
   sendDunningSupplementEmail,
   sendDowngradeNoticeEmail,
   sendEppCodeDeliveryEmail,
@@ -115,6 +116,15 @@ export default async function handler(
       const { domain, first_name, last_name } = body;
       if (!domain) return void res.status(400).json({ error: 'Missing required field: domain' });
       const result = await sendProLiveEmail({ to, lang, domain, firstName: first_name, lastName: last_name });
+      return void res.status(result.success ? 200 : 502).json(result);
+    }
+
+    // Step-replay slice — honest "setup is delayed" email fired when the
+    // finish-later retry loop exhausts its attempts (pro_saga.py).
+    if (kind === 'pro_stalled') {
+      const { domain, first_name, last_name } = body;
+      if (!domain) return void res.status(400).json({ error: 'Missing required field: domain' });
+      const result = await sendProStalledEmail({ to, lang, domain, firstName: first_name, lastName: last_name });
       return void res.status(result.success ? 200 : 502).json(result);
     }
 

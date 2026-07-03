@@ -286,7 +286,7 @@ export interface WorkspaceContent {
         /** Phase 13-07 (D-16) — Vercel-style stepped checklist live UX */
         headline: string;
         subhead: string;
-        /** Bilingual labels for the 7 PRO_SAGA_STEPS (matches PRO_SAGA_STEPS in services/practikah/pro_saga.py) */
+        /** Bilingual labels for the 8 PRO_SAGA_STEPS (matches PRO_SAGA_STEPS in services/practikah/pro_saga.py) */
         steps: {
           'pro.charge_confirmed': string;
           'pro.register_domain': string;
@@ -295,6 +295,7 @@ export interface WorkspaceContent {
           'pro.provision_pro_mailbox': string;
           'pro.attach_saas_hostname': string;
           'pro.migrate_theme': string;
+          'pro.verify_live': string;
         };
         completedHeadline: string;
         completedCta: string;
@@ -735,6 +736,7 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
             'pro.provision_pro_mailbox': 'Creating your custom mailbox',
             'pro.attach_saas_hostname': 'Issuing SSL certificate',
             'pro.migrate_theme': 'Migrating your website to your new domain',
+            'pro.verify_live': 'Verifying your site is live',
           },
           completedHeadline: 'Your Pro workspace is live',
           completedCta: 'Visit my new site',
@@ -1208,6 +1210,7 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
             'pro.provision_pro_mailbox': 'Creando tu buzón personalizado',
             'pro.attach_saas_hostname': 'Emitiendo certificado SSL',
             'pro.migrate_theme': 'Migrando tu sitio al nuevo dominio',
+            'pro.verify_live': 'Verificando que tu sitio esté activo',
           },
           completedHeadline: 'Tu espacio Pro está activo',
           completedCta: 'Ver mi nuevo sitio',
