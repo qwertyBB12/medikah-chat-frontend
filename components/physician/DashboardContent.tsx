@@ -11,6 +11,7 @@ import { useRouter } from 'next/router';
 import { SupportedLang } from '../../lib/i18n';
 import { useBackendToken } from '../../lib/useBackendToken';
 import VerificationBadge from './VerificationBadge';
+import DashboardWelcomeCard from './DashboardWelcomeCard';
 import ProfileOverview from './ProfileOverview';
 import ClinicalSupportTool from './ClinicalSupportTool';
 import InquiryList from './InquiryList';
@@ -321,6 +322,17 @@ export default function DashboardContent({
 
   return (
     <div className="px-4 sm:px-6 py-8 max-w-5xl mx-auto space-y-6">
+      {/* First-visit orientation while verification is pending (journey P2):
+          what's happening, what to do meanwhile, what arrives when verified.
+          Dismissible; gone for good once the doctor is verified. */}
+      {normalizedStatus !== 'verified' && (
+        <DashboardWelcomeCard
+          physicianId={physicianId}
+          lang={lang}
+          onGoToTab={(tab) => setActiveTab(tab)}
+        />
+      )}
+
       {/* Row 1: Profile Overview + Verification Status */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Profile Overview */}
