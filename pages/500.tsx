@@ -7,7 +7,7 @@ export default function Custom500() {
   return (
     <>
       <Head>
-        <title>Server Error — Medikah</title>
+        <title>Server Error | Medikah</title>
         <meta name="robots" content="noindex" />
       </Head>
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#FAFAFB] text-deep-charcoal px-6">

@@ -81,7 +81,7 @@ export interface CueAvisoContent {
 
 const avisoEs: CueAvisoContent = {
   pageTitle: 'Aviso de Privacidad — Cue para Médicos',
-  htmlTitle: 'Aviso de Privacidad de Cue — Medikah / Práctikah',
+  htmlTitle: 'Aviso de Privacidad de Cue | Medikah / Práctikah',
   draftBanner:
     'BORRADOR — Pendiente de revisión por asesor legal en México. ' +
     'Este documento no ha sido aprobado por consejo jurídico y no debe ' +
@@ -324,7 +324,7 @@ const avisoEs: CueAvisoContent = {
 
 const avisoEn: CueAvisoContent = {
   pageTitle: 'Privacy Notice — Cue for Physicians',
-  htmlTitle: 'Cue Privacy Notice — Medikah / Práctikah',
+  htmlTitle: 'Cue Privacy Notice | Medikah / Práctikah',
   draftBanner:
     'DRAFT — Pending review by Mexico-qualified legal counsel. ' +
     'This document has not been approved by legal counsel and must not be ' +

@@ -106,7 +106,7 @@ export default function PhysicianDashboard() {
     <>
       <Head>
         <title>
-          {lang === 'en' ? 'Physician Dashboard — Medikah' : 'Panel de Médico — Medikah'}
+          {lang === 'en' ? 'Physician Dashboard | Medikah' : 'Panel de Médico | Medikah'}
         </title>
         <meta name="robots" content="noindex, nofollow" />
       </Head>

@@ -59,7 +59,7 @@ export default function HeroVariantD() {
         {/* Subheadlines - DM Sans, modern clarity */}
         <div className="max-w-2xl space-y-5 mb-14">
           <p className="font-dm-sans text-lg sm:text-xl md:text-[22px] text-body-slate leading-[1.6]">
-            The Americas function as one medical theater—but systems
+            The Americas function as one medical theater, but systems
             remain divided by borders that families and physicians routinely cross.
           </p>
 

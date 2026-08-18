@@ -23,19 +23,19 @@ export default function LandingPage() {
   return (
     <>
       <Head>
-        <title>Medikah — Care Without Distance</title>
+        <title>Medikah | Care Without Distance</title>
         <meta name="description" content="Connect with real doctors, in your language, wherever you are. Medikah coordinates healthcare between the US and Mexico with compliance, privacy, and care." />
         <link rel="canonical" href="https://medikah.health/" />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://medikah.health/" />
-        <meta property="og:title" content="Medikah — Care Without Distance" />
+        <meta property="og:title" content="Medikah | Care Without Distance" />
         <meta property="og:description" content="Connect with real doctors, in your language, wherever you are. Medikah coordinates healthcare between the US and Mexico with compliance, privacy, and care." />
         <meta property="og:image" content={ogImage} />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta property="og:site_name" content="Medikah" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Medikah — Care Without Distance" />
+        <meta name="twitter:title" content="Medikah | Care Without Distance" />
         <meta name="twitter:description" content="Connect with real doctors, in your language, wherever you are. Medikah coordinates healthcare between the US and Mexico with compliance, privacy, and care." />
         <meta name="twitter:image" content={ogImage} />
         <script

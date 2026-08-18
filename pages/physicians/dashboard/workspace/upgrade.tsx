@@ -33,8 +33,8 @@ export default function UpgradePage({ physician, lang }: UpgradePageProps) {
       <Head>
         <title>
           {lang === 'es'
-            ? 'Pasa a Práctikah Pro — Medikah'
-            : 'Upgrade to Práctikah Pro — Medikah'}
+            ? 'Pasa a Práctikah Pro | Medikah'
+            : 'Upgrade to Práctikah Pro | Medikah'}
         </title>
       </Head>
       <div className="bg-clinical-surface min-h-screen py-10 px-4">

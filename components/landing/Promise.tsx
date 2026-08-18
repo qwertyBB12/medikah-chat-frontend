@@ -6,8 +6,8 @@ const ITEMS = [
   },
   {
     heading: 'Bilingual care',
-    body: 'English and Spanish at every step \u2014 from intake to consultation.',
-    bodyEs: 'Ingl\u00e9s y espa\u00f1ol en cada paso \u2014 desde el ingreso hasta la consulta.',
+    body: 'English and Spanish at every step, from intake to consultation.',
+    bodyEs: 'Ingl\u00e9s y espa\u00f1ol en cada paso, desde el ingreso hasta la consulta.',
   },
   {
     heading: 'Thoughtful intake',

@@ -7,8 +7,8 @@ const STEPS = [
     number: '01',
     title: { en: 'Tell us', es: 'Cuéntenos' },
     body: {
-      en: 'Describe what\u2019s going on \u2014 in English or Spanish. We organize your information and handle the details between countries.',
-      es: 'Describa lo que le pasa \u2014 en inglés o español. Nosotros organizamos su información y gestionamos los detalles entre países.',
+      en: 'Describe what\u2019s going on, in English or Spanish. We organize your information and handle the details between countries.',
+      es: 'Describa lo que le pasa, en inglés o español. Nosotros organizamos su información y gestionamos los detalles entre países.',
     },
     tag: { en: 'English & Spanish', es: 'Inglés y español' },
   },
@@ -42,8 +42,8 @@ export default function HowItWorks() {
     heading2: { en: 'Closer Than', es: 'más cerca de' },
     headingAccent: { en: 'You Think', es: 'lo que cree' },
     lead: {
-      en: 'Tell us what you need. We handle the rest \u2014 so you can sit down with a real doctor, in your language, ready to listen.',
-      es: 'Cuéntenos lo que necesita. Nosotros nos encargamos del resto \u2014 para que usted se siente con un médico real, en su idioma, listo para escucharlo.',
+      en: 'Tell us what you need. We handle the rest, so you can sit down with a real doctor, in your language, ready to listen.',
+      es: 'Cuéntenos lo que necesita. Nosotros nos encargamos del resto, para que usted se siente con un médico real, en su idioma, listo para escucharlo.',
     },
   };
 

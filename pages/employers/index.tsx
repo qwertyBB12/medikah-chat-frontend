@@ -42,7 +42,7 @@ export default function EmployerPortal() {
     <>
       <Head>
         <title>
-          {lang === 'en' ? 'Employer Portal — Medikah' : 'Portal de Empleadores — Medikah'}
+          {lang === 'en' ? 'Employer Portal | Medikah' : 'Portal de Empleadores | Medikah'}
         </title>
         <meta name="robots" content="noindex, nofollow" />
       </Head>

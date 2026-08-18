@@ -133,7 +133,7 @@ export default function PhysicianSetup() {
   return (
     <>
       <Head>
-        <title>Set Up Your Account — Medikah</title>
+        <title>Set Up Your Account | Medikah</title>
         <meta name="robots" content="noindex, nofollow" />
       </Head>
 

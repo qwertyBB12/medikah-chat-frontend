@@ -8,8 +8,8 @@ const FEATURES = [
     eyebrow: { en: 'Listening', es: 'Escuchar' },
     title: { en: 'We listen in\nboth languages', es: 'Escuchamos en\nambos idiomas' },
     body: {
-      en: 'Tell us what you need in English or Spanish. We organize your information and navigate the international requirements \u2014 so your doctor gets a complete picture before you even meet.',
-      es: 'Cuéntenos lo que necesita en inglés o español. Organizamos su información y gestionamos los requisitos entre países \u2014 para que su médico tenga el panorama completo antes de conocerse.',
+      en: 'Tell us what you need in English or Spanish. We organize your information and navigate the international requirements, so your doctor gets a complete picture before you even meet.',
+      es: 'Cuéntenos lo que necesita en inglés o español. Organizamos su información y gestionamos los requisitos entre países, para que su médico tenga el panorama completo antes de conocerse.',
     },
     tags: ['Bilingual', 'Automated', '24/7'],
   },
@@ -18,8 +18,8 @@ const FEATURES = [
     eyebrow: { en: 'Trust', es: 'Confianza' },
     title: { en: 'Every doctor\nis verified', es: 'Cada médico\nestá verificado' },
     body: {
-      en: 'Three levels of verification \u2014 automated license checks through COFEPRIS and US medical boards, professional profile matching, and manual review. Because trust isn\u2019t optional.',
-      es: 'Tres niveles de verificación \u2014 validación automática de licencias vía COFEPRIS y juntas médicas de EE.\u202fUU., cotejo de perfil profesional y revisión manual. Porque la confianza no es opcional.',
+      en: 'Three levels of verification: automated license checks through COFEPRIS and US medical boards, professional profile matching, and manual review. Because trust isn\u2019t optional.',
+      es: 'Tres niveles de verificación: validación automática de licencias vía COFEPRIS y juntas médicas de EE.\u202fUU., cotejo de perfil profesional y revisión manual. Porque la confianza no es opcional.',
     },
     tags: ['3-Tier Verify', 'Multi-Country'],
   },
@@ -28,8 +28,8 @@ const FEATURES = [
     eyebrow: { en: 'Privacy', es: 'Privacidad' },
     title: { en: 'Your conversation\nstays private', es: 'Su conversación\nes privada' },
     body: {
-      en: 'HIPAA-compliant video, scheduling that adjusts to your timezone, digital consent, and encrypted communication. The technology stays invisible \u2014 the care doesn\u2019t.',
-      es: 'Video que cumple con HIPAA, agenda ajustada a su zona horaria, consentimiento digital y comunicación cifrada. La tecnología pasa desapercibida \u2014 el cuidado, no.',
+      en: 'HIPAA-compliant video, scheduling that adjusts to your timezone, digital consent, and encrypted communication. The technology stays invisible. The care doesn\u2019t.',
+      es: 'Video que cumple con HIPAA, agenda ajustada a su zona horaria, consentimiento digital y comunicación cifrada. La tecnología pasa desapercibida. El cuidado, no.',
     },
     tags: ['Video', 'HIPAA', 'Encrypted'],
   },

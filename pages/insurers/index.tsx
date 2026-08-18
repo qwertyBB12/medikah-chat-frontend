@@ -42,7 +42,7 @@ export default function InsurerPortal() {
     <>
       <Head>
         <title>
-          {lang === 'en' ? 'Insurance Portal — Medikah' : 'Portal de Seguros — Medikah'}
+          {lang === 'en' ? 'Insurance Portal | Medikah' : 'Portal de Seguros | Medikah'}
         </title>
         <meta name="robots" content="noindex, nofollow" />
       </Head>

@@ -152,7 +152,7 @@ export async function sendPhysicianWelcomeEmail(
       ? {
           subject: hasTitle
             ? `${title === 'Dra' ? 'Bienvenida' : 'Bienvenido'} a Medikah, ${name} — Su perfil está en revisión`
-            : `Le damos la bienvenida a Medikah — Su perfil está en revisión`,
+            : `Le damos la bienvenida a Medikah: su perfil está en revisión`,
           greeting: hasTitle
             ? `¡${title === 'Dra' ? 'Bienvenida' : 'Bienvenido'} a Medikah, ${name}!`
             : `¡Le damos la bienvenida a Medikah, ${name}!`,
@@ -185,7 +185,7 @@ export async function sendPhysicianWelcomeEmail(
       : {
           subject: hasTitle
             ? `Welcome to Medikah, ${name} — Your profile is in review`
-            : `Welcome to Medikah — Your profile is in review`,
+            : `Welcome to Medikah: your profile is in review`,
           greeting: `Welcome to Medikah, ${name}!`,
           intro: `Thank you for joining the Medikah network. Your profile has been successfully created and your credentials are ready for review.`,
           profileCreated: `Your physician profile is created`,

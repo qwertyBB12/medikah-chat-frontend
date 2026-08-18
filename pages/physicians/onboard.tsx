@@ -288,8 +288,8 @@ export default function PhysicianOnboardingPage() {
     messageQueueRef.current.push({
       text:
         lang === 'en'
-          ? 'No problem — your profile is saved. When you’re ready, sign the network agreement to appear on the Medikah network. You can also come back to this page anytime.'
-          : 'No hay problema — su perfil está guardado. Cuando esté listo, firme el acuerdo de la red para aparecer en la red de Medikah. También puede volver a esta página en cualquier momento.',
+          ? 'No problem, your profile is saved. When you’re ready, sign the network agreement to appear on the Medikah network. You can also come back to this page anytime.'
+          : 'No hay problema, su perfil está guardado. Cuando esté listo, firme el acuerdo de la red para aparecer en la red de Medikah. También puede volver a esta página en cualquier momento.',
       actions: [
         {
           label: lang === 'en' ? 'Review & sign agreement' : 'Revisar y firmar el acuerdo',
@@ -384,8 +384,8 @@ export default function PhysicianOnboardingPage() {
       <Head>
         <title>
           {lang === 'en'
-            ? 'Join the Network — Medikah'
-            : 'Únete a la Red — Medikah'}
+            ? 'Join the Network | Medikah'
+            : 'Únete a la Red | Medikah'}
         </title>
         <meta name="robots" content="noindex, nofollow" />
       </Head>

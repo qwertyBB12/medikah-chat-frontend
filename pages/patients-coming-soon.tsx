@@ -16,15 +16,15 @@ import { LOGO_SRC } from '../lib/assets';
 
 const COPY = {
   en: {
-    title: 'Patient access — coming soon · Medikah',
+    title: 'Patient access coming soon · Medikah',
     heading: 'Patient access is coming soon',
-    body: 'Medikah is currently onboarding physicians. Patient care opens in a later phase — thank you for your patience.',
+    body: 'Medikah is currently onboarding physicians. Patient care opens in a later phase. Thank you for your patience.',
     home: 'Back to medikah.health',
   },
   es: {
-    title: 'Acceso para pacientes — próximamente · Medikah',
+    title: 'Acceso para pacientes próximamente · Medikah',
     heading: 'El acceso para pacientes llegará pronto',
-    body: 'Medikah está incorporando médicos en esta etapa. El acceso para pacientes se habilitará en una fase posterior — gracias por su paciencia.',
+    body: 'Medikah está incorporando médicos en esta etapa. El acceso para pacientes se habilitará en una fase posterior. Gracias por su paciencia.',
     home: 'Volver a medikah.health',
   },
 } as const;

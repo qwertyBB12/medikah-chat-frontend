@@ -248,7 +248,7 @@ export default function PatientPortal() {
   return (
     <>
       <Head>
-        <title>Patient Portal — Medikah</title>
+        <title>Patient Portal | Medikah</title>
         <meta name="robots" content="noindex, nofollow" />
       </Head>
 

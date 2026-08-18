@@ -37,16 +37,16 @@ export const i18n: Record<SupportedLang, ChatSchedulerCopy> = {
       'When would you prefer to meet? You can share something like “tomorrow at 5pm” or “2025-10-12 09:30”.',
     askTimeHelp: 'Feel free to include your timezone if you travel often.',
     askLocale:
-      'Any preferred language or location context the care team should consider? (optional — you can say “skip”).',
+      'Any preferred language or location context the care team should consider? (optional, you can say “skip”).',
     optionalSkipHint: 'You can type “skip” to move ahead.',
-    confirmScheduling: 'Perfect — give me a few seconds while I schedule that.',
-    successHeadline: '✅ Appointment confirmed — check your email for details.',
+    confirmScheduling: 'Perfect, give me a few seconds while I schedule that.',
+    successHeadline: '✅ Appointment confirmed. Check your email for details.',
     successDetails:
       'You are all set. These links will also stay here if you need them again.',
     failureHeadline: '❌ Hmm... something went wrong.',
     failureDetails:
       'Please try again or reach out to our care team if the issue continues.',
-    invalidName: 'Let’s try that again — please share the name you use with clinicians.',
+    invalidName: 'Let’s try that again, please share the name you use with clinicians.',
     invalidEmail:
       'I could not read that email. Can you re-enter it like name@example.com?',
     invalidTime:
@@ -57,7 +57,7 @@ export const i18n: Record<SupportedLang, ChatSchedulerCopy> = {
       'I’ll use the name and email from your profile; let me know if anything needs updating.',
     viewDoxy: 'Join the visit',
     addCalendar: 'Add to Google Calendar',
-    agentSignature: '— Medikah Scheduling Assistant',
+    agentSignature: 'Medikah Scheduling Assistant',
   },
   es: {
     startCta: '📅 Agendar visita',
@@ -71,17 +71,17 @@ export const i18n: Record<SupportedLang, ChatSchedulerCopy> = {
       '¿Cuándo prefieres la consulta? Puedes decir “mañana a las 17:00” o “2025-10-12 09:30”.',
     askTimeHelp: 'Si viajas seguido, comparte también tu zona horaria.',
     askLocale:
-      '¿Alguna preferencia de idioma o contexto local que debamos considerar? (opcional — puedes responder “saltar”).',
+      '¿Alguna preferencia de idioma o contexto local que debamos considerar? (opcional, puedes responder “saltar”).',
     optionalSkipHint: 'Escribe “saltar” si quieres continuar sin agregar nada.',
-    confirmScheduling: 'Perfecto — dame unos segundos para agendar tu cita.',
-    successHeadline: '✅ Cita confirmada — revisa tu correo para ver los detalles.',
+    confirmScheduling: 'Perfecto, dame unos segundos para agendar tu cita.',
+    successHeadline: '✅ Cita confirmada. Revisa tu correo para ver los detalles.',
     successDetails:
       'Todo listo. Estos enlaces quedarán aquí por si los necesitas de nuevo.',
     failureHeadline: '❌ Ups... hubo un problema.',
     failureDetails:
       'Intenta otra vez o contáctanos si el problema continúa.',
     invalidName:
-      'Intentemos de nuevo — comparte el nombre que usas con tus médicos.',
+      'Intentemos de nuevo, comparte el nombre que usas con tus médicos.',
     invalidEmail:
       'No pude leer ese correo. ¿Puedes escribirlo de nuevo como nombre@ejemplo.com?',
     invalidTime:
@@ -92,7 +92,7 @@ export const i18n: Record<SupportedLang, ChatSchedulerCopy> = {
       'Usaré el nombre y correo de tu perfil; dime si necesitas cambiarlos.',
     viewDoxy: 'Entrar a la consulta',
     addCalendar: 'Agregar a Google Calendar',
-    agentSignature: '— Asistente de Agendamiento Medikah',
+    agentSignature: 'Asistente de Agendamiento Medikah',
   },
 };
 

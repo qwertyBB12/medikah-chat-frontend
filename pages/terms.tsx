@@ -16,7 +16,7 @@ type Props = { region: Region; locale: TermsLocale };
 
 const COPY = {
   en: {
-    title: 'Terms of Service — Medikah',
+    title: 'Terms of Service | Medikah',
     back: '← Back to Home',
     appliesTo: 'These Terms apply to users in',
     region: { US: 'the United States', MX: 'Mexico' },
@@ -25,7 +25,7 @@ const COPY = {
     otherName: { US: 'United States', MX: 'Mexico' },
   },
   es: {
-    title: 'Términos y Condiciones — Medikah',
+    title: 'Términos y Condiciones | Medikah',
     back: '← Volver al Inicio',
     appliesTo: 'Estos Términos aplican a usuarios en',
     region: { US: 'Estados Unidos', MX: 'México' },

@@ -34,8 +34,8 @@ const CARDS = [
     meta: { en: 'For physicians', es: 'Para médicos' },
     title: { en: 'Clinical decision\nsupport', es: 'Apoyo a decisiones\nclínicas' },
     body: {
-      en: 'A diagnostic support tool that helps physicians organize symptoms and consider differentials \u2014 so they can make better-informed decisions for their patients.',
-      es: 'Herramienta de apoyo diagnóstico que ayuda a los médicos a organizar síntomas y considerar diferenciales \u2014 para tomar decisiones más informadas por sus pacientes.',
+      en: 'A diagnostic support tool that helps physicians organize symptoms and consider differentials, so they can make better-informed decisions for their patients.',
+      es: 'Herramienta de apoyo diagnóstico que ayuda a los médicos a organizar síntomas y considerar diferenciales, para tomar decisiones más informadas por sus pacientes.',
     },
     badge: { en: 'For licensed physicians', es: 'Para médicos licenciados' },
     link: { label: { en: 'Learn more', es: 'Conocer más' }, href: '#chat-section' },

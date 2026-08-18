@@ -16,8 +16,8 @@ const SLIDES = [
     stat: '100%',
     label: { en: 'Bilingual', es: 'Biling\u00fce' },
     context: {
-      en: 'Every step of the way \u2014 in your language. Because understanding your doctor shouldn\u2019t depend on geography.',
-      es: 'Cada paso del camino \u2014 en su idioma. Porque entender a su m\u00e9dico no deber\u00eda depender de la geograf\u00eda.',
+      en: 'Every step of the way, in your language. Because understanding your doctor shouldn\u2019t depend on geography.',
+      es: 'Cada paso del camino, en su idioma. Porque entender a su m\u00e9dico no deber\u00eda depender de la geograf\u00eda.',
     },
   },
   {

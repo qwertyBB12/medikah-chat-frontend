@@ -650,8 +650,8 @@ const PhysicianOnboardingAgent = forwardRef<
           data.title = value;
           stableAppendMessage({
             text: lang === 'en'
-              ? `Noted \u2014 ${value}.`
-              : `Anotado \u2014 ${value}.`,
+              ? `Noted: ${value}.`
+              : `Anotado: ${value}.`,
           });
           setTimeout(() => {
             askQuestion(

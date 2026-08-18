@@ -4,8 +4,8 @@ import { useRouter } from 'next/router';
 type Locale = 'en' | 'es';
 
 const AI_MESSAGE: Record<Locale, string> = {
-  en: "Hello! I'm your Medikah coordination assistant. I can help you describe your health concerns, find a physician, and schedule a consultation \u2014 in English or Spanish. How can I help you today?",
-  es: "\u00a1Hola! Soy su asistente de coordinación Medikah. Puedo ayudarle a describir lo que necesita, encontrar un médico y agendar una consulta \u2014 en inglés o español. \u00bfEn qué puedo ayudarle?",
+  en: "Hello! I'm your Medikah coordination assistant. I can help you describe your health concerns, find a physician, and schedule a consultation, in English or Spanish. How can I help you today?",
+  es: "\u00a1Hola! Soy su asistente de coordinación Medikah. Puedo ayudarle a describir lo que necesita, encontrar un médico y agendar una consulta, en inglés o español. \u00bfEn qué puedo ayudarle?",
 };
 
 const PATIENT_MESSAGE: Record<Locale, string> = {
@@ -111,8 +111,8 @@ export default function ChatShowcase({ showHeading = true }: { showHeading?: boo
     headingAccent: { en: 'conversation', es: 'conversación' },
     heading2: { en: ', not a form', es: ', no un formulario' },
     lead: {
-      en: 'Just tell us what\u2019s going on. We listen, organize, and connect you with a doctor \u2014 all through a simple conversation.',
-      es: 'Solo cuéntenos lo que pasa. Escuchamos, organizamos y lo conectamos con un médico \u2014 todo a través de una conversación.',
+      en: 'Just tell us what\u2019s going on. We listen, organize, and connect you with a doctor, all through a simple conversation.',
+      es: 'Solo cuéntenos lo que pasa. Escuchamos, organizamos y lo conectamos con un médico, todo a través de una conversación.',
     },
     placeholder: {
       en: 'Type your message... / Escribe tu mensaje...',

@@ -26,12 +26,12 @@ const AUDIENCES: AudienceData[] = [
     },
     body: {
       en: [
-        'Whether you live between countries, seek specialized care across borders, or need access to physicians in other jurisdictions\u2014Medikah coordinates your journey with institutional rigor and human attention.',
+        'Whether you live between countries, seek specialized care across borders, or need access to physicians in other jurisdictions, Medikah coordinates your journey with institutional rigor and human attention.',
         'Our platform connects you with licensed physicians across the Americas for informational consultations about your health needs. Medical care happens in-person, in the provider\u2019s licensed jurisdiction, with full regulatory compliance and complete documentation.',
         'Your physicians collaborate across jurisdictions. Your care happens compliantly, continuously. Bilingual support at every step. Designed for real lives, not insurance categories.',
       ],
       es: [
-        'Ya sea que viva entre países, busque atención especializada transfronteriza, o necesite acceso a médicos en otras jurisdicciones\u2014Medikah coordina su trayectoria con rigor institucional y atención humana.',
+        'Ya sea que viva entre países, busque atención especializada transfronteriza, o necesite acceso a médicos en otras jurisdicciones, Medikah coordina su trayectoria con rigor institucional y atención humana.',
         'Nuestra plataforma lo conecta con médicos licenciados en las Américas para consultas informativas sobre sus necesidades de salud. La atención médica ocurre en persona, en la jurisdicción donde el proveedor está licenciado, con cumplimiento regulatorio completo y documentación completa.',
         'Sus médicos colaboran entre jurisdicciones. Su atención ocurre de manera conforme y continua. Soporte bilingüe en cada paso. Diseñado para vidas reales, no categorías de seguros.',
       ],
@@ -55,12 +55,12 @@ const AUDIENCES: AudienceData[] = [
       en: [
         'Your expertise doesn\u2019t end at national borders. Neither should your patient relationships. Medikah enables cross-border patient consultation within clear regulatory and credentialing frameworks.',
         'Consult with patients across borders within compliant frameworks. Maintain longitudinal relationships regardless of where patients live. Coordinate seamlessly with referring physicians and specialists. Video consultations are informational and planning-focused. Medical diagnosis and treatment happen in-person, in your licensed jurisdiction.',
-        'No regulatory gray zones. No jurisdictional ambiguity. Practice medicine as it should be\u2014focused on patient outcomes, not jurisdictional bureaucracy.',
+        'No regulatory gray zones. No jurisdictional ambiguity. Practice medicine as it should be: focused on patient outcomes, not jurisdictional bureaucracy.',
       ],
       es: [
         'Su experiencia no termina en las fronteras nacionales. Tampoco deberían hacerlo sus relaciones con pacientes. Medikah permite la consulta transfronteriza de pacientes dentro de marcos regulatorios y de credenciales claros.',
         'Consulte con pacientes transfronterizamente dentro de marcos conformes. Mantenga relaciones longitudinales sin importar dónde vivan los pacientes. Coordine perfectamente con médicos y especialistas remitentes. Las videoconsultas son informativas y enfocadas en planificación. El diagnóstico y tratamiento médico ocurren en persona, en su jurisdicción licenciada.',
-        'Sin zonas grises regulatorias. Sin ambigüedad jurisdiccional. Practique la medicina como debe ser\u2014enfocada en los resultados del paciente, no en la burocracia jurisdiccional.',
+        'Sin zonas grises regulatorias. Sin ambigüedad jurisdiccional. Practique la medicina como debe ser: enfocada en los resultados del paciente, no en la burocracia jurisdiccional.',
       ],
     },
     cta: {

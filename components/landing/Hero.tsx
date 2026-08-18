@@ -14,12 +14,12 @@ export default function Hero() {
       es: 'Médicos reales. En su idioma. Donde usted esté.',
     },
     body1: {
-      en: 'Families move between countries every day \u2014 but healthcare doesn\u2019t move with them. Patients lose access. Doctors lose reach. Care gets interrupted.',
-      es: 'Las familias se mueven entre pa\u00edses a diario \u2014 pero la salud no se mueve con ellas. Los pacientes pierden acceso. Los m\u00e9dicos pierden alcance. La atenci\u00f3n se interrumpe.',
+      en: 'Families move between countries every day, but healthcare doesn\u2019t move with them. Patients lose access. Doctors lose reach. Care gets interrupted.',
+      es: 'Las familias se mueven entre pa\u00edses a diario, pero la salud no se mueve con ellas. Los pacientes pierden acceso. Los m\u00e9dicos pierden alcance. La atenci\u00f3n se interrumpe.',
     },
     body2: {
-      en: 'Medikah closes that gap so patients and doctors can focus on what matters \u2014 the consultation, the relationship, the care.',
-      es: 'Medikah cierra esa brecha para que pacientes y m\u00e9dicos se concentren en lo que importa \u2014 la consulta, la relaci\u00f3n, el cuidado.',
+      en: 'Medikah closes that gap so patients and doctors can focus on what matters: the consultation, the relationship, the care.',
+      es: 'Medikah cierra esa brecha para que pacientes y m\u00e9dicos se concentren en lo que importa: la consulta, la relaci\u00f3n, el cuidado.',
     },
     ctaPrimary: { en: 'Find a doctor', es: 'Encontrar un médico' },
     ctaSecondary: { en: 'For institutions', es: 'Para instituciones' },

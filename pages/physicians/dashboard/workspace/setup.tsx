@@ -52,7 +52,7 @@ export default function WorkspaceSetupPage({
     <>
       <Head>
         <title>
-          {lang === 'es' ? 'Configurar Práctikah — Medikah' : 'Set Up Práctikah — Medikah'}
+          {lang === 'es' ? 'Configurar Práctikah | Medikah' : 'Set Up Práctikah | Medikah'}
         </title>
       </Head>
       <div className="bg-linen min-h-screen py-10 px-4">

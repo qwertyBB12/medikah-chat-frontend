@@ -21,7 +21,7 @@ const LOGO_DARK = LOGO_DARK_SRC;
 export default function PrivacyNotice() {
   const { locale } = useRouter();
   const es = locale === 'es';
-  const title = es ? 'Aviso de Privacidad — Medikah' : 'Privacy Notice — Medikah';
+  const title = es ? 'Aviso de Privacidad | Medikah' : 'Privacy Notice | Medikah';
   const back = es ? '← Volver al Inicio' : '← Back to Home';
 
   return (

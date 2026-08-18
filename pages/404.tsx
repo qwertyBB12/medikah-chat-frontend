@@ -7,7 +7,7 @@ export default function Custom404() {
   return (
     <>
       <Head>
-        <title>Page Not Found — Medikah</title>
+        <title>Page Not Found | Medikah</title>
         <meta name="robots" content="noindex" />
       </Head>
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#FAFAFB] text-deep-charcoal px-6">

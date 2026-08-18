@@ -218,7 +218,7 @@ export default function PhysicianOnboardingPage() {
       <Head>
         <title>
           {lang === 'en'
-            ? 'Physician Onboarding — Medikah Network'
+            ? 'Physician Onboarding | Medikah Network'
             : 'Registro de Médicos — Red Medikah'}
         </title>
         <meta name="robots" content="noindex, nofollow" />
