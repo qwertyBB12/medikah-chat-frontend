@@ -1,5 +1,5 @@
 /**
- * FAITHFUL COUNSEL PORT — DO NOT HAND-EDIT. Regenerate via the legal pipeline.
+ * FAITHFUL COUNSEL PORT, DO NOT HAND-EDIT. Regenerate via the legal pipeline.
  *
  * Source of truth: counsel Luis Ignacio's final documents (2026-04-16),
  *   ~/projects/kah-operations/.planning/notes/legal-final-2026-04-16/
@@ -8,7 +8,7 @@
  * Generated verbatim from the .docx (textutil HTML -> typed blocks). The
  * rendered plaintext was verified line-for-line identical to the source
  * (SequenceMatcher similarity 1.0000). To change this text, update the counsel
- * .docx and regenerate — never edit here without counsel review.
+ * .docx and regenerate, never edit here without counsel review.
  * See CLAUDE.md "Copy Language Rules / Do not modify legal documents".
  */
 import type { LegalBlock } from './blocks';
@@ -25,7 +25,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "subtitle",
-        "t": "Terms of Service — Patient Agreement"
+        "t": "Terms of Service, Patient Agreement"
       },
       {
         "k": "meta",
@@ -49,7 +49,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
           },
           {
             "k": "p",
-            "t": "Users located in Mexico: A secondary layer of provisions in Section 16 addresses your specific rights under Mexican law. Where Mexican mandatory consumer protection law (LFPC) conflicts with these Terms, Mexican law applies to you — but all other provisions remain fully in force."
+            "t": "Users located in Mexico: A secondary layer of provisions in Section 16 addresses your specific rights under Mexican law. Where Mexican mandatory consumer protection law (LFPC) conflicts with these Terms, Mexican law applies to you, but all other provisions remain fully in force."
           }
         ]
       },
@@ -63,7 +63,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
         "blocks": [
           {
             "k": "callout-title",
-            "t": "Binding Agreement — Read Before Using the Platform"
+            "t": "Binding Agreement, Read Before Using the Platform"
           },
           {
             "k": "p",
@@ -113,7 +113,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "h2",
-        "t": "Critical Understanding — What Medikah Is and Is Not"
+        "t": "Critical Understanding, What Medikah Is and Is Not"
       },
       {
         "k": "p",
@@ -253,7 +253,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "h2",
-        "t": "3. Cross-Border Informational Appointments — Critical Terms"
+        "t": "3. Cross-Border Informational Appointments, Critical Terms"
       },
       {
         "k": "h3",
@@ -269,7 +269,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
         "blocks": [
           {
             "k": "callout-title",
-            "t": "Critical Warning — Provider Licensing"
+            "t": "Critical Warning, Provider Licensing"
           },
           {
             "k": "p",
@@ -281,13 +281,13 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
           },
           {
             "k": "p",
-            "t": "This is not a limitation of our platform — it is a hard legal boundary that cannot be waived by any agreement between you and Medikah or between you and the provider."
+            "t": "This is not a limitation of our platform, it is a hard legal boundary that cannot be waived by any agreement between you and Medikah or between you and the provider."
           }
         ]
       },
       {
         "k": "h3",
-        "t": "3.2 Informational Appointments — Medical Tourism"
+        "t": "3.2 Informational Appointments, Medical Tourism"
       },
       {
         "k": "p",
@@ -328,7 +328,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "p",
-        "t": "Before each Informational Appointment, you will be required to read and execute a Informational Appointment Acknowledgment Form (Form MEDIKAH-CB-001). This form confirms your understanding that the provider is not licensed in your location and that the session is informational only. Execution is a condition precedent — the session cannot proceed without it. Medikah retains a timestamped, hash-verified record of each signed form."
+        "t": "Before each Informational Appointment, you will be required to read and execute a Informational Appointment Acknowledgment Form (Form MEDIKAH-CB-001). This form confirms your understanding that the provider is not licensed in your location and that the session is informational only. Execution is a condition precedent, the session cannot proceed without it. Medikah retains a timestamped, hash-verified record of each signed form."
       },
       {
         "k": "h3",
@@ -340,7 +340,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "h3",
-        "t": "3.5 Controlled Substances — Absolute Prohibition"
+        "t": "3.5 Controlled Substances, Absolute Prohibition"
       },
       {
         "k": "p",
@@ -360,7 +360,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
           "Medical malpractice laws differ significantly between the U.S. and Mexico; your U.S. legal protections may not apply to care received in Mexico",
           "Dispute resolution across international borders is complex and may be costly",
           "Medical standards of care, training requirements, and licensing standards vary between jurisdictions",
-          "U.S. health insurance typically does not cover care received in Mexico — verify with your insurer before proceeding",
+          "U.S. health insurance typically does not cover care received in Mexico, verify with your insurer before proceeding",
           "Exchange rate fluctuations may affect final costs of care",
           "Language barriers and logistical challenges are your responsibility to manage"
         ]
@@ -507,7 +507,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "p",
-        "t": "Medikah assists with insurance verification and claim submission where applicable but does not guarantee coverage. Informational Appointments and medical tourism services are frequently excluded from standard U.S. health insurance. Verify coverage with your insurer before proceeding. Insurance is a contract between you and your insurer — Medikah is not a party to it."
+        "t": "Medikah assists with insurance verification and claim submission where applicable but does not guarantee coverage. Informational Appointments and medical tourism services are frequently excluded from standard U.S. health insurance. Verify coverage with your insurer before proceeding. Insurance is a contract between you and your insurer, Medikah is not a party to it."
       },
       {
         "k": "h2",
@@ -523,7 +523,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "h3",
-        "t": "8.2 HIPAA Rights — Irrevocable"
+        "t": "8.2 HIPAA Rights, Irrevocable"
       },
       {
         "k": "p",
@@ -563,7 +563,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
           },
           {
             "k": "p",
-            "t": "For users in Mexico: Section 16 governs. Certain limitations in this Section are not enforceable under Mexican mandatory consumer protection law (LFPC Art. 90) and will not be applied to Mexican users — but this does not affect their validity for U.S. users."
+            "t": "For users in Mexico: Section 16 governs. Certain limitations in this Section are not enforceable under Mexican mandatory consumer protection law (LFPC Art. 90) and will not be applied to Mexican users, but this does not affect their validity for U.S. users."
           }
         ]
       },
@@ -601,7 +601,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "p",
-        "t": "Medikah's total cumulative liability to you for any and all claims arising out of or relating to these Terms or your use of the platform — whether in contract, tort, statute, or otherwise — is limited to the greater of: (a) the total amount you paid to Medikah in the twelve (12) months immediately preceding the claim, or (b) ONE HUNDRED U.S. DOLLARS ($100.00 USD)."
+        "t": "Medikah's total cumulative liability to you for any and all claims arising out of or relating to these Terms or your use of the platform, whether in contract, tort, statute, or otherwise, is limited to the greater of: (a) the total amount you paid to Medikah in the twelve (12) months immediately preceding the claim, or (b) ONE HUNDRED U.S. DOLLARS ($100.00 USD)."
       },
       {
         "k": "p",
@@ -648,7 +648,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
         "blocks": [
           {
             "k": "callout-title",
-            "t": "Mexico — Mandatory Limitation on Indemnification"
+            "t": "Mexico, Mandatory Limitation on Indemnification"
           },
           {
             "k": "p",
@@ -674,7 +674,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "h3",
-        "t": "11.1 Informal Resolution — Required First Step"
+        "t": "11.1 Informal Resolution, Required First Step"
       },
       {
         "k": "p",
@@ -682,7 +682,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "h3",
-        "t": "11.2 Binding Arbitration — United States Users"
+        "t": "11.2 Binding Arbitration, United States Users"
       },
       {
         "k": "callout",
@@ -690,11 +690,11 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
         "blocks": [
           {
             "k": "callout-title",
-            "t": "Please Read Carefully — This Affects Your Legal Rights"
+            "t": "Please Read Carefully, This Affects Your Legal Rights"
           },
           {
             "k": "p",
-            "t": "If you are a user in the United States, any dispute with Medikah that cannot be resolved informally will be resolved through final and binding arbitration — not in court, and not before a jury."
+            "t": "If you are a user in the United States, any dispute with Medikah that cannot be resolved informally will be resolved through final and binding arbitration, not in court, and not before a jury."
           },
           {
             "k": "p",
@@ -764,7 +764,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "h3",
-        "t": "12.3 Effect of Termination — Medical Care"
+        "t": "12.3 Effect of Termination, Medical Care"
       },
       {
         "k": "p",
@@ -850,7 +850,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
               "General Support"
             ],
             [
-              "support@medikah.health — Response within 2 business days"
+              "support@medikah.health, Response within 2 business days"
             ]
           ],
           [
@@ -866,7 +866,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
               "Provider Violations"
             ],
             [
-              "legal@medikah.health — Subject: \"Provider Violation Report\""
+              "legal@medikah.health, Subject: \"Provider Violation Report\""
             ]
           ],
           [
@@ -874,7 +874,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
               "Arbitration Opt-Out"
             ],
             [
-              "legal@medikah.health — Subject: \"Arbitration Opt-Out\""
+              "legal@medikah.health, Subject: \"Arbitration Opt-Out\""
             ]
           ],
           [
@@ -882,14 +882,14 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
               "Medical Emergencies"
             ],
             [
-              "DO NOT CONTACT MEDIKAH — Call 911 immediately"
+              "DO NOT CONTACT MEDIKAH, Call 911 immediately"
             ]
           ]
         ]
       },
       {
         "k": "h2",
-        "t": "14. United States — Jurisdiction-Specific Provisions"
+        "t": "14. United States, Jurisdiction-Specific Provisions"
       },
       {
         "k": "h3",
@@ -937,7 +937,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "h3",
-        "t": "15.1 Medical Malpractice — Provider Responsibility"
+        "t": "15.1 Medical Malpractice, Provider Responsibility"
       },
       {
         "k": "p",
@@ -957,11 +957,11 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "p",
-        "t": "If a provider violates cross-border restrictions during a Informational Appointment — for example, by attempting to diagnose or prescribe — stop the session immediately, document what occurred, and report to legal@medikah.health with the subject line \"Provider Violation Report.\" Medikah will investigate and take appropriate action. There will be no retaliation for good-faith reports."
+        "t": "If a provider violates cross-border restrictions during a Informational Appointment, for example, by attempting to diagnose or prescribe, stop the session immediately, document what occurred, and report to legal@medikah.health with the subject line \"Provider Violation Report.\" Medikah will investigate and take appropriate action. There will be no retaliation for good-faith reports."
       },
       {
         "k": "h2",
-        "t": "16. Mexico — Secondary Jurisdiction Provisions"
+        "t": "16. Mexico, Secondary Jurisdiction Provisions"
       },
       {
         "k": "callout",
@@ -977,13 +977,13 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
           },
           {
             "k": "p",
-            "t": "Purpose: Medikah's primary market is U.S. patients. These provisions ensure that if the platform is used by patients in Mexico, their mandatory legal rights under Mexican law are preserved — without affecting the protections provided to U.S. users elsewhere in these Terms."
+            "t": "Purpose: Medikah's primary market is U.S. patients. These provisions ensure that if the platform is used by patients in Mexico, their mandatory legal rights under Mexican law are preserved, without affecting the protections provided to U.S. users elsewhere in these Terms."
           }
         ]
       },
       {
         "k": "h3",
-        "t": "16.1 Consumer Protection — LFPC"
+        "t": "16.1 Consumer Protection, LFPC"
       },
       {
         "k": "p",
@@ -994,13 +994,13 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
         "items": [
           "Clauses that conflict with mandatory rights under the LFPC are null and void by operation of law (Art. 90 LFPC), regardless of your acceptance. Their invalidity does not affect the remainder of these Terms.",
           "Medikah's liability for damages to your health or physical integrity caused by Medikah's gross negligence or willful misconduct cannot be limited under Art. 90 Fr. I LFPC. The $100 USD liability cap in Section 9.4 does not apply to such claims for Mexican users.",
-          "The indemnification obligation in Section 10.1 is limited for Mexican users to claims arising from your willful misconduct or fraud — not mere negligence — consistent with Art. 90 Fr. II LFPC.",
+          "The indemnification obligation in Section 10.1 is limited for Mexican users to claims arising from your willful misconduct or fraud, not mere negligence, consistent with Art. 90 Fr. II LFPC.",
           "Medikah will register this contract with PROFECO as required under Art. 86 LFPC."
         ]
       },
       {
         "k": "h3",
-        "t": "16.2 Data Privacy — LFPDPPP"
+        "t": "16.2 Data Privacy, LFPDPPP"
       },
       {
         "k": "p",
@@ -1008,7 +1008,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "h3",
-        "t": "16.3 Health Regulation — NOM-024"
+        "t": "16.3 Health Regulation, NOM-024"
       },
       {
         "k": "p",
@@ -1016,7 +1016,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "h3",
-        "t": "16.4 Dispute Resolution — Mexico"
+        "t": "16.4 Dispute Resolution, Mexico"
       },
       {
         "k": "p",
@@ -1025,8 +1025,8 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       {
         "k": "ul",
         "items": [
-          "Submit consumer complaints to PROFECO (www.profeco.gob.mx) via the Concilianet system at no cost — regardless of the arbitration or venue provisions in Section 11",
-          "Bring consumer claims before Mexican courts in your state of residence — the venue clause in Section 11.3 does not override this right for Mexican consumers",
+          "Submit consumer complaints to PROFECO (www.profeco.gob.mx) via the Concilianet system at no cost, regardless of the arbitration or venue provisions in Section 11",
+          "Bring consumer claims before Mexican courts in your state of residence, the venue clause in Section 11.3 does not override this right for Mexican consumers",
           "Submit data privacy complaints to the INAI for violations of the LFPDPPP"
         ]
       },
@@ -1049,10 +1049,10 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       {
         "k": "ul",
         "items": [
-          "Medikah is a technology platform — not a healthcare provider.",
+          "Medikah is a technology platform, not a healthcare provider.",
           "Healthcare providers are independent contractors solely responsible for their medical acts.",
           "Providers on this platform are licensed in Mexico and are NOT licensed to diagnose, treat, or prescribe in the United States.",
-          "Informational Appointments are informational only — not medical consultations, telemedicine, or treatment under U.S. law.",
+          "Informational Appointments are informational only, not medical consultations, telemedicine, or treatment under U.S. law.",
           "Final diagnosis and treatment require in-person care in the provider's licensed jurisdiction.",
           "You have read and understood all sections of these Terms, including the limitations of liability, arbitration agreement, class action waiver, and indemnification obligations.",
           "You understand that certain provisions in Section 9 and 10 may not be enforceable if you are in Mexico, but that they apply in full if you are in the United States.",
@@ -1083,7 +1083,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "subtitle",
-        "t": "Acuerdo con el Paciente — Usuarios en Estados Unidos"
+        "t": "Acuerdo con el Paciente, Usuarios en Estados Unidos"
       },
       {
         "k": "meta",
@@ -1151,7 +1151,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "h2",
-        "t": "Entendimiento Crítico — Qué es y qué no es Medikah"
+        "t": "Entendimiento Crítico, Qué es y qué no es Medikah"
       },
       {
         "k": "h3",
@@ -1270,7 +1270,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "h2",
-        "t": "3. Citas Informativas Transfronterizas — Términos Críticos"
+        "t": "3. Citas Informativas Transfronterizas, Términos Críticos"
       },
       {
         "k": "h3",
@@ -1286,7 +1286,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
         "blocks": [
           {
             "k": "callout-title",
-            "t": "Advertencia Crítica — Licencia del Proveedor"
+            "t": "Advertencia Crítica, Licencia del Proveedor"
           },
           {
             "k": "p",
@@ -1304,7 +1304,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "h3",
-        "t": "3.2 Citas Informativas — Solo Información y Planificación"
+        "t": "3.2 Citas Informativas, Solo Información y Planificación"
       },
       {
         "k": "p",
@@ -1332,7 +1332,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
         "k": "ul",
         "items": [
           "Diagnosticar condición médica alguna bajo la ley de EE.UU.",
-          "Recetar medicamento alguno — controlado o no",
+          "Recetar medicamento alguno, controlado o no",
           "Ordenar pruebas médicas o de laboratorio en EE.UU.",
           "Proporcionar planes de tratamiento definitivos",
           "Representarse como licenciado en EE.UU.",
@@ -1345,11 +1345,11 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "p",
-        "t": "Antes de cada Cita Informativa, deberá leer y firmar el Formulario de Reconocimiento de Cita Informativa (Formulario MEDIKAH-CB-001). Su ejecución es condición precedente — la Cita no puede proceder sin él."
+        "t": "Antes de cada Cita Informativa, deberá leer y firmar el Formulario de Reconocimiento de Cita Informativa (Formulario MEDIKAH-CB-001). Su ejecución es condición precedente, la Cita no puede proceder sin él."
       },
       {
         "k": "h3",
-        "t": "3.4 Sustancias Controladas — Prohibición Absoluta"
+        "t": "3.4 Sustancias Controladas, Prohibición Absoluta"
       },
       {
         "k": "p",
@@ -1401,7 +1401,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
           },
           {
             "k": "p",
-            "t": "Para usuarios en México: La Sección 16 aplica. Ciertas limitaciones no son ejecutables bajo la LFPC mexicana obligatoria (Art. 90) y no se aplicarán a usuarios mexicanos — pero esto no afecta su validez para usuarios en EE.UU."
+            "t": "Para usuarios en México: La Sección 16 aplica. Ciertas limitaciones no son ejecutables bajo la LFPC mexicana obligatoria (Art. 90) y no se aplicarán a usuarios mexicanos, pero esto no afecta su validez para usuarios en EE.UU."
           }
         ]
       },
@@ -1439,7 +1439,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "h3",
-        "t": "11.1 Resolución Informal — Paso Previo Obligatorio"
+        "t": "11.1 Resolución Informal, Paso Previo Obligatorio"
       },
       {
         "k": "p",
@@ -1447,7 +1447,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "h3",
-        "t": "11.2 Arbitraje Vinculante — Usuarios en EE.UU."
+        "t": "11.2 Arbitraje Vinculante, Usuarios en EE.UU."
       },
       {
         "k": "callout",
@@ -1455,11 +1455,11 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
         "blocks": [
           {
             "k": "callout-title",
-            "t": "Lea Cuidadosamente — Esto Afecta Sus Derechos Legales"
+            "t": "Lea Cuidadosamente, Esto Afecta Sus Derechos Legales"
           },
           {
             "k": "p",
-            "t": "Si usted es un usuario en Estados Unidos, cualquier disputa con Medikah que no pueda resolverse de manera informal se resolverá mediante arbitraje final y vinculante — no en tribunales ni ante un jurado."
+            "t": "Si usted es un usuario en Estados Unidos, cualquier disputa con Medikah que no pueda resolverse de manera informal se resolverá mediante arbitraje final y vinculante, no en tribunales ni ante un jurado."
           },
           {
             "k": "p",
@@ -1489,7 +1489,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "h2",
-        "t": "16. México — Disposiciones de Jurisdicción Secundaria"
+        "t": "16. México, Disposiciones de Jurisdicción Secundaria"
       },
       {
         "k": "callout",
@@ -1505,13 +1505,13 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
           },
           {
             "k": "p",
-            "t": "Propósito: Estas disposiciones garantizan que si la plataforma es usada por pacientes en México, sus derechos obligatorios bajo la ley mexicana sean preservados — sin afectar las protecciones de los usuarios en EE.UU."
+            "t": "Propósito: Estas disposiciones garantizan que si la plataforma es usada por pacientes en México, sus derechos obligatorios bajo la ley mexicana sean preservados, sin afectar las protecciones de los usuarios en EE.UU."
           }
         ]
       },
       {
         "k": "h3",
-        "t": "16.1 Protección al Consumidor — LFPC"
+        "t": "16.1 Protección al Consumidor, LFPC"
       },
       {
         "k": "p",
@@ -1521,14 +1521,14 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
         "k": "ul",
         "items": [
           "Las cláusulas que contradigan derechos obligatorios bajo la LFPC son nulas de pleno derecho (Art. 90 LFPC), independientemente de su aceptación",
-          "La responsabilidad de Medikah por daños a su salud o integridad física causados por negligencia grave o dolo de Medikah no puede limitarse (Art. 90 Fr. I LFPC) — el límite de $100 USD de la Sección 9.3 no aplica a dichas reclamaciones para usuarios mexicanos",
-          "La obligación de indemnización de la Sección 10.1 se limita para usuarios mexicanos a reclamaciones derivadas de su dolo o fraude — no de mera negligencia (Art. 90 Fr. II LFPC)",
+          "La responsabilidad de Medikah por daños a su salud o integridad física causados por negligencia grave o dolo de Medikah no puede limitarse (Art. 90 Fr. I LFPC), el límite de $100 USD de la Sección 9.3 no aplica a dichas reclamaciones para usuarios mexicanos",
+          "La obligación de indemnización de la Sección 10.1 se limita para usuarios mexicanos a reclamaciones derivadas de su dolo o fraude, no de mera negligencia (Art. 90 Fr. II LFPC)",
           "Puede presentar reclamaciones de consumidor ante PROFECO (www.profeco.gob.mx) o tribunales de su domicilio en México"
         ]
       },
       {
         "k": "h3",
-        "t": "16.2 Privacidad de Datos — LFPDPPP"
+        "t": "16.2 Privacidad de Datos, LFPDPPP"
       },
       {
         "k": "p",
@@ -1536,7 +1536,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "h3",
-        "t": "16.3 Regulación de Salud — NOM-024"
+        "t": "16.3 Regulación de Salud, NOM-024"
       },
       {
         "k": "p",
@@ -1553,10 +1553,10 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       {
         "k": "ul",
         "items": [
-          "Medikah es una plataforma tecnológica — no un proveedor de salud.",
+          "Medikah es una plataforma tecnológica, no un proveedor de salud.",
           "Los proveedores de salud son contratistas independientes.",
           "Los proveedores tienen licencia en México y NO están licenciados para diagnosticar, tratar ni recetar en EE.UU.",
-          "Las Citas Informativas transfronterizas son únicamente informativas — no consultas médicas, telemedicina ni tratamiento bajo la ley de EE.UU.",
+          "Las Citas Informativas transfronterizas son únicamente informativas, no consultas médicas, telemedicina ni tratamiento bajo la ley de EE.UU.",
           "Ha leído y comprendido estos Términos en su totalidad.",
           "Acepta las disposiciones de resolución de disputas, incluyendo arbitraje vinculante y renuncia a acciones colectivas, si es usuario de EE.UU."
         ]
@@ -1587,7 +1587,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "subtitle",
-        "t": "Patient Agreement — Users in Mexico"
+        "t": "Patient Agreement, Users in Mexico"
       },
       {
         "k": "meta",
@@ -1639,7 +1639,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "p",
-        "t": "Acceptance requires three separate unchecked checkboxes at registration: (1) Terms of Service, (2) Privacy Policy / Aviso de Privacidad, and (3) Express consent to health data processing (datos sensibles — Art. 9 LFPDPPP). The platform records timestamp, document hash, IP address, and user ID upon acceptance, and sends a confirmation email."
+        "t": "Acceptance requires three separate unchecked checkboxes at registration: (1) Terms of Service, (2) Privacy Policy / Aviso de Privacidad, and (3) Express consent to health data processing (datos sensibles, Art. 9 LFPDPPP). The platform records timestamp, document hash, IP address, and user ID upon acceptance, and sends a confirmation email."
       },
       {
         "k": "h3",
@@ -1651,7 +1651,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "h2",
-        "t": "Critical Understanding — What Medikah Is and Is Not"
+        "t": "Critical Understanding, What Medikah Is and Is Not"
       },
       {
         "k": "p",
@@ -1678,7 +1678,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
         "k": "ul",
         "items": [
           "Healthcare providers or medical practitioners",
-          "A telemedicine service — we provide the technology, providers deliver the care",
+          "A telemedicine service, we provide the technology, providers deliver the care",
           "Employers or supervisors of the doctors on our platform",
           "Responsible for medical care, diagnoses, treatment, or outcomes"
         ]
@@ -1709,7 +1709,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "h3",
-        "t": "2.1 For Patients in Mexico — Domestic Appointments"
+        "t": "2.1 For Patients in Mexico, Domestic Appointments"
       },
       {
         "k": "p",
@@ -1717,7 +1717,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "h3",
-        "t": "2.2 For Patients in Mexico — Informational Appointments with U.S. Providers"
+        "t": "2.2 For Patients in Mexico, Informational Appointments with U.S. Providers"
       },
       {
         "k": "p",
@@ -1753,7 +1753,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
         "blocks": [
           {
             "k": "callout-title",
-            "t": "Mandatory Consumer Rights Reservation — LFPC"
+            "t": "Mandatory Consumer Rights Reservation, LFPC"
           },
           {
             "k": "p",
@@ -1778,7 +1778,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "h2",
-        "t": "6. Dispute Resolution — Mexico"
+        "t": "6. Dispute Resolution, Mexico"
       },
       {
         "k": "p",
@@ -1799,7 +1799,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "h2",
-        "t": "7. Health Regulation — Mexico"
+        "t": "7. Health Regulation, Mexico"
       },
       {
         "k": "h3",
@@ -1828,11 +1828,11 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       {
         "k": "ul",
         "items": [
-          "Medikah is a technology platform — not a healthcare provider.",
+          "Medikah is a technology platform, not a healthcare provider.",
           "Healthcare providers are independent contractors solely responsible for their clinical acts.",
           "You have read and understood these Terms of Service.",
-          "For domestic Appointments: the provider holds a valid Mexican medical license and may diagnose, treat, and prescribe under Mexican law — subject to Form MEDIKAH-DOM-001.",
-          "For Informational Appointments: the provider is not licensed in your location and cannot provide medical treatment — subject to Form MEDIKAH-CB-001.",
+          "For domestic Appointments: the provider holds a valid Mexican medical license and may diagnose, treat, and prescribe under Mexican law, subject to Form MEDIKAH-DOM-001.",
+          "For Informational Appointments: the provider is not licensed in your location and cannot provide medical treatment, subject to Form MEDIKAH-CB-001.",
           "Your mandatory consumer rights under the LFPC are preserved regardless of any other provision of these Terms."
         ]
       },
@@ -1860,7 +1860,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "subtitle",
-        "t": "Acuerdo con el Paciente — Usuarios en México"
+        "t": "Acuerdo con el Paciente, Usuarios en México"
       },
       {
         "k": "meta",
@@ -1894,7 +1894,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
         "blocks": [
           {
             "k": "callout-title",
-            "t": "Contrato de Adhesión — Acuerdo Vinculante"
+            "t": "Contrato de Adhesión, Acuerdo Vinculante"
           },
           {
             "k": "p",
@@ -1912,7 +1912,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "p",
-        "t": "La aceptación requiere tres casillas separadas sin pre-marcar durante el registro: (1) Términos y Condiciones, (2) Aviso de Privacidad, y (3) Consentimiento expreso para el tratamiento de datos de salud (datos sensibles — Art. 9 LFPDPPP). La plataforma registra marca de tiempo, hash del documento, dirección IP e identificador de usuario al momento de la aceptación."
+        "t": "La aceptación requiere tres casillas separadas sin pre-marcar durante el registro: (1) Términos y Condiciones, (2) Aviso de Privacidad, y (3) Consentimiento expreso para el tratamiento de datos de salud (datos sensibles, Art. 9 LFPDPPP). La plataforma registra marca de tiempo, hash del documento, dirección IP e identificador de usuario al momento de la aceptación."
       },
       {
         "k": "h3",
@@ -1924,7 +1924,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "h2",
-        "t": "Entendimiento Crítico — Qué es y qué no es Medikah"
+        "t": "Entendimiento Crítico, Qué es y qué no es Medikah"
       },
       {
         "k": "p",
@@ -2032,7 +2032,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "h2",
-        "t": "5. Responsabilidad de Medikah — Derechos Irrenunciables del Consumidor"
+        "t": "5. Responsabilidad de Medikah, Derechos Irrenunciables del Consumidor"
       },
       {
         "k": "callout",
@@ -2040,7 +2040,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
         "blocks": [
           {
             "k": "callout-title",
-            "t": "LFPC — Derechos Obligatorios que No Pueden Limitarse"
+            "t": "LFPC, Derechos Obligatorios que No Pueden Limitarse"
           },
           {
             "k": "p",
@@ -2087,7 +2087,7 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       },
       {
         "k": "h2",
-        "t": "7. Regulación Sanitaria — México"
+        "t": "7. Regulación Sanitaria, México"
       },
       {
         "k": "h3",
@@ -2116,11 +2116,11 @@ export const TERMS_CONTENT: Record<TermsRegion, Record<TermsLocale, LegalBlock[]
       {
         "k": "ul",
         "items": [
-          "Medikah es una plataforma tecnológica — no un proveedor de salud.",
+          "Medikah es una plataforma tecnológica, no un proveedor de salud.",
           "Los proveedores de salud son contratistas independientes.",
           "Ha leído y comprendido estos Términos y Condiciones en su totalidad.",
-          "Para Citas nacionales: el proveedor cuenta con cédula profesional vigente en México y puede diagnosticar, tratar y recetar conforme a la ley mexicana — sujeto a la Forma MEDIKAH-DOM-001.",
-          "Para Citas Informativas transfronterizas: el proveedor no está licenciado en su ubicación y no puede prestar tratamiento médico — sujeto a la Forma MEDIKAH-CB-001.",
+          "Para Citas nacionales: el proveedor cuenta con cédula profesional vigente en México y puede diagnosticar, tratar y recetar conforme a la ley mexicana, sujeto a la Forma MEDIKAH-DOM-001.",
+          "Para Citas Informativas transfronterizas: el proveedor no está licenciado en su ubicación y no puede prestar tratamiento médico, sujeto a la Forma MEDIKAH-CB-001.",
           "Sus derechos obligatorios como consumidor bajo la LFPC quedan preservados independientemente de cualquier otra disposición de estos Términos."
         ]
       },

@@ -26,19 +26,19 @@ import { checkPassword } from '../lib/passwordPolicy';
 type PortalSelection = 'doctor' | 'patient' | null;
 
 const t = {
-  patientSignIn: { en: 'Patient sign in', es: 'Inicio de sesión — Paciente' },
-  doctorSignIn: { en: 'Physician sign in', es: 'Inicio de sesión — Médico' },
+  patientSignIn: { en: 'Patient sign in', es: 'Inicio de sesión, Paciente' },
+  doctorSignIn: { en: 'Physician sign in', es: 'Inicio de sesión, Médico' },
   continueGoogle: { en: 'Continue with Google', es: 'Continuar con Google' },
   or: { en: 'or sign in with credentials', es: 'o inicie sesión con credenciales' },
   email: { en: 'Email', es: 'Correo electrónico' },
   password: { en: 'Password', es: 'Contraseña' },
   signIn: { en: 'Sign in', es: 'Iniciar sesión' },
-  // --- New-physician account creation (Option A — email/password entry, no Google) ---
+  // --- New-physician account creation (Option A, email/password entry, no Google) ---
   newPhysicianTab: { en: 'New physician', es: 'Médico nuevo' },
   returningTab: { en: 'Returning', es: 'Ya registrado' },
   createAccountHint: {
-    en: 'Start with any email — your @medikah.health mailbox is created after we verify your credentials.',
-    es: 'Comience con cualquier correo — su buzón @medikah.health se crea tras verificar sus credenciales.',
+    en: 'Start with any email, your @medikah.health mailbox is created after we verify your credentials.',
+    es: 'Comience con cualquier correo, su buzón @medikah.health se crea tras verificar sus credenciales.',
   },
   confirmPassword: { en: 'Confirm password', es: 'Confirme la contraseña' },
   passwordHint: {
@@ -73,7 +73,7 @@ const t = {
     en: 'Credentials not recognized. Please try again.',
     es: 'Credenciales no reconocidas. Intente de nuevo.',
   },
-  // Phase 16 D-12 locked copy — single source of truth lives in
+  // Phase 16 D-12 locked copy, single source of truth lives in
   // lib/auth/mailcowErrorCopy.ts. The string never reveals which side was wrong;
   // every failure outcome (bad_password, unknown_user, locked_out, infra_error)
   // surfaces this exact text.
@@ -95,7 +95,7 @@ const t = {
     en: 'Use your @medikah.health mailbox address, e.g. you@medikah.health',
     es: 'Usa tu dirección @medikah.health, ej. tu@medikah.health',
   },
-  // Phase 17 — login-time TOTP second-factor prompt (17-04 gate)
+  // Phase 17, login-time TOTP second-factor prompt (17-04 gate)
   totpHeading: { en: 'Two-step verification', es: 'Verificación en dos pasos' },
   totpHint: {
     en: 'Enter the 6-digit code from Duo Mobile (or your authenticator app).',
@@ -104,54 +104,54 @@ const t = {
   totpCodeLabel: { en: '6-digit code', es: 'Código de 6 dígitos' },
   totpVerify: { en: 'Verify', es: 'Verificar' },
   totpVerifying: { en: 'Verifying…', es: 'Verificando…' },
-  totpError: { en: 'That code didn’t match — check your authenticator app.', es: 'Ese código no coincide — revisa tu app de autenticación.' },
-  // Decision 42b / D-16 — distinct copy for a temporary lockout (429) vs a wrong
+  totpError: { en: 'That code didn’t match, check your authenticator app.', es: 'Ese código no coincide, revisa tu app de autenticación.' },
+  // Decision 42b / D-16, distinct copy for a temporary lockout (429) vs a wrong
   // code (422). Tells the physician to wait rather than re-key a code that will
   // keep failing, and interpolates a live MM:SS countdown ({time}) of the
   // server-derived remaining wait so the screen reads as "wait", not "broken".
   totpLockout: {
-    en: 'Too many attempts — try again in {time}.',
-    es: 'Demasiados intentos — vuelve a intentar en {time}.',
+    en: 'Too many attempts, try again in {time}.',
+    es: 'Demasiados intentos, vuelve a intentar en {time}.',
   },
-  // Decision 42c — shown while the second-factor handoff completes, so the screen
+  // Decision 42c, shown while the second-factor handoff completes, so the screen
   // reads as progress instead of a silent second sign-in.
   totpCompleting: {
     en: 'Verified. Finishing sign-in…',
     es: 'Verificado. Completando inicio de sesión…',
   },
   totpReauth: {
-    en: 'Code verified — enter your password once to finish.',
-    es: 'Código verificado — ingresa tu contraseña una vez para terminar.',
+    en: 'Code verified, enter your password once to finish.',
+    es: 'Código verificado, ingresa tu contraseña una vez para terminar.',
   },
-  // D-17 — submit label on the focused in-context password re-entry. Reads as
+  // D-17, submit label on the focused in-context password re-entry. Reads as
   // "finish", never "sign in", so the screen feels like continuation.
   totpReauthSubmit: { en: 'Finish sign-in', es: 'Completar inicio de sesión' },
   totpReauthFinishing: { en: 'Finishing…', es: 'Completando…' },
-  // D-17 — continuation banner after a fresh re-enrollment (?reenrolled=1). The
+  // D-17, continuation banner after a fresh re-enrollment (?reenrolled=1). The
   // copy is a static bilingual string gated on the flag, never the param value
-  // (T-18-08-03 — the param is treated as a boolean only, never interpolated).
+  // (T-18-08-03, the param is treated as a boolean only, never interpolated).
   reenrolledBanner: {
-    en: 'Authenticator set up — sign in to finish.',
-    es: 'Autenticador configurado — inicia sesión para terminar.',
+    en: 'Authenticator set up, sign in to finish.',
+    es: 'Autenticador configurado, inicia sesión para terminar.',
   },
-  // Phase 18 CARRY-18-B — lost-authenticator affordance on the TOTP sign-in step.
+  // Phase 18 CARRY-18-B, lost-authenticator affordance on the TOTP sign-in step.
   lostAuthenticator: { en: 'I lost my authenticator', es: 'Perdí mi autenticador' },
   lostAuthFiling: { en: 'Filing request…', es: 'Enviando solicitud…' },
   lostAuthFiled: {
     en: 'Request filed. Once an administrator approves it, return here and choose “Set up a new authenticator” to finish.',
     es: 'Solicitud enviada. Cuando un administrador la apruebe, vuelve aquí y elige «Configurar un nuevo autenticador» para terminar.',
   },
-  // Phase 18 CARRY-18-A — link into the isolated re-enrollment flow (opens only
+  // Phase 18 CARRY-18-A, link into the isolated re-enrollment flow (opens only
   // after an admin has approved the reset and cleared the old 2FA factor).
   reenrollLink: { en: 'Set up a new authenticator', es: 'Configurar un nuevo autenticador' },
-  // Phase 18 CARRY-18-A — surfaced under a failed physician sign-in so a doctor
+  // Phase 18 CARRY-18-A, surfaced under a failed physician sign-in so a doctor
   // whose 2FA was just reset (login now correctly returns no session) still has a
   // path back in. The /auth/reenroll page self-gates on the post-reset state.
   reenrollPrompt: {
     en: 'Authenticator reset? Set up a new one',
     es: '¿Restablecieron tu autenticador? Configura uno nuevo',
   },
-  // Phase 18 Plan 04 — D-01: Demotion wall copy.
+  // Phase 18 Plan 04, D-01: Demotion wall copy.
   // A graduated physician (workspace activated) who signs in via Google or original
   // email-password sees this threshold screen instead of the dashboard.
   // Tone is graduation, not error: "your workspace is ready."
@@ -175,7 +175,7 @@ const t = {
 
 type Lang = 'en' | 'es';
 
-// D-16 — render a remaining-seconds value as MM:SS for the lockout countdown.
+// D-16, render a remaining-seconds value as MM:SS for the lockout countdown.
 function formatCountdown(totalSeconds: number): string {
   const safe = Math.max(0, Math.floor(totalSeconds));
   const minutes = Math.floor(safe / 60);
@@ -192,50 +192,50 @@ export default function ChatPage() {
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // Phase 16 — separate Mailcow physician form so the existing patient/legacy
+  // Phase 16, separate Mailcow physician form so the existing patient/legacy
   // Credentials path stays untouched.
   const [mailcowEmail, setMailcowEmail] = useState('');
   const [mailcowPassword, setMailcowPassword] = useState('');
   const [isMailcowSubmitting, setIsMailcowSubmitting] = useState(false);
   const [showLoginForm, setShowLoginForm] = useState(false);
   const [portalSelection, setPortalSelection] = useState<PortalSelection>(null);
-  // Phase 17 — TOTP second-factor step (server returned a needs_totp session)
+  // Phase 17, TOTP second-factor step (server returned a needs_totp session)
   const [totpCode, setTotpCode] = useState('');
   const [isTotpSubmitting, setIsTotpSubmitting] = useState(false);
   const [totpError, setTotpError] = useState<string | null>(null);
-  // Decision 42b / D-16 — when the verify endpoint returns 429, we hold the
+  // Decision 42b / D-16, when the verify endpoint returns 429, we hold the
   // server-derived remaining wait here and tick it down so the lockout shows a
   // live MM:SS countdown and the verify button re-enables at zero. null = not
   // locked out (a 422 wrong-code state, which shows totpError instead).
   const [lockoutSeconds, setLockoutSeconds] = useState<number | null>(null);
-  // Decision 42c — true while the post-verify second-factor handoff runs.
+  // Decision 42c, true while the post-verify second-factor handoff runs.
   const [isTotpCompleting, setIsTotpCompleting] = useState(false);
-  // D-17 — when the code verified but the password is no longer in memory (page
+  // D-17, when the code verified but the password is no longer in memory (page
   // reloaded mid-flow), we show a focused single-field password re-entry IN the
   // TOTP step rather than bouncing to the full role-selection panel. The screen
   // keeps reading as "finishing", not "starting over".
   const [needsReauth, setNeedsReauth] = useState(false);
   const [reauthPassword, setReauthPassword] = useState('');
   const [isReauthSubmitting, setIsReauthSubmitting] = useState(false);
-  // D-17 — true when the doctor just completed re-enrollment and was redirected
+  // D-17, true when the doctor just completed re-enrollment and was redirected
   // back to /chat with ?reenrolled=1. Drives a one-line continuation banner so
   // the doctor understands they are finishing, not repeating.
   const [showReenrolledBanner, setShowReenrolledBanner] = useState(false);
-  // Phase 18 CARRY-18-B — lost-authenticator self-file state.
+  // Phase 18 CARRY-18-B, lost-authenticator self-file state.
   const [isFilingLostAuth, setIsFilingLostAuth] = useState(false);
   const [lostAuthFiled, setLostAuthFiled] = useState(false);
-  // Phase 18 Plan 04 — D-01: demotion wall state.
+  // Phase 18 Plan 04, D-01: demotion wall state.
   // True when session.user.bootstrap_demoted=true (server set in jwt() callback).
   const [showDemotionWall, setShowDemotionWall] = useState(false);
-  // Phase 18 Plan 04 — D-02: graduated-device cookie hint.
-  // True when mk_physician_graduated cookie is present — reorders physician pane
+  // Phase 18 Plan 04, D-02: graduated-device cookie hint.
+  // True when mk_physician_graduated cookie is present, reorders physician pane
   // so Medikah-password form is primary. Polish only, not an enforcement boundary.
   const [isGraduatedDevice, setIsGraduatedDevice] = useState(false);
   const demotionLoggedRef = useRef(false);
 
   // Doctor pane sub-mode (Option A): 'new' opens the account-creation form,
   // 'returning' shows the sign-in forms. Defaults to 'new' so a brand-new
-  // physician — who previously had NO entry path — sees account creation first.
+  // physician, who previously had NO entry path, sees account creation first.
   const [doctorMode, setDoctorMode] = useState<'new' | 'returning'>('new');
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
@@ -250,7 +250,7 @@ export default function ChatPage() {
     initialRoleRef.current = true;
     const urlParams = new URLSearchParams(window.location.search);
     const role = urlParams.get('role');
-    // D-17 — a doctor returning from a completed re-enrollment carries ?reenrolled=1.
+    // D-17, a doctor returning from a completed re-enrollment carries ?reenrolled=1.
     // Treat it strictly as a boolean flag (T-18-08-03): open the physician sign-in
     // form and show the continuation banner so the screen reads as "finishing".
     const reenrolled = urlParams.get('reenrolled') === '1';
@@ -270,7 +270,7 @@ export default function ChatPage() {
     }
   }, []);
 
-  // Phase 18 Plan 04 — D-02: Read the mk_physician_graduated cookie on mount.
+  // Phase 18 Plan 04, D-02: Read the mk_physician_graduated cookie on mount.
   // Reorders the physician pane (Medikah-password primary, Google as "recover access").
   // Client-side only; cookie is set after a successful mailcow-imap login.
   useEffect(() => {
@@ -278,12 +278,12 @@ export default function ChatPage() {
       .split(';')
       .some((c) => c.trim().startsWith('mk_physician_graduated='));
     setIsGraduatedDevice(graduated);
-    // A graduated device almost certainly belongs to a returning doctor — open the
+    // A graduated device almost certainly belongs to a returning doctor, open the
     // sign-in side by default rather than the new-account form.
     if (graduated) setDoctorMode('returning');
   }, []);
 
-  // Decision 42b / D-16 — tick the lockout countdown down once per second while a
+  // Decision 42b / D-16, tick the lockout countdown down once per second while a
   // lockout is in effect; clear it (re-enabling the verify button) at zero. The
   // interval is the only timer; editing the code also clears the lockout (below).
   useEffect(() => {
@@ -306,7 +306,7 @@ export default function ChatPage() {
   useEffect(() => {
     if (status === 'loading') return;
     if (session?.user) {
-      // Phase 17 — a needs_totp session is NOT signed in: hold for the TOTP
+      // Phase 17, a needs_totp session is NOT signed in: hold for the TOTP
       // prompt, never redirect (the claimless session would route to
       // onboarding as if the physician were a new user).
       if (session.user.needs_totp) {
@@ -314,10 +314,10 @@ export default function ChatPage() {
         return;
       }
 
-      // Phase 18 Plan 04 — D-01: Bootstrap-demotion wall.
+      // Phase 18 Plan 04, D-01: Bootstrap-demotion wall.
       // A graduated physician (activation_complete=true) who signed in via Google
       // or their original email-password gets this flag from the server (set in
-      // jwt() callback). We render the wall — never route to the dashboard.
+      // jwt() callback). We render the wall, never route to the dashboard.
       // The wall is the terminal state for this bootstrap session.
       if (session.user.bootstrap_demoted === true) {
         pendingRedirectRef.current = null;
@@ -367,7 +367,7 @@ export default function ChatPage() {
     }
   };
 
-  // Option A — create a brand-new physician's entry account (email/password), then
+  // Option A, create a brand-new physician's entry account (email/password), then
   // sign them straight in so the redirect effect routes them to /physicians/onboard.
   const handlePhysicianSignup = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -387,7 +387,7 @@ export default function ChatPage() {
     try {
       // Retry transient 5xx (cold-start / network blip to Supabase) so a new doctor
       // never sees a one-off failure on their first signup. 4xx (409 exists, 422
-      // weak password) are definitive — never retried.
+      // weak password) are definitive, never retried.
       let resp: Response | null = null;
       for (let attempt = 0; attempt < 3; attempt++) {
         resp = await fetch('/api/auth/physician-signup', {
@@ -406,7 +406,7 @@ export default function ChatPage() {
         return;
       }
 
-      // Account created — sign in via credentials; the redirect effect sends them
+      // Account created, sign in via credentials; the redirect effect sends them
       // to /physicians/onboard once the session lands.
       pendingRedirectRef.current = 'doctor';
       const result = await signIn('credentials', {
@@ -419,7 +419,7 @@ export default function ChatPage() {
         setSignupError(t.signupGenericError[lang]);
         setIsSigningUp(false);
       }
-      // On success, leave isSigningUp true — the redirect effect navigates away.
+      // On success, leave isSigningUp true, the redirect effect navigates away.
     } catch {
       setSignupError(t.signupGenericError[lang]);
       setIsSigningUp(false);
@@ -430,7 +430,7 @@ export default function ChatPage() {
     event.preventDefault();
     setLoginError(null);
 
-    // Inline domain guard — flag a non-@medikah.health address BEFORE calling
+    // Inline domain guard, flag a non-@medikah.health address BEFORE calling
     // signIn(). Chrome autofills a saved Gmail/contact email into this box; IMAP
     // rejects it and the generic failure copy hides the real cause. Catch it here.
     if (!mailcowEmail.trim().toLowerCase().endsWith('@medikah.health')) {
@@ -451,7 +451,7 @@ export default function ChatPage() {
       });
     } catch {
       // signIn() rejects (rather than resolving with { error }) when the callback
-      // request itself fails — e.g. the function 504s and NextAuth tries to
+      // request itself fails, e.g. the function 504s and NextAuth tries to
       // res.json() an HTML timeout body. Without this catch the spinner would
       // spin forever. Surface the same locked error as any other failure.
       result = undefined;
@@ -460,19 +460,19 @@ export default function ChatPage() {
     }
 
     if (!result || result.error) {
-      // D-05 — single locked string on every failure outcome
+      // D-05, single locked string on every failure outcome
       // (bad_password, unknown_user, locked_out, infra_error). No per-outcome
       // branching in the UI.
       pendingRedirectRef.current = null;
       setLoginError(t.errorMailcow[lang]);
       return;
     }
-    // Phase 18 Plan 04 — D-02: Set the graduated-device cookie after a successful
+    // Phase 18 Plan 04, D-02: Set the graduated-device cookie after a successful
     // mailcow-imap login. On the next visit to /chat this cookie reorders the
     // physician pane (Medikah-password primary, Google as "recover access").
-    // This is polish only — the wall in jwt() carries the enforcement guarantee.
+    // This is polish only, the wall in jwt() carries the enforcement guarantee.
     document.cookie = 'mk_physician_graduated=1; max-age=31536000; path=/; SameSite=Lax; Secure';
-    // Password accepted. The session may come back needs_totp — drop the login
+    // Password accepted. The session may come back needs_totp, drop the login
     // form so the TOTP step (gated on !showLoginForm) can render instead of
     // silently re-showing this form over the held session.
     setShowLoginForm(false);
@@ -486,9 +486,9 @@ export default function ChatPage() {
     signIn(provider, { callbackUrl });
   };
 
-  // Phase 17 — verify the 6-digit code server-side, then re-invoke signIn.
+  // Phase 17, verify the 6-digit code server-side, then re-invoke signIn.
   // The provider consults its own login_2fa audit trail (2-minute window) and
-  // returns the full claim set — the client never asserts totp_verified.
+  // returns the full claim set, the client never asserts totp_verified.
   const handleTotpSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!session?.user?.physician_id) return;
@@ -503,7 +503,7 @@ export default function ChatPage() {
 
     if (!verifyRes.ok) {
       setIsTotpSubmitting(false);
-      // Decision 42b / D-16 — a 429 is a temporary lockout, not a wrong code. A
+      // Decision 42b / D-16, a 429 is a temporary lockout, not a wrong code. A
       // wrong code (422) tells the doctor to check their app; a lockout (429)
       // starts a live MM:SS countdown of the server-derived remaining wait and
       // re-enables the button at zero. Read retry_after_seconds, then fall back
@@ -531,9 +531,9 @@ export default function ChatPage() {
       return;
     }
 
-    // Code accepted — re-run the credential sign-in so the server can upgrade the
+    // Code accepted, re-run the credential sign-in so the server can upgrade the
     // session. Requires the password still in memory; if the page was reloaded
-    // mid-flow we no longer hold it. D-17 — instead of bouncing to the full
+    // mid-flow we no longer hold it. D-17, instead of bouncing to the full
     // role-selection panel (which reads as "starting over"), stay on the TOTP
     // step and reveal a single focused password field in-context. The screen
     // still reads as "finishing".
@@ -543,7 +543,7 @@ export default function ChatPage() {
       return;
     }
 
-    // Decision 42c — surface the handoff as progress ("Finishing sign-in…")
+    // Decision 42c, surface the handoff as progress ("Finishing sign-in…")
     // rather than a silent second sign-in.
     setIsTotpCompleting(true);
     const result = await signIn('mailcow-imap', {
@@ -561,11 +561,11 @@ export default function ChatPage() {
     // Session refresh with full claims triggers the redirect effect.
   };
 
-  // D-17 — focused in-context password re-entry after a mid-flow reload. The
+  // D-17, focused in-context password re-entry after a mid-flow reload. The
   // code already verified; we only need the password (the email is recovered
   // from the held needs_totp session's mailbox_email claim, or the value the
-  // doctor typed). On submit we re-invoke signIn directly — no role reset, no
-  // return to the full panel — so the flow reads as "finishing", not "starting
+  // doctor typed). On submit we re-invoke signIn directly, no role reset, no
+  // return to the full panel, so the flow reads as "finishing", not "starting
   // over". Auth invariant unchanged: this still routes through the provider,
   // which returns the full claim set for the now-verified second factor.
   const handleReauthSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -590,7 +590,7 @@ export default function ChatPage() {
     setReauthPassword('');
   };
 
-  // Phase 18 CARRY-18-B — self-file a lost-authenticator request from the TOTP
+  // Phase 18 CARRY-18-B, self-file a lost-authenticator request from the TOTP
   // step. The needs_totp session proves the first factor (password) was already
   // cleared, which is exactly D-06's precondition. The endpoint is non-enumerating
   // and returns a neutral { filed: true } on every path.
@@ -606,11 +606,11 @@ export default function ChatPage() {
     }
   };
 
-  // Phase 18 Plan 04 — D-01: Bootstrap-demotion wall.
+  // Phase 18 Plan 04, D-01: Bootstrap-demotion wall.
   // A graduated physician who signed in via Google or original email-password sees
   // this branded threshold screen instead of the dashboard. Tone is graduation,
   // not error: "your workspace is ready." The wall is the terminal state for this
-  // bootstrap session — no redirect to /physicians/dashboard is ever issued.
+  // bootstrap session, no redirect to /physicians/dashboard is ever issued.
   // Wall design mirrors pages/auth/activate/[token].tsx (Práctikah lockup + white card).
   if (showDemotionWall) {
     // Post audit with full IP/UA on wall mount (jwt() audit lacked request context)
@@ -622,12 +622,12 @@ export default function ChatPage() {
     return (
       <>
         <Head>
-          <title>Sign in — Práctikah</title>
+          <title>Sign in, Práctikah</title>
           <meta name="robots" content="noindex, nofollow" />
         </Head>
         <div className="min-h-screen flex items-center justify-center bg-[#FAFAFB] px-4">
           <div className="w-full max-w-md">
-            {/* Práctikah lowercase wordmark lockup — mirrors activate/[token].tsx */}
+            {/* Práctikah lowercase wordmark lockup, mirrors activate/[token].tsx */}
             <div className="flex flex-col items-center gap-3 mb-8">
               <Image
                 src={LOGO_DARK_SRC}
@@ -647,7 +647,7 @@ export default function ChatPage() {
 
             {/* White card */}
             <div className="bg-white rounded-xl shadow-lg p-8">
-              {/* Key icon — graduation feel */}
+              {/* Key icon, graduation feel */}
               <div className="text-center mb-6">
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-clinical-teal/10 flex items-center justify-center">
                   <svg className="w-8 h-8 text-clinical-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -662,7 +662,7 @@ export default function ChatPage() {
                 </p>
               </div>
 
-              {/* Primary CTA — deep link to Medikah-password form */}
+              {/* Primary CTA, deep link to Medikah-password form */}
               <button
                 type="button"
                 onClick={() => {
@@ -676,7 +676,7 @@ export default function ChatPage() {
                 {t.demotionWallCta[lang]}
               </button>
 
-              {/* Secondary — forgot Medikah password */}
+              {/* Secondary, forgot Medikah password */}
               <div className="text-center">
                 <Link
                   href="/auth/recovery"
@@ -697,7 +697,7 @@ export default function ChatPage() {
     );
   }
 
-  // Phase 17 — second-factor step: the server returned a needs_totp session
+  // Phase 17, second-factor step: the server returned a needs_totp session
   // (password verified, TOTP outstanding). Render the code prompt instead of
   // redirecting. If the page was reloaded mid-flow (no password in memory),
   // showLoginForm falls through to the regular panel with the reauth message.
@@ -705,13 +705,13 @@ export default function ChatPage() {
     return (
       <>
         <Head>
-          <title>Sign in — Medikah</title>
+          <title>Sign in, Medikah</title>
           <meta name="robots" content="noindex, nofollow" />
         </Head>
         <div className="min-h-screen flex items-center justify-center bg-warm-gray-900 px-4">
           <div className="font-dm-sans bg-warm-gray-900/80 border border-white/10 rounded-sm p-6 space-y-5 text-white w-full max-w-sm">
             <h3 className="text-base font-semibold tracking-wide">{t.totpHeading[lang]}</h3>
-            {/* D-17 — after a mid-flow reload the code is verified but the password
+            {/* D-17, after a mid-flow reload the code is verified but the password
                 is no longer in memory. Show a single focused password field in
                 this same step (no bounce to the full panel); the screen keeps
                 reading as "finishing", not "starting over". */}
@@ -771,7 +771,7 @@ export default function ChatPage() {
                   value={totpCode}
                   onChange={(e) => {
                     setTotpCode(e.target.value.replace(/\D/g, ''));
-                    // D-16 — editing the code clears any lockout countdown so the
+                    // D-16, editing the code clears any lockout countdown so the
                     // doctor isn't stuck staring at a stale timer once they retry.
                     if (lockoutSeconds !== null) setLockoutSeconds(null);
                     if (totpError) setTotpError(null);
@@ -782,7 +782,7 @@ export default function ChatPage() {
                   required
                 />
               </div>
-              {/* D-16 — DISTINCT states: a lockout (429) shows a live MM:SS
+              {/* D-16, DISTINCT states: a lockout (429) shows a live MM:SS
                   countdown of the remaining wait; a wrong code (422) shows the
                   "check your authenticator app" copy. Both on brand (alert-garnet). */}
               {lockoutSeconds !== null ? (
@@ -809,7 +809,7 @@ export default function ChatPage() {
             </>
             )}
 
-            {/* Phase 18 CARRY-18-B — lost-authenticator affordance. */}
+            {/* Phase 18 CARRY-18-B, lost-authenticator affordance. */}
             <div className="pt-1 border-t border-white/10 text-center">
               {lostAuthFiled ? (
                 <div className="space-y-2 pt-3">
@@ -842,7 +842,7 @@ export default function ChatPage() {
 
   // Show loading while checking auth or redirecting.
   // Exclude: TOTP-pending sessions (held for code prompt) and demoted sessions
-  // (held for wall render) — both are handled above and should not show the spinner.
+  // (held for wall render), both are handled above and should not show the spinner.
   if (status === 'loading' || (session && !session.user?.needs_totp && !showDemotionWall)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-warm-gray-900">
@@ -861,7 +861,7 @@ export default function ChatPage() {
 
   const loginPanel = showLoginForm ? (
     <div className="font-dm-sans bg-warm-gray-900/80 rounded-sm p-6 space-y-5 text-white mb-8">
-      {/* D-17 — continuation banner after a fresh re-enrollment (?reenrolled=1).
+      {/* D-17, continuation banner after a fresh re-enrollment (?reenrolled=1).
           Reads as "finish signing in", not a blank restart. Purely informational
           (T-18-08-04): the real gate is the IMAP password + the new TOTP on this
           next login; the banner grants no access. */}
@@ -874,7 +874,7 @@ export default function ChatPage() {
         {heading}
       </h3>
 
-      {/* Option A — physician new/returning toggle. A brand-new doctor had NO entry
+      {/* Option A, physician new/returning toggle. A brand-new doctor had NO entry
           path before (Google is unconfigured, the credentials box only signs in
           existing accounts). 'new' creates the entry account; 'returning' signs in. */}
       {portalSelection === 'doctor' && (
@@ -904,7 +904,7 @@ export default function ChatPage() {
         </div>
       )}
 
-      {/* NEW PHYSICIAN — create the entry account (email/password), then sign in. */}
+      {/* NEW PHYSICIAN, create the entry account (email/password), then sign in. */}
       {portalSelection === 'doctor' && doctorMode === 'new' && (
         <div className="space-y-3">
           <p className="font-body text-xs text-white/50">{t.createAccountHint[lang]}</p>
@@ -971,12 +971,12 @@ export default function ChatPage() {
         </div>
       )}
 
-      {/* Phase 18 Plan 04 — D-02: On a graduated device (mk_physician_graduated cookie
+      {/* Phase 18 Plan 04, D-02: On a graduated device (mk_physician_graduated cookie
           present), the Medikah-password form is primary. Google is demoted to a small
           "recover access" link. On a fresh device, normal order applies.
           Cookie is polish-only; the wall in jwt() carries the enforcement guarantee. */}
 
-      {/* Phase 16 — Medikah-email (Mailcow IMAP) sign-in. Physician tab only.
+      {/* Phase 16, Medikah-email (Mailcow IMAP) sign-in. Physician tab only.
           Shown FIRST on graduated devices (D-02), after Google on fresh devices. */}
       {portalSelection === 'doctor' && isGraduatedDevice && doctorMode === 'returning' && (
         <div className="space-y-3">
@@ -1024,7 +1024,7 @@ export default function ChatPage() {
                 <p className="font-body text-sm text-alert-garnet bg-alert-garnet/10 border border-alert-garnet/20 px-3 py-2 text-center rounded-sm">
                   {loginError}
                 </p>
-                {/* Phase 18 CARRY-18-A — re-enroll path for a post-reset doctor. */}
+                {/* Phase 18 CARRY-18-A, re-enroll path for a post-reset doctor. */}
                 <div className="text-center pt-2">
                   <Link
                     href="/auth/reenroll"
@@ -1039,12 +1039,12 @@ export default function ChatPage() {
         </div>
       )}
 
-      {/* Social login (Google) — PATIENTS ONLY. Google OAuth is not configured for
+      {/* Social login (Google), PATIENTS ONLY. Google OAuth is not configured for
           physicians, so showing it on the doctor pane dead-ends. Doctors use the
           new-account form (above) or the returning sign-in forms (below). */}
       {portalSelection === 'patient' && (
         <div className="space-y-2">
-          {/* Google — patient portal only */}
+          {/* Google, patient portal only */}
           <button
             type="button"
             onClick={() => handleSocialSignIn('google')}
@@ -1061,7 +1061,7 @@ export default function ChatPage() {
         </div>
       )}
 
-      {/* Phase 16 — Medikah-email (Mailcow IMAP) sign-in. Physician tab only.
+      {/* Phase 16, Medikah-email (Mailcow IMAP) sign-in. Physician tab only.
           Added per D-03 two-identity lifecycle. Shown in standard order on fresh devices. */}
       {portalSelection === 'doctor' && !isGraduatedDevice && doctorMode === 'returning' && (
         <div className="space-y-3 pt-2">
@@ -1116,7 +1116,7 @@ export default function ChatPage() {
                 <p className="font-body text-sm text-alert-garnet bg-alert-garnet/10 border border-alert-garnet/20 px-3 py-2 text-center rounded-sm">
                   {loginError}
                 </p>
-                {/* Phase 18 CARRY-18-A — re-enroll path for a post-reset doctor. */}
+                {/* Phase 18 CARRY-18-A, re-enroll path for a post-reset doctor. */}
                 <div className="text-center pt-2">
                   <Link
                     href="/auth/reenroll"
@@ -1131,7 +1131,7 @@ export default function ChatPage() {
         </div>
       )}
 
-      {/* Divider + email/password sign-in — patients, and RETURNING doctors only.
+      {/* Divider + email/password sign-in, patients, and RETURNING doctors only.
           Hidden in the doctor 'new' mode (the account-creation form replaces it). */}
       {(portalSelection === 'patient' || (portalSelection === 'doctor' && doctorMode === 'returning')) && (
       <>
@@ -1176,7 +1176,7 @@ export default function ChatPage() {
             <p className="font-dm-sans text-sm text-alert-garnet bg-alert-garnet/10 border border-alert-garnet/20 px-3 py-2 text-center rounded-sm">
               {loginError}
             </p>
-            {/* Phase 16 D-13 — placeholder recovery link; real flow ships in
+            {/* Phase 16 D-13, placeholder recovery link; real flow ships in
                 Phase 18 (FLOW-01, FLOW-05). */}
             <div className="text-center">
               <Link
@@ -1204,7 +1204,7 @@ export default function ChatPage() {
   return (
     <>
       <Head>
-        <title>Sign in — Medikah</title>
+        <title>Sign in, Medikah</title>
         <meta name="robots" content="noindex, nofollow" />
       </Head>
       <Splash

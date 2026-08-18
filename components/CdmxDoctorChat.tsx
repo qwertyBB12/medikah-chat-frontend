@@ -8,20 +8,20 @@ type Msg = { from: From; es: string; en: string; tag?: { es: string; en: string 
 // Arc: free basics → training (become expert = springboard) → ethical-AI
 // certification (NeXT, U.S.) → the THESIS: an ecosystem founded by physicians
 // that grows with them and never exploits them → then the future. Closes on
-// "Todo sin costo" (never "empieza" — no implication of future charging).
+// "Todo sin costo" (never "empieza", no implication of future charging).
 const HEADER: Record<Lang, string> = { es: 'Asistente para médicos', en: 'Physician assistant' };
 const CLOSER: Record<Lang, string> = { es: 'Todo sin costo.', en: 'All at no cost.' };
 const REPLAY: Record<Lang, string> = { es: '▸ Reproducir', en: '▸ Replay' };
 
 const SCRIPT: Msg[] = [
   { from: 'doc', es: '¿Qué es Medikah y qué traen para los médicos?', en: 'What is Medikah, and what are you bringing for physicians?' },
-  { from: 'medikah', es: 'Para empezar, lo esencial — sin costo: tu correo, tu calendario y tu propio sitio web seguro para agendar y para que tus pacientes te encuentren.', en: 'To start, the essentials — at no cost: your email, your calendar, and your own secure website to schedule and to help patients find you.', tag: { es: 'Gratis para médicos', en: 'Free for physicians' } },
+  { from: 'medikah', es: 'Para empezar, lo esencial, sin costo: tu correo, tu calendario y tu propio sitio web seguro para agendar y para que tus pacientes te encuentren.', en: 'To start, the essentials, at no cost: your email, your calendar, and your own secure website to schedule and to help patients find you.', tag: { es: 'Gratis para médicos', en: 'Free for physicians' } },
   { from: 'doc', es: '¿Y la inteligencia artificial?', en: 'And the artificial intelligence?' },
-  { from: 'medikah', es: 'Te capacitamos: la IA vive dentro de cada herramienta y te volvemos experto. Esa formación es tu trampolín hacia un uso más profundo — para tu práctica, tus pacientes y el lado de negocio.', en: 'We train you: AI lives inside every tool and we make you an expert. That training is your springboard into deeper use — for your practice, your patients, and the business side.' },
+  { from: 'medikah', es: 'Te capacitamos: la IA vive dentro de cada herramienta y te volvemos experto. Esa formación es tu trampolín hacia un uso más profundo, para tu práctica, tus pacientes y el lado de negocio.', en: 'We train you: AI lives inside every tool and we make you an expert. That training is your springboard into deeper use, for your practice, your patients, and the business side.' },
   { from: 'medikah', es: 'Y te certificamos en IA ética aplicada a la medicina, validado por New eXponential Thought Organization de Estados Unidos.', en: 'And we certify you in ethical AI for medicine, validated by New eXponential Thought Organization of the United States.', tag: { es: 'Certificación validada', en: 'Validated certification' } },
   { from: 'doc', es: '¿En qué se diferencia de las herramientas de IA que ya se están lanzando?', en: 'How is this different from the AI tools already hitting the market?' },
-  { from: 'medikah', es: 'No es una herramienta suelta. Es un ecosistema fundado por médicos que se compromete contigo: te certifica, te capacita y crece contigo — dándote todas las herramientas que tu práctica llegará a necesitar, de un modo que trabaja contigo y te vuelve experto para hablar de esto con autoridad.', en: "It's not a one-off tool. It's an ecosystem founded by physicians that commits to you: it certifies you, trains you, and grows with you — giving you every tool your practice will come to need, in a way that works with you and makes you an expert who can speak on this with authority.", tag: { es: 'Fundado por médicos', en: 'Founded by physicians' } },
-  { from: 'medikah', es: 'Y estamos enfocados en América Latina y en México: llevamos tu experiencia al hemisferio y al mundo. Esta plataforma te conecta más allá de la Ciudad de México y más allá de México — con pacientes y colegas en toda América.', en: "And we're focused on Latin America and Mexico: we carry your expertise to the hemisphere and the world. This platform connects you beyond Mexico City and beyond Mexico — to patients and colleagues across the Americas." },
+  { from: 'medikah', es: 'No es una herramienta suelta. Es un ecosistema fundado por médicos que se compromete contigo: te certifica, te capacita y crece contigo, dándote todas las herramientas que tu práctica llegará a necesitar, de un modo que trabaja contigo y te vuelve experto para hablar de esto con autoridad.', en: "It's not a one-off tool. It's an ecosystem founded by physicians that commits to you: it certifies you, trains you, and grows with you, giving you every tool your practice will come to need, in a way that works with you and makes you an expert who can speak on this with authority.", tag: { es: 'Fundado por médicos', en: 'Founded by physicians' } },
+  { from: 'medikah', es: 'Y estamos enfocados en América Latina y en México: llevamos tu experiencia al hemisferio y al mundo. Esta plataforma te conecta más allá de la Ciudad de México y más allá de México, con pacientes y colegas en toda América.', en: "And we're focused on Latin America and Mexico: we carry your expertise to the hemisphere and the world. This platform connects you beyond Mexico City and beyond Mexico, to patients and colleagues across the Americas." },
 ];
 
 export default function CdmxDoctorChat({ lang }: { lang: Lang }) {
@@ -79,7 +79,7 @@ export default function CdmxDoctorChat({ lang }: { lang: Lang }) {
           <span className="font-body text-[0.68rem] uppercase tracking-[0.16em] text-white/55">{HEADER[lang]}</span>
         </div>
 
-        {/* fixed screen — scrolls internally */}
+        {/* fixed screen, scrolls internally */}
         <div ref={scrollRef} className="h-[680px] space-y-3 overflow-y-auto bg-linen-white px-4 py-5">
           {SCRIPT.slice(0, visible).map((m, i) => (
             m.from === 'doc' ? (

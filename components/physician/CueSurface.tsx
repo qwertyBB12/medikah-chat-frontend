@@ -1,20 +1,20 @@
 /**
- * CueSurface — the "Cue Console" (Phase 23 → Cue Console pivot).
+ * CueSurface, the "Cue Console" (Phase 23 → Cue Console pivot).
  *
- * A docked clinical command panel — Claude-Code-inside-Medikah. Instead of a
+ * A docked clinical command panel, Claude-Code-inside-Medikah. Instead of a
  * full-screen takeover, Cue lives as a right-docked side panel: the doctor keeps
  * their screen (calendar/email stay visible) and Cue floats over it. Mounted once
  * by PortalLayout; opens on the medikah:cue:open CustomEvent or Cmd+K
  * (handled by lib/cue/surface.ts).
  *
  * The three console pieces (cue-console-mock-v2):
- *   1. Cascading THINKING TRACE — Cue narrates its tool steps like Code
+ *   1. Cascading THINKING TRACE, Cue narrates its tool steps like Code
  *      ("leyendo tu bandeja ✓ 3 nuevos") as cascading terminal lines BEFORE the
  *      answer. Driven by \x1f tool-event frames on the /api/cue/chat stream
  *      (parsed by lib/cue/cueStream.ts → onToolEvent). Transparent; the wait
  *      feels alive.
- *   2. ANSWER LINE — the streamed reply (TTFT), plain text with a live cursor.
- *   3. D-03 CONFIRM CARD — block/clear write proposals, keyed ONLY off the parsed
+ *   2. ANSWER LINE, the streamed reply (TTFT), plain text with a live cursor.
+ *   3. D-03 CONFIRM CARD, block/clear write proposals, keyed ONLY off the parsed
  *      \x1e sentinel payload, NEVER off model prose (T-23-04-09). Confirm → POST
  *      /api/cue/calendar/confirm-write (the sole mutation path). Cancel → no write.
  *
@@ -26,7 +26,7 @@
  * the primary modality (the round-trip can't beat text for speed).
  *
  * Accessibility:
- *   - role="dialog" aria-label="Cue" (NON-modal dock — no aria-modal, no scrim;
+ *   - role="dialog" aria-label="Cue" (NON-modal dock, no aria-modal, no scrim;
  *     the doctor keeps using their screen and can Tab back to it)
  *   - Stores document.activeElement on open → moves focus into the panel →
  *     returns it to the launcher on close
@@ -72,7 +72,7 @@ import {
 export { splitCueStream, PENDING_CONFIRM_SENTINEL };
 export type { CuePendingConfirm, CueToolEvent };
 
-// Focusable selector — used to move focus into the panel on open (NOT a trap:
+// Focusable selector, used to move focus into the panel on open (NOT a trap:
 // the dock is non-modal, so Tab may leave it back to the doctor's screen).
 const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
@@ -83,7 +83,7 @@ export interface CueSurfaceProps {
   isOpen: boolean;
   /** Called by the surface to request close (PortalLayout updates isOpen). */
   onClose: () => void;
-  /** Workspace bearer token — used for the confirm-write hop. May be null. */
+  /** Workspace bearer token, used for the confirm-write hop. May be null. */
   accessToken: string | null;
   /** Active locale for bilingual rendering. */
   locale?: 'en' | 'es';
@@ -97,9 +97,9 @@ const LABELS = {
         confirmEyebrow: 'Confirm before writing', confirm: 'Confirm', cancel: 'Cancel',
         hintLeft: 'Cue · English + Spanish', done: 'Done', memory: 'What Cue remembers',
         stepsDone: (n: number) => (n === 1 ? '1 step ✓' : `${n} steps ✓`),
-        noFiles: "Cue can't receive files yet — describe it in text and Cue will help.",
-        modeSettings: 'Interaction mode', tapToTalk: 'Tap to talk', tapToStop: 'Listening — tap to stop',
-        resume: 'Paused — tap to resume',
+        noFiles: "Cue can't receive files yet, describe it in text and Cue will help.",
+        modeSettings: 'Interaction mode', tapToTalk: 'Tap to talk', tapToStop: 'Listening, tap to stop',
+        resume: 'Paused, tap to resume',
         blockedResult: () => `Time blocked.`,
         clearResult: (deleted: number, kept: number) => `${deleted} removed, ${kept} kept.` },
   es: { close: 'Cerrar', collapse: 'Contraer', you: 'Tú', context: 'Espacio clínico',
@@ -109,9 +109,9 @@ const LABELS = {
         confirmEyebrow: 'Confirmar antes de escribir', confirm: 'Confirmar', cancel: 'Cancelar',
         hintLeft: 'Cue · español + inglés', done: 'Listo', memory: 'Lo que Cue recuerda',
         stepsDone: (n: number) => (n === 1 ? '1 paso ✓' : `${n} pasos ✓`),
-        noFiles: 'Cue aún no puede recibir archivos — descríbelo en texto y Cue te ayudará.',
-        modeSettings: 'Modo de interacción', tapToTalk: 'Toca para hablar', tapToStop: 'Escuchando — toca para terminar',
-        resume: 'En pausa — toca para reanudar',
+        noFiles: 'Cue aún no puede recibir archivos, descríbelo en texto y Cue te ayudará.',
+        modeSettings: 'Modo de interacción', tapToTalk: 'Toca para hablar', tapToStop: 'Escuchando, toca para terminar',
+        resume: 'En pausa, toca para reanudar',
         blockedResult: () => `Horario bloqueado.`,
         clearResult: (deleted: number, kept: number) => `${deleted} eliminados, ${kept} conservados.` },
 } as const;
@@ -146,7 +146,7 @@ interface CueResponse { title: string; summary: string; }
 
 /** One completed exchange kept for scrollback. The live turn stays in the
  *  existing response/toolTrace/cards state; it is archived here when the NEXT
- *  turn starts (history-scrollback slice — before it, each turn wiped the
+ *  turn starts (history-scrollback slice, before it, each turn wiped the
  *  previous one and the doctor lost the thread they could still see). */
 interface CompletedTurn {
   user: string; // '' for the spoken greeting (no user bubble)
@@ -174,7 +174,7 @@ function applyToolEvent(prev: ToolStep[], ev: CueToolEvent): ToolStep[] {
 function stepResultText(s: ToolStep, unit: string): string {
   if (s.status === 'err') return '⚠';
   // The backend omits `items` when a tool returns no rows, so a count is shown
-  // only for a positive result — `✓ 0 eventos` (success styling on an empty
+  // only for a positive result, `✓ 0 eventos` (success styling on an empty
   // result) never renders; an empty/headerless read shows a plain `✓`.
   if (!s.items) return '✓';
   return unit ? `✓ ${s.items} ${unit}` : `✓ ${s.items}`;
@@ -183,7 +183,7 @@ function stepResultText(s: ToolStep, unit: string): string {
 type ClinicalCopy = (typeof CLINICAL_SUPPORT_COPY)['en'];
 
 /** Phase 24 decision-support card, shared by the live turn (with export
- *  actions) and scrollback turns (read-only — the export state is transient
+ *  actions) and scrollback turns (read-only, the export state is transient
  *  and single-turn; re-asking re-arms it). Rendered off the parsed \x1d
  *  payload (never model prose); NEVER labeled a "diagnosis". */
 function SupportCardView({ card, cds, locale, actions }: {
@@ -268,7 +268,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
   const dialogRef = useRef<HTMLDivElement>(null);
   const prevFocusRef = useRef<Element | null>(null);
   const labels = LABELS[locale];
-  const cds = CLINICAL_SUPPORT_COPY[locale]; // Phase 24 — clinical decision-support card copy
+  const cds = CLINICAL_SUPPORT_COPY[locale]; // Phase 24, clinical decision-support card copy
 
   const [inputValue, setInputValue] = useState('');
   const [orbState, setOrbState] = useState<OrbState>('idle');
@@ -288,22 +288,22 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
   const threadRef = useRef<HTMLDivElement>(null);
   const [toolTrace, setToolTrace] = useState<ToolStep[]>([]);
   const [pendingConfirm, setPendingConfirm] = useState<CuePendingConfirm | null>(null);
-  // Phase 24 — clinical decision-support cards surfaced this turn (additive: the
+  // Phase 24, clinical decision-support cards surfaced this turn (additive: the
   // conversation continues; see lib/cue/cueStream.ts \x1d frames). Reset per turn.
   const [cards, setCards] = useState<CueCard[]>([]);
-  // Slice 3 — export (email / save-as-PDF) transient state for the support card.
+  // Slice 3, export (email / save-as-PDF) transient state for the support card.
   const [exportMsg, setExportMsg] = useState<string | null>(null);
   const [emailing, setEmailing] = useState(false);
   const [isWriting, setIsWriting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Phase 25 Slice 3 — cross-session memory consent + management surface.
+  // Phase 25 Slice 3, cross-session memory consent + management surface.
   // avisoAck: null = unknown/loading, false = needs the one-time consent, true = active.
   const [avisoAck, setAvisoAck] = useState<boolean | null>(null);
   const [consentDismissed, setConsentDismissed] = useState(false); // "not now" for this session
   const [showMemory, setShowMemory] = useState(false);
 
-  // Wave 3 — interaction mode (voice / push-to-talk / text). null = not resolved
+  // Wave 3, interaction mode (voice / push-to-talk / text). null = not resolved
   // yet (first-run picker showing). pttListening drives the PTT mic button.
   const [mode, setMode] = useState<CueMode | null>(null);
   const [showPicker, setShowPicker] = useState(false);
@@ -318,7 +318,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
   const controllerRef = useRef<ContinuousFlowController | null>(null);
   const idempotencyTokenRef = useRef<string | null>(null);
 
-  // Compute ONCE — diagnoseVADSupport() constructs + closes an AudioContext on
+  // Compute ONCE, diagnoseVADSupport() constructs + closes an AudioContext on
   // each call (a per-render leak), so memoize it in lazy state.
   const [voiceSupported] = useState(
     () => typeof window !== 'undefined' && diagnoseVADSupport().ok,
@@ -331,7 +331,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
     return sm.subscribeOrbEvents((p) => setOrbState(p.state));
   }, []);
 
-  // Phase 25 Slice 3 — load the memory aviso status each time the dock opens.
+  // Phase 25 Slice 3, load the memory aviso status each time the dock opens.
   // null on any failure → no consent prompt (fail-quiet; memory stays dark).
   useEffect(() => {
     if (!isOpen) return;
@@ -340,11 +340,11 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
     fetch('/api/cue/memory/aviso')
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => { if (!cancelled && d) setAvisoAck(Boolean(d.acknowledged)); })
-      .catch(() => { /* leave null — memory dark, no prompt */ });
+      .catch(() => { /* leave null, memory dark, no prompt */ });
     return () => { cancelled = true; };
   }, [isOpen]);
 
-  // respond() — the brain turn the controller (and text submit) call. Posts the
+  // respond(), the brain turn the controller (and text submit) call. Posts the
   // canonical messages[] shape to /api/cue/chat and STREAM-READS the reply
   // (Phase-23 TTFT): reasoning text chunks forward to opts.onTextChunk as they
   // arrive (so the controller can start speaking sentence 1 early) and tool-event
@@ -390,7 +390,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
         if (liveTurnRef.current) liveTurnRef.current.trace = next;
         return next;
       }),
-      // Phase 24: a clinical decision-support card streamed in — show it live.
+      // Phase 24: a clinical decision-support card streamed in, show it live.
       (card) => setCards((prevCards) => [...prevCards, card]),
     );
     // Authoritative set (covers the buffered fallback path where onCard never fires).
@@ -420,7 +420,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
     return { text, pendingConfirm: null };
   }, [locale, mode]);
 
-  // Greeting (brain turn) — fetched on open, spoken via the controller's TTS so
+  // Greeting (brain turn), fetched on open, spoken via the controller's TTS so
   // it shares the unlocked AudioContext from the user gesture. Tool-free (opening
   // bypass); one short sentence, read to completion before speaking.
   const speakGreeting = useCallback(async (ctrl: ContinuousFlowController) => {
@@ -472,7 +472,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
     }
   }, [isOpen, voiceSupported]);
 
-  // Controller lifecycle — only voice/ptt use it; text has none, and the
+  // Controller lifecycle, only voice/ptt use it; text has none, and the
   // first-run picker (mode still null) holds it back until the doctor chooses.
   // Re-runs on mode switch (recreates the controller) but greets only once/open.
   useEffect(() => {
@@ -500,7 +500,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
     return () => { controllerRef.current?.destroy(); controllerRef.current = null; };
   }, [isOpen, voiceSupported, mode, locale, respond, speakGreeting, labels.error]);
 
-  // Wave 2a — close the mic while a write-confirm card is up (voice OR text path),
+  // Wave 2a, close the mic while a write-confirm card is up (voice OR text path),
   // so the doctor reading/clicking Confirm isn't captured as a stray utterance.
   // The voice path also holds the mic from inside the controller; the Set-based
   // hold is idempotent, and this is the single RELEASE point when the card
@@ -535,7 +535,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
   }
 
   // File-share defect (sprint QA): dropping a file on the dock made the
-  // browser NAVIGATE to the file — the session vanished and it read as a
+  // browser NAVIGATE to the file, the session vanished and it read as a
   // broken upload. Cue has no file intake yet (real document understanding
   // needs the PHI/de-identification design first), so catch drag/drop and
   // file-paste and answer honestly instead of losing the doctor's session.
@@ -592,7 +592,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
   // Cancel → dismiss the confirm card, NO write (D-03).
   function handleCancelWrite() { setPendingConfirm(null); idempotencyTokenRef.current = null; }
 
-  // Slice 3 — email the clinical decision-support summary to the doctor's OWN
+  // Slice 3, email the clinical decision-support summary to the doctor's OWN
   // @medikah.health mailbox (recipient resolved server-side; never sent from here).
   const handleEmailSummary = useCallback(async (card: CueCard) => {
     const copy = CLINICAL_SUPPORT_COPY[locale];
@@ -611,7 +611,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
     }
   }, [locale]);
 
-  // Slice 3 — "Save as PDF": open the branded summary in a new window and invoke
+  // Slice 3, "Save as PDF": open the branded summary in a new window and invoke
   // the browser's print dialog (print-to-PDF; no PDF dependency, sovereign).
   const handleSavePdf = useCallback((card: CueCard) => {
     const copy = CLINICAL_SUPPORT_COPY[locale];
@@ -625,7 +625,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
     setTimeout(() => { try { w.print(); } catch { /* manual print fallback */ } }, 400);
   }, [locale]);
 
-  // Wave 3 — mode picker. Selecting applies + persists immediately; the
+  // Wave 3, mode picker. Selecting applies + persists immediately; the
   // mode-keyed effect (re)creates or tears down the controller to match.
   const handleSelectMode = useCallback((m: CueMode) => {
     saveCueMode(m); setMode(m); setShowPicker(false);
@@ -638,7 +638,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
     setShowPicker(false);
   }, [mode]);
 
-  // Wave 3 — push-to-talk: tap to open a listening window, tap again to cancel.
+  // Wave 3, push-to-talk: tap to open a listening window, tap again to cancel.
   const handleMicTap = useCallback(() => {
     const ctrl = controllerRef.current;
     if (!ctrl) return;
@@ -729,7 +729,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
           background:#7fc7d4; animation:mk-blink 1s steps(2) infinite; }
         .mk-err { color:#f0b4b4; font-size:14px; margin:0; }
 
-        /* D-03 confirm card — dark surface */
+        /* D-03 confirm card, dark surface */
         .mk-card { background:rgba(255,255,255,.05); border:1px solid rgba(127,199,212,.18); border-radius:13px;
           padding:12px 13px; margin-top:5px; }
         .mk-card-k { font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:#7fc7d4; }
@@ -770,7 +770,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
         .mk-cds-msg { margin-top:7px; font-size:11px; color:#90b4bf; }
 
         .mk-cmd { flex:none; padding:11px 14px 14px; border-top:1px solid rgba(127,199,212,.1); position:relative; z-index:2; }
-        /* PHI / de-identification notice — muted caution tone, always visible */
+        /* PHI / de-identification notice, muted caution tone, always visible */
         .mk-phi { display:flex; gap:6px; align-items:flex-start; margin-bottom:9px; font-size:10.5px; line-height:1.4; color:#cdb88a; }
         .mk-phi span[aria-hidden] { line-height:1.3; }
         .mk-cmd-row { display:flex; align-items:center; gap:9px; background:rgba(255,255,255,.045);
@@ -779,7 +779,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
         .mk-prompt { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; color:#7fc7d4; font-size:14px; }
         .mk-cmd-in { flex:1; background:none; border:none; outline:none; color:#eaf2f5; font:inherit; font-size:13.5px; min-width:0; }
         .mk-cmd-in::placeholder { color:#7fa6b2; }
-        /* ≥44px tap target (PRES-05 a11y contract — matches the Confirm/Cancel buttons). */
+        /* ≥44px tap target (PRES-05 a11y contract, matches the Confirm/Cancel buttons). */
         .mk-mic { width:44px; height:44px; border-radius:50%; flex:none; display:grid; place-items:center; border:none;
           background:linear-gradient(150deg,#2C7A8C,#3aa0b5); color:#fff; box-shadow:0 4px 12px rgba(44,122,140,.45); cursor:pointer; }
         .mk-mic svg { width:16px; height:16px; }
@@ -804,7 +804,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
         onDrop={handleDrop}
         tabIndex={-1}
       >
-        {/* self-contained wave lip — flows from an arc (brand direction: arcs up
+        {/* self-contained wave lip, flows from an arc (brand direction: arcs up
             in the middle, navy drips lower at the edges) */}
         <svg className="mk-dock-lip" viewBox="0 0 416 16" preserveAspectRatio="none" aria-hidden="true">
           <path d="M0,0 L416,0 L416,12 C277,2 139,2 0,12 Z" fill="#1B2A41" />
@@ -855,7 +855,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
           </span>
         </header>
 
-        {/* Wave 3 — interaction-mode picker (first run, or reopened from header).
+        {/* Wave 3, interaction-mode picker (first run, or reopened from header).
             Takes precedence over the memory aviso so the two never stack. */}
         {showPicker && (
           <CueModePicker
@@ -866,7 +866,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
           />
         )}
 
-        {/* Phase 25 Slice 3 — one-time consent overlay + memory management panel.
+        {/* Phase 25 Slice 3, one-time consent overlay + memory management panel.
             Both are position:absolute inset:0 within the dock (see CueMemory.tsx). */}
         {!showPicker && avisoAck === false && !consentDismissed && (
           <CueMemoryConsent
@@ -880,7 +880,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
         )}
 
         <div className="mk-thread" aria-live="polite" aria-atomic="false" ref={threadRef} onScroll={handleThreadScroll}>
-          {/* History scrollback — completed exchanges, oldest first. Prior
+          {/* History scrollback, completed exchanges, oldest first. Prior
               traces collapse to a one-line preview; prior cards are read-only. */}
           {turns.map((t, ti) => (
             <div className="mk-turn-prev" key={ti}>
@@ -936,7 +936,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
 
               {errorMsg && <p className="mk-err">{errorMsg}</p>}
 
-              {/* Phase 24 — clinical DECISION-SUPPORT card(s). ADDITIVE: Cue's
+              {/* Phase 24, clinical DECISION-SUPPORT card(s). ADDITIVE: Cue's
                   narration below keeps the conversation going. Markup lives in
                   SupportCardView (shared with scrollback). */}
               {cards.map((card, ci) => (
@@ -987,7 +987,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
         </div>
 
         <form className="mk-cmd" onSubmit={handleSubmit}>
-          {/* Phase 24 — always-visible PHI/de-identification notice (trains doctors
+          {/* Phase 24, always-visible PHI/de-identification notice (trains doctors
               never to type patient identifiers). Not stream-dependent. */}
           <div className="mk-phi" role="note">
             <span aria-hidden="true">&#9888;</span>

@@ -58,7 +58,7 @@ export interface TryProContactContent {
   email: string;
   subject: string;
   message: string;
-  /** Non-PHI disclaimer — prominent, not hidden. Must render clearly above the submit button. */
+  /** Non-PHI disclaimer, prominent, not hidden. Must render clearly above the submit button. */
   disclaimer: string;
   submit: string;
   submitting: string;
@@ -223,7 +223,7 @@ export interface WorkspaceContent {
    */
   upgrade: {
     banner: {
-      /** D-20 LOCKED copy — "Make this real at your own domain" */
+      /** D-20 LOCKED copy, "Make this real at your own domain" */
       headline: string;
       body: string;
       cta: string;
@@ -235,10 +235,10 @@ export interface WorkspaceContent {
       notify: string;
       done: string;
     };
-    /** Phase 13-05 — UpgradeWizard shell (plan/review/checkout steps).
+    /** Phase 13-05, UpgradeWizard shell (plan/review/checkout steps).
      *
      * Every visible string keyed here per CLAUDE.md (bilingual EN/ES
-     * non-negotiable). Brand colors only — no hardcoded hex codes.
+     * non-negotiable). Brand colors only, no hardcoded hex codes.
      */
     wizard: {
       headline: string;
@@ -283,7 +283,7 @@ export interface WorkspaceContent {
       };
       provisioning: {
         placeholder: string;
-        /** Phase 13-07 (D-16) — Vercel-style stepped checklist live UX */
+        /** Phase 13-07 (D-16), Vercel-style stepped checklist live UX */
         headline: string;
         subhead: string;
         /** Bilingual labels for the 8 PRO_SAGA_STEPS (matches PRO_SAGA_STEPS in services/practikah/pro_saga.py) */
@@ -299,17 +299,17 @@ export interface WorkspaceContent {
         };
         completedHeadline: string;
         completedCta: string;
-        /** Phase 13-07 (D-15) — finish-later post-POR retry UX */
+        /** Phase 13-07 (D-15), finish-later post-POR retry UX */
         finishLaterHeadline: string;
         finishLaterBody: string;
-        /** Phase 13-07 — pre-POR failure UX (Stripe charge succeeded but the
-         * saga aborted before pro.register_domain — card already refunded by
+        /** Phase 13-07, pre-POR failure UX (Stripe charge succeeded but the
+         * saga aborted before pro.register_domain, card already refunded by
          * Stripe webhook reconciliation). */
         failedPreporHeadline: string;
         failedPreporBody: string;
         resolving: string;
         missingSession: string;
-        /** Run-id lookup failed AFTER a successful charge — the doctor must
+        /** Run-id lookup failed AFTER a successful charge, the doctor must
          * never read this as "my money vanished". Reassure + offer retry. */
         resolveFailedBody: string;
         resolveRetry: string;
@@ -319,7 +319,7 @@ export interface WorkspaceContent {
         network: string;
       };
     };
-    /** Phase 13-04 / PRO-01 / PRO-02 / PRO-14 — DomainSearch + DefensiveSuggestions */
+    /** Phase 13-04 / PRO-01 / PRO-02 / PRO-14, DomainSearch + DefensiveSuggestions */
     search: {
       headline: string;
       subheadline: string;
@@ -342,7 +342,7 @@ export interface WorkspaceContent {
       showMore: string;
       showLess: string;
       empty: string;
-      /** Reason badges — keys mirror SUGGESTION_REASON_KEYS in lib/domainSuggestions.ts */
+      /** Reason badges, keys mirror SUGGESTION_REASON_KEYS in lib/domainSuggestions.ts */
       rules: {
         dr_lastname: string;
         dra_lastname: string;
@@ -438,7 +438,7 @@ export interface WorkspaceContent {
       goToSettings: string;
     };
   };
-  /** Phase 13-09 — billing surfaces (DunningBanner / BillingCard /
+  /** Phase 13-09, billing surfaces (DunningBanner / BillingCard /
    *  SubscriptionStatus / billing.tsx page). Per CLAUDE.md every visible
    *  string is bilingual EN/ES. Per D-27 the dunning copy is warm and
    *  non-judgmental. */
@@ -498,19 +498,19 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
       tabContent: 'Content',
       savePending: 'Saving...',
       saved: 'All changes saved',
-      saveError: 'Save failed — retry',
+      saveError: 'Save failed, retry',
       layout: {
         classic: {
           name: 'Classic',
-          desc: 'Traditional medical practice — top hero photo, services grid, credentials prominent, location card with map',
+          desc: 'Traditional medical practice, top hero photo, services grid, credentials prominent, location card with map',
         },
         editorial: {
           name: 'Editorial',
-          desc: 'Personality-forward — large narrative bio dominates, smaller services list, photo gallery as "moments"',
+          desc: 'Personality-forward, large narrative bio dominates, smaller services list, photo gallery as "moments"',
         },
         minimal: {
           name: 'Minimal',
-          desc: 'Restrained portfolio — lots of whitespace, single-column flow, accent used sparingly',
+          desc: 'Restrained portfolio, lots of whitespace, single-column flow, accent used sparingly',
         },
       },
       colors: {
@@ -591,7 +591,7 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
       toggleEnabled: 'Site published',
       toggleDisabled: 'Site offline',
       cardTitle: 'Your Práctikah Profile Site',
-      cardSubtitle: 'Your professional page at <slug>.medikah.health — included with your Práctikah workspace.',
+      cardSubtitle: 'Your professional page at <slug>.medikah.health, included with your Práctikah workspace.',
       notClaimedTitle: 'Your profile site is ready',
       notClaimedBody: 'Your Práctikah workspace includes a professional profile site. Activate it, customize the appearance, and share it with patients and colleagues.',
       claimButton: 'Activate My Profile Site',
@@ -618,7 +618,7 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
       imapCardTitle: 'IMAP Credentials',
       imapCardSubtitle: 'Connect Apple Mail, Outlook, or Gmail using these credentials.',
       revealConfirmTitle: 'Reveal mailbox password?',
-      revealConfirmBody: "We will show your password once. Save it in your password manager — we don't store it anywhere you can see it again.",
+      revealConfirmBody: "We will show your password once. Save it in your password manager, we don't store it anywhere you can see it again.",
       revealConfirmYes: 'Reveal once',
       revealConfirmNo: 'Cancel',
       passwordForm: {
@@ -666,15 +666,15 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
     upgrade: {
       banner: {
         headline: 'Make this real at your own domain',
-        body: 'Take your profile site to your own domain — your custom address, full ownership.',
+        body: 'Take your profile site to your own domain, your custom address, full ownership.',
         cta: 'See pricing',
         dismiss: 'Maybe later',
       },
       page: {
-        headline: 'Práctikah Pro — coming soon',
+        headline: 'Práctikah Pro, coming soon',
         body: "We're finalizing Práctikah Pro. Custom domain setup and one-click migration of your profile site are launching soon. Want to be notified the moment it's available?",
         notify: 'Notify me',
-        done: "Done — we'll notify you.",
+        done: "Done, we'll notify you.",
       },
       wizard: {
         headline: 'Upgrade to Práctikah Pro',
@@ -697,13 +697,13 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
           cadenceLabel: 'Billing cadence',
           annualSavings: 'Save vs monthly',
           valueBullets: [
-            'Custom domain (you own it — fully transferable via EPP)',
+            'Custom domain (you own it, fully transferable via EPP)',
             'Práctikah mailbox at your domain',
             'Your profile site at your own domain',
             'One-click migration of your current profile site',
             'Priority support during launch',
           ],
-          guarantee: '30-day money-back guarantee — no questions asked.',
+          guarantee: '30-day money-back guarantee, no questions asked.',
           continueCta: 'Continue',
         },
         review: {
@@ -718,16 +718,16 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         },
         checkout: {
           handoffHeadline: 'Secure checkout via Stripe',
-          handoffText: 'Stripe handles your payment securely. We never see your card details. After payment, your domain and mailbox are set up automatically — usually in under 3 minutes.',
+          handoffText: 'Stripe handles your payment securely. We never see your card details. After payment, your domain and mailbox are set up automatically, usually in under 3 minutes.',
           cta: 'Continue to secure checkout',
           loading: 'Opening Stripe…',
-          cancelledNotice: 'Payment cancelled — you can resume any time.',
+          cancelledNotice: 'Payment cancelled, you can resume any time.',
         },
         provisioning: {
           placeholder: 'Provisioning your Pro workspace…',
           headline: 'Setting up your Pro workspace',
           subhead:
-            "This usually takes about 3 minutes. You can leave this page open or close it — we'll email you the moment it's live.",
+            "This usually takes about 3 minutes. You can leave this page open or close it, we'll email you the moment it's live.",
           steps: {
             'pro.charge_confirmed': 'Payment confirmed',
             'pro.register_domain': 'Registering your domain',
@@ -741,7 +741,7 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
           completedHeadline: 'Your Pro workspace is live',
           completedCta: 'Visit my new site',
           finishLaterHeadline:
-            "Your domain is registered — we're finishing setup",
+            "Your domain is registered, we're finishing setup",
           finishLaterBody:
             "We hit a small snag finishing setup, but your domain is yours and we're retrying automatically. We'll email you the moment it's live (usually within an hour).",
           failedPreporHeadline: "We couldn't complete your purchase",
@@ -749,14 +749,14 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
             'Your card was not charged. Please try again or contact support if the issue persists.',
           resolving: 'Resolving your upgrade…',
           missingSession:
-            'Missing checkout session — please return to the upgrade page.',
+            'Missing checkout session, please return to the upgrade page.',
           resolveFailedBody:
-            "Your payment went through — we just couldn't load your setup status. Your upgrade is safe; try again in a moment.",
+            "Your payment went through, we just couldn't load your setup status. Your upgrade is safe; try again in a moment.",
           resolveRetry: 'Try again',
         },
         errors: {
           generic: 'Something went wrong starting checkout. Please try again.',
-          network: 'Network error — please check your connection and try again.',
+          network: 'Network error, please check your connection and try again.',
         },
       },
       search: {
@@ -767,7 +767,7 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         freeformLabel: 'Or type your own',
         freeformPlaceholder: 'e.g. drlopez',
         primaryHeading: 'Suggested for you',
-        defensiveHeading: 'Protect your brand — also reserve',
+        defensiveHeading: 'Protect your brand, also reserve',
         defensiveSubheading: 'Common variations a competitor or squatter could grab. Add any to your plan with one click.',
         pricingWholesale: 'Domain (wholesale)',
         pricingService: 'Práctikah Pro service',
@@ -801,9 +801,9 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         headline_en: 'Práctikah Pro is launching in México soon',
         headline_es: 'Práctikah Pro estará disponible en México pronto',
         body_en:
-          "We're completing tax compliance with the SAT (Servicio de Administración Tributaria) so we can collect IVA correctly on Mexican subscriptions. We'll email you the moment Pro is available — your free workspace stays fully active in the meantime.",
+          "We're completing tax compliance with the SAT (Servicio de Administración Tributaria) so we can collect IVA correctly on Mexican subscriptions. We'll email you the moment Pro is available, your free workspace stays fully active in the meantime.",
         body_es:
-          'Estamos finalizando el cumplimiento fiscal con el SAT (Servicio de Administración Tributaria) para cobrar correctamente el IVA en suscripciones mexicanas. Te avisaremos por correo en cuanto Pro esté disponible — mientras tanto, tu espacio gratuito sigue completamente activo.',
+          'Estamos finalizando el cumplimiento fiscal con el SAT (Servicio de Administración Tributaria) para cobrar correctamente el IVA en suscripciones mexicanas. Te avisaremos por correo en cuanto Pro esté disponible, mientras tanto, tu espacio gratuito sigue completamente activo.',
         cta_notify_en: 'Notify me when Pro launches in México',
         cta_notify_es: 'Avísame cuando Pro esté disponible en México',
       },
@@ -811,9 +811,9 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         headline_en: "Práctikah Pro isn't available in your country yet",
         headline_es: 'Práctikah Pro aún no está disponible en tu país',
         body_en:
-          "We're currently launching in México and the United States. Your free workspace works the same anywhere — we'll expand to more countries soon.",
+          "We're currently launching in México and the United States. Your free workspace works the same anywhere, we'll expand to more countries soon.",
         body_es:
-          'Estamos lanzando inicialmente en México y Estados Unidos. Tu espacio gratuito funciona igual en cualquier país — pronto expandiremos a más regiones.',
+          'Estamos lanzando inicialmente en México y Estados Unidos. Tu espacio gratuito funciona igual en cualquier país, pronto expandiremos a más regiones.',
       },
     },
     tryProContact: {
@@ -841,7 +841,7 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         message: 800,
       },
     },
-    /** Phase 23 (PRES-03 / VOICE-08): Cue surface strings — EN */
+    /** Phase 23 (PRES-03 / VOICE-08): Cue surface strings, EN */
     cue: {
       confirmLabel: 'Confirm',
       cancelLabel: 'Cancel',
@@ -851,7 +851,7 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
       surfaceError: 'Something went wrong. Please try again.',
       disconnectTitle: 'Disconnect Cue',
       disconnectSubtitle:
-        'Revoke Cue’s access to your calendar and inbox. This removes only Cue’s app password — your mailbox login is untouched. You can reconnect any time.',
+        'Revoke Cue’s access to your calendar and inbox. This removes only Cue’s app password, your mailbox login is untouched. You can reconnect any time.',
       disconnectButton: 'Disconnect Cue',
       disconnectDone: 'Cue disconnected.',
       disconnectError: 'Could not disconnect Cue. Please try again.',
@@ -886,7 +886,7 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
       password: {
         title: 'Set your mailbox password',
         subtitle: 'Your mailbox password is separate from your Medikah login.',
-        whyExplain: "Your mailbox lives on its own server for security and portability — Práctikah doesn't store this password.",
+        whyExplain: "Your mailbox lives on its own server for security and portability, Práctikah doesn't store this password.",
         label: 'New mailbox password',
         confirmLabel: 'Confirm password',
         strengthMeter: 'Password strength',
@@ -907,7 +907,7 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         passwordReveal: 'Your mailbox password (shown once)',
         copyPassword: 'Copy password',
         copied: 'Copied',
-        passwordWarning: "Save this now — we don't store it.",
+        passwordWarning: "Save this now, we don't store it.",
         openMailbox: 'Open Mailbox',
         openMailboxDesc: 'Webmail at practikah.medikah.health',
         viewProfile: 'View Your Profile',
@@ -932,10 +932,10 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
       domainLabel: 'Your domain',
       manageBillingCta: 'Manage billing',
       transferOutHeading: 'Transfer your domain out',
-      transferOutBody: "Your domain is yours. Request the EPP transfer code and we'll deliver it instantly to your email and on this page — paste it at any registrar to bring your domain elsewhere.",
+      transferOutBody: "Your domain is yours. Request the EPP transfer code and we'll deliver it instantly to your email and on this page, paste it at any registrar to bring your domain elsewhere.",
       transferOutCta: 'Transfer my domain out',
       transferOutConfirm: "We'll generate your EPP transfer authorization code now. Continue?",
-      transferOutSuccess: 'Here is your EPP code — paste it at the gaining registrar within 30 days.',
+      transferOutSuccess: 'Here is your EPP code, paste it at the gaining registrar within 30 days.',
       transferOutErrorGeneric: "We couldn't issue the EPP code right now. Please retry in a moment.",
       eppLabel: 'EPP code',
       eppCopyCta: 'Copy code',
@@ -944,7 +944,7 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
       dnsRecordsHelp: "These records keep your custom domain working. Full self-service editing is on the roadmap; for now, contact us for changes.",
       dunning: {
         retryHeadline: "Let's keep your Pro workspace going",
-        retryBody: "Your last payment didn't go through. Stripe is retrying automatically — most cases are a quick card update from the billing portal.",
+        retryBody: "Your last payment didn't go through. Stripe is retrying automatically, most cases are a quick card update from the billing portal.",
         graceHeadline: 'Pro features end in {days} days unless we can charge your card',
         graceBody: 'Your custom domain stays yours. Update your payment method to keep your Pro workspace.',
         ctaUpdatePayment: 'Update payment',
@@ -972,19 +972,19 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
       tabContent: 'Contenido',
       savePending: 'Guardando...',
       saved: 'Todos los cambios guardados',
-      saveError: 'Error al guardar — reintentar',
+      saveError: 'Error al guardar, reintentar',
       layout: {
         classic: {
           name: 'Clásico',
-          desc: 'Consulta médica tradicional — foto de héroe superior, cuadrícula de servicios, credenciales prominentes, tarjeta de ubicación con mapa',
+          desc: 'Consulta médica tradicional, foto de héroe superior, cuadrícula de servicios, credenciales prominentes, tarjeta de ubicación con mapa',
         },
         editorial: {
           name: 'Editorial',
-          desc: 'Personalidad destacada — gran bio narrativa, lista de servicios compacta, galería de fotos como "momentos"',
+          desc: 'Personalidad destacada, gran bio narrativa, lista de servicios compacta, galería de fotos como "momentos"',
         },
         minimal: {
           name: 'Minimalista',
-          desc: 'Portafolio contenido — mucho espacio en blanco, flujo de una columna, acento usado con moderación',
+          desc: 'Portafolio contenido, mucho espacio en blanco, flujo de una columna, acento usado con moderación',
         },
       },
       colors: {
@@ -1065,7 +1065,7 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
       toggleEnabled: 'Sitio publicado',
       toggleDisabled: 'Sitio desconectado',
       cardTitle: 'Tu Sitio de Perfil Práctikah',
-      cardSubtitle: 'Tu página profesional en <slug>.medikah.health — incluida con tu espacio de trabajo.',
+      cardSubtitle: 'Tu página profesional en <slug>.medikah.health, incluida con tu espacio de trabajo.',
       notClaimedTitle: 'Tu sitio de perfil está listo',
       notClaimedBody: 'Tu espacio de trabajo Práctikah incluye un sitio de perfil profesional. Actívalo, personaliza la apariencia y compártelo con tus pacientes y colegas.',
       claimButton: 'Activar Mi Sitio de Perfil',
@@ -1092,7 +1092,7 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
       imapCardTitle: 'Credenciales IMAP',
       imapCardSubtitle: 'Conecta Apple Mail, Outlook o Gmail con estas credenciales.',
       revealConfirmTitle: '¿Mostrar contraseña del buzón?',
-      revealConfirmBody: 'Te mostraremos tu contraseña una vez. Guárdala en tu gestor de contraseñas — no la almacenamos en un lugar que puedas volver a ver.',
+      revealConfirmBody: 'Te mostraremos tu contraseña una vez. Guárdala en tu gestor de contraseñas, no la almacenamos en un lugar que puedas volver a ver.',
       revealConfirmYes: 'Mostrar una vez',
       revealConfirmNo: 'Cancelar',
       passwordForm: {
@@ -1140,12 +1140,12 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
     upgrade: {
       banner: {
         headline: 'Hazlo real en tu propio dominio',
-        body: 'Lleva tu sitio de perfil a tu propio dominio — tu dirección personalizada, control total.',
+        body: 'Lleva tu sitio de perfil a tu propio dominio, tu dirección personalizada, control total.',
         cta: 'Ver precios',
         dismiss: 'Quizás después',
       },
       page: {
-        headline: 'Práctikah Pro — próximamente',
+        headline: 'Práctikah Pro, próximamente',
         body: 'Estamos ultimando Práctikah Pro. La configuración de dominio personalizado y la migración con un clic de tu sitio de perfil se lanzan pronto. ¿Quieres que te avisemos cuando esté disponible?',
         notify: 'Avísame',
         done: '¡Listo! Te avisaremos.',
@@ -1171,13 +1171,13 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
           cadenceLabel: 'Frecuencia de pago',
           annualSavings: 'Ahorra vs mensual',
           valueBullets: [
-            'Dominio propio (es tuyo — transferible vía EPP)',
+            'Dominio propio (es tuyo, transferible vía EPP)',
             'Buzón Práctikah en tu dominio',
             'Tu sitio de perfil en tu propio dominio',
             'Migración con un clic de tu sitio de perfil actual',
             'Soporte prioritario durante el lanzamiento',
           ],
-          guarantee: 'Garantía de devolución de 30 días — sin preguntas.',
+          guarantee: 'Garantía de devolución de 30 días, sin preguntas.',
           continueCta: 'Continuar',
         },
         review: {
@@ -1192,16 +1192,16 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         },
         checkout: {
           handoffHeadline: 'Pago seguro con Stripe',
-          handoffText: 'Stripe procesa tu pago de forma segura. Nunca vemos los datos de tu tarjeta. Al confirmar, tu dominio y buzón se configuran automáticamente — usualmente en menos de 3 minutos.',
+          handoffText: 'Stripe procesa tu pago de forma segura. Nunca vemos los datos de tu tarjeta. Al confirmar, tu dominio y buzón se configuran automáticamente, usualmente en menos de 3 minutos.',
           cta: 'Continuar al pago seguro',
           loading: 'Abriendo Stripe…',
-          cancelledNotice: 'Pago cancelado — puedes retomarlo en cualquier momento.',
+          cancelledNotice: 'Pago cancelado, puedes retomarlo en cualquier momento.',
         },
         provisioning: {
           placeholder: 'Configurando tu espacio Pro…',
           headline: 'Configurando tu espacio Pro',
           subhead:
-            'Esto suele tardar unos 3 minutos. Puedes dejar esta página abierta o cerrarla — te avisaremos por correo en cuanto esté lista.',
+            'Esto suele tardar unos 3 minutos. Puedes dejar esta página abierta o cerrarla, te avisaremos por correo en cuanto esté lista.',
           steps: {
             'pro.charge_confirmed': 'Pago confirmado',
             'pro.register_domain': 'Registrando tu dominio',
@@ -1215,7 +1215,7 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
           completedHeadline: 'Tu espacio Pro está activo',
           completedCta: 'Ver mi nuevo sitio',
           finishLaterHeadline:
-            'Tu dominio está registrado — estamos terminando la configuración',
+            'Tu dominio está registrado, estamos terminando la configuración',
           finishLaterBody:
             'Tuvimos un pequeño contratiempo terminando la configuración, pero tu dominio es tuyo y lo estamos reintentando automáticamente. Te avisaremos por correo en cuanto esté listo (generalmente dentro de una hora).',
           failedPreporHeadline: 'No pudimos completar tu compra',
@@ -1223,14 +1223,14 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
             'Tu tarjeta no fue cobrada. Por favor intenta de nuevo o contacta a soporte si el problema persiste.',
           resolving: 'Resolviendo tu actualización…',
           missingSession:
-            'Falta la sesión de pago — por favor regresa a la página de actualización.',
+            'Falta la sesión de pago, por favor regresa a la página de actualización.',
           resolveFailedBody:
-            'Tu pago se procesó correctamente — solo no pudimos cargar el estado de tu configuración. Tu actualización está segura; intenta de nuevo en un momento.',
+            'Tu pago se procesó correctamente, solo no pudimos cargar el estado de tu configuración. Tu actualización está segura; intenta de nuevo en un momento.',
           resolveRetry: 'Intentar de nuevo',
         },
         errors: {
           generic: 'Hubo un problema al iniciar el pago. Inténtalo de nuevo.',
-          network: 'Error de red — verifica tu conexión e inténtalo de nuevo.',
+          network: 'Error de red, verifica tu conexión e inténtalo de nuevo.',
         },
       },
       search: {
@@ -1241,7 +1241,7 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         freeformLabel: 'O escribe el tuyo',
         freeformPlaceholder: 'ej. drlopez',
         primaryHeading: 'Sugeridos para ti',
-        defensiveHeading: 'Protege tu marca — también reserva',
+        defensiveHeading: 'Protege tu marca, también reserva',
         defensiveSubheading: 'Variantes comunes que un competidor o squatter podría registrar. Agrega cualquiera a tu plan con un clic.',
         pricingWholesale: 'Dominio (mayorista)',
         pricingService: 'Servicio Práctikah Pro',
@@ -1275,9 +1275,9 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         headline_en: 'Práctikah Pro is launching in México soon',
         headline_es: 'Práctikah Pro estará disponible en México pronto',
         body_en:
-          "We're completing tax compliance with the SAT (Servicio de Administración Tributaria) so we can collect IVA correctly on Mexican subscriptions. We'll email you the moment Pro is available — your free workspace stays fully active in the meantime.",
+          "We're completing tax compliance with the SAT (Servicio de Administración Tributaria) so we can collect IVA correctly on Mexican subscriptions. We'll email you the moment Pro is available, your free workspace stays fully active in the meantime.",
         body_es:
-          'Estamos finalizando el cumplimiento fiscal con el SAT (Servicio de Administración Tributaria) para cobrar correctamente el IVA en suscripciones mexicanas. Te avisaremos por correo en cuanto Pro esté disponible — mientras tanto, tu espacio gratuito sigue completamente activo.',
+          'Estamos finalizando el cumplimiento fiscal con el SAT (Servicio de Administración Tributaria) para cobrar correctamente el IVA en suscripciones mexicanas. Te avisaremos por correo en cuanto Pro esté disponible, mientras tanto, tu espacio gratuito sigue completamente activo.',
         cta_notify_en: 'Notify me when Pro launches in México',
         cta_notify_es: 'Avísame cuando Pro esté disponible en México',
       },
@@ -1285,9 +1285,9 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         headline_en: "Práctikah Pro isn't available in your country yet",
         headline_es: 'Práctikah Pro aún no está disponible en tu país',
         body_en:
-          "We're currently launching in México and the United States. Your free workspace works the same anywhere — we'll expand to more countries soon.",
+          "We're currently launching in México and the United States. Your free workspace works the same anywhere, we'll expand to more countries soon.",
         body_es:
-          'Estamos lanzando inicialmente en México y Estados Unidos. Tu espacio gratuito funciona igual en cualquier país — pronto expandiremos a más regiones.',
+          'Estamos lanzando inicialmente en México y Estados Unidos. Tu espacio gratuito funciona igual en cualquier país, pronto expandiremos a más regiones.',
       },
     },
     tryProContact: {
@@ -1315,7 +1315,7 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         message: 800,
       },
     },
-    /** Phase 23 (PRES-03 / VOICE-08): Cue surface strings — ES */
+    /** Phase 23 (PRES-03 / VOICE-08): Cue surface strings, ES */
     cue: {
       confirmLabel: 'Confirmar',
       cancelLabel: 'Cancelar',
@@ -1325,7 +1325,7 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
       surfaceError: 'Algo salió mal. Inténtalo de nuevo.',
       disconnectTitle: 'Desconectar Cue',
       disconnectSubtitle:
-        'Revoca el acceso de Cue a tu calendario y bandeja. Esto elimina solo la contraseña de aplicación de Cue — tu acceso al buzón no se toca. Puedes reconectar cuando quieras.',
+        'Revoca el acceso de Cue a tu calendario y bandeja. Esto elimina solo la contraseña de aplicación de Cue, tu acceso al buzón no se toca. Puedes reconectar cuando quieras.',
       disconnectButton: 'Desconectar Cue',
       disconnectDone: 'Cue desconectado.',
       disconnectError: 'No se pudo desconectar Cue. Inténtalo de nuevo.',
@@ -1360,7 +1360,7 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
       password: {
         title: 'Crea tu contraseña del buzón',
         subtitle: 'Tu contraseña del buzón es independiente de tu inicio de sesión en Medikah.',
-        whyExplain: 'Tu buzón vive en su propio servidor por seguridad y portabilidad — Práctikah no guarda esta contraseña.',
+        whyExplain: 'Tu buzón vive en su propio servidor por seguridad y portabilidad, Práctikah no guarda esta contraseña.',
         label: 'Nueva contraseña del buzón',
         confirmLabel: 'Confirmar contraseña',
         strengthMeter: 'Fuerza de la contraseña',
@@ -1381,7 +1381,7 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
         passwordReveal: 'Tu contraseña del buzón (visible una sola vez)',
         copyPassword: 'Copiar contraseña',
         copied: 'Copiado',
-        passwordWarning: 'Guárdala ahora — no la almacenamos.',
+        passwordWarning: 'Guárdala ahora, no la almacenamos.',
         openMailbox: 'Abrir Buzón',
         openMailboxDesc: 'Webmail en practikah.medikah.health',
         viewProfile: 'Ver tu perfil',
@@ -1406,10 +1406,10 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
       domainLabel: 'Tu dominio',
       manageBillingCta: 'Administrar facturación',
       transferOutHeading: 'Transferir tu dominio',
-      transferOutBody: 'Tu dominio es tuyo. Solicita el código EPP y te lo enviamos al instante a tu correo y aquí — pégalo en cualquier registrador para llevarte tu dominio.',
+      transferOutBody: 'Tu dominio es tuyo. Solicita el código EPP y te lo enviamos al instante a tu correo y aquí, pégalo en cualquier registrador para llevarte tu dominio.',
       transferOutCta: 'Transferir mi dominio',
       transferOutConfirm: 'Generaremos tu código de autorización EPP ahora. ¿Continuar?',
-      transferOutSuccess: 'Aquí está tu código EPP — pégalo en el registrador receptor en menos de 30 días.',
+      transferOutSuccess: 'Aquí está tu código EPP, pégalo en el registrador receptor en menos de 30 días.',
       transferOutErrorGeneric: 'No pudimos generar el código EPP ahora. Reintenta en un momento.',
       eppLabel: 'Código EPP',
       eppCopyCta: 'Copiar código',
@@ -1418,7 +1418,7 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
       dnsRecordsHelp: 'Estos registros mantienen activo tu dominio personalizado. La edición completa autoservicio está en planes; por ahora contáctanos para cambios.',
       dunning: {
         retryHeadline: 'Mantengamos tu espacio Pro activo',
-        retryBody: 'Tu último pago no se procesó. Stripe está reintentando automáticamente — la mayoría se soluciona actualizando tu tarjeta desde el portal de facturación.',
+        retryBody: 'Tu último pago no se procesó. Stripe está reintentando automáticamente, la mayoría se soluciona actualizando tu tarjeta desde el portal de facturación.',
         graceHeadline: 'Tu Pro termina en {days} días si no podemos cobrar tu tarjeta',
         graceBody: 'Tu dominio sigue siendo tuyo. Actualiza tu método de pago para conservar tu espacio Pro.',
         ctaUpdatePayment: 'Actualizar pago',
@@ -1430,7 +1430,7 @@ export const content: Record<WorkspaceLang, WorkspaceContent> = {
 
 /**
  * Resolve `{placeholder}` tokens in a translation string.
- * Tiny helper — no full i18n library; we only need positional substitution.
+ * Tiny helper, no full i18n library; we only need positional substitution.
  */
 export function format(template: string, vars: Record<string, string | number>): string {
   return template.replace(/\{(\w+)\}/g, (_match, key) => {
