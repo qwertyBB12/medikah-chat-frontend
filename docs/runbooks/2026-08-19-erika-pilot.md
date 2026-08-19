@@ -390,3 +390,5 @@ using this.
 No patient may receive any calendar notification. Therefore: COPY, never move. Step one, inspect her existing events for attendees or invitees. Regardless of the finding, migration means creating FRESH appointments on the Medikah calendar with no attendees attached (fresh events without invitees cannot notify anyone). Her original calendar is never touched on migration day: no deletions, no moves. It stays as a hidden archive. Any deletion of old events happens weeks later, individually, only for events verified to have zero attendees.
 
 Activation email target: dra.erikatorres@gmail.com (ruled by Hector, voice, Aug 19).
+
+Cedula profesional (provided by Hector, Aug 19 morning): 5732231. SEP online pre-check inconclusive from the CLI (endpoint returned empty); the cockpit verification against her Constancia remains the authoritative step.
