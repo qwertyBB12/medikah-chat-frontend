@@ -34,12 +34,36 @@
  */
 export interface CuePendingConfirm {
   kind: 'confirm';
-  action: 'block' | 'clear';
+  action: CueConfirmAction;
   title: string;
   summary: string;
   start_iso: string;
   end_iso: string;
+  /**
+   * Which backend confirm-write route this card belongs to (appointments
+   * vertical). ABSENT on the older calendar cards, which keep going to
+   * /cue/calendar/confirm-write — see lib/cue/confirmTarget.ts, which maps this
+   * to a same-origin BFF path off an allowlist (the value is never used as a
+   * fetch URL directly).
+   */
+  endpoint?: string;
+  /** Appointment move/cancel: which appointment the card is about. */
+  appointment_id?: string;
+  /** Appointment create: the ALREADY-MINIMIZED patient name (first name + last initial). */
+  patient_name?: string;
 }
+
+/**
+ * Every action a confirm card can carry. `block`/`clear` are the original
+ * calendar writes; the `appointment_*` trio comes from the appointments vertical
+ * and is proposed by appointment_create/move/cancel.
+ */
+export type CueConfirmAction =
+  | 'block'
+  | 'clear'
+  | 'appointment_create'
+  | 'appointment_move'
+  | 'appointment_cancel';
 
 /**
  * A "thinking trace" event: the engine emits one when a tool call starts and one
