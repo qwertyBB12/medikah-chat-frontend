@@ -347,6 +347,264 @@ describe('CueSurface — D-03 sentinel split + confirm card', () => {
   });
 });
 
+// ─── Appointments vertical — confirm cards routed by their `endpoint` ─────────
+//
+// The appointment proposers emit the same \x1e confirm sentinel, plus an
+// `endpoint` naming their backend route. The surface must send those cards to
+// the appointments BFF with the action translated to the wire vocabulary the
+// route validates (appointment_create → create), while cards WITHOUT an
+// endpoint keep going to the calendar route untouched (pinned by the D-03 tests
+// above, which carry no endpoint field).
+
+const APPT_ROUTE = '/api/cue/appointments/confirm-write';
+const CAL_ROUTE = '/api/cue/calendar/confirm-write';
+const APPT_ENDPOINT = '/cue/appointments/confirm-write';
+
+/** Build a \x1e confirm-sentinel stream body carrying one pending_confirm card. */
+function confirmStream(pc: Record<string, unknown>): string {
+  const RS = '\x1e'; // the confirm sentinel (U+001E), see lib/cue/cueStream.ts
+  return RS + JSON.stringify({ pending_confirm: { kind: 'confirm', ...pc } }) + '\n';
+}
+
+/**
+ * Stub fetch: the chat call returns `body`, the write route returns `writeJson`,
+ * everything else (the Phase-25 aviso effect) is a no-op. Routed by URL because
+ * the aviso effect eats ordered mockResolvedValueOnce chains.
+ */
+function stubConfirmFetch(body: string, writeJson: Record<string, unknown> = { synced: true }) {
+  const fetchMock = vi.fn(async (url: string, _init?: RequestInit) => {
+    if (url === '/api/cue/chat') return { ok: true, text: async () => body };
+    if (url === APPT_ROUTE || url === CAL_ROUTE) {
+      return { ok: true, json: async () => writeJson, text: async () => '' };
+    }
+    return { ok: false, text: async () => '', json: async () => ({}) };
+  });
+  vi.stubGlobal('fetch', fetchMock);
+  return fetchMock;
+}
+
+/** Submit a command and wait for the confirm card, then click Confirm. */
+async function submitAndConfirm(command: string) {
+  const input = screen.getByRole('textbox');
+  fireEvent.change(input, { target: { value: command } });
+  fireEvent.submit(input.closest('form') as HTMLFormElement);
+  const confirmBtn = await screen.findByText('Confirm');
+  fireEvent.click(confirmBtn);
+}
+
+describe('CueSurface — appointment confirm cards', () => {
+  beforeEach(() => {
+    stubReducedMotion(false);
+    vi.stubGlobal('crypto', { randomUUID: () => 'tok-appt-uuid' });
+  });
+  afterEach(() => { cleanup(); vi.restoreAllMocks(); });
+
+  it('create: POSTs to the appointments route with the action translated to "create"', async () => {
+    const fetchMock = stubConfirmFetch(
+      confirmStream({
+        action: 'appointment_create',
+        endpoint: APPT_ENDPOINT,
+        title: 'Ana T.',
+        summary: 'Schedule an appointment with Ana T. on 2026-07-01 09:00–09:30?',
+        start_iso: '2026-07-01T09:00:00',
+        end_iso: '2026-07-01T09:30:00',
+        patient_name: 'Ana T.',
+      }),
+      { created: true, appointment_id: 'appt-1', caldav_uid: 'uid-1', synced: true },
+    );
+
+    render(<CueSurface isOpen onClose={vi.fn()} accessToken="tok" locale="en" />);
+    await submitAndConfirm('book Ana tomorrow at 9');
+
+    await waitFor(() => {
+      expect(fetchMock.mock.calls.filter((c) => c[0] === APPT_ROUTE).length).toBe(1);
+    });
+    // The calendar route must NOT see an appointment write.
+    expect(fetchMock.mock.calls.filter((c) => c[0] === CAL_ROUTE).length).toBe(0);
+
+    const call = fetchMock.mock.calls.find((c) => c[0] === APPT_ROUTE)!;
+    const sent = JSON.parse(String(call[1]?.body));
+    expect(sent.action).toBe('create'); // NOT 'appointment_create' — the route 400s on that
+    expect(sent.patient_name).toBe('Ana T.');
+    expect(sent.start_iso).toBe('2026-07-01T09:00:00');
+    expect(sent.end_iso).toBe('2026-07-01T09:30:00');
+    expect(sent.idempotency_token).toBe('tok-appt-uuid');
+  });
+
+  it('create: the card headline names the appointment, not a calendar block', async () => {
+    stubConfirmFetch(
+      confirmStream({
+        action: 'appointment_create',
+        endpoint: APPT_ENDPOINT,
+        title: 'Ana T.',
+        summary: 'Schedule an appointment with Ana T.?',
+        start_iso: '2026-07-01T09:00:00',
+        end_iso: '2026-07-01T09:30:00',
+        patient_name: 'Ana T.',
+      }),
+    );
+
+    render(<CueSurface isOpen onClose={vi.fn()} accessToken="tok" locale="en" />);
+    const input = screen.getByRole('textbox');
+    fireEvent.change(input, { target: { value: 'book Ana' } });
+    fireEvent.submit(input.closest('form') as HTMLFormElement);
+
+    expect(await screen.findByText('Schedule this appointment?')).toBeTruthy();
+    expect(screen.queryByText('Clear Cue blocks?')).toBeNull();
+  });
+
+  it('cancel: sends the appointment id and no window', async () => {
+    const fetchMock = stubConfirmFetch(
+      confirmStream({
+        action: 'appointment_cancel',
+        endpoint: APPT_ENDPOINT,
+        title: 'Ana T.',
+        summary: 'Cancel the appointment with Ana T. on 2026-07-01 09:00?',
+        start_iso: '2026-07-01T09:00:00',
+        end_iso: '2026-07-01T09:30:00',
+        appointment_id: 'appt-7',
+      }),
+      { cancelled: true, appointment_id: 'appt-7', synced: true },
+    );
+
+    render(<CueSurface isOpen onClose={vi.fn()} accessToken="tok" locale="en" />);
+    await submitAndConfirm('cancel Ana appointment');
+
+    await waitFor(() => {
+      expect(fetchMock.mock.calls.filter((c) => c[0] === APPT_ROUTE).length).toBe(1);
+    });
+    const sent = JSON.parse(String(fetchMock.mock.calls.find((c) => c[0] === APPT_ROUTE)![1]?.body));
+    expect(sent).toEqual({
+      action: 'cancel',
+      appointment_id: 'appt-7',
+      idempotency_token: 'tok-appt-uuid',
+      locale: 'en',
+    });
+  });
+
+  it('move: sends the id plus the new window', async () => {
+    const fetchMock = stubConfirmFetch(
+      confirmStream({
+        action: 'appointment_move',
+        endpoint: APPT_ENDPOINT,
+        title: 'Ana T.',
+        summary: 'Move the appointment with Ana T.?',
+        start_iso: '2026-07-02T11:00:00',
+        end_iso: '2026-07-02T11:30:00',
+        appointment_id: 'appt-7',
+      }),
+      { moved: true, appointment_id: 'appt-7', synced: true },
+    );
+
+    render(<CueSurface isOpen onClose={vi.fn()} accessToken="tok" locale="en" />);
+    await submitAndConfirm('move Ana to 11');
+
+    await waitFor(() => {
+      expect(fetchMock.mock.calls.filter((c) => c[0] === APPT_ROUTE).length).toBe(1);
+    });
+    const sent = JSON.parse(String(fetchMock.mock.calls.find((c) => c[0] === APPT_ROUTE)![1]?.body));
+    expect(sent.action).toBe('move');
+    expect(sent.appointment_id).toBe('appt-7');
+    expect(sent.start_iso).toBe('2026-07-02T11:00:00');
+  });
+
+  it('synced:false says the calendar has not caught up (the booking still stands)', async () => {
+    // The DB row is authoritative and the CalDAV mirror is best-effort. A doctor
+    // who opens their calendar and does not see the appointment must already have
+    // been told why, or they will assume the booking failed and double-book.
+    stubConfirmFetch(
+      confirmStream({
+        action: 'appointment_create',
+        endpoint: APPT_ENDPOINT,
+        title: 'Ana T.',
+        summary: 'Schedule an appointment with Ana T.?',
+        start_iso: '2026-07-01T09:00:00',
+        end_iso: '2026-07-01T09:30:00',
+        patient_name: 'Ana T.',
+      }),
+      { created: true, appointment_id: 'appt-2', caldav_uid: null, synced: false },
+    );
+
+    render(<CueSurface isOpen onClose={vi.fn()} accessToken="tok" locale="en" />);
+    await submitAndConfirm('book Ana');
+
+    const line = await screen.findByText(/Appointment scheduled\./);
+    expect(line.textContent).toMatch(/calendar has not caught up/);
+  });
+
+  it('an unrecognized endpoint writes NOTHING, to either route', async () => {
+    // The card rides the model-loop stream. An endpoint off the allowlist must
+    // stop the write rather than fall back to the calendar route.
+    const fetchMock = stubConfirmFetch(
+      confirmStream({
+        action: 'appointment_create',
+        endpoint: 'https://evil.example/cue/appointments/confirm-write',
+        title: 'Ana T.',
+        summary: 'Schedule an appointment with Ana T.?',
+        start_iso: '2026-07-01T09:00:00',
+        end_iso: '2026-07-01T09:30:00',
+        patient_name: 'Ana T.',
+      }),
+    );
+
+    render(<CueSurface isOpen onClose={vi.fn()} accessToken="tok" locale="en" />);
+    await submitAndConfirm('book Ana');
+
+    await waitFor(() => {
+      expect(screen.getByText('Something went wrong. Please try again.')).toBeTruthy();
+    });
+    const writes = fetchMock.mock.calls.filter(
+      (c) => c[0] === APPT_ROUTE || c[0] === CAL_ROUTE || String(c[0]).startsWith('https://evil'),
+    );
+    expect(writes.length).toBe(0);
+  });
+
+  it('an appointment card missing the id its action needs writes nothing', async () => {
+    const fetchMock = stubConfirmFetch(
+      confirmStream({
+        action: 'appointment_cancel',
+        endpoint: APPT_ENDPOINT,
+        title: 'Ana T.',
+        summary: 'Cancel the appointment with Ana T.?',
+        start_iso: '2026-07-01T09:00:00',
+        end_iso: '2026-07-01T09:30:00',
+        // appointment_id deliberately absent
+      }),
+    );
+
+    render(<CueSurface isOpen onClose={vi.fn()} accessToken="tok" locale="en" />);
+    await submitAndConfirm('cancel it');
+
+    await waitFor(() => {
+      expect(screen.getByText('Something went wrong. Please try again.')).toBeTruthy();
+    });
+    expect(fetchMock.mock.calls.filter((c) => c[0] === APPT_ROUTE).length).toBe(0);
+  });
+
+  it('Cancel dismisses an appointment card without writing', async () => {
+    const fetchMock = stubConfirmFetch(
+      confirmStream({
+        action: 'appointment_cancel',
+        endpoint: APPT_ENDPOINT,
+        title: 'Ana T.',
+        summary: 'Cancel the appointment with Ana T.?',
+        start_iso: '2026-07-01T09:00:00',
+        end_iso: '2026-07-01T09:30:00',
+        appointment_id: 'appt-7',
+      }),
+    );
+
+    render(<CueSurface isOpen onClose={vi.fn()} accessToken="tok" locale="en" />);
+    const input = screen.getByRole('textbox');
+    fireEvent.change(input, { target: { value: 'cancel Ana' } });
+    fireEvent.submit(input.closest('form') as HTMLFormElement);
+
+    fireEvent.click(await screen.findByText('Cancel'));
+    await waitFor(() => expect(screen.queryByText('Cancel')).toBeNull());
+    expect(fetchMock.mock.calls.filter((c) => c[0] === APPT_ROUTE).length).toBe(0);
+  });
+});
+
 // ─── Phase 23 voice port — messages[] chat shape + text fallback ──────────────
 
 describe('CueSurface — Phase 23 voice port', () => {

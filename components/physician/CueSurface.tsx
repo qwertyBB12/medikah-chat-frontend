@@ -14,9 +14,12 @@
  *      (parsed by lib/cue/cueStream.ts → onToolEvent). Transparent; the wait
  *      feels alive.
  *   2. ANSWER LINE, the streamed reply (TTFT), plain text with a live cursor.
- *   3. D-03 CONFIRM CARD, block/clear write proposals, keyed ONLY off the parsed
- *      \x1e sentinel payload, NEVER off model prose (T-23-04-09). Confirm → POST
- *      /api/cue/calendar/confirm-write (the sole mutation path). Cancel → no write.
+ *   3. D-03 CONFIRM CARD, write proposals (calendar block/clear and appointment
+ *      create/move/cancel), keyed ONLY off the parsed \x1e sentinel payload,
+ *      NEVER off model prose (T-23-04-09). Confirm → POST to the route named by
+ *      the card's `endpoint` field, resolved through the allowlist in
+ *      lib/cue/confirmTarget.ts (no endpoint → the calendar route, unchanged).
+ *      Cancel → no write.
  *
  * Text-first + push-to-talk: a command line + mic at the bottom; bilingual. When
  * the browser supports continuous VAD (diagnoseVADSupport().ok) a
@@ -51,9 +54,11 @@ import {
   readCueStream,
   PENDING_CONFIRM_SENTINEL,
   type CuePendingConfirm,
+  type CueConfirmAction,
   type CueToolEvent,
   type CueCard,
 } from '../../lib/cue/cueStream';
+import { resolveConfirmRoute, buildConfirmBody } from '../../lib/cue/confirmTarget';
 import { CLINICAL_SUPPORT_COPY, confidenceLabel } from '../../lib/cue/clinicalSupportContent';
 import { buildClinicalSupportSummaryHtml } from '../../lib/cue/clinicalSupportSummary';
 import { CueMemoryConsent, CueMemoryPanel } from './CueMemory';
@@ -100,8 +105,19 @@ const LABELS = {
         noFiles: "Cue can't receive files yet, describe it in text and Cue will help.",
         modeSettings: 'Interaction mode', tapToTalk: 'Tap to talk', tapToStop: 'Listening, tap to stop',
         resume: 'Paused, tap to resume',
+        confirmApptCreate: 'Schedule this appointment?', confirmApptMove: 'Move this appointment?',
+        confirmApptCancel: 'Cancel this appointment?',
         blockedResult: () => `Time blocked.`,
-        clearResult: (deleted: number, kept: number) => `${deleted} removed, ${kept} kept.` },
+        clearResult: (deleted: number, kept: number) => `${deleted} removed, ${kept} kept.`,
+        // synced=false means the appointment IS booked but its calendar mirror
+        // did not land. Say so plainly: the doctor must not open their calendar,
+        // not see it, and conclude the booking failed.
+        appointmentResult: (action: CueConfirmAction, synced: boolean) => {
+          const base = action === 'appointment_create' ? 'Appointment scheduled.'
+            : action === 'appointment_move' ? 'Appointment moved.'
+            : 'Appointment cancelled.';
+          return synced ? base : `${base} Your calendar has not caught up yet.`;
+        } },
   es: { close: 'Cerrar', collapse: 'Contraer', you: 'Tú', context: 'Espacio clínico',
         thinking: 'Cue está pensando…', placeholder: 'Escribe un comando…',
         error: 'Algo salió mal. Inténtalo de nuevo.', mic: 'Enviar mensaje',
@@ -112,9 +128,28 @@ const LABELS = {
         noFiles: 'Cue aún no puede recibir archivos, descríbelo en texto y Cue te ayudará.',
         modeSettings: 'Modo de interacción', tapToTalk: 'Toca para hablar', tapToStop: 'Escuchando, toca para terminar',
         resume: 'En pausa, toca para reanudar',
+        confirmApptCreate: '¿Agendar esta cita?', confirmApptMove: '¿Mover esta cita?',
+        confirmApptCancel: '¿Cancelar esta cita?',
         blockedResult: () => `Horario bloqueado.`,
-        clearResult: (deleted: number, kept: number) => `${deleted} eliminados, ${kept} conservados.` },
+        clearResult: (deleted: number, kept: number) => `${deleted} eliminados, ${kept} conservados.`,
+        appointmentResult: (action: CueConfirmAction, synced: boolean) => {
+          const base = action === 'appointment_create' ? 'Cita agendada.'
+            : action === 'appointment_move' ? 'Cita movida.'
+            : 'Cita cancelada.';
+          return synced ? base : `${base} Tu calendario aún no se actualiza.`;
+        } },
 } as const;
+
+/** Card headline for a confirm action (the summary line underneath carries the detail). */
+function confirmTitle(labels: (typeof LABELS)['en' | 'es'], action: CueConfirmAction): string {
+  switch (action) {
+    case 'block': return labels.confirmBlock;
+    case 'clear': return labels.confirmClear;
+    case 'appointment_create': return labels.confirmApptCreate;
+    case 'appointment_move': return labels.confirmApptMove;
+    case 'appointment_cancel': return labels.confirmApptCancel;
+  }
+}
 
 // Localized human phrasing for the thinking trace, keyed by tool name. The wire
 // carries only the structured event (phase/tool/ok/items); the verb + unit are
@@ -127,6 +162,10 @@ const TOOL_LABELS: Record<'en' | 'es', Record<string, { verb: string; unit: stri
     inquiry_list_recent: { verb: 'reviewing your queue', unit: 'patients' },
     calendar_block_time: { verb: 'preparing the block', unit: '' },
     calendar_clear_range: { verb: 'preparing to clear', unit: '' },
+    appointment_list: { verb: 'reading your appointments', unit: 'appointments' },
+    appointment_create: { verb: 'preparing the appointment', unit: '' },
+    appointment_move: { verb: 'preparing the change', unit: '' },
+    appointment_cancel: { verb: 'preparing the cancellation', unit: '' },
   },
   es: {
     inbox_read_recent: { verb: 'leyendo tu bandeja', unit: 'nuevos' },
@@ -135,6 +174,10 @@ const TOOL_LABELS: Record<'en' | 'es', Record<string, { verb: string; unit: stri
     inquiry_list_recent: { verb: 'revisando tu fila', unit: 'pacientes' },
     calendar_block_time: { verb: 'preparando el bloqueo', unit: '' },
     calendar_clear_range: { verb: 'preparando la limpieza', unit: '' },
+    appointment_list: { verb: 'leyendo tus citas', unit: 'citas' },
+    appointment_create: { verb: 'preparando la cita', unit: '' },
+    appointment_move: { verb: 'preparando el cambio', unit: '' },
+    appointment_cancel: { verb: 'preparando la cancelación', unit: '' },
   },
 };
 
@@ -563,25 +606,38 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
     sm.send('stop');
   }
 
-  // Confirm → POST /api/cue/calendar/confirm-write (the sole mutation path).
+  // Confirm → POST to the card's confirm-write route (the sole mutation path).
+  // Which route: the card's `endpoint` field, mapped to its same-origin BFF
+  // sibling off an allowlist (lib/cue/confirmTarget.ts). A card with no endpoint
+  // is a pre-vertical calendar card and still goes to /api/cue/calendar/confirm-write.
   async function handleConfirmWrite() {
     if (!pendingConfirm || isWriting) return;
     const token = idempotencyTokenRef.current; if (!token) return;
+    const route = resolveConfirmRoute(pendingConfirm.endpoint);
+    const body = route ? buildConfirmBody(pendingConfirm, token, locale) : null;
+    // Fail closed. An endpoint we cannot name, or a card missing a field its
+    // action requires, is not written ANYWHERE — sending it to the other route
+    // would aim a mutation at a path it was never proposed for.
+    if (!route || !body) { setErrorMsg(labels.error); return; }
     setIsWriting(true); setErrorMsg(null);
     try {
-      const res = await fetch('/api/cue/calendar/confirm-write', {
+      const res = await fetch(route, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) },
-        body: JSON.stringify({
-          action: pendingConfirm.action, start_iso: pendingConfirm.start_iso, end_iso: pendingConfirm.end_iso,
-          title: pendingConfirm.title || undefined, idempotency_token: token, locale,
-        }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const r = (await res.json()) as { uid?: string; deleted?: number; skipped?: number };
+      const r = (await res.json()) as {
+        uid?: string; deleted?: number; skipped?: number; synced?: boolean;
+      };
+      // The appointments route reports whether the calendar mirror landed; a
+      // missing `synced` is treated as synced so an older/partial response never
+      // raises a false alarm.
       const summary = pendingConfirm.action === 'block'
         ? labels.blockedResult()
-        : labels.clearResult(r.deleted ?? 0, r.skipped ?? 0);
+        : pendingConfirm.action === 'clear'
+          ? labels.clearResult(r.deleted ?? 0, r.skipped ?? 0)
+          : labels.appointmentResult(pendingConfirm.action, r.synced !== false);
       if (liveTurnRef.current) liveTurnRef.current.text = summary;
       setResponse({ title: labels.done, summary });
       setPendingConfirm(null);
@@ -969,7 +1025,7 @@ export default function CueSurface({ isOpen, onClose, accessToken, locale = 'en'
                 <div className="mk-card">
                   <div className="mk-card-k">&#9670; {labels.confirmEyebrow}</div>
                   <div className="mk-card-ttl">
-                    {pendingConfirm.action === 'block' ? labels.confirmBlock : labels.confirmClear}
+                    {confirmTitle(labels, pendingConfirm.action)}
                   </div>
                   <div className="mk-card-sub">{pendingConfirm.summary}</div>
                   <div className="mk-card-acts">

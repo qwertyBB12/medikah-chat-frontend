@@ -14,7 +14,12 @@
 
 /** Minimal structural shape of a pending_confirm payload (see CuePendingConfirm). */
 export interface CueProposal {
-  action: 'block' | 'clear';
+  action:
+    | 'block'
+    | 'clear'
+    | 'appointment_create'
+    | 'appointment_move'
+    | 'appointment_cancel';
   title?: string;
   summary?: string;
   start_iso?: string;
@@ -34,12 +39,31 @@ export function buildProposalLine(
   pc: CueProposal,
   locale: 'en' | 'es' = 'en',
 ): string {
-  if (locale === 'es') {
-    return pc.action === 'block'
-      ? 'Revisa la tarjeta en tu pantalla para aprobar el bloque.'
-      : 'Revisa la tarjeta en tu pantalla para aprobar el cambio.';
-  }
-  return pc.action === 'block'
-    ? 'Check the card on your screen to approve the block.'
-    : 'Check the card on your screen to approve the change.';
+  const noun = PROPOSAL_NOUN[locale][pc.action] ?? PROPOSAL_NOUN[locale].clear;
+  return locale === 'es'
+    ? `Revisa la tarjeta en tu pantalla para aprobar ${noun}.`
+    : `Check the card on your screen to approve the ${noun}.`;
 }
+
+/**
+ * The one word that changes per action. Appointment proposals say "appointment" /
+ * "cancellation" rather than the calendar's "block", so a doctor who only HEARS
+ * the line still knows which kind of card is waiting. Everything else about the
+ * proposal stays on the visual card, deliberately un-narrated.
+ */
+const PROPOSAL_NOUN: Record<'en' | 'es', Record<CueProposal['action'], string>> = {
+  en: {
+    block: 'block',
+    clear: 'change',
+    appointment_create: 'appointment',
+    appointment_move: 'change',
+    appointment_cancel: 'cancellation',
+  },
+  es: {
+    block: 'el bloque',
+    clear: 'el cambio',
+    appointment_create: 'la cita',
+    appointment_move: 'el cambio',
+    appointment_cancel: 'la cancelación',
+  },
+};
