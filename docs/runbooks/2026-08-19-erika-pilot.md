@@ -385,3 +385,8 @@ using this.
 7. **Moving events between calendars can notify invitees.** Warn her first.
 8. **Only the Medikah calendar is visible to Cue.** Set it as the default on both
    devices or appointments will quietly land somewhere Cue cannot see.
+
+## LAW: the migration protocol (ruled by Hector, non-negotiable)
+No patient may receive any calendar notification. Therefore: COPY, never move. Step one, inspect her existing events for attendees or invitees. Regardless of the finding, migration means creating FRESH appointments on the Medikah calendar with no attendees attached (fresh events without invitees cannot notify anyone). Her original calendar is never touched on migration day: no deletions, no moves. It stays as a hidden archive. Any deletion of old events happens weeks later, individually, only for events verified to have zero attendees.
+
+Activation email target: dra.erikatorres@gmail.com (ruled by Hector, voice, Aug 19).
