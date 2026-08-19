@@ -72,7 +72,7 @@ In the modal:
 2. **"Workspace email address."** The field will prefill from her name, and here
    is the trap: the derivation takes the **last** token of the full name as the
    surname. "Erika Torres Valdez" derives `dra-valdez`, which uses her materno.
-   **Override it to `dra-torres-valdez`.** The modal's own helper text says exactly this:
+   **Override it to `dra.torresvaldez`.** The modal's own helper text says exactly this:
    *"Edit this for double surnames (e.g. `dra-garcia`)."* Confirm the spelling
    with her before you click, because changing a mailbox address afterward is a
    migration, not an edit.
@@ -81,7 +81,7 @@ In the modal:
 
 **What you should see:**
 
-> Verified. Mailbox provisioned (dra-torres-valdez@medikah.health). Activation link sent
+> Verified. Mailbox provisioned (dra.torresvaldez@medikah.health). Activation link sent
 > to the physician's email.
 
 **If you see something else:**
@@ -90,7 +90,7 @@ In the modal:
 |---|---|---|
 | "A valid activation link was already sent recently." | A live, unconsumed token exists. | Fine. Have her use the email she already has, or use "Resend activation link" to force a fresh one. |
 | "Verified, but the mailbox is not provisioned yet, so no activation link was sent." | Mailcow call failed. | Check `MAILCOW_API_URL` (origin only, not the `/admin` path) and `MAILCOW_API_KEY`. Fix, then re-run. |
-| "...is already taken" | `local_part_taken`. | Pick another address with her. Do not auto-suffix a real doctor into `dra-torres-valdez2`. |
+| "...is already taken" | `local_part_taken`. | Pick another address with her. Do not auto-suffix a real doctor into `dra.torresvaldez2`. |
 | "A Doctor/Doctora title is required" | Title not set. | Pick the title in the modal. |
 | Quota error (`mailbox_quota_left_exceeded`) | The Mailcow domain quota is exhausted. | Raise the domain quota in Mailcow. Each mailbox takes 5 GB. |
 
@@ -189,10 +189,10 @@ workflow and the data moves house.
 **Credentials for both devices:**
 
 - **Server:** `practikah.medikah.health`
-- **Username:** `dra-torres-valdez@medikah.health` (the full address, not the local part)
+- **Username:** `dra.torresvaldez@medikah.health` (the full address, not the local part)
 - **Password:** the mailbox password from Section 3a
 - **Full CalDAV URL, if manual entry is needed:**
-  `https://practikah.medikah.health/SOGo/dav/dra-torres-valdez/Calendar/personal/`
+  `https://practikah.medikah.health/SOGo/dav/dra.torresvaldez/Calendar/personal/`
 
 Use `practikah.medikah.health`. Do not use `mail.medikah.health`, which is a
 legacy CNAME the codebase itself calls fragile.
@@ -205,7 +205,7 @@ Settings, then Calendar, then Accounts, then Add Account, then Other, then
 Fill in:
 
 - Server: `practikah.medikah.health`
-- User Name: `dra-torres-valdez@medikah.health`
+- User Name: `dra.torresvaldez@medikah.health`
 - Password: her mailbox password
 - Description: `Medikah`
 
@@ -223,7 +223,7 @@ Open the Calendar app, then the **Calendar** menu, then **Add Account**, then
 **Other CalDAV Account**, then Continue.
 
 - Account Type: **Manual**
-- User Name: `dra-torres-valdez@medikah.health`
+- User Name: `dra.torresvaldez@medikah.health`
 - Password: her mailbox password
 - Server Address: `practikah.medikah.health`
 
@@ -238,7 +238,7 @@ Medikah calendar here too. The default is per device.
 
 Have her create a test event on the Mac and confirm it appears on the iPhone
 within a minute. Then open
-`https://practikah.medikah.health/SOGo/so/dra-torres-valdez@medikah.health/Calendar` in a
+`https://practikah.medikah.health/SOGo/so/dra.torresvaldez@medikah.health/Calendar` in a
 browser and confirm the same event is there. If it shows in all three places, the
 calendar is wired.
 
@@ -358,13 +358,13 @@ using this.
 | Thing | Value |
 |---|---|
 | Admin detail page | `https://medikah.health/admin/physicians/{id}` |
-| Her mailbox | `dra-torres-valdez@medikah.health` |
+| Her mailbox | `dra.torresvaldez@medikah.health` |
 | Activation link | `https://medikah.health/auth/activate/{token}`, 24 hours |
 | Re-enroll authenticator | `https://medikah.health/auth/reenroll` |
 | Webmail and calendar | `https://practikah.medikah.health/SOGo/` |
 | CalDAV server (device setup) | `practikah.medikah.health` |
-| CalDAV full URL | `https://practikah.medikah.health/SOGo/dav/dra-torres-valdez/Calendar/personal/` |
-| Calendar in browser | `https://practikah.medikah.health/SOGo/so/dra-torres-valdez@medikah.health/Calendar` |
+| CalDAV full URL | `https://practikah.medikah.health/SOGo/dav/dra.torresvaldez/Calendar/personal/` |
+| Calendar in browser | `https://practikah.medikah.health/SOGo/so/dra.torresvaldez@medikah.health/Calendar` |
 | Activation sender | `activacion@medikah.health` |
 | Mailbox quota | 5 GB |
 | TOTP tolerance | plus or minus 60 seconds |
@@ -379,7 +379,7 @@ using this.
 3. **Retrying into a lockout.** 3 failures in 5 minutes locks the IP. Wait it out.
 4. **Relaying codes by voice.** Never. The 30 second window will not survive it.
 5. **The derived mailbox uses the materno.** Override `dra-valdez` to
-   `dra-torres-valdez` in the provisioning modal.
+   `dra.torresvaldez` in the provisioning modal.
 6. **`onboarding_language` decides the email language.** Set it to `es` before
    verifying.
 7. **Moving events between calendars can notify invitees.** Warn her first.
